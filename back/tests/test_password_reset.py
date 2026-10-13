@@ -24,7 +24,7 @@ class TestPasswordReset(PgClientTestCase):
         self.session.commit()
         self.session.refresh(self.tenant)
         self.user = models.User(
-            email="pwreset-staff@amvara.de",
+            username="pwreset-staff@amvara.de",
             hashed_password=security.get_password_hash("old-secret-9"),
             tenant_id=self.tenant.id,
             role=models.UserRole.owner,

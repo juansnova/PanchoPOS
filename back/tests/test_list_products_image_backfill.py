@@ -17,7 +17,7 @@ from app import provider_images
 def _bearer_headers(user: models.User) -> dict[str, str]:
     token = security.create_access_token(
         {
-            "sub": user.email,
+            "sub": user.username,
             "tenant_id": user.tenant_id,
             "provider_id": getattr(user, "provider_id", None),
             "token_version": user.token_version,
@@ -40,7 +40,7 @@ class TestListProductsImageBackfill(PgClientTestCase):
         self.session.refresh(self.tenant)
 
         self.owner = models.User(
-            email=f"img-backfill-{uuid4().hex[:8]}@amvara.de",
+            username=f"img-backfill-{uuid4().hex[:8]}@amvara.de",
             hashed_password=security.get_password_hash("secret"),
             full_name="Owner",
             tenant_id=self.tenant.id,

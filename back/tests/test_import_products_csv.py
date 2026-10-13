@@ -104,7 +104,7 @@ class TestImportProductsCsvPipeline(PgClientTestCase):
         self.tenant_id = tenant.id
 
         self.owner = models.User(
-            email="csv-import-owner@test.local",
+            username="csv-import-owner@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Owner",
             tenant_id=self.tenant_id,

@@ -21,7 +21,7 @@ from app.tenant_subcategories import tenant_categories_for_ui
 
 def _owner_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -40,7 +40,7 @@ class TestCategoryNormalize(PgClientTestCase):
         self.tenant_id = tenant.id
 
         self.owner = models.User(
-            email="cat-norm-owner@test.local",
+            username="cat-norm-owner@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Owner",
             tenant_id=self.tenant_id,

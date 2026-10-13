@@ -8,13 +8,12 @@ from datetime import timedelta
 from pg_client_mixin import PgClientTestCase
 
 from app import models, security
-from app.category_codes import CATEGORY_CODES
 from app.tenant_subcategories import STANDARD_CATEGORY_ORDER, tenant_categories_for_ui
 
 
 def _owner_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -33,7 +32,7 @@ class TestTenantSubcategories(PgClientTestCase):
         self.tenant_id = tenant.id
 
         self.owner = models.User(
-            email="subcat-owner@test.local",
+            username="subcat-owner@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Owner",
             tenant_id=self.tenant_id,
@@ -91,17 +90,17 @@ class TestTenantSubcategories(PgClientTestCase):
 
     def test_tenant_with_no_products_has_all_standard_categories(self):
         merged = tenant_categories_for_ui(self.session, self.tenant_id)
-        for name in CATEGORY_CODES.values():
+        for name in STANDARD_CATEGORY_ORDER:
             self.assertIn(name, merged)
             self.assertIsInstance(merged[name], list)
-        self.assertEqual(list(merged.keys())[:5], STANDARD_CATEGORY_ORDER)
+        self.assertEqual(list(merged.keys()), STANDARD_CATEGORY_ORDER)
 
         r = self.client.get("/catalog/categories", headers=self.headers)
         self.assertEqual(r.status_code, 200, r.text)
         body = r.json()
-        for name in CATEGORY_CODES.values():
+        for name in STANDARD_CATEGORY_ORDER:
             self.assertIn(name, body)
-        self.assertEqual(list(body.keys())[:5], STANDARD_CATEGORY_ORDER)
+        self.assertEqual(list(body.keys()), STANDARD_CATEGORY_ORDER)
 
     def test_product_subcategories_included_in_merge(self):
         self.session.add(

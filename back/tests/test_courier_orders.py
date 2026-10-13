@@ -14,7 +14,7 @@ from app import models, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -35,14 +35,14 @@ class TestCourierOrders(PgClientTestCase):
         self.session.refresh(self.tenant_b)
 
         self.courier_a = models.User(
-            email="co-courier-a@test.local",
+            username="co-courier-a@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Courier A",
             tenant_id=self.tenant_a.id,
             role=models.UserRole.courier,
         )
         self.waiter_a = models.User(
-            email="co-waiter-a@test.local",
+            username="co-waiter-a@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Waiter A",
             tenant_id=self.tenant_a.id,
@@ -180,7 +180,7 @@ class TestCourierOrders(PgClientTestCase):
             )
         )
         other_courier = models.User(
-            email="co-courier-other@test.local",
+            username="co-courier-other@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Other Courier",
             tenant_id=self.tenant_a.id,
@@ -364,7 +364,7 @@ class TestCourierOrders(PgClientTestCase):
 
     def test_wrong_courier_cannot_act(self) -> None:
         other = models.User(
-            email="co-courier-b@test.local",
+            username="co-courier-b@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Courier B",
             tenant_id=self.tenant_a.id,

@@ -11,7 +11,7 @@ from app import models, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -33,14 +33,14 @@ class TestSplitBill(PgClientTestCase):
 
         pwd = security.get_password_hash("x")
         self.admin = models.User(
-            email="split-admin@amvara.de",
+            username="split-admin@amvara.de",
             hashed_password=pwd,
             full_name="Admin",
             role=models.UserRole.owner,
             tenant_id=self.tenant.id,
         )
         self.other_admin = models.User(
-            email="split-other@amvara.de",
+            username="split-other@amvara.de",
             hashed_password=pwd,
             full_name="Other",
             role=models.UserRole.owner,

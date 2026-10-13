@@ -198,7 +198,7 @@ def _bearer_headers(user: models.User) -> dict[str, str]:
     from app import security
 
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -225,7 +225,7 @@ class TestGuestFeedbackStaffAnalytics(PgClientTestCase):
         self.other_tenant_id = other.id
 
         self.admin = models.User(
-            email="fb-analytics-admin@test.local",
+            username="fb-analytics-admin@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="FB Admin",
             tenant_id=self.tenant_id,

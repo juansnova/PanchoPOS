@@ -67,7 +67,7 @@ def main() -> int:
 
     def _headers(u: models.User) -> dict[str, str]:
         data = {
-            "sub": u.email,
+            "sub": u.username,
             "tenant_id": u.tenant_id,
             "provider_id": None,
             "token_version": u.token_version,

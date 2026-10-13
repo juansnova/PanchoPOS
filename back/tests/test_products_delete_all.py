@@ -12,7 +12,7 @@ from app import models, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -33,21 +33,21 @@ class TestProductsDeleteAll(PgClientTestCase):
         self.session.refresh(self.t_b)
 
         self.owner_a = models.User(
-            email="delete-all-owner-a@test.local",
+            username="delete-all-owner-a@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Owner A",
             tenant_id=self.t_a.id,
             role=models.UserRole.owner,
         )
         self.owner_b = models.User(
-            email="delete-all-owner-b@test.local",
+            username="delete-all-owner-b@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Owner B",
             tenant_id=self.t_b.id,
             role=models.UserRole.owner,
         )
         self.kitchen_a = models.User(
-            email="delete-all-kitchen-a@test.local",
+            username="delete-all-kitchen-a@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Kitchen A",
             tenant_id=self.t_a.id,

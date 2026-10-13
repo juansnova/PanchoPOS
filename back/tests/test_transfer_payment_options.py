@@ -16,7 +16,7 @@ _PNG = base64.b64decode(
 
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
-    data = {"sub": user.email, "tenant_id": user.tenant_id, "token_version": user.token_version}
+    data = {"sub": user.username, "tenant_id": user.tenant_id, "token_version": user.token_version}
     token = security.create_access_token(data, expires_delta=timedelta(minutes=30))
     return {"Authorization": f"Bearer {token}"}
 
@@ -29,13 +29,13 @@ class TestTransferPaymentOptions(PgClientTestCase):
         self.session.commit()
         self.session.refresh(self.tenant)
         self.owner = models.User(
-            email="transfer-owner@amvara.de",
+            username="transfer-owner@amvara.de",
             hashed_password=security.get_password_hash("x"),
             role=models.UserRole.owner,
             tenant_id=self.tenant.id,
         )
         self.waiter = models.User(
-            email="transfer-waiter@amvara.de",
+            username="transfer-waiter@amvara.de",
             hashed_password=security.get_password_hash("x"),
             role=models.UserRole.waiter,
             tenant_id=self.tenant.id,

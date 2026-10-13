@@ -12,7 +12,7 @@ from app import models, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -31,7 +31,7 @@ class TestDefaultTaxSettings(PgClientTestCase):
 
         pwd = security.get_password_hash("x")
         self.admin = models.User(
-            email="tax-settings-admin@amvara.de",
+            username="tax-settings-admin@amvara.de",
             hashed_password=pwd,
             full_name="Admin",
             role=models.UserRole.owner,

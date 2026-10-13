@@ -17,7 +17,7 @@ from app.work_session_serialization import WORK_SESSION_CONTRACT_THRESHOLD_MINUT
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -36,7 +36,7 @@ class TestWorkSession(PgClientTestCase):
         self.tenant_id = tenant.id
 
         self.waiter = models.User(
-            email="ws-waiter@test.local",
+            username="ws-waiter@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Waiter W",
             tenant_id=self.tenant_id,
@@ -46,7 +46,7 @@ class TestWorkSession(PgClientTestCase):
         self.session.commit()
         self.session.refresh(self.waiter)
         self.admin = models.User(
-            email="ws-admin@test.local",
+            username="ws-admin@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Admin A",
             tenant_id=self.tenant_id,

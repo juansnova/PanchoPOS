@@ -11,7 +11,7 @@ from app import models, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -30,21 +30,21 @@ class TestAttendanceExcel(PgClientTestCase):
         self.tenant_id = tenant.id
 
         self.staff_a = models.User(
-            email="att-staff-a@test.local",
+            username="att-staff-a@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Staff Alpha",
             tenant_id=self.tenant_id,
             role=models.UserRole.waiter,
         )
         self.staff_b = models.User(
-            email="att-staff-b@test.local",
+            username="att-staff-b@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Staff Beta",
             tenant_id=self.tenant_id,
             role=models.UserRole.waiter,
         )
         self.admin = models.User(
-            email="att-admin@test.local",
+            username="att-admin@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Admin A",
             tenant_id=self.tenant_id,

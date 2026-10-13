@@ -12,7 +12,7 @@ from app import models, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -33,7 +33,7 @@ class TestOtpDisablePassword(PgClientTestCase):
         secret = pyotp.random_base32()
         self.password = "otp-owner-secret"
         self.user = models.User(
-            email="otp-disable-owner@test.local",
+            username="otp-disable-owner@test.local",
             hashed_password=security.get_password_hash(self.password),
             full_name="OTP Owner",
             tenant_id=self.tenant_id,

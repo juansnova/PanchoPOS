@@ -12,7 +12,7 @@ from app import models, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -31,7 +31,7 @@ class TestScheduleCopyWeek(PgClientTestCase):
         self.tenant_id = tenant.id
 
         self.waiter = models.User(
-            email="scw-waiter@test.local",
+            username="scw-waiter@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Copy Waiter",
             tenant_id=self.tenant_id,
@@ -39,7 +39,7 @@ class TestScheduleCopyWeek(PgClientTestCase):
         )
         self.session.add(self.waiter)
         self.admin = models.User(
-            email="scw-admin@test.local",
+            username="scw-admin@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Copy Admin",
             tenant_id=self.tenant_id,

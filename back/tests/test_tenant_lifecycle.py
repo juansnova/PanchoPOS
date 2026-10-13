@@ -18,7 +18,7 @@ from app.db import engine
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -37,14 +37,14 @@ class TestTenantLifecycle(PgClientTestCase):
         self.tenant_id = tenant.id
 
         self.owner = models.User(
-            email="tl-owner@test.local",
+            username="tl-owner@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Owner O",
             tenant_id=self.tenant_id,
             role=models.UserRole.owner,
         )
         self.waiter = models.User(
-            email="tl-waiter@test.local",
+            username="tl-waiter@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Waiter A",
             tenant_id=self.tenant_id,
@@ -70,7 +70,7 @@ class TestTenantLifecycle(PgClientTestCase):
         data = json.loads(zf.read("tenant-export.json").decode("utf-8"))
         self.assertEqual(data.get("export_version"), 1)
         self.assertEqual(data["tenant"]["name"], "Lifecycle Café")
-        self.assertTrue(any(u.get("email") == "tl-owner@test.local" for u in data["users"]))
+        self.assertTrue(any(u.get("username") == "tl-owner@test.local" for u in data["users"]))
 
     def test_purge_wrong_name_rejected(self) -> None:
         r = self.client.post(

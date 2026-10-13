@@ -14,7 +14,7 @@ from app import models, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -32,7 +32,7 @@ class TestOfflineCashOrderApi(PgClientTestCase):
         self.session.refresh(self.tenant)
 
         self.owner = models.User(
-            email="owner-offline@test.local",
+            username="owner-offline@test.local",
             hashed_password=security.get_password_hash("x"),
             full_name="Owner",
             tenant_id=self.tenant.id,
@@ -78,7 +78,7 @@ class TestOfflineCashOrderApi(PgClientTestCase):
         self.session.commit()
         self.session.refresh(other)
         self.other_owner = models.User(
-            email="owner-other-offline@test.local",
+            username="owner-other-offline@test.local",
             hashed_password=security.get_password_hash("x"),
             full_name="Other",
             tenant_id=other.id,

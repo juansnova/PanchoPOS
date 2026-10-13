@@ -42,8 +42,8 @@ class TestReservationReminderEmail(unittest.TestCase):
         _args, _kwargs = m.call_args
         html_content = _args[2]
         text_content = _args[3]
-        self.assertIn("View or change your reservation online", html_content)
-        self.assertIn("View or change your reservation online", text_content)
+        self.assertIn("Ver o cambiar su reserva en línea", html_content)
+        self.assertIn("Ver o cambiar su reserva en línea", text_content)
         self.assertIn(url, text_content)
         self.assertNotIn("view or cancel", html_content.lower())
         self.assertIn(f'href="{url}"', html_content)
@@ -98,10 +98,10 @@ class TestReservationReminderEmail(unittest.TestCase):
         _args, _kwargs = m.call_args
         html_content = _args[2]
         text_content = _args[3]
-        self.assertIn("Contact us", html_content)
+        self.assertIn("Contacto", html_content)
         self.assertIn("+34 900 111 222", html_content)
         self.assertIn("hola@demo.test", html_content)
-        self.assertIn("Contact us", text_content)
+        self.assertIn("Contacto", text_content)
         self.assertIn("+34 900 111 222", text_content)
 
     def test_reminder_includes_map_links_when_urls_set(self):

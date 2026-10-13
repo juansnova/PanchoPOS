@@ -33,7 +33,7 @@ class TestUserRolePgEnum(PgClientTestCase):
 
         for i, role in enumerate(models.UserRole):
             u = models.User(
-                email=f"urole-{role.value}-{i}@test.local",
+                username=f"urole-{role.value}-{i}@test.local",
                 hashed_password=security.get_password_hash("secret"),
                 tenant_id=tenant.id,
                 role=role,

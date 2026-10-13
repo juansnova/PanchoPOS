@@ -12,7 +12,7 @@ from app import models, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -31,7 +31,7 @@ class TestRegistroHorarioExcel(PgClientTestCase):
         self.tenant_id = tenant.id
 
         self.staff_a = models.User(
-            email="rh-staff-a@test.local",
+            username="rh-staff-a@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Staff Alpha",
             employee_number="E-1",
@@ -39,7 +39,7 @@ class TestRegistroHorarioExcel(PgClientTestCase):
             role=models.UserRole.waiter,
         )
         self.admin = models.User(
-            email="rh-admin@test.local",
+            username="rh-admin@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Admin A",
             tenant_id=self.tenant_id,

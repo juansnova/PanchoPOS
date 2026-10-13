@@ -13,7 +13,7 @@ from app import print_service as print_svc
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -34,14 +34,14 @@ class TestPrintJobs(PgClientTestCase):
         self.session.refresh(self.t_b)
 
         self.owner_a = models.User(
-            email="print-owner-a@amvara.de",
+            username="print-owner-a@amvara.de",
             hashed_password=security.get_password_hash("x"),
             full_name="Owner A",
             tenant_id=self.t_a.id,
             role=models.UserRole.owner,
         )
         self.owner_b = models.User(
-            email="print-owner-b@amvara.de",
+            username="print-owner-b@amvara.de",
             hashed_password=security.get_password_hash("x"),
             full_name="Owner B",
             tenant_id=self.t_b.id,

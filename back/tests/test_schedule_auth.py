@@ -11,7 +11,7 @@ from app import models, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -30,21 +30,21 @@ class TestScheduleAuth(PgClientTestCase):
         self.tenant_id = tenant.id
 
         self.waiter = models.User(
-            email="sa-waiter@test.local",
+            username="sa-waiter@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Auth Waiter",
             tenant_id=self.tenant_id,
             role=models.UserRole.waiter,
         )
         self.owner = models.User(
-            email="sa-owner@test.local",
+            username="sa-owner@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Auth Owner",
             tenant_id=self.tenant_id,
             role=models.UserRole.owner,
         )
         self.admin = models.User(
-            email="sa-admin@test.local",
+            username="sa-admin@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Auth Admin",
             tenant_id=self.tenant_id,

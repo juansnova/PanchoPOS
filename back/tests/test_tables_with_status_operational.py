@@ -14,7 +14,7 @@ def _bearer_headers(user: models.User) -> dict[str, str]:
     from datetime import timedelta
 
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -32,7 +32,7 @@ class TestTablesWithStatusOperational(PgClientTestCase):
         self.session.refresh(tenant)
 
         owner = models.User(
-            email=f"opstatus-owner-{uuid4().hex[:8]}@amvara.de",
+            username=f"opstatus-owner-{uuid4().hex[:8]}@amvara.de",
             hashed_password=security.get_password_hash("x"),
             full_name="Owner",
             tenant_id=tenant.id,

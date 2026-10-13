@@ -11,7 +11,7 @@ from app import models, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -30,14 +30,14 @@ class TestUserPasswordUpdate(PgClientTestCase):
         self.tenant_id = tenant.id
 
         self.owner = models.User(
-            email="pwd-owner@test.local",
+            username="pwd-owner@test.local",
             hashed_password=security.get_password_hash("owner-secret"),
             full_name="Owner",
             tenant_id=self.tenant_id,
             role=models.UserRole.owner,
         )
         self.waiter = models.User(
-            email="pwd-waiter@test.local",
+            username="pwd-waiter@test.local",
             hashed_password=security.get_password_hash("waiter-old"),
             full_name="Waiter W",
             tenant_id=self.tenant_id,

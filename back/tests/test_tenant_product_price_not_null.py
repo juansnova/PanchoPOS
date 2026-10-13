@@ -14,7 +14,7 @@ from app.security import get_password_hash
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -32,7 +32,7 @@ class TestTenantProductPriceNotNull(PgClientTestCase):
         self.session.refresh(self.tenant)
 
         self.owner = models.User(
-            email="tp-price-owner@test.local",
+            username="tp-price-owner@test.local",
             hashed_password=get_password_hash("secret"),
             full_name="Owner",
             tenant_id=self.tenant.id,

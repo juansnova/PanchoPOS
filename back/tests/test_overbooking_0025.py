@@ -30,7 +30,7 @@ TEST_CUSTOMER = "test-0025-overbooking-isolated"
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -62,7 +62,7 @@ class TestOverbooking0025(PgClientTestCase):
         self.session.refresh(self.tenant)
 
         owner = models.User(
-            email=f"overbooking-0025-{suffix}@amvara.de",
+            username=f"overbooking-0025-{suffix}@amvara.de",
             hashed_password=security.get_password_hash("x"),
             full_name="Owner",
             role=models.UserRole.owner,

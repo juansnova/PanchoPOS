@@ -11,7 +11,7 @@ from app import models, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -30,7 +30,7 @@ class TestScheduleBulk(PgClientTestCase):
         self.tenant_id = tenant.id
 
         self.waiter = models.User(
-            email="sb-waiter@test.local",
+            username="sb-waiter@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Bulk Waiter",
             tenant_id=self.tenant_id,
@@ -41,7 +41,7 @@ class TestScheduleBulk(PgClientTestCase):
         self.session.refresh(self.waiter)
 
         self.admin = models.User(
-            email="sb-admin@test.local",
+            username="sb-admin@test.local",
             hashed_password=security.get_password_hash("secret"),
             full_name="Bulk Admin",
             tenant_id=self.tenant_id,
@@ -112,7 +112,7 @@ class TestScheduleBulk(PgClientTestCase):
         self.session.commit()
         self.session.refresh(other)
         outsider = models.User(
-            email="sb-out@test.local",
+            username="sb-out@test.local",
             hashed_password=security.get_password_hash("x"),
             tenant_id=other.id,
             role=models.UserRole.waiter,

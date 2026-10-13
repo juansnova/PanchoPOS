@@ -12,7 +12,7 @@ from app import models, otp_recovery, security
 
 def _bearer_headers(user: models.User) -> dict[str, str]:
     data = {
-        "sub": user.email,
+        "sub": user.username,
         "tenant_id": user.tenant_id,
         "provider_id": getattr(user, "provider_id", None),
         "token_version": user.token_version,
@@ -32,7 +32,7 @@ class TestOtpRecoveryCodes(PgClientTestCase):
 
         self.password = "otp-recovery-secret"
         self.user = models.User(
-            email="otp-recovery-owner@test.local",
+            username="otp-recovery-owner@test.local",
             hashed_password=security.get_password_hash(self.password),
             full_name="OTP Recovery Owner",
             tenant_id=self.tenant_id,
@@ -75,7 +75,7 @@ class TestOtpRecoveryCodes(PgClientTestCase):
         r = self.client.post(
             "/token",
             data={
-                "username": self.user.email,
+                "username": self.user.username,
                 "password": self.password,
                 "scope": "tenant",
             },
@@ -96,7 +96,7 @@ class TestOtpRecoveryCodes(PgClientTestCase):
         r = self.client.post(
             "/token",
             data={
-                "username": self.user.email,
+                "username": self.user.username,
                 "password": self.password,
                 "scope": "tenant",
             },
@@ -119,7 +119,7 @@ class TestOtpRecoveryCodes(PgClientTestCase):
         r = self.client.post(
             "/token",
             data={
-                "username": self.user.email,
+                "username": self.user.username,
                 "password": self.password,
                 "scope": "tenant",
             },
@@ -157,7 +157,7 @@ class TestOtpRecoveryCodes(PgClientTestCase):
         r = self.client.post(
             "/token",
             data={
-                "username": self.user.email,
+                "username": self.user.username,
                 "password": self.password,
                 "scope": "tenant",
             },
