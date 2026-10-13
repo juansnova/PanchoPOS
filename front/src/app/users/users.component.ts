@@ -1,0 +1,806 @@
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { SidebarComponent } from '../shared/sidebar.component';
+import { ApiService, User, UserRole, UserCreate, UserUpdate } from '../services/api.service';
+import { PermissionService } from '../services/permission.service';
+import { ConfirmationModalComponent } from '../shared/confirmation-modal.component';
+import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
+@Component({
+  selector: 'app-users',
+  standalone: true,
+  imports: [CommonModule, FormsModule, SidebarComponent, ConfirmationModalComponent, FocusFirstInputDirective, TranslateModule],
+  template: `
+    <app-sidebar>
+      <div class="users-page">
+        <div class="page-header">
+          <h1>{{ 'USERS.TITLE' | translate }}</h1>
+          <div class="header-actions">
+            <button type="button" class="btn-primary" data-testid="add-user" (click)="openCreateModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              {{ 'USERS.ADD_USER' | translate }}
+            </button>
+          </div>
+        </div>
+
+        @if (loading()) {
+          <div class="loading">{{ 'COMMON.LOADING' | translate }}...</div>
+        } @else if (error()) {
+          <div class="error">{{ error() }}</div>
+        } @else {
+          <div class="users-grid">
+            @for (user of users(); track user.id) {
+              <div class="user-card" [class.current-user]="user.id === currentUser()?.id">
+                <div class="user-avatar">
+                  {{ getInitials(user) }}
+                </div>
+                <div class="user-details">
+                  <h3 class="user-name">{{ user.full_name || user.username }}</h3>
+                  <p class="user-email">{{ user.username }}</p>
+                  <div class="user-badges">
+                    <span class="user-role-badge" [class]="'role-' + user.role">
+                      {{ getRoleDisplayName(user.role) }}
+                    </span>
+                  </div>
+                </div>
+                <div class="user-actions">
+                  @if (canEditUser(user)) {
+                    <button class="btn-icon" (click)="openEditModal(user)" title="Edit user">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                  }
+                  @if (canDeleteUser(user)) {
+                    <button class="btn-icon btn-danger" (click)="confirmDelete(user)" title="Delete user">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      </svg>
+                    </button>
+                  }
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <p>{{ 'USERS.NO_USERS' | translate }}</p>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Create/Edit Modal -->
+        @if (showModal()) {
+          <div class="modal-overlay">
+            <div class="modal" (click)="$event.stopPropagation()" appFocusFirstInput>
+              <div class="modal-header">
+                <h2>{{ editingUser() ? ('USERS.EDIT_USER' | translate) : ('USERS.ADD_USER' | translate) }}</h2>
+                <button class="btn-close" (click)="closeModal()">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <form class="modal-body" (ngSubmit)="saveUser()">
+                <div class="form-group">
+                  <label for="username">{{ 'USERS.USERNAME' | translate }}</label>
+                  <input
+                    type="text"
+                    id="username"
+                    [(ngModel)]="formUsername"
+                    name="username"
+                    required
+                    [disabled]="editingUser()?.id === currentUser()?.id"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="fullName">{{ 'USERS.FULL_NAME' | translate }}</label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    [(ngModel)]="formFullName"
+                    name="fullName"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="role">{{ 'USERS.ROLE' | translate }}</label>
+                  <select
+                    id="role"
+                    [(ngModel)]="formRole"
+                    name="role"
+                    required
+                    [disabled]="editingUser()?.id === currentUser()?.id"
+                  >
+                    @for (role of roleOptionsForModal(); track role) {
+                      <option [value]="role">{{ getRoleDisplayName(role) }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="password">
+                    {{ editingUser() ? ('USERS.NEW_PASSWORD' | translate) : ('USERS.PASSWORD' | translate) }}
+                    @if (editingUser()) {
+                      <span class="optional">({{ 'USERS.LEAVE_BLANK' | translate }})</span>
+                    }
+                  </label>
+                  <div class="input-with-toggle">
+                    <input
+                      [type]="showPassword() ? 'text' : 'password'"
+                      id="password"
+                      [(ngModel)]="formPassword"
+                      name="password"
+                      [required]="!editingUser()"
+                      minlength="6"
+                    />
+                    <button type="button" class="pw-toggle" (click)="showPassword.set(!showPassword())" [attr.aria-label]="showPassword() ? ('USERS.HIDE_PASSWORD' | translate) : ('USERS.SHOW_PASSWORD' | translate)" tabindex="-1">
+                      @if (showPassword()) {
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      } @else {
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      }
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="password_confirm">{{ 'USERS.CONFIRM_PASSWORD' | translate }}</label>
+                  <div class="input-with-toggle">
+                    <input
+                      [type]="showPasswordConfirm() ? 'text' : 'password'"
+                      id="password_confirm"
+                      [(ngModel)]="formPasswordConfirm"
+                      name="password_confirm"
+                      minlength="6"
+                    />
+                    <button type="button" class="pw-toggle" (click)="showPasswordConfirm.set(!showPasswordConfirm())" [attr.aria-label]="showPasswordConfirm() ? ('USERS.HIDE_PASSWORD' | translate) : ('USERS.SHOW_PASSWORD' | translate)" tabindex="-1">
+                      @if (showPasswordConfirm()) {
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      } @else {
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      }
+                    </button>
+                  </div>
+                </div>
+                @if (editingUser() && currentUser()?.role === 'owner' && editingUser()?.id !== currentUser()?.id) {
+                  <p class="role-hint">{{ 'USERS.CO_OWNER_HINT' | translate }}</p>
+                }
+                @if (formError()) {
+                  <div class="form-error">{{ formError() }}</div>
+                }
+                <div class="modal-actions">
+                  <button type="button" class="btn-secondary" (click)="closeModal()">
+                    {{ 'COMMON.CANCEL' | translate }}
+                  </button>
+                  <button type="submit" class="btn-primary" [disabled]="saving()">
+                    {{ saving() ? ('COMMON.SAVING' | translate) : ('COMMON.SAVE' | translate) }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+
+        <!-- Delete Confirmation -->
+        @if (showDeleteConfirm()) {
+          <app-confirmation-modal
+            [title]="'USERS.DELETE_CONFIRM_TITLE' | translate"
+            [message]="'USERS.DELETE_CONFIRM_MESSAGE' | translate: { name: userToDelete()?.username }"
+            [confirmText]="'COMMON.DELETE' | translate"
+            [cancelText]="'COMMON.CANCEL' | translate"
+            [confirmBtnClass]="'btn-danger'"
+            (confirm)="deleteUser()"
+            (cancel)="cancelDelete()"
+          ></app-confirmation-modal>
+        }
+      </div>
+    </app-sidebar>
+  `,
+  styles: [`
+    .users-page {
+      max-width: 1200px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-6);
+    }
+
+    .page-header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--color-primary-hover);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-surface);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--color-bg);
+    }
+
+    .users-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .user-card {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      transition: box-shadow 0.15s ease;
+    }
+
+    .user-card:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .user-card.current-user {
+      border-color: var(--color-primary);
+      background: var(--color-primary-light);
+    }
+
+    .user-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .user-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-name {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--color-text);
+      margin: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-email {
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      margin: 2px 0 var(--space-2);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      align-items: center;
+    }
+
+    .user-role-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    .user-support-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background: #ede9fe;
+      color: #5b21b6;
+    }
+
+    .role-owner {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .role-admin {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .role-kitchen {
+      background: #fce7f3;
+      color: #9d174d;
+    }
+
+    .role-bartender {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .role-waiter {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .role-receptionist {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    .role-courier {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+
+    .user-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .btn-icon {
+      padding: var(--space-2);
+      background: none;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-icon:hover {
+      background: var(--color-bg);
+      color: var(--color-text);
+    }
+
+    .btn-icon.btn-danger:hover {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #dc2626;
+    }
+
+    .loading, .error, .empty-state {
+      text-align: center;
+      padding: var(--space-8);
+      color: var(--color-text-muted);
+    }
+
+    .error {
+      color: #dc2626;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: var(--space-4);
+    }
+
+    .modal {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .modal-header h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .btn-close {
+      padding: var(--space-1);
+      background: none;
+      border: none;
+      color: var(--color-text-muted);
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: var(--space-5);
+    }
+
+    .form-group {
+      margin-bottom: var(--space-4);
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: var(--space-2);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .form-group .optional {
+      font-weight: 400;
+      color: var(--color-text-muted);
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      background: var(--color-bg);
+      color: var(--color-text);
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+    }
+
+    .form-group input:disabled,
+    .form-group select:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .input-with-toggle {
+      position: relative;
+      display: flex;
+    }
+    .input-with-toggle input {
+      flex: 1;
+      padding-right: 2.75rem;
+    }
+    .input-with-toggle .pw-toggle {
+      position: absolute;
+      right: var(--space-2);
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      padding: var(--space-1);
+      cursor: pointer;
+      color: var(--color-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .input-with-toggle .pw-toggle:hover {
+      color: var(--color-text);
+    }
+
+    .role-hint {
+      margin-bottom: var(--space-3);
+      font-size: 0.8125rem;
+      color: var(--color-text-muted, #64748b);
+      line-height: 1.4;
+    }
+
+    .field-hint {
+      margin: var(--space-2) 0 0;
+      font-size: 0.75rem;
+      color: var(--color-text-muted, #64748b);
+      line-height: 1.35;
+    }
+
+    .form-error {
+      margin-bottom: var(--space-4);
+      padding: var(--space-3);
+      background: #fee2e2;
+      border-radius: var(--radius-md);
+      color: #dc2626;
+      font-size: 0.875rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--space-3);
+      margin-top: var(--space-5);
+    }
+  `]
+})
+export class UsersComponent implements OnInit {
+  private api = inject(ApiService);
+  private permissions = inject(PermissionService);
+  private translate = inject(TranslateService);
+
+  users = signal<User[]>([]);
+  currentUser = signal<User | null>(null);
+  loading = signal(true);
+  error = signal<string | null>(null);
+
+  // Modal state
+  showModal = signal(false);
+  editingUser = signal<User | null>(null);
+  saving = signal(false);
+  formError = signal<string | null>(null);
+
+  // Form fields
+  formUsername = '';
+  formFullName = '';
+  formRole: UserRole = 'waiter';
+  formPassword = '';
+  formPasswordConfirm = '';
+  showPassword = signal(false);
+  showPasswordConfirm = signal(false);
+
+  // Delete confirmation
+  showDeleteConfirm = signal(false);
+  userToDelete = signal<User | null>(null);
+
+  // Available roles based on current user's permissions
+  availableRoles = signal<UserRole[]>([]);
+
+  ngOnInit() {
+    this.currentUser.set(this.api.getCurrentUser());
+    this.loadUsers();
+    this.updateAvailableRoles();
+  }
+
+  loadUsers() {
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.api.getUsers().subscribe({
+      next: (users) => {
+        this.users.set(users);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.error.set(err.error?.detail || 'Failed to load users');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  updateAvailableRoles() {
+    const user = this.currentUser();
+    if (!user) return;
+
+    if (user.role === 'owner') {
+      this.availableRoles.set(['owner', 'waiter', 'kitchen', 'courier']);
+    }
+  }
+
+  /** Roles shown in create/edit modal. */
+  roleOptionsForModal(): UserRole[] {
+    return this.availableRoles();
+  }
+
+  getInitials(user: User): string {
+    if (user.full_name) {
+      const parts = user.full_name.split(' ');
+      return parts.map(p => p[0]).join('').toUpperCase().slice(0, 2);
+    }
+    return user.username.slice(0, 2).toUpperCase();
+  }
+
+  getRoleDisplayName(role: UserRole): string {
+    const roleKey = `USERS.ROLES.${role.toUpperCase()}`;
+    return this.translate.instant(roleKey);
+  }
+
+  canEditUser(user: User): boolean {
+    const current = this.currentUser();
+    if (!current) return false;
+
+    // Only the administrator (owner) edits users
+    return current.role === 'owner';
+  }
+
+  canDeleteUser(user: User): boolean {
+    const current = this.currentUser();
+    if (!current) return false;
+
+    // Can't delete yourself
+    if (user.id === current.id) return false;
+
+    // Can't delete owner
+    if (user.role === 'owner') return false;
+
+    // Only owner can delete
+    return current.role === 'owner';
+  }
+
+  openCreateModal() {
+    this.editingUser.set(null);
+    this.formUsername = '';
+    this.formFullName = '';
+    this.formRole = 'waiter';
+    this.formPassword = '';
+    this.formPasswordConfirm = '';
+    this.formError.set(null);
+    this.showModal.set(true);
+  }
+
+  openEditModal(user: User) {
+    this.editingUser.set(user);
+    this.formUsername = user.username;
+    this.formFullName = user.full_name || '';
+    this.formRole = user.role;
+    this.formPassword = '';
+    this.formPasswordConfirm = '';
+    this.formError.set(null);
+    this.showModal.set(true);
+  }
+
+  closeModal() {
+    this.showModal.set(false);
+    this.editingUser.set(null);
+  }
+
+  saveUser() {
+    this.formError.set(null);
+
+    const editing = this.editingUser();
+    if (!editing) {
+      if (this.formPassword !== this.formPasswordConfirm) {
+        this.formError.set(this.translate.instant('USERS.PASSWORDS_DO_NOT_MATCH'));
+        return;
+      }
+      if (!this.formPassword || this.formPassword.length < 6) {
+        this.formError.set(this.translate.instant('COMMON.ERROR'));
+        return;
+      }
+    } else if (this.formPassword || this.formPasswordConfirm) {
+      if (this.formPassword !== this.formPasswordConfirm) {
+        this.formError.set(this.translate.instant('USERS.PASSWORDS_DO_NOT_MATCH'));
+        return;
+      }
+      if (this.formPassword.length < 6) {
+        this.formError.set(this.translate.instant('COMMON.ERROR'));
+        return;
+      }
+    }
+
+    this.saving.set(true);
+
+    if (editing) {
+      // Update existing user
+      const updateData: UserUpdate = {};
+
+      if (this.formUsername !== editing.username) {
+        updateData.username = this.formUsername;
+      }
+      if (this.formFullName !== (editing.full_name || '')) {
+        updateData.full_name = this.formFullName || undefined;
+      }
+      if (this.formRole !== editing.role) {
+        updateData.role = this.formRole;
+      }
+      if (this.formPassword) {
+        updateData.password = this.formPassword;
+      }
+
+      this.api.updateUser(editing.id!, updateData).subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.closeModal();
+          this.loadUsers();
+        },
+        error: (err) => {
+          this.formError.set(err.error?.detail || 'Failed to update user');
+          this.saving.set(false);
+        }
+      });
+    } else {
+      // Create new user
+      const createData: UserCreate = {
+        username: this.formUsername,
+        password: this.formPassword,
+        full_name: this.formFullName || undefined,
+        role: this.formRole,
+      };
+
+      this.api.createUser(createData).subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.closeModal();
+          this.loadUsers();
+        },
+        error: (err) => {
+          this.formError.set(err.error?.detail || 'Failed to create user');
+          this.saving.set(false);
+        }
+      });
+    }
+  }
+
+  confirmDelete(user: User) {
+    this.userToDelete.set(user);
+    this.showDeleteConfirm.set(true);
+  }
+
+  cancelDelete() {
+    this.showDeleteConfirm.set(false);
+    this.userToDelete.set(null);
+  }
+
+  deleteUser() {
+    const user = this.userToDelete();
+    if (!user) return;
+
+    this.api.deleteUser(user.id!).subscribe({
+      next: () => {
+        this.showDeleteConfirm.set(false);
+        this.userToDelete.set(null);
+        this.loadUsers();
+      },
+      error: (err) => {
+        console.error('Delete failed:', err);
+        this.showDeleteConfirm.set(false);
+      }
+    });
+  }
+}

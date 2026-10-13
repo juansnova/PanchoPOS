@@ -1,0 +1,225 @@
+import { Injectable, inject, Injector } from '@angular/core';
+import { ApiService, User, UserRole } from './api.service';
+
+/**
+ * Permission types matching the backend Permission enum
+ */
+export type Permission =
+  // User management
+  | 'user:create'
+  | 'user:read'
+  | 'user:update'
+  | 'user:delete'
+  // Settings
+  | 'settings:read'
+  | 'settings:update'
+  | 'settings:billing'
+  // Products
+  | 'product:read'
+  | 'product:write'
+  // Catalog
+  | 'catalog:read'
+  | 'catalog:write'
+  // Tables
+  | 'table:read'
+  | 'table:write'
+  | 'table:activate'
+  // Reservations
+  | 'reservation:read'
+  | 'reservation:write'
+  // Floors
+  | 'floor:read'
+  | 'floor:write'
+  // Orders
+  | 'order:read'
+  | 'order:update_status'
+  | 'order:item_status'
+  | 'order:mark_paid'
+  | 'order:cancel'
+  | 'order:remove_item'
+  | 'order:delete'
+  // Inventory
+  | 'inventory:read'
+  | 'inventory:write'
+  // Reports (revenue analysis)
+  | 'report:read'
+  // Billing customers (Factura)
+  | 'billing_customer:read'
+  | 'billing_customer:write'
+  // Price promotions
+  | 'promo:read'
+  | 'promo:write'
+  // Working plan (schedule)
+  | 'schedule:read'
+  | 'schedule:write';
+
+/**
+ * Role to permissions mapping (mirrors backend ROLE_PERMISSIONS)
+ */
+const ROLE_PERMISSIONS: Record<UserRole, Set<Permission | '*'>> = {
+  owner: new Set(['*']), // Owner has all permissions
+
+  kitchen: new Set([
+    'product:read',
+    'catalog:read',
+    'order:read', 'order:item_status',
+    'schedule:read', 'schedule:write',
+  ]),
+
+  waiter: new Set([
+    'product:read',
+    'catalog:read',
+    'table:read', 'table:activate',
+    'reservation:read', 'reservation:write',
+    'floor:read',
+    'order:read', 'order:update_status', 'order:item_status',
+    'order:mark_paid', 'order:remove_item',
+    'billing_customer:read', 'billing_customer:write',
+    'schedule:read', 'schedule:write',
+  ]),
+
+  courier: new Set([]), // Courier portal uses dedicated endpoints, not staff RBAC
+};
+
+/**
+ * Routes and their required roles
+ */
+const STAFF_ROLES: UserRole[] = ['owner', 'kitchen', 'waiter'];
+
+const ROUTE_ROLES: Record<string, UserRole[]> = {
+  '/': STAFF_ROLES,
+  '/products': ['owner'],
+  '/tables': ['owner', 'waiter'],
+  '/tables/canvas': ['owner'],
+  '/reservations': ['owner', 'waiter'],
+  '/staff/orders': STAFF_ROLES,
+  '/customers': ['owner', 'waiter'],
+  '/kitchen': ['owner', 'kitchen'],
+  '/bar': STAFF_ROLES,
+  '/inventory': ['owner'],
+  '/reports': ['owner'],
+  '/settings': ['owner'],
+  '/users': ['owner'],
+  '/working-plan': STAFF_ROLES,
+  '/my-shift': STAFF_ROLES,
+};
+
+@Injectable({
+  providedIn: 'root'
+})
+export class PermissionService {
+  /** Lazy via Injector so PermissionService is not an eager dep of ApiService (avoids NG0200 cycles with HttpClient/interceptors). */
+  private injector = inject(Injector);
+
+  private get api(): ApiService {
+    return this.injector.get(ApiService);
+  }
+
+  /**
+   * Check if a user has a specific permission
+   */
+  hasPermission(user: User | null, permission: Permission): boolean {
+    if (!user) return false;
+
+    const roleKey = user.role ? String(user.role).toLowerCase() : '';
+    const permissions = ROLE_PERMISSIONS[roleKey as UserRole];
+    if (!permissions) return false;
+
+    // Owner has all permissions
+    if (permissions.has('*')) return true;
+
+    return permissions.has(permission);
+  }
+
+  /**
+   * Check if a user has any of the specified permissions
+   */
+  hasAnyPermission(user: User | null, ...permissions: Permission[]): boolean {
+    return permissions.some(p => this.hasPermission(user, p));
+  }
+
+  /**
+   * Check if a user has all of the specified permissions
+   */
+  hasAllPermissions(user: User | null, ...permissions: Permission[]): boolean {
+    return permissions.every(p => this.hasPermission(user, p));
+  }
+
+  /**
+   * Check if a user can access a specific route
+   */
+  canAccessRoute(user: User | null, route: string): boolean {
+    if (!user) return false;
+
+    // Normalize route - remove trailing slashes and query params
+    const normalizedRoute = route.split('?')[0].replace(/\/$/, '') || '/';
+
+    const userRole = user.role ? String(user.role).toLowerCase() : '';
+
+    // Check for exact match first
+    if (ROUTE_ROLES[normalizedRoute]) {
+      return ROUTE_ROLES[normalizedRoute].some((r) => String(r).toLowerCase() === userRole);
+    }
+
+    // Check for parent route match (e.g., /inventory/items matches /inventory)
+    for (const [routePattern, roles] of Object.entries(ROUTE_ROLES)) {
+      if (normalizedRoute.startsWith(routePattern + '/') || normalizedRoute === routePattern) {
+        return roles.some((r) => String(r).toLowerCase() === userRole);
+      }
+    }
+
+    // Default: allow if authenticated (for routes not explicitly defined)
+    return true;
+  }
+
+  /**
+   * Check if current user has a specific role
+   */
+  hasRole(user: User | null, ...roles: UserRole[]): boolean {
+    if (!user) return false;
+    const userRole = user.role ? String(user.role).toLowerCase() : '';
+    return roles.some((r) => String(r).toLowerCase() === userRole);
+  }
+
+  /**
+   * Check if current user is the restaurant administrator (owner role)
+   */
+  isAdmin(user: User | null): boolean {
+    return this.hasRole(user, 'owner');
+  }
+
+  /**
+   * Check if current user is the owner
+   */
+  isOwner(user: User | null): boolean {
+    return this.hasRole(user, 'owner');
+  }
+
+  /**
+   * Get the current user from the API service
+   */
+  getCurrentUser(): User | null {
+    return this.api.getCurrentUser();
+  }
+
+  /**
+   * Get allowed roles for a route
+   */
+  getAllowedRolesForRoute(route: string): UserRole[] {
+    const normalizedRoute = route.split('?')[0].replace(/\/$/, '') || '/';
+
+    if (ROUTE_ROLES[normalizedRoute]) {
+      return ROUTE_ROLES[normalizedRoute];
+    }
+
+    // Check for parent route match
+    for (const [routePattern, roles] of Object.entries(ROUTE_ROLES)) {
+      if (normalizedRoute.startsWith(routePattern + '/')) {
+        return roles;
+      }
+    }
+
+    // Default: all staff roles
+    return STAFF_ROLES;
+  }
+}

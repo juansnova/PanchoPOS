@@ -1,0 +1,152 @@
+# Base stack. Use with an overlay:
+#   Local:  docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#   Prod:   docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+services:
+  back:
+    build: ./back
+    # Stable tag so ws-bridge FROM does not depend on Compose project name (pos vs pos2).
+    image: pos-back:latest
+    container_name: pos-back
+    restart: unless-stopped
+    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
+    expose:
+      - "8020"
+    networks:
+      - pos2_net
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-pos}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-pos}
+      - DB_NAME=${POSTGRES_DB:-pos}
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=${SECRET_KEY:-CHANGE_THIS_IN_PRODUCTION}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:4200}
+      - ROOT_PATH=/api
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-true}
+      - EMAIL_FROM=${EMAIL_FROM:-}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-PanchoPOS}
+    volumes:
+      - ./back:/app
+      - ./back/uploads:/app/uploads
+      - ./config.env:/app/config.env:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  front:
+    build: ./front
+    container_name: pos-front
+    restart: unless-stopped
+    expose:
+      - "4200"
+    networks:
+      - pos2_net
+    environment:
+      - NODE_ENV=development
+      # Leave API_URL and WS_URL empty to use relative URLs (proxied through HAProxy)
+      - API_URL=${API_URL:-}
+      - WS_URL=${WS_URL:-}
+      # GA4 measurement ID (prefer .secrets — never commit the real ID; see .secrets.example)
+      - GOOGLE_ANALYTICS_MEASUREMENT_ID=${GOOGLE_ANALYTICS_MEASUREMENT_ID:-}
+      # Optional: host git short hash — bind mount is ./front only (no .git); entrypoint runs get-commit-hash.js
+      - COMMIT_HASH=${COMMIT_HASH:-}
+    volumes:
+      - ./front:/app
+      - /app/node_modules
+    depends_on:
+      - db
+      - redis
+      - ws-bridge
+      - back
+  db:
+    image: postgres:18-alpine3.23
+    container_name: pos-postgres
+    restart: unless-stopped
+    networks:
+      - pos2_net
+    environment:
+      # Superuser is POSTGRES_USER (default pos), not "postgres"; wrong username causes FATAL in server logs.
+      POSTGRES_DB: ${POSTGRES_DB:-pos}
+      POSTGRES_USER: ${POSTGRES_USER:-pos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pos}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pos_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: pos-redis
+    restart: unless-stopped
+    networks:
+      - pos2_net
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  ws-bridge:
+    build:
+      context: ./ws-bridge
+      # Resolve Dockerfile `FROM pos-back` to the back service image (build order + no Hub pull).
+      additional_contexts:
+        pos-back: service:back
+    image: pos-ws-bridge:latest
+    container_name: pos-ws-bridge
+    restart: unless-stopped
+    expose:
+      - "8021"
+    networks:
+      - pos2_net
+    environment:
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: ${SECRET_KEY:-CHANGE_THIS_IN_PRODUCTION}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      API_URL: http://pos-back:8020
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200}
+    depends_on:
+      redis:
+        condition: service_healthy
+      back:
+        condition: service_started
+
+  haproxy:
+    image: haproxy:2.8-alpine
+    container_name: pos-haproxy
+    restart: unless-stopped
+    expose:
+      - "4202"   # dev only
+      - "80"     # prod
+      - "443"    # prod (HTTPS)
+    # Published ports: override (dev) → 4202 only; prod → 80 and 443.
+    # haproxy.cfg has no 443/certs; prod override uses haproxy.prod.cfg + certbot/haproxy-certs.
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - front
+      - back
+      - ws-bridge
+    networks:
+      - pos2_net
+
+networks:
+  pos2_net:
+    name: pos2_net
+
+volumes:
+  pos_pgdata:

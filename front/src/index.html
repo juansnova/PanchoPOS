@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Pancho Panza</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Pancho Panza — sistema de pedidos y gestión del restaurante.">
+  <meta name="robots" content="noindex,nofollow">
+  <!-- Default icon: orange (production). App switches to white in dev, blue on staging/admin. Do not replace favicon.svg with white. -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2.0.0">
+  <link rel="apple-touch-icon" href="/favicon.svg">
+  <script src="/runtime-config.js"></script>
+  <script>
+    // Runtime configuration from environment variables
+    // Use relative URLs when behind proxy, or absolute URLs if specified
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    window.__API_URL__ = window.__API_URL__ || `${protocol}//${host}/api`;
+    window.__WS_URL__ = window.__WS_URL__ || `${wsProtocol}//${host}/ws`;
+    // Google Analytics (GA4). Prefer window.__GA_MEASUREMENT_ID__ from /runtime-config.js
+    // (written by docker entrypoints from GOOGLE_ANALYTICS_MEASUREMENT_ID / .secrets).
+    // Never commit a real measurement ID.
+    window.__GA_MEASUREMENT_ID__ = window.__GA_MEASUREMENT_ID__ || '';
+  </script>
+  <script>
+    (function () {
+      var id = window.__GA_MEASUREMENT_ID__;
+      if (!id || typeof id !== 'string' || id.indexOf('G-') !== 0) return;
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push(arguments); }
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', id);
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(id);
+      document.head.appendChild(s);
+    })();
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

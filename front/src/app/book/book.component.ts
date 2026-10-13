@@ -1,0 +1,388 @@
+import { Component, inject, signal, computed, OnInit, ViewChild } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import {
+  ApiService,
+  Reservation,
+  ReservationBookZone,
+  ReservationCreate,
+  TenantSummary,
+} from '../services/api.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { PublicGuestHeaderComponent } from '../shared/public-guest-header.component';
+import { LegalLinksComponent } from '../shared/legal-links.component';
+import { ReservationWeekSlotGridComponent } from '../shared/reservation-week-slot-grid.component';
+import { resolvePublicPrimaryColor } from '../shared/public-brand-colors';
+import { publicBookPath, publicBookRouterLink } from '../shared/public-book-path';
+import { tenantOpeningHoursHasMealSplit, resolveBookingServiceLabel } from '../shared/booking-meal-split';
+import { contactEmailValid, contactPhoneValid } from '../shared/contact-validators';
+import { ApiErrorMessageService } from '../services/api-error-message.service';
+
+@Component({
+  selector: 'app-book',
+  standalone: true,
+  imports: [FormsModule, TranslateModule, PublicGuestHeaderComponent, ReservationWeekSlotGridComponent, LegalLinksComponent, RouterLink],
+  templateUrl: './book.component.html',
+  styleUrl: './book.component.scss',
+})
+export class BookComponent implements OnInit {
+  @ViewChild(ReservationWeekSlotGridComponent) private weekSlotGrid?: ReservationWeekSlotGridComponent;
+
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  goManageReservation(): void {
+    const token = this.successReservation()?.token;
+    if (token) {
+      void this.router.navigate(['/reservation'], { queryParams: { token } });
+    }
+  }
+
+  private api = inject(ApiService);
+  private translate = inject(TranslateService);
+  private sanitizer = inject(DomSanitizer);
+  private apiErr = inject(ApiErrorMessageService);
+
+  tenantId = signal<number>(0);
+  tenant = signal<TenantSummary | null>(null);
+  logoUrl = signal<string | null>(null);
+  loading = signal(true);
+  formDate = '';
+  formTime = '';
+  formPartySize = 2;
+  /** lunch/dinner/all — grid + API when opening hours have a break */
+  formService: 'all' | 'lunch' | 'dinner' = 'all';
+  /** Allergies / special requirements (maps to allergies_* + customer_notes on submit). */
+  formDietaryNotes = '';
+  formSeating: 'no_preference' | 'indoor' | 'terrace' = 'no_preference';
+  formName = '';
+  formPhone = '';
+  formEmail = '';
+  formClientNotes = '';
+  /** Optional guest birthday (month/day only; no year). */
+  formBirthdayMonth: number | null = null;
+  formBirthdayDay: number | null = null;
+  formBirthdayMarketingConsent = false;
+  readonly birthdayMonths = [
+    { value: 1, labelKey: 'BOOK.MONTH_01' },
+    { value: 2, labelKey: 'BOOK.MONTH_02' },
+    { value: 3, labelKey: 'BOOK.MONTH_03' },
+    { value: 4, labelKey: 'BOOK.MONTH_04' },
+    { value: 5, labelKey: 'BOOK.MONTH_05' },
+    { value: 6, labelKey: 'BOOK.MONTH_06' },
+    { value: 7, labelKey: 'BOOK.MONTH_07' },
+    { value: 8, labelKey: 'BOOK.MONTH_08' },
+    { value: 9, labelKey: 'BOOK.MONTH_09' },
+    { value: 10, labelKey: 'BOOK.MONTH_10' },
+    { value: 11, labelKey: 'BOOK.MONTH_11' },
+    { value: 12, labelKey: 'BOOK.MONTH_12' },
+  ];
+  readonly birthdayDays = Array.from({ length: 31 }, (_, i) => i + 1);
+  /** Public book zones (2+ → show selector; 1 → set automatically; 0 → venue-wide). */
+  bookZones = signal<ReservationBookZone[]>([]);
+  formFloorId: number | null = null;
+  submitting = signal(false);
+  error = signal<string | null>(null);
+  successReservation = signal<Reservation | null>(null);
+
+  /** Today YYYY-MM-DD in tenant IANA timezone (or browser TZ as fallback). */
+  tenantTodayDate(): string {
+    const tz =
+      this.tenant()?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+  }
+
+  hasMealSplit = computed(() => tenantOpeningHoursHasMealSplit(this.tenant()?.opening_hours));
+
+  /** Display labels for the service select / summary (custom opening-hours labels or i18n defaults). */
+  serviceOptionLabel(service: 'all' | 'lunch' | 'dinner'): string {
+    return resolveBookingServiceLabel(
+      this.tenant()?.opening_hours,
+      service,
+      {
+        all: this.translate.instant('BOOK.SERVICE_ALL'),
+        lunch: this.translate.instant('BOOK.SERVICE_LUNCH'),
+        dinner: this.translate.instant('BOOK.SERVICE_DINNER'),
+      },
+      this.formDate || null,
+    );
+  }
+
+  maxPartySize = computed(() => {
+    const cap = this.tenant()?.reservation_max_guests_per_slot;
+    if (cap != null && cap > 0) return Math.min(20, cap);
+    return 20;
+  });
+
+  googleMapsUrl = computed(() => this.tenant()?.public_google_maps_url?.trim() || null);
+  openstreetmapUrl = computed(() => this.tenant()?.public_openstreetmap_url?.trim() || null);
+  facebookUrl = computed(() => this.tenant()?.public_facebook_url?.trim() || null);
+  instagramUrl = computed(() => this.tenant()?.public_instagram_url?.trim() || null);
+  termsOfServiceUrl = computed(() => this.tenant()?.terms_of_service_url?.trim() || null);
+  privacyPolicyUrl = computed(() => this.tenant()?.privacy_policy_url?.trim() || null);
+  /** Primary CTA colour for public book page (#370); blue OOBE when unset. */
+  primaryColorCss = computed(() =>
+    resolvePublicPrimaryColor(this.tenant()?.public_primary_color),
+  );
+
+  /** Public booking: ensure http(s) href so the link works when settings omit the scheme. */
+  websiteHref = computed((): string | null => {
+    const w = this.tenant()?.website?.trim();
+    if (!w) return null;
+    if (/^https?:\/\//i.test(w)) return w;
+    return `https://${w}`;
+  });
+
+  /** Show hostname (no www) as link text so the destination is visible; fallback to i18n label. */
+  websiteLinkText = computed((): string => {
+    const href = this.websiteHref();
+    if (!href) return '';
+    try {
+      const u = new URL(href);
+      const host = u.hostname.replace(/^www\./i, '');
+      return host || this.translate.instant('BOOK.WEBSITE');
+    } catch {
+      return this.translate.instant('BOOK.WEBSITE');
+    }
+  });
+
+  ngOnInit(): void {
+    const fromLegacy = (this.route.snapshot.paramMap.get('tenantId') || '').trim();
+    const fromSlugRoute = (this.route.snapshot.paramMap.get('publicSlug') || '').trim();
+    const refParam = fromSlugRoute || fromLegacy;
+    if (!refParam) {
+      this.loading.set(false);
+      return;
+    }
+    const numericId = /^\d+$/.test(refParam) ? parseInt(refParam, 10) : NaN;
+    if (Number.isFinite(numericId) && numericId >= 1) {
+      this.tenantId.set(numericId);
+    }
+
+    this.api.getPublicTenant(refParam).subscribe({
+      next: (t) => {
+        this.tenant.set(t);
+        this.tenantId.set(t.id);
+        const url = this.api.getTenantLogoUrl(t.logo_filename ?? undefined, t.id);
+        this.logoUrl.set(url);
+        const canonical = publicBookPath(t);
+        const current = (typeof window !== 'undefined' ? window.location.pathname : '')
+          .replace(/\/$/, '') || '';
+        if (canonical && current && canonical !== current) {
+          void this.router.navigate(publicBookRouterLink(t), {
+            replaceUrl: true,
+            queryParamsHandling: 'preserve',
+          });
+        }
+        this.loading.set(false);
+        this.formDate = this.tenantTodayDate();
+        this.formTime = '';
+        this.api.getReservationBookZones(t.id).subscribe({
+          next: (z) => {
+            this.bookZones.set(z.floors);
+            this.onSeatingPreferenceChange();
+          },
+          error: () => {
+            this.bookZones.set([]);
+            this.formFloorId = null;
+          },
+        });
+      },
+      error: () => {
+        this.loading.set(false);
+      },
+    });
+  }
+
+  getLogoSafeUrl(url: string | null): SafeResourceUrl | null {
+    if (!url) return null;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
+
+  /** Plain URL (not CSS) for rendering the custom banner as an <img>, so it keeps its own aspect ratio (matches /public-menu). */
+  headerBackgroundImgUrl(): string | null {
+    const t = this.tenant();
+    if (!t?.header_background_filename || t?.id == null) return null;
+    return this.api.getTenantHeaderBackgroundUrl(t.header_background_filename, t.id) || null;
+  }
+
+  /** Build WhatsApp wa.me link from phone string (e.g. +34 612 345 678 -> https://wa.me/34612345678). */
+  getWhatsAppUrl(phone: string): string {
+    const digits = (phone || '').replace(/\D/g, '');
+    return `https://wa.me/${digits}`;
+  }
+
+  /** Bookable zones compatible with the current seating preference. */
+  bookZonesForSeating(): ReservationBookZone[] {
+    return this.bookZones().filter((z) => this.zoneMatchesSeating(z, this.formSeating));
+  }
+
+  private zoneMatchesSeating(
+    z: ReservationBookZone,
+    pref: 'no_preference' | 'indoor' | 'terrace',
+  ): boolean {
+    const zone = (z.seating_zone || 'any').toLowerCase();
+    if (zone === 'any') return true;
+    if (pref === 'no_preference') return true;
+    if (pref === 'indoor') return zone === 'indoor';
+    if (pref === 'terrace') return zone === 'outdoor';
+    return true;
+  }
+
+  onSeatingPreferenceChange(): void {
+    const opts = this.bookZonesForSeating();
+    if (opts.length === 1) {
+      this.formFloorId = opts[0].id;
+    } else if (opts.length === 0) {
+      this.formFloorId = null;
+    } else if (this.formFloorId != null && !opts.some((x) => x.id === this.formFloorId)) {
+      this.formFloorId = null;
+    }
+  }
+
+  /** Format opening_hours JSON for display in current locale (e.g. "Mon–Fri 09:00–22:00, Sat 10:00–20:00, Sun closed"). */
+  formatOpeningHours(json: string | null | undefined): string {
+    if (!json) return '';
+    try {
+      const oh = JSON.parse(json);
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      const locale = this.translate.currentLang || this.translate.defaultLang || 'en';
+      const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+      const short = days.map((_, i) => formatter.format(new Date(2024, 0, 1 + i)));
+      const closedLabel = this.translate.instant('SETTINGS.CLOSED');
+      const parts: string[] = [];
+      let i = 0;
+      while (i < days.length) {
+        const d = oh[days[i]];
+        if (!d) {
+          i++;
+          continue;
+        }
+        if (d.closed) {
+          parts.push(`${short[i]} ${closedLabel}`);
+          i++;
+          continue;
+        }
+        const range = d.hasBreak
+          ? `${d.morningOpen}–${d.morningClose}, ${d.eveningOpen}–${d.eveningClose}`
+          : `${d.open}–${d.close}`;
+        let j = i + 1;
+        while (j < days.length) {
+          const n = oh[days[j]];
+          if (!n || n.closed !== d.closed || n.hasBreak !== d.hasBreak) break;
+          if (d.hasBreak) {
+            if (n.morningOpen !== d.morningOpen || n.morningClose !== d.morningClose ||
+                n.eveningOpen !== d.eveningOpen || n.eveningClose !== d.eveningClose) break;
+          } else if (n.open !== d.open || n.close !== d.close) break;
+          j++;
+        }
+        parts.push(j > i + 1 ? `${short[i]}–${short[j - 1]} ${range}` : `${short[i]} ${range}`);
+        i = j;
+      }
+      return parts.join(', ');
+    } catch {
+      return '';
+    }
+  }
+
+  /** Build a simple browser fingerprint string (hash of userAgent, screen, timezone). */
+  private getClientFingerprint(): string {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    const w = typeof screen !== 'undefined' ? screen.width : 0;
+    const h = typeof screen !== 'undefined' ? screen.height : 0;
+    const tz = typeof Intl !== 'undefined' && Intl.DateTimeFormat ? Intl.DateTimeFormat().resolvedOptions().timeZone : '';
+    const lang = typeof navigator !== 'undefined' ? navigator.language : '';
+    const s = `${ua}|${w}x${h}|${tz}|${lang}`;
+    let hc = 0;
+    for (let i = 0; i < s.length; i++) {
+      hc = ((hc << 5) - hc + s.charCodeAt(i)) | 0;
+    }
+    return String(hc >>> 0);
+  }
+
+  submit() {
+    this.error.set(null);
+    const tid = this.tenantId();
+    if (!tid) {
+      this.error.set(this.translate.instant('BOOK.ERROR_INVALID_LINK'));
+      return;
+    }
+    if (!contactPhoneValid(this.formPhone)) {
+      this.error.set(this.translate.instant('BOOK.INVALID_PHONE'));
+      return;
+    }
+    const em = this.formEmail.trim();
+    if (em && !contactEmailValid(em)) {
+      this.error.set(this.translate.instant('BOOK.INVALID_EMAIL'));
+      return;
+    }
+    if (!this.formDate?.trim() || !this.formTime?.trim()) {
+      this.error.set(this.translate.instant('BOOK.PICK_SLOT'));
+      return;
+    }
+    if (this.bookZones().length >= 1 && this.bookZonesForSeating().length === 0) {
+      this.error.set(this.translate.instant('BOOK.NO_ZONE_FOR_SEATING'));
+      return;
+    }
+    if (this.bookZonesForSeating().length >= 2 && (this.formFloorId == null || Number.isNaN(this.formFloorId))) {
+      this.error.set(this.translate.instant('BOOK.LOCATION_ZONE_REQUIRED'));
+      return;
+    }
+    const st = this.weekSlotGrid?.slotState(this.formDate, this.formTime) ?? 'out_of_hours';
+    if (st !== 'available') {
+      this.error.set(this.translate.instant('BOOK.SLOT_UNAVAILABLE'));
+      return;
+    }
+    this.submitting.set(true);
+    const svc =
+      this.hasMealSplit() && this.formService !== 'all' ? this.formService : undefined;
+    const dietary = this.formDietaryNotes.trim();
+    const body: ReservationCreate = {
+      tenant_id: tid,
+      customer_name: this.formName.trim(),
+      customer_phone: this.formPhone.trim(),
+      customer_email: this.formEmail.trim() || undefined,
+      reservation_date: this.formDate,
+      reservation_time: this.formTime,
+      party_size: this.formPartySize,
+      client_notes: this.formClientNotes.trim() || undefined,
+      customer_notes: dietary || undefined,
+      client_fingerprint: this.getClientFingerprint(),
+      client_screen_width: typeof screen !== 'undefined' ? screen.width : undefined,
+      client_screen_height: typeof screen !== 'undefined' ? screen.height : undefined,
+      service_type: svc,
+      seating_preference: this.formSeating,
+      allergies_has: dietary.length > 0,
+      allergies_detail: dietary || undefined,
+      preferred_floor_id:
+        this.formFloorId != null && !Number.isNaN(this.formFloorId) ? this.formFloorId : undefined,
+    };
+    if (
+      this.tenant()?.guest_birthday_capture_enabled !== false &&
+      this.formBirthdayMonth != null &&
+      this.formBirthdayDay != null
+    ) {
+      body.guest_birthday_month = this.formBirthdayMonth;
+      body.guest_birthday_day = this.formBirthdayDay;
+      if (this.tenant()?.guest_birthday_marketing_enabled) {
+        body.guest_birthday_marketing_consent = this.formBirthdayMarketingConsent;
+      }
+    }
+    this.api.createReservationPublic(body).subscribe({
+      next: (res) => {
+        this.successReservation.set(res);
+        this.submitting.set(false);
+      },
+      error: (e) => {
+        this.error.set(this.apiErr.fromHttpError(e, 'BOOK.ERROR_FAILED'));
+        this.submitting.set(false);
+      },
+    });
+  }
+}

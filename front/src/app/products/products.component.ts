@@ -1,0 +1,1341 @@
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { ApiService, KitchenStation, Product, ProductBulkImportConfirmResult, Tax } from '../services/api.service';
+import { PermissionService } from '../services/permission.service';
+import { SidebarComponent } from '../shared/sidebar.component';
+import { CommonModule } from '@angular/common';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { formatMoneyCents } from '../shared/currency-symbol';
+import { getSubcategoryLabel as resolveSubcategoryLabel } from '../shared/product-subcategory-label.util';
+import { MAX_IMAGE_UPLOAD_BYTES, MAX_IMAGE_UPLOAD_MB } from '../shared/image-upload-limits';
+import { CategoriesComponent } from './categories.component';
+import { PricingHelperComponent } from './pricing-helper.component';
+import { ProductBulkImportComponent } from './product-bulk-import.component';
+import { InventoryService } from '../inventory/inventory.service';
+import { InventoryItem, ProductRecipeItem, UnitOfMeasure, inventoryUnitKey } from '../inventory/inventory.types';
+import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-category-label.util';
+
+@Component({
+  selector: 'app-products',
+  standalone: true,
+  imports: [
+    FormsModule,
+    SidebarComponent,
+    CommonModule,
+    TranslateModule,
+    CategoriesComponent,
+    PricingHelperComponent,
+    ProductBulkImportComponent,
+  ],
+  template: `
+    <app-sidebar>
+        <div class="page-header">
+           <h1>{{ 'PRODUCTS.TITLE' | translate }}</h1>
+           @if (activeTab() === 'products' && !showAddForm() && !editingProduct() && canEditProducts()) {
+             <div class="page-header-actions">
+             <button type="button" class="btn btn-secondary" (click)="openBulkImport()">
+               {{ 'PRODUCTS.BULK_IMPORT' | translate }}
+             </button>
+             @if (products().length > 0) {
+               <button type="button" class="btn btn-secondary btn-delete-all" (click)="confirmDeleteAll()" [disabled]="deletingAll()">
+                 {{ 'PRODUCTS.DELETE_ALL' | translate }}
+               </button>
+             }
+             <button class="btn btn-primary" (click)="openAddForm()">
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+               </svg>
+               {{ 'PRODUCTS.ADD_PRODUCT' | translate }}
+             </button>
+             </div>
+           }
+         </div>
+
+        <!-- Main Tab Navigation (Button Style like Settings) -->
+        <div class="main-tabs-container">
+          <div class="main-tabs">
+            <button 
+              type="button" 
+              class="main-tab" 
+              [class.active]="activeTab() === 'products'"
+              (click)="activeTab.set('products')">
+              <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+              </svg>
+              <span>{{ 'NAV.PRODUCTS' | translate }}</span>
+            </button>
+            
+            <button 
+              type="button" 
+              class="main-tab" 
+              [class.active]="activeTab() === 'categories'"
+              (click)="activeTab.set('categories')">
+              <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span>{{ 'PRODUCTS.PRODUCT_CATEGORIES' | translate }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="content">
+          @if (activeTab() === 'categories') {
+            <app-categories (categoriesChanged)="onCategoriesChanged()"></app-categories>
+          } @else {
+            @if (showAddForm() || editingProduct()) {
+              <div class="form-card">
+                 <div class="form-header">
+                   <h3>{{ editingProduct() ? ('PRODUCTS.EDIT_PRODUCT' | translate) : ('PRODUCTS.NEW_PRODUCT' | translate) }}</h3>
+                   <button class="icon-btn" (click)="cancelForm()">
+                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                       <path d="M18 6L6 18M6 6l12 12"/>
+                     </svg>
+                   </button>
+                 </div>
+                 @if (error()) {
+                   <div class="error-banner form-inline-error" role="alert">
+                     <span>{{ error() }}</span>
+                     <button type="button" class="icon-btn" (click)="error.set('')" [attr.aria-label]="'COMMON.CLOSE' | translate">
+                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                         <path d="M18 6L6 18M6 6l12 12"/>
+                       </svg>
+                     </button>
+                   </div>
+                 }
+                 @if (!canEditProducts()) {
+                   <p class="form-readonly-hint">{{ 'PRODUCTS.ONLY_OWNERS_CAN_EDIT' | translate }}</p>
+                 }
+                <form (submit)="saveProduct($event)">
+                   <div class="form-row">
+                     <div class="form-group">
+                       <label for="name">{{ 'PRODUCTS.PRODUCT_NAME' | translate }} <span class="required" aria-hidden="true">*</span></label>
+                       <input id="name" type="text" [(ngModel)]="formData.name" name="name" required [placeholder]="'PRODUCTS.NAME_PLACEHOLDER' | translate" [readonly]="!canEditProducts()" [class.input-error]="productFormErrors()?.name" (ngModelChange)="clearProductFormError('name')">
+                       @if (productFormErrors()?.name) {
+                         <span class="field-error" role="alert">{{ 'PRODUCTS.NAME_REQUIRED' | translate }}</span>
+                       }
+                     </div>
+                     <div class="form-group form-group-sm">
+                       <label for="price">{{ 'PRODUCTS.PRODUCT_PRICE' | translate }} <span class="required" aria-hidden="true">*</span></label>
+                       <div class="price-row-with-helper">
+                         <div class="price-input">
+                           <span class="currency">{{ currency() }}</span>
+                           <input id="price" type="number" step="0.01" [(ngModel)]="formData.price" name="price" required [placeholder]="'PRODUCTS.PRICE_PLACEHOLDER' | translate" [readonly]="!canEditProducts()" [class.input-error]="productFormErrors()?.price" (ngModelChange)="clearProductFormError('price')">
+                         </div>
+                         @if (canEditProducts()) {
+                           <button type="button" class="btn btn-secondary btn-sm pricing-ideal-btn" (click)="openPricingHelper()">
+                             {{ 'PRICING.CALCULATE_IDEAL' | translate }}
+                           </button>
+                         }
+                       </div>
+                       @if (productFormErrors()?.price) {
+                         <span class="field-error" role="alert">{{ 'PRODUCTS.PRICE_REQUIRED' | translate }}</span>
+                       }
+                     </div>
+                     <div class="form-group form-group-sm">
+                       <label for="cost">{{ 'PRODUCTS.COST_PRICE' | translate }}</label>
+                       <div class="price-input">
+                         <span class="currency">{{ currency() }}</span>
+                         <input id="cost" type="number" step="0.01" [(ngModel)]="formData.cost" name="cost" [placeholder]="'PRODUCTS.COST_PLACEHOLDER' | translate" [readonly]="!canEditProducts()">
+                       </div>
+                       <small class="field-hint">{{ 'PRODUCTS.COST_HINT' | translate }}</small>
+                     </div>
+                   </div>
+                   <div class="form-group">
+                     <label for="description">{{ 'PRODUCTS.DESCRIPTION_LABEL' | translate }}</label>
+                     <textarea id="description" [(ngModel)]="formData.description" name="description" [placeholder]="'PRODUCTS.DESCRIPTION_PLACEHOLDER' | translate" rows="3" [readonly]="!canEditProducts()"></textarea>
+                   </div>
+                   <div class="form-row">
+                     <div class="form-group">
+                       <label for="category">{{ 'PRODUCTS.CATEGORY_LABEL' | translate }}</label>
+                       <select id="category" [(ngModel)]="formData.category" name="category" (change)="onCategoryChange()" [disabled]="!canEditProducts()">
+                         <option value="">{{ 'PRODUCTS.SELECT_CATEGORY' | translate }}</option>
+                         @for (category of getCategoryKeys(); track category) {
+                           <option [value]="category">{{ getCategoryLabel(category) }}</option>
+                         }
+                       </select>
+                     </div>
+                     <div class="form-group">
+                       <label for="subcategory">{{ 'PRODUCTS.SUBCATEGORY_LABEL' | translate }}</label>
+                       <select id="subcategory" [(ngModel)]="formData.subcategory" name="subcategory" [disabled]="!canEditProducts() || !formData.category || availableSubcategories().length === 0">
+                         <option value="">{{ 'PRODUCTS.SELECT_SUBCATEGORY' | translate }}</option>
+                         @for (subcat of availableSubcategories(); track subcat) {
+                           <option [value]="subcat">{{ getSubcategoryLabel(subcat) }}</option>
+                         }
+                       </select>
+                     </div>
+                   </div>
+                   <div class="form-row">
+                     <div class="form-group">
+                       <label for="available_from">{{ 'PRODUCTS.AVAILABLE_FROM' | translate }}</label>
+                       <input id="available_from" type="date" [(ngModel)]="formData.available_from" name="available_from" [readonly]="!canEditProducts()">
+                       <small class="field-hint">{{ 'PRODUCTS.AVAILABLE_FROM_HINT' | translate }}</small>
+                     </div>
+                     <div class="form-group">
+                       <label for="available_until">{{ 'PRODUCTS.AVAILABLE_UNTIL' | translate }}</label>
+                       <input id="available_until" type="date" [(ngModel)]="formData.available_until" name="available_until" [readonly]="!canEditProducts()">
+                       <small class="field-hint">{{ 'PRODUCTS.AVAILABLE_UNTIL_HINT' | translate }}</small>
+                     </div>
+                   </div>
+                   <div class="form-group stock-alert-section" data-testid="product-stock-alert">
+                     <label class="checkbox-label">
+                       <input
+                         type="checkbox"
+                         [(ngModel)]="formData.stock_alert_enabled"
+                         name="stock_alert_enabled"
+                         [disabled]="!canEditProducts()"
+                       />
+                       {{ 'PRODUCTS.STOCK_ALERT_ENABLED' | translate }}
+                     </label>
+                     <small class="field-hint">{{ 'PRODUCTS.STOCK_ALERT_HINT' | translate }}</small>
+                     @if (formData.stock_alert_enabled) {
+                       <div class="form-row stock-alert-fields">
+                         <div class="form-group form-group-sm">
+                           <label for="stock_qty">{{ 'PRODUCTS.STOCK_QTY' | translate }}</label>
+                           <input
+                             id="stock_qty"
+                             type="number"
+                             min="0"
+                             step="1"
+                             [(ngModel)]="formData.stock_qty"
+                             name="stock_qty"
+                             [readonly]="!canEditProducts()"
+                           />
+                         </div>
+                         <div class="form-group form-group-sm">
+                           <label for="stock_alert_level">{{ 'PRODUCTS.STOCK_ALERT_LEVEL' | translate }}</label>
+                           <input
+                             id="stock_alert_level"
+                             type="number"
+                             min="0"
+                             step="1"
+                             [(ngModel)]="formData.stock_alert_level"
+                             name="stock_alert_level"
+                             [readonly]="!canEditProducts()"
+                           />
+                         </div>
+                       </div>
+                     }
+                   </div>
+                   <div class="form-group">
+                     <label>{{ 'PRODUCTS.PRODUCT_IMAGE' | translate }}</label>
+                     <div class="image-upload-row">
+                       @if (editingProduct()?.image_filename) {
+                         <div class="image-preview-wrapper">
+                           <img [src]="getImageUrl(editingProduct()!)" class="product-thumb" alt="">
+                           @if (editingProduct()?.image_size_formatted) {
+                             <div class="file-size">{{ editingProduct()!.image_size_formatted }}</div>
+                           }
+                         </div>
+                       } @else if (pendingImagePreview()) {
+                         <div class="image-preview-wrapper">
+                           <img [src]="pendingImagePreview()" class="product-thumb" alt="">
+                           @if (pendingImageFile()?.size) {
+                             <div class="file-size">{{ formatFileSize(pendingImageFile()!.size) }}</div>
+                           }
+                         </div>
+                       }
+                       @if (canEditProducts()) {
+                         <input type="file" #fileInput accept="image/jpeg,image/png,image/webp,image/avif" (change)="handleImageSelect($event)" style="display:none">
+                         <button type="button" class="btn btn-secondary" (click)="fileInput.click()" [disabled]="uploading()">
+                           {{ uploading() ? ('PRODUCTS.UPLOADING' | translate) : (pendingImageFile() ? ('PRODUCTS.CHANGE_IMAGE' | translate) : ('PRODUCTS.UPLOAD_IMAGE' | translate)) }}
+                         </button>
+                         @if (pendingImageFile()) {
+                           <span class="pending-file-name">{{ pendingImageFile()?.name }}</span>
+                         }
+                       }
+                     </div>
+                     <small class="field-hint">{{ 'PRODUCTS.IMAGE_UPLOAD_HINT' | translate:{ maxMb: maxImageUploadMb } }}</small>
+                   </div>
+
+                   @if (canEditProducts() && showAddForm() && !editingProduct()?.id) {
+                     <p class="field-hint">{{ 'PRODUCTS.RECIPE_AFTER_SAVE' | translate }}</p>
+                   }
+
+                   @if (canEditProducts() && editingProduct()?.id) {
+                     <div class="form-group product-recipe-section">
+                       <label>{{ 'PRODUCTS.RECIPE_TITLE' | translate }}</label>
+                       <p class="field-hint">{{ 'PRODUCTS.RECIPE_HINT' | translate }}</p>
+                       @if (recipeLoading()) {
+                         <p class="questions-loading">{{ 'PRODUCTS.RECIPE_LOADING' | translate }}</p>
+                       } @else {
+                         @if (recipeItems().length > 0) {
+                           <ul class="question-list" role="list">
+                             @for (ri of recipeItems(); track ri.id; let idx = $index) {
+                               <li class="question-row">
+                                 <div class="question-row-main">
+                                   <span class="question-label-text">{{ ri.inventory_item_name }}</span>
+                                   <span class="question-type-badge">{{ ri.quantity_required }} {{ unitKey(ri.unit) | translate }}</span>
+                                 </div>
+                                 <div class="question-row-actions">
+                                   <button type="button" class="btn btn-ghost btn-sm btn-danger-ghost" (click)="removeRecipeRow(idx)" [disabled]="recipeSaving()">{{ 'PRODUCTS.QUESTION_DELETE' | translate }}</button>
+                                 </div>
+                               </li>
+                             }
+                           </ul>
+                         } @else {
+                           <p class="questions-empty">{{ 'PRODUCTS.RECIPE_NONE' | translate }}</p>
+                         }
+                         @if (inventoryItems().length === 0) {
+                           <p class="field-hint">{{ 'PRODUCTS.RECIPE_NO_INVENTORY_ITEMS' | translate }}</p>
+                         } @else {
+                           <div class="form-row recipe-add-row">
+                             <div class="form-group flex-grow">
+                               <label for="recipe-item">{{ 'PRODUCTS.RECIPE_ITEM_LABEL' | translate }}</label>
+                               <select id="recipe-item" name="recipe-item" [(ngModel)]="recipeDraft.inventory_item_id" [disabled]="recipeSaving()">
+                                 <option [ngValue]="null">-- {{ 'COMMON.SELECT' | translate }} --</option>
+                                 @for (inv of inventoryItems(); track inv.id) {
+                                   <option [ngValue]="inv.id">{{ inv.name }} ({{ inv.sku }})</option>
+                                 }
+                               </select>
+                             </div>
+                             <div class="form-group form-group-sm">
+                               <label for="recipe-qty">{{ 'PRODUCTS.RECIPE_QTY_LABEL' | translate }}</label>
+                               <input id="recipe-qty" type="number" name="recipe-qty" min="0.01" step="0.01" [(ngModel)]="recipeDraft.quantity_required" [disabled]="recipeSaving()">
+                             </div>
+                             <div class="form-group form-group-sm">
+                               <label for="recipe-unit">{{ 'PRODUCTS.RECIPE_UNIT_LABEL' | translate }}</label>
+                               <select id="recipe-unit" name="recipe-unit" [(ngModel)]="recipeDraft.unit" [disabled]="recipeSaving()">
+                                 @for (unit of recipeUnits; track unit) {
+                                   <option [value]="unit">{{ unitKey(unit) | translate }}</option>
+                                 }
+                               </select>
+                             </div>
+                             <button type="button" class="btn btn-secondary btn-sm" (click)="addRecipeRow()" [disabled]="recipeSaving() || recipeDraft.inventory_item_id == null">{{ 'PRODUCTS.RECIPE_ADD' | translate }}</button>
+                           </div>
+                         }
+                       }
+                     </div>
+                   }
+
+                   <div class="form-actions">
+                     <button type="button" class="btn btn-secondary" (click)="cancelForm()">{{ 'PRODUCTS.CANCEL' | translate }}</button>
+                     <button type="submit" class="btn btn-primary" [disabled]="saving() || !canEditProducts()">
+                       {{ saving() ? ('PRODUCTS.SAVING' | translate) : (editingProduct() ? ('PRODUCTS.UPDATE' | translate) : ('PRODUCTS.ADD_PRODUCT_BUTTON' | translate)) }}
+                     </button>
+                   </div>
+                </form>
+              </div>
+            } @else {
+
+            @if (error()) {
+              <div class="error-banner">
+                <span>{{ error() }}</span>
+                <button class="icon-btn" (click)="error.set('')">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            }
+            @if (successMessage()) {
+              <div class="success-banner">
+                <span>{{ successMessage() }}</span>
+                <button class="icon-btn" (click)="successMessage.set('')">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            }
+
+             @if (loading()) {
+               <div class="empty-state">
+                 <p>{{ 'PRODUCTS.LOADING_PRODUCTS' | translate }}</p>
+               </div>
+             } @else if (products().length === 0) {
+               <div class="empty-state">
+                 <div class="empty-icon">
+                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                     <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                   </svg>
+                 </div>
+                 <h3>{{ 'PRODUCTS.NO_PRODUCTS' | translate }}</h3>
+                 <p>{{ 'PRODUCTS.NO_PRODUCTS_DESC' | translate }}</p>
+                 @if (canEditProducts()) {
+                 <button class="btn btn-primary" (click)="openAddForm()">{{ 'PRODUCTS.ADD_PRODUCT' | translate }}</button>
+               }
+               </div>
+            } @else {
+              <!-- Search -->
+              <div class="search-row">
+                <label for="products-search" class="visually-hidden">{{ 'PRODUCTS.SEARCH_PLACEHOLDER' | translate }}</label>
+                <input
+                  id="products-search"
+                  type="search"
+                  class="search-input"
+                  [value]="searchQuery()"
+                  (input)="onSearchChange($event)"
+                  [placeholder]="'PRODUCTS.SEARCH_PLACEHOLDER' | translate"
+                  autocomplete="off"
+                />
+              </div>
+              <!-- Category Filters (Ribbon Style) -->
+              <div class="filters-section">
+                @if (availableCategories().length > 0) {
+                  <div class="ribbon-container">
+                    <div class="ribbon">
+                      <button 
+                        class="ribbon-tab" 
+                        [class.active]="selectedCategory() === null"
+                        (click)="selectCategory(null)">
+                        {{ 'CATALOG.ALL_CATEGORIES' | translate }}
+                      </button>
+                      @for (category of availableCategories(); track category) {
+                        <button 
+                          class="ribbon-tab" 
+                          [class.active]="selectedCategory() === category"
+                          (click)="selectCategory(category)">
+                          {{ getCategoryLabel(category) }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+                
+                <!-- Subcategory Filters (Ribbon Style - Smaller) -->
+                @if (selectedCategory() && availableSubcategoriesForFilter().length > 0) {
+                  <div class="ribbon-container subribbon">
+                    <div class="ribbon">
+                      <button 
+                        class="ribbon-tab tab-sm" 
+                        [class.active]="selectedSubcategory() === null"
+                        (click)="selectSubcategory(null)">
+                        {{ 'PRODUCTS.ALL_ITEMS_IN' | translate:{category: getCategoryLabel(selectedCategory()!) } }}
+                      </button>
+                      @for (subcategory of availableSubcategoriesForFilter(); track subcategory) {
+                        <button 
+                          class="ribbon-tab tab-sm" 
+                          [class.active]="selectedSubcategory() === subcategory"
+                          (click)="selectSubcategory(subcategory)">
+                          {{ getSubcategoryLabel(subcategory) }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="table-card products-data-table">
+                <div class="products-table-scroll">
+                 <table>
+                   <thead>
+                     <tr>
+                       <th style="width:60px"></th>
+                       <th>{{ 'PRODUCTS.NAME_HEADER' | translate }}</th>
+                       <th>{{ 'PRODUCTS.CATEGORY_HEADER' | translate }}</th>
+                       <th>{{ 'PRODUCTS.SUBCATEGORY_HEADER' | translate }}</th>
+                       <th>{{ 'PRODUCTS.PRICE_HEADER' | translate }}</th>
+                       <th>{{ 'PRODUCTS.COST_HEADER' | translate }}</th>
+                       <th>{{ 'PRODUCTS.STOCK_HEADER' | translate }}</th>
+                       <th></th>
+                     </tr>
+                   </thead>
+                  <tbody>
+                    @for (product of filteredProducts(); track product.id) {
+                      <tr>
+                        <td>
+                          @if (product.image_filename) {
+                            <div class="image-preview-wrapper">
+                              <img [src]="getImageUrl(product)" class="table-thumb" alt="" (error)="handleImageError($event)">
+                              @if (product.image_size_formatted) {
+                                <div class="file-size">{{ product.image_size_formatted }}</div>
+                              }
+                            </div>
+                          } @else {
+                            <div class="no-image" title="No image">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <path d="M21 15l-5-5L5 21"/>
+                              </svg>
+                            </div>
+                          }
+                        </td>
+                        <td>
+                          <div>{{ product.name }}</div>
+                          @if (product.ingredients) {
+                            <small class="ingredients">{{ product.ingredients }}</small>
+                          }
+                        </td>
+                        <td>
+                          @if (editingCategoryProductId() === product.id && canEditProducts()) {
+                            <select 
+                              class="inline-select" 
+                              [(ngModel)]="editingCategory" 
+                              (change)="onCategoryChangeInline()"
+                              (blur)="saveCategoryInline(product)"
+                              (keydown.escape)="cancelCategoryEdit()"
+                              [attr.data-product-id]="product.id">
+                              <option value="">None</option>
+                              @for (category of getCategoryKeys(); track category) {
+                                <option [value]="category">{{ getCategoryLabel(category) }}</option>
+                              }
+                            </select>
+                          } @else {
+                            <span class="category-cell" [class.clickable]="canEditProducts()" (click)="canEditProducts() && startCategoryEdit(product, $event)">
+                              {{ product.category ? getCategoryLabel(product.category) : '—' }}
+                            </span>
+                          }
+                        </td>
+                        <td>
+                          @if (editingCategoryProductId() === product.id && canEditProducts()) {
+                            <select 
+                              class="inline-select" 
+                              [(ngModel)]="editingSubcategory" 
+                              [disabled]="!editingCategory || getSubcategoriesForCategory(editingCategory || '').length === 0"
+                              (blur)="saveCategoryInline(product)"
+                              (keydown.escape)="cancelCategoryEdit()">
+                              <option value="">None</option>
+                              @for (subcat of getSubcategoriesForCategory(editingCategory); track subcat) {
+                                <option [value]="subcat">{{ getSubcategoryLabel(subcat) }}</option>
+                              }
+                            </select>
+                          } @else {
+                            <span class="category-cell" [class.clickable]="canEditProducts()" (click)="canEditProducts() && startCategoryEdit(product, $event)">
+                              {{ product.subcategory ? getSubcategoryLabel(product.subcategory) : '—' }}
+                            </span>
+                          }
+                        </td>
+                        <td class="price">{{ formatPrice(product.price_cents) }}</td>
+                        <td class="price">{{ product.cost_cents != null ? formatPrice(product.cost_cents) : '—' }}</td>
+                        <td data-testid="product-stock-cell">
+                          @if (product.stock_alert_enabled) {
+                            <span
+                              class="stock-badge"
+                              [class.stock-badge--low]="isProductLowStock(product)"
+                              [attr.title]="'PRODUCTS.STOCK_BADGE_TITLE' | translate:{qty: product.stock_qty ?? 0, level: product.stock_alert_level ?? 0}"
+                            >
+                              @if (isProductLowStock(product)) {
+                                {{ 'PRODUCTS.STOCK_LOW' | translate }}
+                              } @else {
+                                {{ 'PRODUCTS.STOCK_OK' | translate }}
+                              }
+                              <small>{{ product.stock_qty ?? 0 }} / {{ product.stock_alert_level ?? 0 }}</small>
+                            </span>
+                          } @else {
+                            <span class="muted">—</span>
+                          }
+                        </td>
+                        <td class="actions">
+                          <div class="actions-inner">
+                          <button class="icon-btn" (click)="startEdit(product)" [attr.title]="'PRODUCTS.EDIT_TOOLTIP' | translate">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                          @if (canEditProducts()) {
+                            <button class="icon-btn icon-btn-danger" (click)="confirmDelete(product)" [attr.title]="'PRODUCTS.DELETE_TOOLTIP' | translate" [disabled]="deleting() === product.id">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                              </svg>
+                            </button>
+                          }
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            }
+            }
+          }
+
+           @if (productToDelete()) {
+             <div class="modal-overlay" (click)="productToDelete.set(null)">
+               <div class="modal" (click)="$event.stopPropagation()">
+                 <h3>{{ 'PRODUCTS.DELETE_PRODUCT_TITLE' | translate }}</h3>
+                 <p>{{ 'PRODUCTS.DELETE_PRODUCT_CONFIRM' | translate:{name: productToDelete()?.name} }}</p>
+                 <div class="modal-actions">
+                   <button class="btn btn-secondary" (click)="productToDelete.set(null)">{{ 'PRODUCTS.CANCEL' | translate }}</button>
+                   <button class="btn btn-danger" (click)="deleteProduct()">{{ 'PRODUCTS.DELETE_PRODUCT' | translate }}</button>
+                 </div>
+               </div>
+             </div>
+           }
+           @if (showDeleteAllModal()) {
+             <div class="modal-overlay" (click)="showDeleteAllModal.set(false)">
+               <div class="modal" (click)="$event.stopPropagation()">
+                 <h3>{{ 'PRODUCTS.DELETE_ALL_TITLE' | translate }}</h3>
+                 <p>{{ 'PRODUCTS.DELETE_ALL_CONFIRM' | translate:{count: products().length} }}</p>
+                 <div class="modal-actions">
+                   <button class="btn btn-secondary" (click)="showDeleteAllModal.set(false)" [disabled]="deletingAll()">{{ 'PRODUCTS.CANCEL' | translate }}</button>
+                   <button class="btn btn-danger" (click)="deleteAllProducts()" [disabled]="deletingAll()">{{ 'PRODUCTS.DELETE_ALL_BUTTON' | translate }}</button>
+                 </div>
+               </div>
+             </div>
+           }
+           @if (pricingHelperOpen()) {
+             <app-pricing-helper
+               [productId]="pricingHelperProductId()"
+               [productCategory]="formData.category || null"
+               [currencyCode]="currencyCode()"
+               [currencySymbol]="currency()"
+               (closed)="closePricingHelper()"
+               (applyMajor)="onPricingHelperApply($event)"
+             />
+           }
+           @if (bulkImportOpen()) {
+             <app-product-bulk-import
+               [categories]="categories()"
+               (closed)="closeBulkImport()"
+               (imported)="onBulkImportDone($event)"
+             />
+           }
+        </div>
+    </app-sidebar>
+  `,
+  styleUrl: './products.component.scss'
+})
+export class ProductsComponent implements OnInit {
+  private api = inject(ApiService);
+  private router = inject(Router);
+  private permissions = inject(PermissionService);
+  private translate = inject(TranslateService);
+  private inventoryService = inject(InventoryService);
+
+  canEditProducts = computed(() => this.permissions.hasPermission(this.permissions.getCurrentUser(), 'product:write'));
+
+  activeTab = signal<'products' | 'categories'>('products');
+  products = signal<Product[]>([]);
+  filteredProducts = signal<Product[]>([]);
+  loading = signal(true);
+  saving = signal(false);
+  deleting = signal<number | null>(null);
+  deletingAll = signal(false);
+  showAddForm = signal(false);
+  editingProduct = signal<Product | null>(null);
+  productToDelete = signal<Product | null>(null);
+  showDeleteAllModal = signal(false);
+  pricingHelperOpen = signal(false);
+  pricingHelperProductId = signal<number | null>(null);
+  bulkImportOpen = signal(false);
+  error = signal('');
+  successMessage = signal('');
+  /** Set when submit was attempted with invalid required fields; cleared on edit or cancel */
+  productFormErrors = signal<{ name?: boolean; price?: boolean } | null>(null);
+  formData: {
+    name: string;
+    price: number;
+    cost: number | null;
+    ingredients: string;
+    description: string;
+    category: string;
+    subcategory: string;
+    tax_id?: number | null;
+    available_from?: string;
+    available_until?: string;
+    kitchen_station_id?: number | null;
+    stock_alert_enabled: boolean;
+    stock_qty: number;
+    stock_alert_level: number;
+  } = {
+    name: '',
+    price: 0,
+    cost: null,
+    ingredients: '',
+    description: '',
+    category: '',
+    subcategory: '',
+    kitchen_station_id: null,
+    stock_alert_enabled: false,
+    stock_qty: 0,
+    stock_alert_level: 5,
+  };
+  productTaxes = signal<Tax[]>([]);
+  kitchenStations = signal<KitchenStation[]>([]);
+  readonly maxImageUploadMb = MAX_IMAGE_UPLOAD_MB;
+  uploading = signal(false);
+  pendingImageFile = signal<File | null>(null);
+  pendingImagePreview = signal<string | null>(null);
+  /** This deployment only operates in Colombian pesos (COP). */
+  currency(): string { return '$'; }
+  currencyCode(): string { return 'COP'; }
+  categories = signal<Record<string, string[]>>({});
+  availableSubcategories = signal<string[]>([]);
+  editingCategoryProductId = signal<number | null>(null);
+  editingCategory: string = '';
+  editingSubcategory: string = '';
+  // Filter state
+  searchQuery = signal('');
+  selectedCategory = signal<string | null>(null);
+  selectedSubcategory = signal<string | null>(null);
+  availableCategories = signal<string[]>([]);
+  availableSubcategoriesForFilter = signal<string[]>([]);
+
+  /** Recipe (BOM): which inventory items get deducted when this product is sold, and how much. */
+  readonly unitKey = inventoryUnitKey;
+  readonly recipeUnits: UnitOfMeasure[] = ['piece', 'gram', 'kilogram', 'ounce', 'pound', 'milliliter', 'centiliter', 'liter', 'fluid_ounce', 'cup', 'gallon'];
+  recipeItems = signal<ProductRecipeItem[]>([]);
+  recipeLoading = signal(false);
+  recipeSaving = signal(false);
+  inventoryItems = signal<InventoryItem[]>([]);
+  recipeDraft: { inventory_item_id: number | null; quantity_required: number; unit: UnitOfMeasure } = {
+    inventory_item_id: null,
+    quantity_required: 1,
+    unit: 'piece',
+  };
+
+  ngOnInit() {
+    this.loadTenantSettingsThenProducts();
+    this.loadCategories();
+    // Load all taxes (not only "valid today") so dropdowns aren't empty due to validity-period edge cases.
+    this.api.getTaxes(false).subscribe({ next: (list) => this.productTaxes.set(list), error: () => this.productTaxes.set([]) });
+    this.api.getKitchenStations().subscribe({
+      next: (list) => this.kitchenStations.set(list),
+      error: () => this.kitchenStations.set([]),
+    });
+  }
+
+  categoryLabelOverrides = signal<Record<string, string>>({});
+
+  loadCategories() {
+    this.api.getCatalogCategories().subscribe({
+      next: (cats) => {
+        this.categories.set(cats);
+        this.onCategoryChange();
+        if (this.selectedCategory()) {
+          this.updateAvailableSubcategories(this.selectedCategory());
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load categories:', err);
+      }
+    });
+    this.api.getTenantCategoryLabels().subscribe({
+      next: (labels) => this.categoryLabelOverrides.set(labels),
+      error: () => this.categoryLabelOverrides.set({}),
+    });
+  }
+
+  onCategoriesChanged() {
+    this.loadCategories();
+  }
+
+  getCategoryKeys(): string[] {
+    return Object.keys(this.categories());
+  }
+
+  /** Tenant rename override > built-in Spanish translation > raw value for custom categories. */
+  getCategoryLabel(category: string): string {
+    return resolveCategoryLabel(category, this.translate, this.categoryLabelOverrides());
+  }
+
+  getSubcategoryLabel(subcategory: string): string {
+    return resolveSubcategoryLabel(subcategory, this.translate);
+  }
+
+  getSubcategoriesForCategory(category: string): string[] {
+    return this.categories()[category] || [];
+  }
+
+  onCategoryChange() {
+    // Update available subcategories when category changes
+    const selectedCategory = this.formData.category;
+    if (selectedCategory && this.categories()[selectedCategory]) {
+      this.availableSubcategories.set(this.categories()[selectedCategory]);
+    } else {
+      this.availableSubcategories.set([]);
+      this.formData.subcategory = '';
+    }
+  }
+
+  onCategoryChangeInline() {
+    // Update subcategory when category changes inline
+    const selectedCategory = this.editingCategory;
+    if (selectedCategory && this.categories()[selectedCategory]) {
+      // Keep subcategory if it's still valid, otherwise clear it
+      const validSubcats = this.categories()[selectedCategory];
+      if (this.editingSubcategory && !validSubcats.includes(this.editingSubcategory)) {
+        this.editingSubcategory = '';
+      }
+    } else {
+      this.editingSubcategory = '';
+    }
+  }
+
+  startCategoryEdit(product: Product, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!product.id) return;
+    // Don't start editing if already editing this product or another product
+    if (this.editingCategoryProductId() === product.id) return;
+    if (this.editingCategoryProductId() !== null) {
+      // Save current edit first
+      const currentProduct = this.products().find(p => p.id === this.editingCategoryProductId());
+      if (currentProduct) {
+        this.saveCategoryInline(currentProduct);
+      }
+    }
+    this.editingCategoryProductId.set(product.id);
+    this.editingCategory = product.category || '';
+    this.editingSubcategory = product.subcategory || '';
+    // Focus the category select after a brief delay
+    setTimeout(() => {
+      const select = document.querySelector(`[data-product-id="${product.id}"]`) as HTMLSelectElement;
+      if (select) select.focus();
+    }, 10);
+  }
+
+  cancelCategoryEdit() {
+    this.editingCategoryProductId.set(null);
+    this.editingCategory = '';
+    this.editingSubcategory = '';
+  }
+
+  saveCategoryInline(product: Product) {
+    if (!product.id || this.editingCategoryProductId() !== product.id) return;
+
+    const category = this.editingCategory || undefined;
+    const subcategory = this.editingSubcategory || undefined;
+
+    // Only update if changed
+    if (category === product.category && subcategory === product.subcategory) {
+      this.cancelCategoryEdit();
+      return;
+    }
+
+    this.saving.set(true);
+    this.api.updateProduct(product.id, { category, subcategory }).subscribe({
+      next: (updated) => {
+        this.products.update(list => list.map(p => p.id === updated.id ? updated : p));
+        this.updateAvailableCategories();
+        this.updateAvailableSubcategories(this.selectedCategory());
+        this.applyFilters();
+        this.cancelCategoryEdit();
+        this.saving.set(false);
+      },
+      error: (err) => {
+        this.error.set(err.error?.detail || 'Failed to update category');
+        this.cancelCategoryEdit();
+        this.saving.set(false);
+      }
+    });
+  }
+
+  loadTenantSettingsThenProducts() {
+    this.api.getTenantSettings().subscribe({
+      next: () => {
+        this.loadProducts();
+      },
+      error: (err) => {
+        console.error('Failed to load tenant settings:', err);
+        this.loadProducts();
+      },
+    });
+  }
+
+  isProductLowStock(product: Product): boolean {
+    if (!product.stock_alert_enabled) return false;
+    return (product.stock_qty ?? 0) <= (product.stock_alert_level ?? 0);
+  }
+
+  formatPrice(priceCents: number): string {
+    return formatMoneyCents(priceCents);
+  }
+
+  loadProducts() {
+    this.loading.set(true);
+    this.api.getProducts().subscribe({
+      next: (products) => {
+        this.products.set(products);
+        this.updateAvailableCategories();
+        this.applyFilters();
+        this.loading.set(false);
+      },
+      error: (err) => {
+        if (err.status === 401) { this.router.navigate(['/login']); }
+        else { this.error.set(err.error?.detail || 'Failed to load products'); }
+        this.loading.set(false);
+      }
+    });
+  }
+
+  updateAvailableCategories() {
+    const categories = new Set<string>();
+    this.products().forEach((product: Product) => {
+      if (product.category) {
+        categories.add(product.category);
+      }
+    });
+    this.availableCategories.set(Array.from(categories).sort());
+  }
+
+  selectCategory(category: string | null) {
+    this.selectedCategory.set(category);
+    this.selectedSubcategory.set(null);
+    this.updateAvailableSubcategories(category);
+    this.applyFilters();
+  }
+
+  selectSubcategory(subcategory: string | null) {
+    this.selectedSubcategory.set(subcategory);
+    this.applyFilters();
+  }
+
+  updateAvailableSubcategories(category: string | null) {
+    if (!category) {
+      this.availableSubcategoriesForFilter.set([]);
+      return;
+    }
+
+    const subcategories = new Set<string>();
+    this.products().forEach((product: Product) => {
+      if (product.category === category && product.subcategory) {
+        subcategories.add(product.subcategory);
+      }
+    });
+    this.availableSubcategoriesForFilter.set(Array.from(subcategories).sort());
+  }
+
+  onSearchChange(event: Event) {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    let filtered = this.products();
+
+    // Filter by search (name, ingredients, description, category, subcategory)
+    const q = this.searchQuery().trim().toLowerCase();
+    if (q) {
+      filtered = filtered.filter(p => {
+        const name = (p.name || '').toLowerCase();
+        const ingredients = (p.ingredients || '').toLowerCase();
+        const description = (p.description || '').toLowerCase();
+        const category = (p.category || '').toLowerCase();
+        const subcategory = (p.subcategory || '').toLowerCase();
+        return name.includes(q) || ingredients.includes(q) || description.includes(q) || category.includes(q) || subcategory.includes(q);
+      });
+    }
+
+    // Filter by category
+    if (this.selectedCategory()) {
+      filtered = filtered.filter(p => p.category === this.selectedCategory());
+    }
+
+    // Filter by subcategory
+    if (this.selectedSubcategory()) {
+      filtered = filtered.filter(p => p.subcategory === this.selectedSubcategory());
+    }
+
+    this.filteredProducts.set(filtered);
+  }
+
+  startEdit(product: Product) {
+    // Cancel any inline category editing
+    if (this.editingCategoryProductId() === product.id) {
+      this.cancelCategoryEdit();
+    }
+    this.productFormErrors.set(null);
+    this.editingProduct.set(product);
+    this.formData = {
+      name: product.name,
+      price: product.price_cents / 100,
+      cost: product.cost_cents != null ? product.cost_cents / 100 : null,
+      ingredients: product.ingredients || '',
+      description: product.description || '',
+      category: product.category || '',
+      subcategory: product.subcategory || '',
+      tax_id: product.tax_id ?? null,
+      available_from: product.available_from || '',
+      available_until: product.available_until || '',
+      kitchen_station_id: product.kitchen_station_id ?? null,
+      stock_alert_enabled: !!product.stock_alert_enabled,
+      stock_qty: product.stock_qty ?? 0,
+      stock_alert_level: product.stock_alert_level ?? 0,
+    };
+    this.onCategoryChange(); // Update available subcategories
+    this.showAddForm.set(false);
+    if (product.id) {
+      this.loadProductRecipe(product.id);
+      this.loadInventoryItemsForRecipe();
+    } else {
+      this.clearRecipeState();
+    }
+  }
+
+  openAddForm() {
+    this.productFormErrors.set(null);
+    this.formData = {
+      name: '',
+      price: 0,
+      cost: null,
+      ingredients: '',
+      description: '',
+      category: '',
+      subcategory: '',
+      tax_id: null,
+      available_from: '',
+      available_until: '',
+      kitchen_station_id: null,
+      stock_alert_enabled: false,
+      stock_qty: 0,
+      stock_alert_level: 5,
+    };
+    this.showAddForm.set(true);
+    this.clearRecipeState();
+  }
+
+  cancelForm() {
+    this.showAddForm.set(false);
+    this.editingProduct.set(null);
+    this.formData = {
+      name: '',
+      price: 0,
+      cost: null,
+      ingredients: '',
+      description: '',
+      category: '',
+      subcategory: '',
+      tax_id: null,
+      available_from: '',
+      available_until: '',
+      kitchen_station_id: null,
+      stock_alert_enabled: false,
+      stock_qty: 0,
+      stock_alert_level: 5,
+    };
+    this.availableSubcategories.set([]);
+    this.productFormErrors.set(null);
+    this.clearPendingImage();
+    this.clearRecipeState();
+    this.pricingHelperOpen.set(false);
+  }
+
+  openPricingHelper() {
+    this.pricingHelperProductId.set(this.editingProduct()?.id ?? null);
+    this.pricingHelperOpen.set(true);
+  }
+
+  closePricingHelper() {
+    this.pricingHelperOpen.set(false);
+  }
+
+  onPricingHelperApply(major: number) {
+    this.formData.price = major;
+    this.closePricingHelper();
+  }
+
+  openBulkImport() {
+    this.bulkImportOpen.set(true);
+  }
+
+  closeBulkImport() {
+    this.bulkImportOpen.set(false);
+  }
+
+  onBulkImportDone(result: ProductBulkImportConfirmResult) {
+    this.bulkImportOpen.set(false);
+    this.loadProducts();
+    this.successMessage.set(
+      this.translate.instant('PRODUCTS.BULK_IMPORT_SUCCESS', {
+        created: result.created,
+        updated: result.updated,
+      })
+    );
+  }
+
+  private clearRecipeState() {
+    this.recipeItems.set([]);
+    this.recipeLoading.set(false);
+    this.recipeSaving.set(false);
+    this.recipeDraft = { inventory_item_id: null, quantity_required: 1, unit: 'piece' };
+  }
+
+  loadProductRecipe(productId: number) {
+    this.recipeLoading.set(true);
+    this.inventoryService.getProductRecipe(productId).subscribe({
+      next: (recipe) => {
+        this.recipeItems.set(recipe.items || []);
+        this.recipeLoading.set(false);
+      },
+      error: () => {
+        this.recipeItems.set([]);
+        this.recipeLoading.set(false);
+      },
+    });
+  }
+
+  loadInventoryItemsForRecipe() {
+    this.inventoryService.getItems({ activeOnly: true }).subscribe({
+      next: (items) => this.inventoryItems.set(items),
+      error: () => this.inventoryItems.set([]),
+    });
+  }
+
+  /** Adds the draft ingredient to the recipe and persists the whole list immediately. */
+  addRecipeRow() {
+    const productId = this.editingProduct()?.id;
+    if (!productId || this.recipeDraft.inventory_item_id == null) return;
+    const qty = Number(this.recipeDraft.quantity_required);
+    if (!(qty > 0)) return;
+
+    const items = [
+      ...this.recipeItems().map((ri) => ({
+        inventory_item_id: ri.inventory_item_id,
+        quantity_required: ri.quantity_required,
+        unit: ri.unit,
+        waste_percentage: ri.waste_percentage,
+        notes: ri.notes,
+      })),
+      { inventory_item_id: this.recipeDraft.inventory_item_id, quantity_required: qty, unit: this.recipeDraft.unit },
+    ];
+    this.saveRecipe(productId, items);
+  }
+
+  removeRecipeRow(index: number) {
+    const productId = this.editingProduct()?.id;
+    if (!productId) return;
+    const items = this.recipeItems()
+      .filter((_, idx) => idx !== index)
+      .map((ri) => ({
+        inventory_item_id: ri.inventory_item_id,
+        quantity_required: ri.quantity_required,
+        unit: ri.unit,
+        waste_percentage: ri.waste_percentage,
+        notes: ri.notes,
+      }));
+    this.saveRecipe(productId, items);
+  }
+
+  private saveRecipe(
+    productId: number,
+    items: { inventory_item_id: number; quantity_required: number; unit: UnitOfMeasure; waste_percentage?: number; notes?: string | null }[]
+  ) {
+    this.recipeSaving.set(true);
+    this.inventoryService.updateProductRecipe(productId, { items }).subscribe({
+      next: () => {
+        this.recipeDraft = { inventory_item_id: null, quantity_required: 1, unit: 'piece' };
+        this.loadProductRecipe(productId);
+        this.recipeSaving.set(false);
+      },
+      error: () => {
+        this.recipeSaving.set(false);
+      },
+    });
+  }
+
+  clearProductFormError(field: 'name' | 'price') {
+    const current = this.productFormErrors();
+    if (!current) return;
+    const next = { ...current };
+    delete next[field];
+    const nextState = Object.keys(next).length ? next : null;
+    this.productFormErrors.set(nextState);
+    if (!nextState) this.error.set('');
+  }
+
+  clearPendingImage() {
+    this.pendingImageFile.set(null);
+    if (this.pendingImagePreview()) {
+      URL.revokeObjectURL(this.pendingImagePreview()!);
+      this.pendingImagePreview.set(null);
+    }
+  }
+
+  saveProduct(event: Event) {
+    event.preventDefault();
+    if (!this.canEditProducts()) return;
+
+    const nameInvalid = !this.formData.name?.trim();
+    const priceInvalid = this.formData.price == null || Number(this.formData.price) <= 0;
+    if (nameInvalid || priceInvalid) {
+      this.productFormErrors.set({ name: nameInvalid, price: priceInvalid });
+      this.error.set(this.translate.instant('PRODUCTS.FILL_REQUIRED_FIELDS'));
+      return;
+    }
+
+    this.productFormErrors.set(null);
+    this.error.set('');
+    this.saving.set(true);
+    const productData: Record<string, unknown> = {
+      name: this.formData.name,
+      price_cents: Math.round(this.formData.price * 100),
+      cost_cents: this.formData.cost != null && this.formData.cost >= 0 ? Math.round(this.formData.cost * 100) : undefined,
+      ingredients: this.formData.ingredients || undefined,
+      description: this.formData.description || undefined,
+      category: this.formData.category || undefined,
+      subcategory: this.formData.subcategory || undefined,
+      tax_id: this.formData.tax_id,
+      available_from: this.formData.available_from?.trim() || null,
+      available_until: this.formData.available_until?.trim() || null,
+      kitchen_station_id: this.formData.kitchen_station_id ?? null,
+      stock_alert_enabled: !!this.formData.stock_alert_enabled,
+      stock_qty: Math.max(0, Math.floor(Number(this.formData.stock_qty) || 0)),
+      stock_alert_level: Math.max(0, Math.floor(Number(this.formData.stock_alert_level) || 0)),
+    };
+
+    const editing = this.editingProduct();
+    if (editing?.id) {
+      this.api.updateProduct(editing.id, productData as Partial<Product>).subscribe({
+        next: (updated) => {
+          this.products.update(list => list.map(p => p.id === updated.id ? updated : p));
+          this.updateAvailableCategories();
+          this.applyFilters();
+          this.cancelForm();
+          this.saving.set(false);
+        },
+        error: (err) => { this.error.set(err.error?.detail || 'Failed to update'); this.saving.set(false); }
+      });
+    } else {
+      this.api.createProduct(productData as unknown as Product).subscribe({
+        next: (product) => {
+          this.products.update(list => [...list, product]);
+          this.updateAvailableCategories();
+          this.applyFilters();
+          // Upload pending image if one was selected
+          const pendingFile = this.pendingImageFile();
+          if (pendingFile && product.id) {
+            this.uploading.set(true);
+            this.api.uploadProductImage(product.id, pendingFile).subscribe({
+              next: (updated) => {
+                this.products.update(list => list.map(p => p.id === updated.id ? updated : p));
+                this.clearPendingImage();
+                this.uploading.set(false);
+              },
+              error: (err) => {
+                this.error.set(
+                  err.error?.detail || this.translate.instant('PRODUCTS.PRODUCT_CREATED_BUT_IMAGE_FAILED'),
+                );
+                this.clearPendingImage();
+                this.uploading.set(false);
+              }
+            });
+          } else {
+            this.clearPendingImage();
+          }
+          this.cancelForm();
+          this.saving.set(false);
+        },
+        error: (err) => { this.error.set(err.error?.detail || 'Failed to create'); this.saving.set(false); }
+      });
+    }
+  }
+
+  confirmDelete(product: Product) { this.productToDelete.set(product); }
+
+  confirmDeleteAll() {
+    this.showDeleteAllModal.set(true);
+  }
+
+  deleteAllProducts() {
+    if (this.deletingAll()) return;
+    this.deletingAll.set(true);
+    this.api.deleteAllProducts().subscribe({
+      next: (res) => {
+        this.showDeleteAllModal.set(false);
+        this.products.set([]);
+        this.filteredProducts.set([]);
+        this.updateAvailableCategories();
+        this.applyFilters();
+        this.deletingAll.set(false);
+        this.error.set('');
+        this.successMessage.set(
+          this.translate.instant('PRODUCTS.DELETE_ALL_SUCCESS', { count: res.count })
+        );
+      },
+      error: (err) => {
+        this.error.set(err.error?.detail || this.translate.instant('PRODUCTS.FAILED_TO_DELETE_ALL'));
+        this.deletingAll.set(false);
+      },
+    });
+  }
+
+  deleteProduct() {
+    const product = this.productToDelete();
+    if (!product?.id) return;
+    this.deleting.set(product.id);
+    this.productToDelete.set(null);
+    this.api.deleteProduct(product.id).subscribe({
+      next: () => {
+        this.products.update(list => list.filter(p => p.id !== product.id));
+        this.updateAvailableCategories();
+        this.applyFilters();
+        this.deleting.set(null);
+      },
+      error: (err) => { this.error.set(err.error?.detail || 'Failed to delete'); this.deleting.set(null); }
+    });
+  }
+
+  getImageUrl(product: Product): string | null {
+    return this.api.getProductImageUrl(product);
+  }
+
+  handleImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+    const wrapper = img.closest('.image-preview-wrapper');
+    if (wrapper) {
+      let placeholder = wrapper.querySelector('.no-image') as HTMLElement;
+      if (!placeholder) {
+        placeholder = document.createElement('div');
+        placeholder.className = 'no-image';
+        placeholder.title = 'No image';
+        placeholder.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+        wrapper.insertBefore(placeholder, img);
+      } else {
+        placeholder.style.display = 'flex';
+      }
+    }
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    } else if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    } else {
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+  }
+
+  handleImageSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+      this.error.set(
+        this.translate.instant('COMMON.IMAGE_FILE_TOO_LARGE', { maxMb: MAX_IMAGE_UPLOAD_MB }),
+      );
+      input.value = '';
+      return;
+    }
+
+    const editing = this.editingProduct();
+    if (editing?.id) {
+      // Direct upload for existing products
+      this.uploading.set(true);
+      this.error.set('');
+      this.api.uploadProductImage(editing.id, file).subscribe({
+        next: (updated) => {
+          this.products.update(list => list.map(p => p.id === updated.id ? updated : p));
+          this.editingProduct.set(updated);
+          this.uploading.set(false);
+        },
+        error: (err) => {
+          this.error.set(
+            err.error?.detail || this.translate.instant('PRODUCTS.FAILED_TO_UPLOAD_IMAGE'),
+          );
+          this.uploading.set(false);
+        }
+      });
+    } else {
+      // Store file for upload after product creation
+      this.error.set('');
+      this.clearPendingImage();
+      this.pendingImageFile.set(file);
+      this.pendingImagePreview.set(URL.createObjectURL(file));
+    }
+    // Reset input to allow selecting the same file again
+    input.value = '';
+  }
+}

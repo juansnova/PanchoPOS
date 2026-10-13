@@ -1,0 +1,1967 @@
+import { afterNextRender, Component, DestroyRef, effect, inject, signal, computed, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime } from 'rxjs/operators';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { QRCodeComponent } from 'angularx-qrcode';
+import { ApiService, Table, TenantSettings, Floor, User } from '../services/api.service';
+import { PermissionService } from '../services/permission.service';
+import { SidebarComponent } from '../shared/sidebar.component';
+import { StaffPosToolbarComponent } from '../shared/staff-pos-toolbar.component';
+import { TablesAreaPreferenceService } from '../services/tables-area-preference.service';
+import { ConfirmationModalComponent } from '../shared/confirmation-modal.component';
+import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
+import { TranslateModule } from '@ngx-translate/core';
+import { CommonModule } from '@angular/common';
+import { ApiErrorMessageService } from '../services/api-error-message.service';
+import { LanguageService } from '../services/language.service';
+import { findNonOverlappingDefaultPosition } from './table-floor-layout.util';
+import { formatActivatedAtTime, formatElapsedActiveDuration } from './table-active-duration.util';
+
+const TABLES_VIEW_STORAGE_KEY = 'pos.tables.viewMode';
+
+/** One combined list row per joined group, or one row per ungrouped table. */
+type TablesListRow =
+  | { kind: 'group'; groupId: number; floorId: number; members: Table[]; label: string; seatTotal: number }
+  | { kind: 'single'; table: Table };
+
+/** One combined tile block per floor: joined group or single table. */
+type TablesTileBlock =
+  | { kind: 'group'; groupId: number; members: Table[]; label: string; seatTotal: number }
+  | { kind: 'single'; table: Table };
+
+function getInitialTablesViewMode(): 'tiles' | 'table' {
+  if (typeof localStorage === 'undefined') return 'tiles';
+  const v = localStorage.getItem(TABLES_VIEW_STORAGE_KEY);
+  return (v === 'tiles' || v === 'table') ? v : 'tiles';
+}
+
+@Component({
+  selector: 'app-tables',
+  standalone: true,
+  imports: [CommonModule, FormsModule, QRCodeComponent, SidebarComponent, StaffPosToolbarComponent, RouterLink, TranslateModule, ConfirmationModalComponent, FocusFirstInputDirective],
+  template: `
+    <app-sidebar>
+        <div class="page-header page-header--staff-flow">
+          <app-staff-pos-toolbar />
+          <div class="page-header-row">
+          <div class="header-left">
+            <h1>{{ 'TABLES.TITLE' | translate }}</h1>
+            @if (canViewFloorPlan()) {
+            <a routerLink="/tables/canvas" class="btn btn-ghost btn-sm" data-testid="tables-floor-plan-link">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
+                <line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/>
+              </svg>
+              {{ 'TABLES.FLOOR_PLAN' | translate }}
+            </a>
+            }
+            @if (!showForm() && tables().length > 0) {
+              <div class="view-toggle" data-testid="tables-view-toggle">
+                <button type="button" class="btn btn-ghost btn-sm" [class.active]="viewMode() === 'tiles'" (click)="setViewMode('tiles')" [title]="'TABLES.VIEW_TILES' | translate" data-testid="view-mode-tiles">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+                  </svg>
+                  {{ 'TABLES.VIEW_TILES' | translate }}
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" [class.active]="viewMode() === 'table'" (click)="setViewMode('table')" [title]="'TABLES.VIEW_TABLE' | translate" data-testid="view-mode-table">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="1"/>
+                    <line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/>
+                    <line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
+                  </svg>
+                  {{ 'TABLES.VIEW_TABLE' | translate }}
+                </button>
+              </div>
+            }
+          </div>
+          @if (!showForm() && floors().length > 0) {
+            <button class="btn btn-primary" (click)="showForm.set(true)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              {{ 'TABLES.ADD_TABLE' | translate }}
+            </button>
+          }
+          </div>
+        </div>
+
+        <div class="content">
+          @if (showForm()) {
+            <div class="form-card">
+              <form (submit)="createTable($event)">
+                <div class="form-inline">
+                  <div class="form-group-inline">
+                    <label>{{ 'TABLES.NAME' | translate }}</label>
+                    <input type="text" [(ngModel)]="newTableName" name="name" [placeholder]="'TABLES.TABLE_NAME' | translate" required>
+                  </div>
+                  <div class="form-group-inline">
+                    <label>{{ 'TABLES.FLOOR' | translate }}</label>
+                    <select [(ngModel)]="selectedFloorId" name="floor_id" required>
+                      @for (floor of floors(); track floor.id) {
+                        <option [value]="floor.id">{{ floor.name }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-actions-inline">
+                    <button type="submit" class="btn btn-primary">{{ 'COMMON.ADD' | translate }}</button>
+                    <button type="button" class="btn btn-secondary" (click)="showForm.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          }
+
+          @if (error()) {
+            <div class="error-banner">{{ error() }}</div>
+          }
+
+          @if (loading()) {
+            <div class="empty-state"><p>{{ 'COMMON.LOADING' | translate }}</p></div>
+          } @else if (floors().length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                </svg>
+              </div>
+              <h3>{{ 'TABLES.CREATE_FIRST_FLOOR' | translate }}</h3>
+              <p>{{ 'TABLES.CREATE_FIRST_FLOOR_DESC' | translate }}</p>
+              @if (canViewFloorPlan()) {
+              <a routerLink="/tables/canvas" class="btn btn-primary">
+                {{ 'TABLES.ADD_FLOOR' | translate }}
+              </a>
+              }
+            </div>
+          } @else if (tables().length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                </svg>
+              </div>
+              <h3>{{ 'TABLES.NO_TABLES' | translate }}</h3>
+              <p>{{ 'TABLES.CREATE_FIRST_FLOOR_DESC' | translate }}</p>
+              <button class="btn btn-primary" (click)="showForm.set(true)">{{ 'TABLES.ADD_TABLE' | translate }}</button>
+            </div>
+          } @else if (viewMode() === 'table') {
+            <!-- Table view: all tables in a data table -->
+            <div class="table-responsive">
+              <table class="tables-data-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'TABLES.NAME' | translate }}</th>
+                    <th>{{ 'TABLES.FLOOR' | translate }}</th>
+                    <th>{{ 'TABLES.SEATS' | translate }}</th>
+                    <th>{{ 'TABLES.COL_STATUS' | translate }}</th>
+                    <th>{{ 'TABLES.ASSIGNED_WAITER' | translate }}</th>
+                    <th class="th-actions">{{ 'COMMON.ACTIONS' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of listViewRows(); track trackListRow($index, row)) {
+                    @if (row.kind === 'single') {
+                      <tr class="tr-table-row" (dblclick)="onTableCardDoubleClick(row.table)">
+                        <ng-container *ngTemplateOutlet="listTableDataRow; context: {$implicit: row.table}" />
+                      </tr>
+                    } @else {
+                      <tr class="tr-group-summary" (dblclick)="onListGroupDoubleClick(row)">
+                        <td>
+                          <button type="button" class="btn-ghost btn-expand-group" (click)="toggleListGroupExpand(row.groupId); $event.stopPropagation()"
+                            [attr.aria-expanded]="isListGroupExpanded(row.groupId)"
+                            [title]="(isListGroupExpanded(row.groupId) ? 'TABLES.GROUP_COLLAPSE_MEMBERS' : 'TABLES.GROUP_EXPAND_MEMBERS') | translate">
+                            {{ isListGroupExpanded(row.groupId) ? '▾' : '▸' }}
+                          </button>
+                          <span class="group-label">{{ row.label }}</span>
+                          @if (groupMembersHaveActivity(row.members)) {
+                            <span class="badge-group-activity">{{ 'TABLES.GROUP_ACTIVITY_BADGE' | translate }}</span>
+                          }
+                        </td>
+                        <td>{{ getFloorName(row.floorId) }}</td>
+                        <td>{{ row.seatTotal }}</td>
+                        <td>
+                          @if (groupMembersHaveActiveSession(row.members)) {
+                            <span class="status-badge status-active status-inline"><span class="status-dot"></span>{{ 'TABLES.ACTIVE' | translate }}</span>
+                          } @else {
+                            <span class="status-badge status-inactive status-inline"><span class="status-dot"></span>{{ 'TABLES.INACTIVE' | translate }}</span>
+                          }
+                        </td>
+                        <td>—</td>
+                        <td class="td-actions">
+                          <button type="button" class="btn btn-ghost btn-sm" (click)="toggleListGroupExpand(row.groupId); $event.stopPropagation()">
+                            {{ (isListGroupExpanded(row.groupId) ? 'TABLES.GROUP_COLLAPSE_MEMBERS' : 'TABLES.GROUP_EXPAND_MEMBERS') | translate }}
+                          </button>
+                        </td>
+                      </tr>
+                      @if (isListGroupExpanded(row.groupId)) {
+                        @for (table of row.members; track table.id) {
+                          <tr class="tr-group-member" (dblclick)="onTableCardDoubleClick(table)">
+                            <ng-container *ngTemplateOutlet="listTableDataRow; context: {$implicit: table}" />
+                          </tr>
+                        }
+                      }
+                    }
+                  }
+                </tbody>
+                <ng-template #listTableDataRow let-table>
+                  <td>
+                    @if (editingTableId() === table.id) {
+                      <input type="text" [(ngModel)]="editingName" class="edit-input-inline" (keydown.enter)="saveTable(table)" (keydown.escape)="cancelEdit()">
+                    } @else {
+                      <span class="table-name" (click)="startEdit(table)">{{ table.name }}</span>
+                    }
+                  </td>
+                  <td>
+                    @if (editingTableId() === table.id) {
+                      <select [(ngModel)]="editingFloorId" class="edit-select-inline" (keydown.escape)="cancelEdit()">
+                        @for (floor of floors(); track floor.id) {
+                          <option [ngValue]="floor.id">{{ floor.name }}</option>
+                        }
+                      </select>
+                    } @else {
+                      {{ getFloorName(table.floor_id) }}
+                    }
+                  </td>
+                  @if (editingTableId() !== table.id) {
+                    <td>{{ table.seat_count ?? '—' }}</td>
+                  } @else {
+                    <td>
+                      <input type="number" [(ngModel)]="editingSeatCount" class="edit-input-inline edit-seats" min="1" max="20" (keydown.enter)="saveTable(table)" (keydown.escape)="cancelEdit()">
+                    </td>
+                  }
+                  <td>
+                    @if (table.is_active) {
+                      <span class="status-badge status-active status-inline"><span class="status-dot"></span>{{ 'TABLES.ACTIVE' | translate }}</span>
+                      @if (activeSessionMeta(table); as meta) {
+                        <div class="active-session-meta" data-testid="table-active-duration">
+                          {{ 'TABLES.ACTIVE_SESSION_META' | translate: meta }}
+                        </div>
+                      }
+                    } @else {
+                      <span class="status-badge status-inactive status-inline"><span class="status-dot"></span>{{ 'TABLES.INACTIVE' | translate }}</span>
+                    }
+                  </td>
+                  <td>
+                    @if (canManageTableAssignments()) {
+                      <select class="waiter-select-inline" (change)="onWaiterAssign(table, $event)">
+                        <option value="" [selected]="!table.assigned_waiter_id">{{ 'TABLES.UNASSIGNED' | translate }}</option>
+                        @for (w of waiters(); track w.id) {
+                          <option [value]="w.id" [selected]="table.assigned_waiter_id === w.id">{{ w.full_name || w.username }}</option>
+                        }
+                      </select>
+                      @if (!table.assigned_waiter_id && table.effective_waiter_name) {
+                        <div class="waiter-inherited-inline">{{ table.effective_waiter_name }}</div>
+                      }
+                    } @else {
+                      <div class="waiter-readonly-inline">
+                        @if (table.assigned_waiter_id) {
+                          {{ table.assigned_waiter_name || table.effective_waiter_name || '—' }}
+                        } @else if (table.effective_waiter_name) {
+                          {{ 'TABLES.SECTION_DEFAULT' | translate }}: {{ table.effective_waiter_name }}
+                        } @else {
+                          {{ 'TABLES.UNASSIGNED' | translate }}
+                        }
+                      </div>
+                    }
+                  </td>
+                  <td class="td-actions">
+                    @if (editingTableId() === table.id) {
+                      <button type="button" class="icon-btn icon-btn-success" (click)="saveTable(table)" [title]="'COMMON.SAVE' | translate">✓</button>
+                      <button type="button" class="icon-btn" (click)="cancelEdit()" [title]="'COMMON.CANCEL' | translate">✕</button>
+                    } @else {
+                      <button type="button" class="icon-btn icon-btn-edit" (click)="startEdit(table)" [title]="'COMMON.EDIT' | translate">✎</button>
+                      @if (table.is_active) {
+                        <button type="button" class="btn btn-sm btn-warning" (click)="confirmCloseTable(table)" [disabled]="activatingTableId() === table.id" [title]="'TABLES.CLOSE_TABLE' | translate">⌫</button>
+                      } @else {
+                        <button type="button" class="btn btn-sm btn-success" (click)="activateTableSession(table)" [disabled]="activatingTableId() === table.id" [title]="'TABLES.ACTIVATE' | translate">▶</button>
+                      }
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="openStaffMenu(table)"
+                        [title]="'TABLES.OPEN_MENU' | translate">↗</button>
+                      <button type="button" class="icon-btn" (click)="copyLink(table)" [title]="'COMMON.COPY' | translate">⎘</button>
+                      <button type="button" class="icon-btn icon-btn-danger" (click)="deleteTable(table)" [title]="'COMMON.DELETE' | translate">🗑</button>
+                    }
+                  </td>
+                </ng-template>
+              </table>
+            </div>
+          } @else {
+            <!-- Tiles view: grouped by Floor -->
+            @for (floor of floorsSorted(); track floor.id) {
+              @if (tileBlocksForFloor(floor.id!).length > 0) {
+                <div class="floor-section">
+                  <div class="section-header">
+                    <div class="section-header-left">
+                      <h2>{{ floor.name }}</h2>
+                      <span class="badge">{{ tileBlocksForFloor(floor.id!).length }}</span>
+                    </div>
+                    @if (canManageFloors()) {
+                      <div class="floor-admin-actions">
+                        <label class="floor-active-toggle">
+                          <input
+                            type="checkbox"
+                            [checked]="floor.is_active !== false"
+                            (change)="toggleFloorActive(floor, $event)"
+                          />
+                          {{ 'TABLES.FLOOR_PUBLIC_BOOKING' | translate }}
+                        </label>
+                        <label class="floor-seating-zone-label">
+                          <span class="floor-waiter-label">{{ 'TABLES.FLOOR_SEATING_ZONE' | translate }}</span>
+                          <select
+                            class="waiter-select waiter-select-sm"
+                            [value]="floor.seating_zone || 'any'"
+                            (change)="onFloorSeatingZoneChange(floor, $event)"
+                          >
+                            <option value="any">{{ 'TABLES.SEATING_ZONE_ANY' | translate }}</option>
+                            <option value="indoor">{{ 'TABLES.SEATING_ZONE_INDOOR' | translate }}</option>
+                            <option value="outdoor">{{ 'TABLES.SEATING_ZONE_OUTDOOR' | translate }}</option>
+                          </select>
+                        </label>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm"
+                          (click)="moveFloorSort(floor, -1)"
+                          [disabled]="isFirstFloorSort(floor)"
+                          [title]="'TABLES.FLOOR_MOVE_UP' | translate"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm"
+                          (click)="moveFloorSort(floor, 1)"
+                          [disabled]="isLastFloorSort(floor)"
+                          [title]="'TABLES.FLOOR_MOVE_DOWN' | translate"
+                        >
+                          ↓
+                        </button>
+                      </div>
+                    }
+                    <div class="floor-waiter-assign">
+                      <label class="floor-waiter-label">{{ 'TABLES.DEFAULT_WAITER' | translate }}:</label>
+                      @if (canManageTableAssignments()) {
+                        <select class="waiter-select waiter-select-sm" (change)="onFloorWaiterAssign(floor, $event)">
+                          <option value="" [selected]="!floor.default_waiter_id">{{ 'TABLES.UNASSIGNED' | translate }}</option>
+                          @for (w of waiters(); track w.id) {
+                            <option [value]="w.id" [selected]="floor.default_waiter_id === w.id">{{ w.full_name || w.username }}</option>
+                          }
+                        </select>
+                      } @else {
+                        <span class="waiter-readonly-floor">{{ floor.default_waiter_name || ('TABLES.UNASSIGNED' | translate) }}</span>
+                      }
+                    </div>
+                  </div>
+                  
+                  <div class="table-grid">
+                    @for (block of tileBlocksForFloor(floor.id!); track trackTileBlock($index, block)) {
+                      @if (block.kind === 'single') {
+                        <div class="table-card" (dblclick)="onTableCardDoubleClick(block.table)">
+                          <ng-container *ngTemplateOutlet="tableTileInner; context: {$implicit: block.table}" />
+                        </div>
+                      } @else {
+                        <div class="table-card table-card--group">
+                          <div class="group-tile-banner">
+                            <h3 class="group-tile-title">{{ block.label }}</h3>
+                            <div class="group-tile-meta">
+                              <span>{{ block.seatTotal }} {{ 'TABLES.SEATS' | translate }}</span>
+                              @if (groupMembersHaveActivity(block.members)) {
+                                <span class="badge-group-activity">{{ 'TABLES.GROUP_ACTIVITY_BADGE' | translate }}</span>
+                              }
+                            </div>
+                            <p class="group-tile-hint">{{ 'TABLES.GROUP_TILE_MEMBER_HINT' | translate }}</p>
+                          </div>
+                          <div class="group-tile-members">
+                            @for (table of block.members; track table.id) {
+                              <div class="group-tile-member">
+                                <button
+                                  type="button"
+                                  class="group-tile-member-summary"
+                                  (click)="toggleTileGroupMember(block.groupId, table.id!)"
+                                  [attr.aria-expanded]="isTileGroupMemberExpanded(block.groupId, table.id!)"
+                                  [title]="(isTileGroupMemberExpanded(block.groupId, table.id!) ? 'TABLES.GROUP_TILE_HIDE_TABLE' : 'TABLES.GROUP_TILE_SHOW_TABLE') | translate"
+                                >
+                                  <span class="group-tile-member-chevron" aria-hidden="true">
+                                    {{ isTileGroupMemberExpanded(block.groupId, table.id!) ? '▾' : '▸' }}
+                                  </span>
+                                  <span class="group-tile-member-name">{{ table.name }}</span>
+                                  @if (table.is_active) {
+                                    <span class="status-badge status-active status-inline group-tile-member-status">
+                                      <span class="status-dot"></span>{{ 'TABLES.ACTIVE' | translate }}
+                                    </span>
+                                    @if (activeSessionDurationOnly(table); as duration) {
+                                      <span class="active-session-meta active-session-meta--inline" data-testid="table-active-duration">{{ duration }}</span>
+                                    }
+                                  } @else {
+                                    <span class="status-badge status-inactive status-inline group-tile-member-status">
+                                      <span class="status-dot"></span>{{ 'TABLES.INACTIVE' | translate }}
+                                    </span>
+                                  }
+                                </button>
+                                @if (isTileGroupMemberExpanded(block.groupId, table.id!)) {
+                                  <div class="group-tile-member-detail" (dblclick)="onTableCardDoubleClick(table)">
+                                    <ng-container *ngTemplateOutlet="tableTileInner; context: { $implicit: table, compact: true, hideTitle: true }" />
+                                  </div>
+                                }
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
+                </div>
+              }
+            }
+            <ng-template #tableTileInner let-table let-compact="compact" let-hideTitle="hideTitle">
+              <div class="table-tile-inner" [class.table-tile-inner--compact]="compact">
+              <div class="table-header">
+                @if (editingTableId() === table.id) {
+                  <div class="edit-fields">
+                    <input 
+                      type="text" 
+                      [(ngModel)]="editingName" 
+                      class="edit-input"
+                      (keydown.enter)="saveTable(table)"
+                      (keydown.escape)="cancelEdit()"
+                      autofocus
+                    >
+                    <input 
+                      type="number" 
+                      [(ngModel)]="editingSeatCount" 
+                      class="edit-input edit-input-seats"
+                      min="1"
+                      max="20"
+                      placeholder="Seats"
+                      (keydown.enter)="saveTable(table)"
+                      (keydown.escape)="cancelEdit()"
+                    >
+                    <div class="edit-actions">
+                      <button class="icon-btn icon-btn-success" (click)="saveTable(table)" [title]="'COMMON.SAVE' | translate">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="20,6 9,17 4,12"/>
+                        </svg>
+                      </button>
+                      <button class="icon-btn" (click)="cancelEdit()" [title]="'COMMON.CANCEL' | translate">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  @if (!hideTitle) {
+                    <div class="table-info">
+                      <h3 (click)="startEdit(table)" class="editable-name">{{ table.name }}</h3>
+                      <div class="seat-count" (click)="startEdit(table)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                          <circle cx="9" cy="7" r="4"/>
+                          <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                        </svg>
+                        {{ table.seat_count || '0' }} {{ 'TABLES.SEATS' | translate }}
+                      </div>
+                    </div>
+                  }
+                  <div class="header-actions" [class.header-actions--solo]="hideTitle">
+                    <button class="icon-btn icon-btn-edit" (click)="startEdit(table)" [title]="'COMMON.EDIT' | translate">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                    <button class="icon-btn icon-btn-danger" (click)="deleteTable(table)" [title]="'COMMON.DELETE' | translate">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3,6 5,6 21,6"/>
+                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                      </svg>
+                    </button>
+                  </div>
+                }
+              </div>
+
+              <!-- Table Status Section -->
+              <div class="status-section">
+                @if (table.is_active) {
+                  <div class="status-badge status-active">
+                    <span class="status-dot"></span>
+                    {{ 'TABLES.ACTIVE' | translate }}
+                  </div>
+                  @if (activeSessionMeta(table); as meta) {
+                    <div class="active-session-meta" data-testid="table-active-duration">
+                      {{ 'TABLES.ACTIVE_SESSION_META' | translate: meta }}
+                    </div>
+                  }
+                  @if (table.order_code) {
+                    <div class="order-code-badge" data-testid="table-order-code" (dblclick)="$event.stopPropagation()">
+                      <span class="order-code-label">{{ 'TABLES.ORDER_CODE' | translate }}</span>
+                      <span class="order-code-value">{{ table.order_code }}</span>
+                    </div>
+                  }
+                } @else {
+                  <div class="status-badge status-inactive">
+                    <span class="status-dot"></span>
+                    {{ 'TABLES.INACTIVE' | translate }}
+                  </div>
+                }
+              </div>
+
+              <!-- Waiter Assignment -->
+              <div class="waiter-assign-section">
+                <div class="waiter-assign-row">
+                  <svg class="waiter-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  @if (canManageTableAssignments()) {
+                    <select class="waiter-select" (change)="onWaiterAssign(table, $event)">
+                      <option value="" [selected]="!table.assigned_waiter_id">{{ 'TABLES.UNASSIGNED' | translate }}</option>
+                      @for (w of waiters(); track w.id) {
+                        <option [value]="w.id" [selected]="table.assigned_waiter_id === w.id">{{ w.full_name || w.username }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <span class="waiter-readonly">
+                      @if (table.assigned_waiter_id) {
+                        {{ table.assigned_waiter_name || table.effective_waiter_name || '—' }}
+                      } @else if (table.effective_waiter_name) {
+                        {{ 'TABLES.SECTION_DEFAULT' | translate }}: {{ table.effective_waiter_name }}
+                      } @else {
+                        {{ 'TABLES.UNASSIGNED' | translate }}
+                      }
+                    </span>
+                  }
+                </div>
+                @if (canManageTableAssignments() && !table.assigned_waiter_id && table.effective_waiter_name) {
+                  <div class="waiter-inherited">{{ 'TABLES.SECTION_DEFAULT' | translate }}: {{ table.effective_waiter_name }}</div>
+                }
+              </div>
+
+              <div class="qr-section">
+                <div class="qr-card">
+                  @if (tenantSettings() && !compact) {
+                    <div class="qr-header">
+                      <div class="company-name">{{ tenantSettings()!.name }}</div>
+                      @if (tenantSettings()!.phone) {
+                        <div class="company-phone">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                          </svg>
+                          {{ tenantSettings()!.phone }}
+                        </div>
+                      }
+                    </div>
+                  }
+                  <div class="qr-code-wrapper">
+                    <qrcode [qrdata]="getMenuUrl(table)" [width]="compact ? 96 : 180" [errorCorrectionLevel]="'M'" cssClass="qr-code"></qrcode>
+                  </div>
+                  <div class="qr-footer">
+                    <div class="table-number">{{ table.name }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Session Control Actions -->
+              <div
+                class="session-actions"
+                [class.session-actions--inactive]="!table.is_active"
+                [class.session-actions--single]="table.is_active">
+                @if (table.is_active) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-warning"
+                    (click)="confirmCloseTable(table)"
+                    [disabled]="activatingTableId() === table.id">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0110 0v4"/>
+                    </svg>
+                    {{ 'TABLES.CLOSE_TABLE' | translate }}
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-success"
+                    (click)="activateTableSession(table)"
+                    [disabled]="activatingTableId() === table.id">
+                    @if (activatingTableId() === table.id) {
+                      <span class="spinner"></span>
+                    } @else {
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0110 0v4"/>
+                      </svg>
+                    }
+                    {{ 'TABLES.ACTIVATE' | translate }}
+                  </button>
+                }
+              </div>
+
+              <div class="table-actions">
+                <button type="button" class="btn btn-secondary btn-sm" (click)="openStaffMenu(table)"
+                  >{{ 'TABLES.OPEN_MENU' | translate }}</button>
+                <button 
+                  class="btn btn-sm" 
+                  [class.btn-ghost]="copiedTableId() !== table.id"
+                  [class.btn-copied]="copiedTableId() === table.id"
+                  (click)="copyLink(table)">
+                  @if (copiedTableId() === table.id) {
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="20,6 9,17 4,12"/>
+                    </svg>
+                    Copied!
+                  } @else {
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                    </svg>
+                    Copy
+                  }
+                </button>
+              </div>
+              </div>
+            </ng-template>
+          }
+        </div>
+
+        <!-- Confirmation Modal -->
+        @if (confirmationModal().show) {
+          <app-confirmation-modal
+            [title]="confirmationModal().title"
+            [message]="confirmationModal().message"
+            [messageParams]="confirmationModal().messageParams"
+            [confirmText]="confirmationModal().confirmText"
+            [cancelText]="confirmationModal().cancelText"
+            [confirmBtnClass]="confirmationModal().confirmBtnClass"
+            (confirm)="onConfirmationConfirm()"
+            (cancel)="onConfirmationCancel()"
+          ></app-confirmation-modal>
+        }
+
+        @if (groupSafetyModal(); as g) {
+          <app-confirmation-modal
+            [title]="'TABLES.GROUP_SIBLING_ACTIVITY_TITLE'"
+            [message]="'TABLES.GROUP_SIBLING_ACTIVITY_MESSAGE'"
+            [messageParams]="{ names: g.siblingNames }"
+            [confirmText]="'TABLES.GROUP_SIBLING_ACTIVITY_CONFIRM'"
+            [cancelText]="'COMMON.CANCEL'"
+            [confirmBtnClass]="'btn-warning'"
+            (confirm)="onGroupSafetyConfirm()"
+            (cancel)="onGroupSafetyCancel()"
+          ></app-confirmation-modal>
+        }
+
+        <!-- Reassign orders/reservations to another table before delete -->
+        @if (reassignTableModal()) {
+          <div class="modal-overlay">
+            <div class="modal-content reassign-modal" (click)="$event.stopPropagation()" appFocusFirstInput>
+              <div class="modal-header">
+                <h3>{{ 'TABLES.REASSIGN_AND_DELETE_TITLE' | translate }}</h3>
+                <button type="button" class="close-btn" (click)="cancelReassign()" aria-label="Close">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div class="modal-body">
+                <p class="reassign-message">{{ 'TABLES.REASSIGN_AND_DELETE_MESSAGE' | translate }}</p>
+                <label class="reassign-label">{{ 'TABLES.REASSIGN_TO_TABLE' | translate }}</label>
+                <select class="reassign-select" [ngModel]="reassignTargetTableId()" (ngModelChange)="reassignTargetTableId.set($event)">
+                  @for (t of otherTablesForReassign(); track t.id) {
+                    <option [ngValue]="t.id">{{ t.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" (click)="cancelReassign()">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button type="button" class="btn btn-primary" (click)="doReassignAndDelete()" [disabled]="!reassignTargetTableId()">
+                  {{ 'TABLES.REASSIGN_AND_DELETE' | translate }}
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Toast (e.g. after close table) -->
+        @if (toast()) {
+          <div class="toast" [class]="toast()!.type">
+            <span>{{ toast()!.message | translate }}</span>
+            <button type="button" class="toast-close" (click)="dismissToast()" aria-label="Dismiss">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        }
+    </app-sidebar>
+  `,
+  styles: [`
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-5); }
+    .page-header.page-header--staff-flow {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+    }
+    .page-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+    .header-left { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+    .page-header h1 { font-size: 1.5rem; font-weight: 600; color: var(--color-text); margin: 0; }
+    .view-toggle { display: flex; gap: 2px; }
+    .view-toggle .btn { display: inline-flex; align-items: center; gap: 6px; }
+    .view-toggle .btn.active { background: var(--color-bg); color: var(--color-text); font-weight: 500; }
+
+    .btn { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border: none; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.15s ease; text-decoration: none; }
+    .btn-primary { background: var(--color-primary); color: white; &:hover { background: var(--color-primary-hover); } }
+    .btn-secondary { background: var(--color-bg); color: var(--color-text); border: 1px solid var(--color-border); &:hover { background: var(--color-border); } }
+    .btn-ghost { background: transparent; color: var(--color-text-muted); &:hover { background: var(--color-bg); color: var(--color-text); } }
+    .btn-sm { padding: var(--space-2) var(--space-3); font-size: 0.8125rem; }
+    .btn-copied { 
+      background: rgba(34, 197, 94, 0.1); 
+      color: #22c55e; 
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      animation: copiedPulse 0.3s ease;
+    }
+    @keyframes copiedPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .form-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); margin-bottom: var(--space-5); }
+    .form-inline { display: flex; gap: var(--space-4); align-items: flex-end; flex-wrap: wrap; }
+    .form-group-inline { display: flex; flex-direction: column; gap: var(--space-1); flex: 1; min-width: 200px; }
+    .form-group-inline label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; }
+    .form-group-inline input, .form-group-inline select { padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 0.9375rem; background: var(--color-surface); color: var(--color-text); }
+    .form-actions-inline { display: flex; gap: var(--space-2); }
+
+    .error-banner { background: rgba(220, 38, 38, 0.1); color: var(--color-error); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); margin-bottom: var(--space-4); }
+
+    .toast {
+      position: fixed; bottom: var(--space-4); right: var(--space-4);
+      background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4);
+      box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: var(--space-3); z-index: 3000; max-width: calc(100vw - var(--space-8));
+    }
+    .toast.success { border-left: 4px solid var(--color-success, #16a34a); }
+    .toast.error { border-left: 4px solid var(--color-error, #dc2626); }
+    .toast-close { background: none; border: none; color: var(--color-text-muted); cursor: pointer; padding: var(--space-1); }
+    .toast-close:hover { color: var(--color-text); }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content.reassign-modal { background: var(--color-surface); border-radius: var(--radius-lg); max-width: 400px; width: 90%; box-shadow: var(--shadow-xl); overflow: hidden; }
+    .reassign-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: var(--space-4); border-bottom: 1px solid var(--color-border); }
+    .reassign-modal .modal-header h3 { margin: 0; font-size: 1.125rem; font-weight: 600; }
+    .reassign-modal .close-btn { background: none; border: none; color: var(--color-text-muted); cursor: pointer; padding: var(--space-1); border-radius: var(--radius-sm); }
+    .reassign-modal .close-btn:hover { color: var(--color-text); background: var(--color-bg); }
+    .reassign-modal .modal-body { padding: var(--space-4); }
+    .reassign-modal .reassign-message { margin: 0 0 var(--space-4); color: var(--color-text-muted); font-size: 0.9375rem; }
+    .reassign-modal .reassign-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: var(--space-2); }
+    .reassign-modal .reassign-select { width: 100%; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 0.9375rem; background: var(--color-surface); color: var(--color-text); }
+    .reassign-modal .modal-footer { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-4); border-top: 1px solid var(--color-border); }
+
+    .empty-state {
+      text-align: center; padding: var(--space-8); background: var(--color-surface);
+      border: 1px dashed var(--color-border); border-radius: var(--radius-lg);
+      .empty-icon { color: var(--color-text-muted); margin-bottom: var(--space-4); }
+      h3 { margin: 0 0 var(--space-2); font-size: 1.125rem; color: var(--color-text); }
+      p { margin: 0 0 var(--space-4); color: var(--color-text-muted); }
+    }
+
+    .floor-section { margin-bottom: var(--space-8); }
+    .floor-admin-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+    .floor-active-toggle {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      cursor: pointer;
+    }
+    .floor-active-toggle input { cursor: pointer; }
+    .floor-seating-zone-label {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+    }
+    .floor-section .section-header { 
+      display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4);
+      padding-bottom: var(--space-2); border-bottom: 2px solid var(--color-bg); flex-wrap: wrap;
+    }
+    .section-header-left { display: flex; align-items: center; gap: var(--space-3); }
+    .floor-waiter-assign { display: flex; align-items: center; gap: var(--space-2); }
+    .floor-waiter-label { font-size: 0.75rem; color: var(--color-text-muted); white-space: nowrap; }
+    .floor-section h2 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+    .badge { background: var(--color-bg); color: var(--color-text-muted); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+
+    .table-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: var(--space-4);
+      align-items: stretch;
+    }
+
+    .btn-expand-group {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 28px; min-height: 28px; padding: 0 6px; margin-right: var(--space-2);
+      border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-surface);
+      cursor: pointer; font-size: 0.75rem; color: var(--color-text-muted);
+    }
+    .btn-expand-group:hover { background: var(--color-bg); color: var(--color-text); }
+    .group-label { font-weight: 600; }
+    .badge-group-activity {
+      margin-left: var(--space-2); font-size: 0.625rem; font-weight: 700; text-transform: uppercase;
+      padding: 2px 6px; border-radius: 6px; background: rgba(245, 158, 11, 0.15); color: #b45309;
+    }
+    .tables-data-table .tr-group-summary td { background: var(--color-bg); vertical-align: middle; }
+    .tables-data-table .tr-group-member td { background: var(--color-surface); }
+    .tables-data-table .tr-group-member td:first-child { padding-left: 2.25rem; border-left: 3px solid rgba(168, 85, 247, 0.35); }
+
+    .table-card--group {
+      align-self: start;
+      text-align: left;
+      border-color: rgba(168, 85, 247, 0.35);
+    }
+    .group-tile-banner { margin-bottom: var(--space-2); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); }
+    .group-tile-title { margin: 0 0 var(--space-2); font-size: 1.125rem; font-weight: 600; text-align: center; }
+    .group-tile-meta { display: flex; align-items: center; justify-content: center; gap: var(--space-2); flex-wrap: wrap; font-size: 0.875rem; color: var(--color-text-muted); }
+    .group-tile-hint { margin: var(--space-2) 0 0; font-size: 0.75rem; color: var(--color-text-muted); text-align: center; }
+    .group-tile-members { display: flex; flex-direction: column; gap: var(--space-2); }
+    .group-tile-member-summary {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      width: 100%;
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg);
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      color: inherit;
+    }
+    .group-tile-member-summary:hover { border-color: rgba(168, 85, 247, 0.45); background: var(--color-surface); }
+    .group-tile-member-chevron {
+      flex-shrink: 0;
+      width: 1rem;
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      text-align: center;
+    }
+    .group-tile-member-name { font-size: 0.875rem; font-weight: 600; color: var(--color-primary); }
+    .group-tile-member-status {
+      margin-left: auto;
+      font-size: 0.625rem;
+      padding: 2px 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+    .group-tile-member-detail {
+      padding-top: var(--space-2);
+      border-top: 1px dashed var(--color-border);
+    }
+    .header-actions--solo { margin-left: auto; }
+    .table-tile-inner--compact .qr-section { margin-bottom: var(--space-2); }
+    .table-tile-inner--compact .qr-card { padding: var(--space-2); box-shadow: none; }
+    .table-tile-inner--compact .qr-code-wrapper { margin: var(--space-1) 0; }
+    .table-tile-inner--compact .qr-footer { margin-top: var(--space-1); padding-top: var(--space-1); }
+    .table-tile-inner--compact .status-section { padding: var(--space-2); margin-bottom: var(--space-2); }
+    .table-tile-inner--compact .waiter-assign-section { margin-bottom: var(--space-2); }
+    .table-tile-inner--compact .session-actions { min-height: 2.25rem; margin-bottom: var(--space-2); }
+
+    .table-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      text-align: center;
+    }
+    .table-tile-inner {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+    .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-3); gap: var(--space-2); }
+    
+    .table-info { flex: 1; min-width: 0; text-align: left; }
+    .editable-name { cursor: pointer; margin: 0; font-size: 1rem; font-weight: 600; color: var(--color-text); }
+    .editable-name:hover { color: var(--color-primary); }
+    .seat-count {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: 0.8125rem;
+      color: var(--color-text-muted);
+      margin-top: var(--space-1);
+      cursor: pointer;
+    }
+    
+    .edit-fields { display: flex; gap: var(--space-2); align-items: center; flex: 1; flex-wrap: wrap; }
+    .edit-input { padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 0.9375rem; flex: 1; min-width: 120px; }
+    .edit-input-seats { width: 80px; flex: 0 0 80px; }
+    .edit-actions { display: flex; gap: var(--space-1); }
+    
+    .header-actions { display: flex; gap: var(--space-1); }
+    
+    .qr-section { margin-bottom: var(--space-4); }
+    .qr-card {
+      background: white; border: 2px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .qr-header { text-align: center; margin-bottom: var(--space-3); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); }
+    .company-name { font-size: 1.125rem; font-weight: 700; color: var(--color-text); margin-bottom: var(--space-2); }
+    .company-phone { display: flex; align-items: center; justify-content: center; gap: var(--space-1); font-size: 0.875rem; color: var(--color-text-muted); }
+    .qr-code-wrapper { display: flex; justify-content: center; margin: var(--space-3) 0; }
+    .qr-footer { text-align: center; margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+    .table-number { font-size: 1rem; font-weight: 600; color: var(--color-primary); text-transform: uppercase; }
+    .table-actions { display: flex; gap: var(--space-2); justify-content: center; }
+
+    .icon-btn { background: none; border: none; padding: var(--space-2); border-radius: var(--radius-sm); color: var(--color-text-muted); cursor: pointer; transition: all 0.15s ease; }
+    .icon-btn:hover { background: var(--color-bg); color: var(--color-text); }
+    .icon-btn-danger:hover { background: rgba(220, 38, 38, 0.1); color: var(--color-error); }
+
+    /* Status Section */
+    .status-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-3);
+      padding: var(--space-3);
+      background: var(--color-bg);
+      border-radius: var(--radius-md);
+    }
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: var(--space-1) var(--space-3);
+      border-radius: 12px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .status-active {
+      background: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+    }
+    .status-active .status-dot {
+      background: #22c55e;
+      animation: pulse 2s infinite;
+    }
+    .status-inactive {
+      background: rgba(156, 163, 175, 0.1);
+      color: #9ca3af;
+    }
+    .status-inactive .status-dot {
+      background: #9ca3af;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    /* Waiter Assignment */
+    .waiter-assign-section {
+      padding: var(--space-2) var(--space-3);
+      margin-bottom: var(--space-3);
+      border-top: 1px solid var(--color-border);
+    }
+    .waiter-assign-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .waiter-icon { color: var(--color-text-muted); flex-shrink: 0; }
+    .waiter-select {
+      flex: 1;
+      padding: var(--space-1) var(--space-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-size: 0.8125rem;
+      background: var(--color-surface);
+      color: var(--color-text);
+      cursor: pointer;
+    }
+    .waiter-select-sm {
+      padding: var(--space-1) var(--space-2);
+      font-size: 0.75rem;
+      max-width: 180px;
+    }
+    .order-code-badge {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-top: 6px;
+      padding: 2px 10px;
+      border: 1px dashed var(--color-border, currentColor);
+      border-radius: 6px;
+      width: fit-content;
+      user-select: all;
+      cursor: text;
+    }
+    .order-code-label {
+      font-size: 0.6875rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+    }
+    .order-code-value {
+      font-family: monospace;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+    }
+    .waiter-inherited {
+      font-size: 0.6875rem;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+      padding-left: 22px;
+      font-style: italic;
+    }
+    .waiter-readonly {
+      flex: 1;
+      font-size: 0.8125rem;
+      color: var(--color-text);
+    }
+    .waiter-readonly-floor {
+      font-size: 0.75rem;
+      color: var(--color-text);
+    }
+
+    /* Session Actions */
+    .session-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2);
+      align-items: center;
+      min-height: 2.75rem;
+      margin-top: auto;
+      margin-bottom: var(--space-3);
+    }
+    .session-actions .btn {
+      width: 100%;
+      justify-content: center;
+    }
+    .session-actions--inactive {
+      display: flex;
+      justify-content: center;
+    }
+    .session-actions--inactive .btn {
+      width: auto;
+      min-width: 8rem;
+    }
+    .session-actions--single {
+      grid-template-columns: 1fr;
+    }
+    .session-actions--single .btn {
+      max-width: 100%;
+    }
+    .btn-success {
+      background: #22c55e;
+      color: white;
+      &:hover { background: #16a34a; }
+    }
+    .btn-warning {
+      background: #f59e0b;
+      color: white;
+      &:hover { background: #d97706; }
+    }
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Table view (data table) */
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: var(--space-6); }
+    .tables-data-table { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+    .tables-data-table th, .tables-data-table td { padding: var(--space-3) var(--space-4); text-align: left; border-bottom: 1px solid var(--color-border); }
+    .tables-data-table th { background: var(--color-bg); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); }
+    .tables-data-table th.th-actions { text-align: right; }
+    .tables-data-table td.td-actions { text-align: right; }
+    .tables-data-table tbody tr:hover td { background: var(--color-bg); }
+    .tables-data-table .table-name { font-weight: 600; cursor: pointer; }
+    .tables-data-table .table-name:hover { color: var(--color-primary); }
+      .tables-data-table .waiter-select-inline { padding: var(--space-1) var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 0.8125rem; background: var(--color-surface); color: var(--color-text); min-width: 120px; }
+    .tables-data-table .waiter-inherited-inline { font-size: 0.6875rem; color: var(--color-text-muted); font-style: italic; margin-top: 2px; }
+    .tables-data-table .waiter-readonly-inline { font-size: 0.8125rem; color: var(--color-text); }
+    .tables-data-table .status-inline { display: inline-flex; align-items: center; gap: var(--space-1); }
+    .active-session-meta {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      margin-top: 0.25rem;
+      line-height: 1.3;
+    }
+    .active-session-meta--inline {
+      margin-top: 0;
+      margin-left: var(--space-1);
+      white-space: nowrap;
+    }
+    .status-section .active-session-meta {
+      width: 100%;
+      text-align: center;
+    }
+    .tables-data-table .table-cell-edit { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+    .tables-data-table .edit-input-inline,
+    .tables-data-table .edit-select-inline { padding: var(--space-1) var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 0.875rem; }
+    .tables-data-table .edit-input-inline.edit-seats { width: 56px; }
+    .tables-data-table .edit-select-inline { min-width: 100px; background: var(--color-bg); }
+    .tables-data-table .td-actions { display: flex; gap: var(--space-1); justify-content: flex-end; flex-wrap: wrap; }
+
+    @media (max-width: 768px) {
+      .table-grid { grid-template-columns: 1fr; }
+    }
+  `]
+})
+export class TablesComponent implements OnInit {
+  private api = inject(ApiService);
+  private permissions = inject(PermissionService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private tablesArea = inject(TablesAreaPreferenceService);
+  private apiErr = inject(ApiErrorMessageService);
+  private language = inject(LanguageService);
+  private destroyRef = inject(DestroyRef);
+
+  /** Ticks so live active-session duration refreshes without a full reload. */
+  private nowTick = signal(Date.now());
+
+  /** When true, skip restoring view mode from localStorage (URL ?view= had priority). */
+  private viewResolvedFromQuery = false;
+
+  tables = signal<Table[]>([]);
+  floors = signal<Floor[]>([]);
+  loading = signal(true);
+  error = signal('');
+  showForm = signal(false);
+  viewMode = signal<'tiles' | 'table'>(getInitialTablesViewMode());
+  newTableName = '';
+  selectedFloorId: number | null = null;
+  tenantSettings = signal<TenantSettings | null>(null);
+
+  editingTableId = signal<number | null>(null);
+  editingName = '';
+  editingFloorId: number | null = null;
+  editingSeatCount: number | null = null;
+  copiedTableId = signal<number | null>(null);
+  activatingTableId = signal<number | null>(null);
+  /** While fetching staff menu token for open-in-new-tab. */
+  waiters = signal<User[]>([]);
+
+  // Confirmation Modal State
+  confirmationModal = signal<{
+    show: boolean;
+    title: string;
+    message: string;
+    messageParams?: Record<string, string>;
+    confirmText: string;
+    cancelText: string;
+    confirmBtnClass: string;
+    tableToDelete: Table | null;
+    tableToClose: Table | null;
+  }>({
+    show: false,
+    title: '',
+    message: '',
+    confirmText: 'COMMON.YES',
+    cancelText: 'COMMON.NO',
+    confirmBtnClass: 'btn-primary',
+    tableToDelete: null,
+    tableToClose: null
+  });
+
+  private toastTimeout?: ReturnType<typeof setTimeout>;
+  toast = signal<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  /** When set, show modal to reassign this table's orders to another table before delete. */
+  reassignTableModal = signal<Table | null>(null);
+  reassignTargetTableId = signal<number | null>(null);
+
+  otherTablesForReassign = computed(() => {
+    const table = this.reassignTableModal();
+    if (!table?.id) return [];
+    return this.tables().filter(t => t.id !== table.id);
+  });
+
+  /** List view: which joined groups show member rows (by group id). */
+  expandedListGroupIds = signal<number[]>([]);
+  /** Tiles view: expanded group member rows as "groupId-tableId". */
+  expandedTileGroupMemberKeys = signal<string[]>([]);
+  /** Warn before activate / open menu when another group member already has a session or order. */
+  groupSafetyModal = signal<{ table: Table; action: 'activate' | 'menu'; siblingNames: string } | null>(null);
+
+  constructor() {
+    effect(() => {
+      const mode = this.viewMode();
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem(TABLES_VIEW_STORAGE_KEY, mode);
+        }
+      } catch (_) {}
+    });
+    // Restore view mode from localStorage after first browser paint (ensures we run in client context)
+    afterNextRender(() => {
+      if (this.viewResolvedFromQuery) {
+        return;
+      }
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const saved = window.localStorage.getItem(TABLES_VIEW_STORAGE_KEY);
+          if (saved === 'tiles' || saved === 'table') {
+            this.viewMode.set(saved);
+          }
+        }
+      } catch (_) {}
+    });
+  }
+
+  /** Set view mode and persist to localStorage immediately (so it survives navigation). */
+  setViewMode(mode: 'tiles' | 'table') {
+    this.viewMode.set(mode);
+    try {
+      const storage = typeof window !== 'undefined' && window.localStorage;
+      if (storage) {
+        storage.setItem(TABLES_VIEW_STORAGE_KEY, mode);
+      }
+    } catch (e) {
+      console.warn('Tables: could not persist view mode to localStorage', e);
+    }
+  }
+
+  ngOnInit() {
+    this.tablesArea.setArea('list');
+    const v = this.route.snapshot.queryParamMap.get('view');
+    if (v === 'tiles' || v === 'table') {
+      this.viewResolvedFromQuery = true;
+      this.setViewMode(v);
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { view: null },
+        replaceUrl: true,
+      });
+    }
+    this.loadData();
+    this.loadTenantSettings();
+    const tickId = setInterval(() => this.nowTick.set(Date.now()), 30_000);
+    this.destroyRef.onDestroy(() => clearInterval(tickId));
+    // Live updates: another waiter/admin activates or closes a table, orders change, etc.
+    this.api.orderUpdates$
+      .pipe(debounceTime(400), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.refreshTables());
+    this.api.waitForInitialAuthCheck().subscribe(() => {
+      this.api.connectWebSocket();
+      if (this.canManageTableAssignments()) {
+        this.api.getWaiters().subscribe({
+          next: waiters => this.waiters.set(waiters),
+          error: () => {}
+        });
+      }
+    });
+  }
+
+  /** Params for TABLES.ACTIVE_SESSION_META when the table has a live activation timestamp. */
+  activeSessionMeta(table: Table): { duration: string; time: string } | null {
+    if (!table.is_active || !table.activated_at) return null;
+    const now = this.nowTick();
+    const duration = formatElapsedActiveDuration(table.activated_at, now);
+    const time = formatActivatedAtTime(
+      table.activated_at,
+      this.language.currentLocale(),
+      this.tenantSettings()?.timezone,
+    );
+    if (!duration || !time) return null;
+    return { duration, time };
+  }
+
+  /** Compact duration for tight group-member chips. */
+  activeSessionDurationOnly(table: Table): string | null {
+    if (!table.is_active || !table.activated_at) return null;
+    return formatElapsedActiveDuration(table.activated_at, this.nowTick());
+  }
+
+  /** Owner/admin: can change table/floor waiter assignment (requires user list API). */
+  canManageTableAssignments(): boolean {
+    return this.permissions.hasPermission(this.api.getCurrentUser(), 'table:write');
+  }
+
+  /** Floor plan (/tables/canvas) is administrator-only. */
+  canViewFloorPlan(): boolean {
+    return this.permissions.isAdmin(this.api.getCurrentUser());
+  }
+
+  /** Rename/reorder/deactivate floors for public booking zones. */
+  canManageFloors(): boolean {
+    return this.permissions.hasPermission(this.api.getCurrentUser(), 'floor:write');
+  }
+
+  floorsSorted(): Floor[] {
+    return [...this.floors()].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  }
+
+  floorSortIndex(floor: Floor): number {
+    return this.floorsSorted().findIndex(f => f.id === floor.id);
+  }
+
+  isFirstFloorSort(floor: Floor): boolean {
+    return this.floorSortIndex(floor) <= 0;
+  }
+
+  isLastFloorSort(floor: Floor): boolean {
+    const s = this.floorsSorted();
+    return this.floorSortIndex(floor) >= s.length - 1;
+  }
+
+  toggleFloorActive(floor: Floor, event: Event) {
+    const el = event.target as HTMLInputElement;
+    if (!floor.id) return;
+    const next = el.checked;
+    this.api.updateFloor(floor.id, { is_active: next }).subscribe({
+      next: u => this.floors.update(fs => fs.map(f => (f.id === u.id ? u : f))),
+      error: err => {
+        el.checked = !next;
+        this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED'));
+      },
+    });
+  }
+
+  onFloorSeatingZoneChange(floor: Floor, event: Event) {
+    const sel = event.target as HTMLSelectElement;
+    const v = sel.value;
+    if (!floor.id) return;
+    this.api.updateFloor(floor.id, { seating_zone: v }).subscribe({
+      next: (u) => this.floors.update((fs) => fs.map((f) => (f.id === u.id ? u : f))),
+      error: (err: any) => this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED')),
+    });
+  }
+
+  moveFloorSort(floor: Floor, delta: number) {
+    const sorted = this.floorsSorted();
+    const i = sorted.findIndex(f => f.id === floor.id);
+    const j = i + delta;
+    if (i < 0 || j < 0 || j >= sorted.length) return;
+    const a = sorted[i];
+    const b = sorted[j];
+    const aid = a.id;
+    const bid = b.id;
+    if (aid == null || bid == null) return;
+    const ao = a.sort_order ?? 0;
+    const bo = b.sort_order ?? 0;
+    this.api.updateFloor(aid, { sort_order: bo }).subscribe({
+      next: () => {
+        this.api.updateFloor(bid, { sort_order: ao }).subscribe({
+          next: () => this.loadData(),
+          error: err => this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED')),
+        });
+      },
+      error: err => this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED')),
+    });
+  }
+
+  /** Double-click a tile: open staff orders filtered to this table. */
+  onTableCardDoubleClick(table: Table) {
+    if (!this.permissions.canAccessRoute(this.api.getCurrentUser(), '/staff/orders') || !table.id) return;
+    void this.router.navigate(['/staff/orders'], {
+      queryParams: { focusTableId: table.id, table: table.id },
+    });
+  }
+
+  loadData() {
+    this.loading.set(true);
+    // Use forkJoin if needed, but sequential is fine for now
+    this.api.getFloors().subscribe({
+      next: floors => {
+        this.floors.set(floors);
+        if (floors.length > 0) {
+          this.selectedFloorId = floors[0].id!;
+        }
+        this.api.getTables().subscribe({
+          next: tables => { this.tables.set(tables); this.loading.set(false); },
+          error: err => { this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED')); this.loading.set(false); }
+        });
+      },
+      error: err => { this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED')); this.loading.set(false); }
+    });
+  }
+
+  /** Silent reload of table state (no spinner, keeps selected floor). */
+  private refreshTables() {
+    this.api.getTables().subscribe({
+      next: tables => this.tables.set(tables),
+      error: () => {},
+    });
+  }
+
+  getTablesByFloor(floorId: number): Table[] {
+    return this.tables().filter(t => t.floor_id === floorId);
+  }
+
+  getFloorName(floorId?: number | null): string {
+    if (floorId == null) return '—';
+    const floor = this.floors().find(f => f.id === floorId);
+    return floor?.name ?? '—';
+  }
+
+  /** Sorted member names for a joined group (matches backend display). */
+  private groupLabelFromMembers(members: Table[]): string {
+    const names = members.map(m => m.name ?? '').filter(Boolean).sort((a, b) => a.localeCompare(b));
+    return names.join(' + ');
+  }
+
+  tableHasActiveSessionOrOpenOrder(t: Table): boolean {
+    if (t.is_active) return true;
+    const oid = t.active_order_id;
+    return oid != null && oid > 0;
+  }
+
+  /** Other members of the same group that already have an active session or open order. */
+  getGroupSiblingActivityOthers(table: Table): Table[] {
+    if (!table.table_group_id || table.id == null) return [];
+    const gid = table.table_group_id;
+    return this.tables().filter(
+      t =>
+        t.id != null &&
+        t.id !== table.id &&
+        t.table_group_id === gid &&
+        this.tableHasActiveSessionOrOpenOrder(t),
+    );
+  }
+
+  groupMembersHaveActivity(members: Table[]): boolean {
+    return members.some(m => this.tableHasActiveSessionOrOpenOrder(m));
+  }
+
+  groupMembersHaveActiveSession(members: Table[]): boolean {
+    return members.some(m => m.is_active);
+  }
+
+  listViewRows(): TablesListRow[] {
+    const tables = this.tables();
+    const byGroup = new Map<number, Table[]>();
+    for (const t of tables) {
+      if (t.table_group_id != null && t.id != null) {
+        const arr = byGroup.get(t.table_group_id) ?? [];
+        arr.push(t);
+        byGroup.set(t.table_group_id, arr);
+      }
+    }
+    for (const [, arr] of byGroup) {
+      arr.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+    }
+
+    const seenGroup = new Set<number>();
+    const rows: TablesListRow[] = [];
+    for (const t of tables) {
+      const gid = t.table_group_id;
+      if (gid == null) {
+        rows.push({ kind: 'single', table: t });
+        continue;
+      }
+      if (seenGroup.has(gid)) continue;
+      seenGroup.add(gid);
+      const members = byGroup.get(gid) ?? [];
+      if (members.length === 0) continue;
+      const label = this.groupLabelFromMembers(members);
+      const seatTotal =
+        members[0].group_seat_total ?? members.reduce((s, m) => s + (m.seat_count ?? 0), 0);
+      rows.push({
+        kind: 'group',
+        groupId: gid,
+        floorId: members[0].floor_id ?? 0,
+        members,
+        label,
+        seatTotal,
+      });
+    }
+    return rows.sort((a, b) => {
+      const floorA = this.getFloorName(a.kind === 'group' ? a.floorId : a.table.floor_id);
+      const floorB = this.getFloorName(b.kind === 'group' ? b.floorId : b.table.floor_id);
+      if (floorA !== floorB) return floorA.localeCompare(floorB);
+      const nameA = a.kind === 'group' ? a.label : (a.table.name ?? '');
+      const nameB = b.kind === 'group' ? b.label : (b.table.name ?? '');
+      return nameA.localeCompare(nameB);
+    });
+  }
+
+  trackListRow(_index: number, row: TablesListRow): string {
+    if (row.kind === 'group') return `g-${row.groupId}`;
+    return `t-${row.table.id ?? 0}`;
+  }
+
+  tileBlocksForFloor(floorId: number): TablesTileBlock[] {
+    const onFloor = this.getTablesByFloor(floorId);
+    const byGroup = new Map<number, Table[]>();
+    for (const t of onFloor) {
+      if (t.table_group_id != null && t.id != null) {
+        const arr = byGroup.get(t.table_group_id) ?? [];
+        arr.push(t);
+        byGroup.set(t.table_group_id, arr);
+      }
+    }
+    for (const [, arr] of byGroup) {
+      arr.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+    }
+    const seen = new Set<number>();
+    const blocks: TablesTileBlock[] = [];
+    for (const t of onFloor) {
+      const gid = t.table_group_id;
+      if (gid == null) {
+        blocks.push({ kind: 'single', table: t });
+        continue;
+      }
+      if (seen.has(gid)) continue;
+      seen.add(gid);
+      const members = byGroup.get(gid) ?? [];
+      if (members.length === 0) continue;
+      const label = this.groupLabelFromMembers(members);
+      const seatTotal =
+        members[0].group_seat_total ?? members.reduce((s, m) => s + (m.seat_count ?? 0), 0);
+      blocks.push({ kind: 'group', groupId: gid, members, label, seatTotal });
+    }
+    return blocks.sort((a, b) => {
+      const nameA = a.kind === 'group' ? a.label : (a.table.name ?? '');
+      const nameB = b.kind === 'group' ? b.label : (b.table.name ?? '');
+      return nameA.localeCompare(nameB);
+    });
+  }
+
+  trackTileBlock(_index: number, block: TablesTileBlock): string {
+    if (block.kind === 'group') return `g-${block.groupId}-${_index}`;
+    return `t-${block.table.id ?? _index}`;
+  }
+
+  isListGroupExpanded(groupId: number): boolean {
+    return this.expandedListGroupIds().includes(groupId);
+  }
+
+  toggleListGroupExpand(groupId: number): void {
+    this.expandedListGroupIds.update(ids => {
+      const i = ids.indexOf(groupId);
+      if (i >= 0) {
+        return ids.filter(x => x !== groupId);
+      }
+      return [...ids, groupId];
+    });
+  }
+
+  private tileGroupMemberKey(groupId: number, tableId: number): string {
+    return `${groupId}-${tableId}`;
+  }
+
+  isTileGroupMemberExpanded(groupId: number, tableId: number | undefined): boolean {
+    if (tableId == null) return false;
+    return this.expandedTileGroupMemberKeys().includes(this.tileGroupMemberKey(groupId, tableId));
+  }
+
+  toggleTileGroupMember(groupId: number, tableId: number): void {
+    const key = this.tileGroupMemberKey(groupId, tableId);
+    this.expandedTileGroupMemberKeys.update(keys => {
+      const i = keys.indexOf(key);
+      if (i >= 0) {
+        return keys.filter(x => x !== key);
+      }
+      return [...keys, key];
+    });
+  }
+
+  onListGroupDoubleClick(row: Extract<TablesListRow, { kind: 'group' }>): void {
+    const withOrder = row.members.find(m => m.active_order_id != null && m.active_order_id > 0);
+    const t = withOrder ?? row.members[0];
+    if (t) this.onTableCardDoubleClick(t);
+  }
+
+  onGroupSafetyConfirm(): void {
+    const g = this.groupSafetyModal();
+    this.groupSafetyModal.set(null);
+    if (!g?.table.id) return;
+    if (g.action === 'activate') {
+      this.doActivateTableSession(g.table);
+    } else {
+      this.doOpenStaffMenu(g.table);
+    }
+  }
+
+  onGroupSafetyCancel(): void {
+    this.groupSafetyModal.set(null);
+  }
+
+  createTable(e: Event) {
+    e.preventDefault();
+    if (!this.newTableName || !this.selectedFloorId) return;
+    const floorId = this.selectedFloorId;
+    const onFloor = this.tables().filter(t => t.floor_id === floorId || (!t.floor_id && !floorId));
+    const defaultW = 100;
+    const defaultH = 60;
+    const { x, y } = findNonOverlappingDefaultPosition(onFloor, defaultW, defaultH, 'rectangle');
+    this.api.createTable(this.newTableName, floorId).subscribe({
+      next: table => {
+        if (table.id == null) {
+          this.tables.update(t => [...t, table]);
+          this.newTableName = '';
+          this.showForm.set(false);
+          return;
+        }
+        this.api
+          .updateTable(table.id, {
+            x_position: x,
+            y_position: y,
+            shape: 'rectangle',
+            width: defaultW,
+            height: defaultH,
+          })
+          .subscribe({
+            next: updated => {
+              this.tables.update(t => [...t, updated]);
+              this.newTableName = '';
+              this.showForm.set(false);
+            },
+            error: err => {
+              this.tables.update(t => [...t, table]);
+              this.newTableName = '';
+              this.showForm.set(false);
+              this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED'));
+            },
+          });
+      },
+      error: err => this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED'))
+    });
+  }
+
+  deleteTable(table: Table) {
+    if (!table.id) return;
+    this.confirmationModal.set({
+      show: true,
+      title: 'TABLES.DELETE_TABLE',
+      message: 'TABLES.DELETE_TABLE_CONFIRM',
+      confirmText: 'COMMON.DELETE',
+      cancelText: 'COMMON.CANCEL',
+      confirmBtnClass: 'btn-danger',
+      tableToDelete: table,
+      tableToClose: null
+    });
+  }
+
+  confirmCloseTable(table: Table) {
+    if (!table.id) return;
+    this.confirmationModal.set({
+      show: true,
+      title: 'TABLES.CLOSE_TABLE',
+      message: 'TABLES.CLOSE_TABLE_CONFIRM',
+      messageParams: { name: table.name || '' },
+      confirmText: 'COMMON.CONFIRM',
+      cancelText: 'COMMON.CANCEL',
+      confirmBtnClass: 'btn-warning',
+      tableToDelete: null,
+      tableToClose: table
+    });
+  }
+
+  onConfirmationConfirm() {
+    const modal = this.confirmationModal();
+    if (modal.tableToClose?.id != null) {
+      const table = modal.tableToClose;
+      const tableId = table.id as number;
+      this.activatingTableId.set(tableId);
+      this.api.closeTable(tableId).subscribe({
+        next: () => {
+          this.tables.update(tables => tables.map(t =>
+            t.id === tableId
+              ? { ...t, is_active: false, active_order_id: null }
+              : t
+          ));
+          this.activatingTableId.set(null);
+          this.showToast('TABLES.TABLE_CLOSED', 'success');
+          this.onConfirmationCancel();
+        },
+        error: err => {
+          this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED'));
+          this.activatingTableId.set(null);
+          this.onConfirmationCancel();
+        }
+      });
+      return;
+    }
+    const table = modal.tableToDelete;
+    if (table?.id) {
+      this.api.deleteTable(table.id).subscribe({
+        next: () => {
+          this.tables.update(t => t.filter(x => x.id !== table.id));
+          this.onConfirmationCancel();
+        },
+        error: err => {
+          const d = err.error?.detail;
+          const code =
+            d && typeof d === 'object' && !Array.isArray(d) && 'code' in d
+              ? (d as { code?: string }).code
+              : undefined;
+          if (err.status === 400 && code === 'table_has_orders') {
+            this.confirmationModal.update(m => ({ ...m, show: false }));
+            this.reassignTableModal.set(table);
+            const other = this.tables().filter(t => t.id !== table.id);
+            this.reassignTargetTableId.set(other.length > 0 ? other[0].id ?? null : null);
+          } else {
+            this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED'));
+          }
+        }
+      });
+    } else {
+      this.onConfirmationCancel();
+    }
+  }
+
+  cancelReassign() {
+    this.reassignTableModal.set(null);
+    this.reassignTargetTableId.set(null);
+  }
+
+  doReassignAndDelete() {
+    const table = this.reassignTableModal();
+    const targetId = this.reassignTargetTableId();
+    if (!table?.id || targetId == null) return;
+    this.api.deleteTable(table.id, targetId).subscribe({
+      next: () => {
+        this.tables.update(t => t.filter(x => x.id !== table.id));
+        this.cancelReassign();
+        this.showToast('TABLES.TABLE_DELETED', 'success');
+      },
+      error: err => this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED'))
+    });
+  }
+
+  onConfirmationCancel() {
+    this.confirmationModal.update(m => ({ ...m, show: false, tableToDelete: null, tableToClose: null }));
+  }
+
+  showToast(messageKey: string, type: 'success' | 'error') {
+    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+    this.toastTimeout = undefined;
+    this.toast.set({ message: messageKey, type });
+  }
+
+  dismissToast() {
+    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+    this.toastTimeout = undefined;
+    this.toast.set(null);
+  }
+
+  /** Public customer URL (QR code, copy link, staff "open menu"). */
+  getMenuUrl(table: Table): string {
+    return `${window.location.origin}/menu/${table.token}`;
+  }
+
+  openStaffMenu(table: Table) {
+    if (!table.id) return;
+    const others = this.getGroupSiblingActivityOthers(table);
+    if (others.length) {
+      this.groupSafetyModal.set({
+        table,
+        action: 'menu',
+        siblingNames: others.map(t => t.name || '?').join(', '),
+      });
+      return;
+    }
+    this.doOpenStaffMenu(table);
+  }
+
+  private doOpenStaffMenu(table: Table) {
+    window.open(this.getMenuUrl(table), '_blank');
+  }
+
+  copyLink(table: Table) {
+    if (!table.id) return;
+    const url = this.getMenuUrl(table);
+    const tableId = table.id;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        this.showCopiedFeedback(tableId);
+      }).catch(err => {
+        this.fallbackCopy(url, tableId);
+      });
+    } else {
+      this.fallbackCopy(url, tableId);
+    }
+  }
+
+  private showCopiedFeedback(tableId: number) {
+    this.copiedTableId.set(tableId);
+    setTimeout(() => {
+      this.copiedTableId.set(null);
+    }, 2000);
+  }
+
+  private fallbackCopy(text: string, tableId: number) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-999999px';
+    textarea.style.top = '-999999px';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try {
+      if (document.execCommand('copy')) {
+        this.showCopiedFeedback(tableId);
+      }
+    } catch (err) {
+      this.error.set('Failed to copy link');
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  }
+
+  loadTenantSettings() {
+    this.api.getTenantSettings().subscribe({
+      next: settings => this.tenantSettings.set(settings),
+      error: () => this.tenantSettings.set(null)
+    });
+  }
+
+  startEdit(table: Table) {
+    if (!table.id) return;
+    this.editingTableId.set(table.id);
+    this.editingName = table.name;
+    this.editingFloorId = table.floor_id ?? null;
+    this.editingSeatCount = table.seat_count || null;
+  }
+
+  cancelEdit() {
+    this.editingTableId.set(null);
+    this.editingName = '';
+    this.editingFloorId = null;
+    this.editingSeatCount = null;
+  }
+
+  saveTable(table: Table) {
+    if (!table.id || !this.editingName.trim()) return;
+
+    const updates: Partial<Table> = {
+      name: this.editingName.trim()
+    };
+
+    if (this.editingFloorId != null) {
+      updates.floor_id = Number(this.editingFloorId);
+    }
+    if (this.editingSeatCount !== null && this.editingSeatCount > 0) {
+      updates.seat_count = this.editingSeatCount;
+    }
+
+    this.api.updateTable(table.id, updates).subscribe({
+      next: updated => {
+        this.tables.update(t => t.map(x => x.id === table.id ? updated : x));
+        this.cancelEdit();
+      },
+      error: err => this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED'))
+    });
+  }
+
+  // Table Session Management
+  activateTableSession(table: Table) {
+    if (!table.id) return;
+    if (!table.is_active) {
+      const others = this.getGroupSiblingActivityOthers(table);
+      if (others.length) {
+        this.groupSafetyModal.set({
+          table,
+          action: 'activate',
+          siblingNames: others.map(t => t.name || '?').join(', '),
+        });
+        return;
+      }
+    }
+    this.doActivateTableSession(table);
+  }
+
+  private doActivateTableSession(table: Table) {
+    if (!table.id) return;
+    this.activatingTableId.set(table.id);
+    this.api.activateTable(table.id).subscribe({
+      next: response => {
+        this.tables.update(tables => tables.map(t =>
+          t.id === table.id
+            ? { ...t, is_active: true, active_order_id: response.active_order_id, activated_at: response.activated_at }
+            : t
+        ));
+        this.activatingTableId.set(null);
+      },
+      error: err => {
+        this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED'));
+        this.activatingTableId.set(null);
+      }
+    });
+  }
+
+  closeTableSession(table: Table) {
+    if (!table.id) return;
+    this.activatingTableId.set(table.id);
+    this.api.closeTable(table.id).subscribe({
+      next: () => {
+        this.tables.update(tables => tables.map(t =>
+          t.id === table.id
+            ? { ...t, is_active: false, active_order_id: null }
+            : t
+        ));
+        this.activatingTableId.set(null);
+      },
+      error: err => {
+        this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED'));
+        this.activatingTableId.set(null);
+      }
+    });
+  }
+
+  onWaiterAssign(table: Table, event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const waiterId = select.value ? Number(select.value) : null;
+    if (!table.id) return;
+    this.api.assignWaiterToTable(table.id, waiterId).subscribe({
+      next: (res: any) => {
+        this.tables.update(tables => tables.map(t =>
+          t.id === table.id
+            ? { ...t, assigned_waiter_id: res.assigned_waiter_id, assigned_waiter_name: res.assigned_waiter_name }
+            : t
+        ));
+      },
+      error: (err: any) => this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED'))
+    });
+  }
+
+  onFloorWaiterAssign(floor: Floor, event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const waiterId = select.value ? Number(select.value) : null;
+    if (!floor.id) return;
+    this.api.assignWaiterToFloor(floor.id, waiterId).subscribe({
+      next: (res: any) => {
+        this.floors.update(floors => floors.map(f =>
+          f.id === floor.id
+            ? { ...f, default_waiter_id: res.default_waiter_id, default_waiter_name: res.default_waiter_name }
+            : f
+        ));
+      },
+      error: (err: any) => this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED'))
+    });
+  }
+}

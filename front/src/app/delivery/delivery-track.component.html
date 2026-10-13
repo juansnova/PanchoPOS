@@ -1,0 +1,95 @@
+<div class="delivery-track-page">
+  @if (loading() && !status()) {
+    <p>{{ 'DELIVERY_TRACK.LOADING' | translate }}</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+    <a [routerLink]="['/delivery', tenantId()]">{{ 'DELIVERY_CHECKOUT.ORDER_AGAIN' | translate }}</a>
+  } @else if (status(); as s) {
+    <h1>{{ 'DELIVERY_TRACK.TITLE' | translate }}</h1>
+    @if (s.tenant_name) {
+      <p class="tenant-name">{{ s.tenant_name }}</p>
+    }
+    <p class="order-ref">{{ 'DELIVERY_CHECKOUT.ORDER_REF' | translate: { id: s.order_id } }}</p>
+
+    <p class="current-status" data-testid="delivery-track-status">
+      {{ statusLabelKey(s.status) | translate }}
+    </p>
+
+    @if (s.status === 'awaiting_payment') {
+      <p class="hint">{{ 'DELIVERY_TRACK.AWAITING_PAYMENT_HINT' | translate }}</p>
+    } @else if (s.status === 'cancelled') {
+      <p class="hint">{{ 'DELIVERY_TRACK.CANCELLED_HINT' | translate }}</p>
+    } @else {
+      <ol class="status-steps" aria-label="{{ 'DELIVERY_TRACK.TITLE' | translate }}">
+        @for (step of steps; track step) {
+          <li [class.done]="isStepDone(step, s.status)" [class.current]="s.status === step">
+            {{ statusLabelKey(step) | translate }}
+          </li>
+        }
+      </ol>
+    }
+
+    @if (s.status === 'delivered') {
+      <section class="rate-card" aria-label="{{ 'DELIVERY_TRACK.RATE_TITLE' | translate }}">
+        <div class="rate-card-icon">🎉</div>
+        <h2 class="rate-card-title">{{ 'DELIVERY_TRACK.RATE_TITLE' | translate }}</h2>
+        <p class="rate-card-subtitle">{{ 'DELIVERY_TRACK.RATE_SUBTITLE' | translate }}</p>
+        <div class="rate-card-stars" role="group" aria-label="{{ 'DELIVERY_TRACK.RATE_TITLE' | translate }}">
+          @for (n of rateStars; track n) {
+            <a
+              [routerLink]="rateLink()"
+              [queryParams]="rateQueryParams(n)"
+              class="rate-star"
+              [attr.aria-label]="n"
+            >★</a>
+          }
+        </div>
+        @if (googleRateUrl(); as gUrl) {
+          <a [href]="gUrl" target="_blank" rel="noopener noreferrer" class="btn btn-google-rate">
+            <span class="google-g">G</span>
+            {{ 'DELIVERY_TRACK.RATE_GOOGLE_CTA' | translate }}
+          </a>
+          <p class="rate-card-hint">{{ 'DELIVERY_TRACK.RATE_GOOGLE_HINT' | translate }}</p>
+        }
+      </section>
+    }
+
+    @if (s.delivery_address) {
+      <p class="address">
+        <strong>{{ 'DELIVERY_CHECKOUT.ADDRESS' | translate }}:</strong>
+        {{ s.delivery_address }}
+      </p>
+    }
+
+    @if (s.items && s.items.length > 0) {
+      <ul class="order-items">
+        @for (item of s.items; track item.product_name) {
+          <li>
+            <span class="qty">{{ item.quantity }}×</span>
+            <span class="name">{{ item.product_name }}</span>
+            <span class="line-price">{{ formatCents(item.price_cents * item.quantity) }}</span>
+          </li>
+        }
+      </ul>
+    }
+
+    <p class="totals">
+      @if (s.delivery_fee_cents > 0) {
+        <span class="subtotal">
+          {{ 'DELIVERY_CHECKOUT.SUBTOTAL' | translate }}: {{ formatCents(s.subtotal_cents) }}
+        </span>
+        <span class="fee">
+          {{ 'DELIVERY_CHECKOUT.DELIVERY_FEE' | translate }}: {{ formatCents(s.delivery_fee_cents) }}
+        </span>
+      }
+      <span class="grand-total">{{ 'DELIVERY_CHECKOUT.TOTAL' | translate }}: {{ formatCents(s.total_cents) }}</span>
+    </p>
+
+    <button type="button" class="btn btn-secondary" (click)="refresh()">
+      {{ 'DELIVERY_TRACK.REFRESH' | translate }}
+    </button>
+    <a [routerLink]="['/delivery', tenantId()]" class="btn btn-primary">
+      {{ 'DELIVERY_CHECKOUT.ORDER_AGAIN' | translate }}
+    </a>
+  }
+</div>

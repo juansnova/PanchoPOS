@@ -1,0 +1,442 @@
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import {
+  ApiService,
+  CourierDeliveryPaymentMethod,
+  CourierOrderAction,
+  CourierOrderDetail,
+} from '../services/api.service';
+import { intlLocaleFromTranslate } from '../shared/intl-locale';
+
+@Component({
+  selector: 'app-courier-order-detail',
+  standalone: true,
+  imports: [TranslateModule, RouterLink],
+  template: `
+    <div class="courier-page">
+      <header class="courier-header">
+        <a routerLink="/courier" class="btn-back">{{ 'COURIER_ORDERS.BACK' | translate }}</a>
+        <span class="courier-status" [attr.data-status]="order()?.status">
+          @if (order()) {
+            {{ statusLabelKey(order()!.status) | translate }}
+          }
+        </span>
+      </header>
+
+      @if (loading()) {
+        <p class="courier-muted">{{ 'COMMON.LOADING' | translate }}</p>
+      } @else if (error()) {
+        <p class="courier-error">{{ error() | translate }}</p>
+      } @else if (order()) {
+        <section class="courier-card">
+          <h1 class="courier-title">{{ 'COURIER_ORDERS.ORDER_TITLE' | translate:{ id: order()!.id } }}</h1>
+          @if (order()!.customer_name) {
+            <p class="courier-row">
+              <span class="label">{{ 'COURIER_ORDERS.CUSTOMER' | translate }}</span>
+              <span>{{ order()!.customer_name }}</span>
+            </p>
+          }
+          @if (order()!.customer_phone) {
+            <p class="courier-row">
+              <span class="label">{{ 'COURIER_ORDERS.PHONE' | translate }}</span>
+              <a [href]="'tel:' + order()!.customer_phone">{{ order()!.customer_phone }}</a>
+            </p>
+          }
+          <p class="courier-row">
+            <span class="label">{{ 'COURIER_ORDERS.CREATED' | translate }}</span>
+            <span>{{ formatCreatedAt(order()!.created_at) }}</span>
+          </p>
+        </section>
+
+        <section class="courier-card">
+          <h2>{{ 'COURIER_ORDERS.PICKUP' | translate }}</h2>
+          @if (order()!.pickup_name) {
+            <p class="courier-strong">{{ order()!.pickup_name }}</p>
+          }
+          @if (order()!.pickup_address) {
+            <p class="courier-muted">{{ order()!.pickup_address }}</p>
+          } @else {
+            <p class="courier-muted">{{ 'COURIER_ORDERS.NO_ADDRESS' | translate }}</p>
+          }
+        </section>
+
+        <section class="courier-card">
+          <h2>{{ 'COURIER_ORDERS.DELIVERY' | translate }}</h2>
+          @if (order()!.delivery_address) {
+            <p>{{ order()!.delivery_address }}</p>
+          } @else {
+            <p class="courier-muted">{{ 'COURIER_ORDERS.DELIVERY_ADDRESS_UNAVAILABLE' | translate }}</p>
+          }
+          @if (order()!.delivery_notes) {
+            <p class="courier-notes">
+              <span class="label">{{ 'COURIER_ORDERS.NOTES' | translate }}</span>
+              {{ order()!.delivery_notes }}
+            </p>
+          }
+          @if (order()!.external_order_ref) {
+            <p class="courier-muted">{{ 'COURIER_ORDERS.EXTERNAL_REF' | translate }}: {{ order()!.external_order_ref }}</p>
+          }
+        </section>
+
+        <section class="courier-card">
+          <h2>{{ 'COURIER_ORDERS.ITEMS' | translate }}</h2>
+          <ul class="courier-item-list">
+            @for (item of order()!.items; track $index) {
+              <li>
+                <span class="qty">{{ item.quantity }}×</span>
+                <span>{{ item.product_name }}</span>
+                @if (item.notes) {
+                  <span class="custom">{{ item.notes }}</span>
+                }
+              </li>
+            }
+          </ul>
+          <p class="courier-total">
+            {{ 'COURIER_ORDERS.TOTAL' | translate }}:
+            {{ formatMoney(order()!.total_cents) }}
+          </p>
+        </section>
+
+        @if (primaryActions().length || canReject()) {
+          <section class="courier-actions" aria-label="Order actions">
+            @if (actionError()) {
+              <p class="courier-error">{{ actionError() | translate }}</p>
+            }
+            @for (action of primaryActions(); track action) {
+              <button
+                type="button"
+                class="btn-action"
+                [class.btn-primary]="action !== 'reject'"
+                [disabled]="actionBusy()"
+                (click)="runAction(action)"
+              >
+                {{ actionLabelKey(action) | translate }}
+              </button>
+            }
+            @if (canReject()) {
+              <button
+                type="button"
+                class="btn-action btn-secondary"
+                [disabled]="actionBusy()"
+                (click)="runAction('reject')"
+              >
+                {{ 'COURIER_ORDERS.ACTION_REJECT' | translate }}
+              </button>
+            }
+          </section>
+        }
+      }
+    </div>
+
+    @if (paymentPromptOpen()) {
+      <div class="courier-modal-backdrop">
+        <div class="courier-modal" role="dialog" aria-modal="true">
+          <h2>{{ 'COURIER_ORDERS.PAYMENT_PROMPT_TITLE' | translate }}</h2>
+          <p class="courier-muted">{{ 'COURIER_ORDERS.PAYMENT_PROMPT_HINT' | translate }}</p>
+          <div class="courier-modal-actions">
+            <button
+              type="button"
+              class="btn-action btn-primary"
+              [disabled]="actionBusy()"
+              (click)="confirmDelivered('cash')"
+            >
+              {{ 'COURIER_ORDERS.PAYMENT_CASH' | translate }}
+            </button>
+            <button
+              type="button"
+              class="btn-action btn-primary"
+              [disabled]="actionBusy()"
+              (click)="confirmDelivered('transfer')"
+            >
+              {{ 'COURIER_ORDERS.PAYMENT_TRANSFER' | translate }}
+            </button>
+          </div>
+          <button
+            type="button"
+            class="btn-modal-cancel"
+            [disabled]="actionBusy()"
+            (click)="cancelDeliveredPrompt()"
+          >
+            {{ 'COMMON.CANCEL' | translate }}
+          </button>
+        </div>
+      </div>
+    }
+  `,
+  styles: [`
+    .courier-page {
+      min-height: 100vh;
+      padding: var(--space-4) var(--space-4) var(--space-8);
+      background: var(--color-bg);
+      color: var(--color-text);
+      max-width: 560px;
+      margin: 0 auto;
+    }
+    .courier-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+    .btn-back {
+      color: var(--color-primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .courier-status {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+    }
+    .courier-status[data-status='out_for_delivery'],
+    .courier-status[data-status='ready'] {
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+    .courier-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-border);
+      padding: var(--space-4);
+      margin-bottom: var(--space-3);
+    }
+    .courier-card h2 {
+      margin: 0 0 var(--space-3);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .courier-title {
+      margin: 0 0 var(--space-3);
+      font-size: 1.25rem;
+    }
+    .courier-row {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin: 0 0 var(--space-2);
+      font-size: 0.95rem;
+    }
+    .courier-row a { color: var(--color-primary); }
+    .label { color: var(--color-text-muted); }
+    .courier-strong { font-weight: 600; margin: 0 0 var(--space-1); }
+    .courier-muted { color: var(--color-text-muted); margin: 0; }
+    .courier-notes { margin: var(--space-3) 0 0; line-height: 1.4; }
+    .courier-item-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .courier-item-list li {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      align-items: baseline;
+    }
+    .qty { font-weight: 600; }
+    .custom {
+      width: 100%;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+    .courier-total {
+      margin: var(--space-4) 0 0;
+      font-weight: 600;
+      text-align: right;
+    }
+    .courier-actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+      position: sticky;
+      bottom: var(--space-4);
+    }
+    .btn-action {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-action:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+    }
+    .courier-error { color: var(--color-error); margin: 0 0 var(--space-2); }
+    .courier-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 1000;
+      padding: var(--space-4);
+    }
+    .courier-modal {
+      width: 100%;
+      max-width: 480px;
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      box-shadow: var(--shadow-md);
+    }
+    .courier-modal h2 {
+      margin: 0 0 var(--space-2);
+      font-size: 1.1rem;
+    }
+    .courier-modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      margin: var(--space-4) 0 var(--space-2);
+    }
+    .btn-modal-cancel {
+      width: 100%;
+      padding: var(--space-2) var(--space-4);
+      border: none;
+      background: transparent;
+      color: var(--color-text-muted);
+      cursor: pointer;
+    }
+    .btn-modal-cancel:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  `]
+})
+export class CourierOrderDetailComponent implements OnInit {
+  private api = inject(ApiService);
+  private route = inject(ActivatedRoute);
+  private translate = inject(TranslateService);
+
+  loading = signal(true);
+  error = signal('');
+  order = signal<CourierOrderDetail | null>(null);
+  actionBusy = signal(false);
+  actionError = signal('');
+  paymentPromptOpen = signal(false);
+
+  private allowed = computed(() => new Set(this.order()?.allowed_actions ?? []));
+
+  primaryActions = computed(() => {
+    const order: CourierOrderAction[] = ['accept', 'picked_up', 'delivered'];
+    return order.filter((a) => this.allowed().has(a));
+  });
+
+  canReject = computed(() => this.allowed().has('reject'));
+
+  ngOnInit(): void {
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (!Number.isFinite(id) || id <= 0) {
+      this.loading.set(false);
+      this.error.set('COURIER_ORDERS.NOT_FOUND');
+      return;
+    }
+    this.loadOrder(id);
+  }
+
+  runAction(action: CourierOrderAction): void {
+    if (this.actionBusy()) {
+      return;
+    }
+    // Delivered requires the courier to say how they collected payment first.
+    if (action === 'delivered') {
+      this.actionError.set('');
+      this.paymentPromptOpen.set(true);
+      return;
+    }
+    this.executeAction(action);
+  }
+
+  confirmDelivered(paymentMethod: CourierDeliveryPaymentMethod): void {
+    this.paymentPromptOpen.set(false);
+    this.executeAction('delivered', paymentMethod);
+  }
+
+  cancelDeliveredPrompt(): void {
+    this.paymentPromptOpen.set(false);
+  }
+
+  private executeAction(action: CourierOrderAction, paymentMethod?: CourierDeliveryPaymentMethod): void {
+    const current = this.order();
+    if (!current || this.actionBusy()) {
+      return;
+    }
+    this.actionBusy.set(true);
+    this.actionError.set('');
+    this.api.courierOrderAction(current.id, action, paymentMethod).subscribe({
+      next: (detail) => {
+        this.order.set(detail);
+        this.actionBusy.set(false);
+      },
+      error: (err) => {
+        this.actionBusy.set(false);
+        this.actionError.set(
+          err.status === 400 ? 'COURIER_ORDERS.ACTION_NOT_ALLOWED' : 'COURIER_ORDERS.ACTION_FAILED'
+        );
+      },
+    });
+  }
+
+  actionLabelKey(action: CourierOrderAction): string {
+    return `COURIER_ORDERS.ACTION_${action.toUpperCase()}`;
+  }
+
+  statusLabelKey(status: string): string {
+    return `COURIER_ORDERS.STATUS_${status.toUpperCase()}`;
+  }
+
+  formatCreatedAt(iso: string): string {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleString();
+    } catch {
+      return iso;
+    }
+  }
+
+  formatMoney(cents: number): string {
+    const locale = intlLocaleFromTranslate(this.translate);
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: this.order()?.currency_code || 'EUR',
+      currencyDisplay: 'symbol',
+    }).format(cents / 100);
+  }
+
+  private loadOrder(id: number): void {
+    this.loading.set(true);
+    this.api.getCourierOrder(id).subscribe({
+      next: (detail) => {
+        this.order.set(detail);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err.status === 404 ? 'COURIER_ORDERS.NOT_FOUND' : 'COURIER_ORDERS.LOAD_FAILED');
+      },
+    });
+  }
+}

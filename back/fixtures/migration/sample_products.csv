@@ -1,0 +1,8 @@
+name,price,category,subcategory,description,ingredients,cost
+House Salad,6.50,Starters,Salads,Fresh mixed greens,lettuce tomato cucumber,2.00
+Tomato Soup,5.00,Starters,Soups,Classic tomato soup,tomato cream basil,1.50
+Grilled Salmon,18.90,Main Course,Fish,Salmon with seasonal vegetables,salmon lemon herbs,8.00
+Margherita Pizza,12.00,Main Course,Pizza,Tomato mozzarella basil,flour tomato mozzarella basil,3.50
+Chocolate Cake,6.50,Desserts,Cakes,Dark chocolate slice,chocolate flour eggs,2.25
+Espresso,2.20,Beverages,Hot Drinks,Single shot espresso,coffee,0.40
+Still Water,1.50,Beverages,Soft Drinks,500ml bottle,,0.20

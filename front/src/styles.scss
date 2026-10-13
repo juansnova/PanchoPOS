@@ -1,0 +1,273 @@
+// Responsive breakpoint mixins
+@use 'styles/breakpoints' as *;
+
+// Shared component styles (mobile-first)
+@use 'styles/layout';
+@use 'styles/buttons';
+@use 'styles/forms';
+@use 'styles/cards';
+@use 'styles/modals';
+@use 'styles/tables';
+@use 'styles/utilities';
+@use 'styles/rtl';
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap');
+
+:root {
+  /* Warm, appetite-friendly palette (staff app chrome), tuned to the
+     Pancho Panza logo's asadero orange (#DF7F39 sampled from the mark). */
+  --color-bg: #FBF7F2;
+  /* Light chrome fill for secondary controls; public branding must not override this (#408) */
+  --color-subtle: #FBF7F2;
+  --color-surface: #FFFFFF;
+  --color-primary: #C2672C;
+  /* Brand accent: the logo's own orange, used for illustrative/light touches
+     where AA contrast with white text isn't required (badges, brand chip, etc.) */
+  --color-brand-accent: #DE7C34;
+  /* Text/icons on solid primary fills */
+  --color-on-primary: #ffffff;
+  /* Hover/light follow --color-primary so public pages can override one token (#370) */
+  --color-primary-hover: color-mix(in srgb, var(--color-primary) 82%, black);
+  --color-primary-light: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  --color-text: #1C1917;
+  --color-text-muted: #78716C;
+  --color-border: #EBE3DA;
+  --color-success: #16A34A;
+  --color-success-light: rgba(22, 163, 74, 0.1);
+  --color-warning: #F59E0B;
+  --color-error: #DC2626;
+
+  /* Typography: Inter for body/UI copy; Fredoka for the brand wordmark and
+     page titles, echoing the logo's rounded hand-drawn lettering. */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-brand: 'Fredoka', var(--font-sans);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1);
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-8: 48px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* Brand wordmark font for page titles, echoing the logo's rounded lettering.
+   Left to inherit color/size from each page so this stays a subtle accent. */
+h1 {
+  font-family: var(--font-brand);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+input,
+textarea,
+select {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+}
+
+/* Utility classes */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-5);
+}
+
+// ============================================
+// RESPONSIVE UTILITY CLASSES
+// ============================================
+
+// Prevent horizontal overflow on page/containers
+.overflow-hidden {
+  overflow-x: hidden;
+}
+
+// Responsive table wrapper - enables horizontal scroll for tables
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  // Ensure minimum touch target and visual feedback
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+}
+
+// Visibility utilities
+.hide-phone {
+  @include for-phone-only {
+    display: none !important;
+  }
+}
+
+.hide-tablet {
+  @include for-tablet-only {
+    display: none !important;
+  }
+}
+
+.hide-desktop {
+  @include for-desktop-up {
+    display: none !important;
+  }
+}
+
+.show-phone-only {
+  display: none !important;
+
+  @include for-phone-only {
+    display: block !important;
+  }
+}
+
+.show-tablet-only {
+  display: none !important;
+
+  @include for-tablet-only {
+    display: block !important;
+  }
+}
+
+.show-desktop-only {
+  display: none !important;
+
+  @include for-desktop-up {
+    display: block !important;
+  }
+}
+
+// Responsive grid utilities
+.grid-responsive {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+
+  @include for-tablet-portrait-up {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+.grid-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+
+  @include for-phone-landscape-up {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include for-tablet-landscape-up {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @include for-desktop-up {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+// Stack elements on mobile
+.stack-mobile {
+  @include for-phone-only {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+}
+
+// Text truncation utility
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Note: .card, .btn, .btn-primary, .btn-secondary, .btn-ghost, and .form-group
+// are now defined in the shared modules (_cards.scss, _buttons.scss, _forms.scss)
+
+.error-msg {
+  color: var(--color-error);
+  margin-top: var(--space-2);
+  font-size: 0.875rem;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+
+  &:hover {
+    background: var(--color-text-muted);
+  }
+}
+
+/* Guest feedback: print only the QR block (see GuestFeedbackComponent.printFeedbackQr) */
+@media print {
+  body.print-feedback-qr-only {
+    .layout > .sidebar,
+    .layout > .mobile-header,
+    .layout > .overlay {
+      display: none !important;
+    }
+
+    .layout > .main {
+      margin: 0 !important;
+      padding: 1.5rem !important;
+      width: 100% !important;
+      max-width: none !important;
+    }
+
+    .no-print-on-feedback-qr {
+      display: none !important;
+    }
+  }
+}
