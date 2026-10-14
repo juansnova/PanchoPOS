@@ -670,39 +670,72 @@
 // ============================================
 // GUEST MENU SKIN: public-menu specifics
 // ============================================
+.menu-page .product-card {
+  position: relative;
+  container-type: inline-size;
+}
+
+// Room below the image for the floating add button / stepper that straddles its bottom edge.
 .menu-page .product-info {
-  padding: var(--space-4);
+  padding: calc(var(--space-4) + 14px) var(--space-4) var(--space-4);
+}
+
+// Floating "+" (same as the table menu): image is 4:3, so its bottom edge sits at 75% of the card width.
+.menu-page .add-to-cart-btn,
+.menu-page .qty-stepper-card {
+  position: absolute;
+  top: calc(75cqw - 26px);
+  right: var(--space-4);
+  z-index: 2;
+  margin: 0;
 }
 
 .menu-page .add-to-cart-btn {
-  min-height: 46px;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
   background: var(--color-primary);
   color: #fff;
-  border: 0;
-  border-radius: 999px;
-  font-weight: 700;
-  box-shadow: 0 12px 22px -12px color-mix(in srgb, var(--color-primary) 85%, black);
+  cursor: pointer;
+  box-shadow: 0 12px 22px -10px color-mix(in srgb, var(--color-primary) 80%, black);
   transition: transform 160ms var(--gm-ease);
+  touch-action: manipulation;
 
   &:hover {
     background: var(--color-primary);
+    transform: scale(1.08);
   }
 
   &:active {
-    transform: scale(0.96);
+    transform: scale(0.88);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--gm-ink);
+    outline-offset: 3px;
   }
 }
 
 .menu-page .qty-stepper-card {
+  width: auto;
   padding: 4px;
+  gap: var(--space-2);
   border-radius: 999px;
-  background: #f4ebdf;
+  background: #fff;
+  box-shadow: 0 12px 22px -10px rgba(23, 18, 16, 0.5), 0 0 0 1px var(--gm-line);
 }
 
-.menu-page .qty-stepper button {
+.menu-page .qty-stepper button,
+.menu-page .qty-stepper-card button {
+  width: 2.5rem;
+  height: 2.5rem;
   border: 0;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(23, 18, 16, 0.12);
+  background: #f4ebdf;
 }
 
 .menu-page .public-menu-cart-badge {

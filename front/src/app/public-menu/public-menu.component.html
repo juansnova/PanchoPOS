@@ -180,8 +180,12 @@
                           <button type="button" (click)="setQty(product.id, cartQtyFor(product.id) + 1)">+</button>
                         </div>
                       } @else {
-                        <button type="button" class="btn btn-secondary add-to-cart-btn" (click)="addToCart(product)">
-                          {{ 'DELIVERY_CHECKOUT.ADD' | translate }}
+                        <button type="button" class="add-to-cart-btn" (click)="addToCart(product)"
+                          [attr.aria-label]="('DELIVERY_CHECKOUT.ADD' | translate) + ' ' + product.name">
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                          </svg>
                         </button>
                       }
                     </div>
