@@ -12,7 +12,7 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
   standalone: true,
   imports: [ReactiveFormsModule, FormsModule, RouterLink, TranslateModule, LegalLinksComponent],
   template: `
-    <main class="auth-page">
+    <div class="auth-page">
       <div class="auth-card">
         @if (selectedTenantLogoUrl()) {
           <div class="brand-hero">
@@ -57,7 +57,7 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
               >
             </div>
             @if (error()) {
-              <div class="error-banner" role="alert">{{ error() }}</div>
+              <div class="error-banner">{{ error() }}</div>
             }
             <button type="submit" class="btn-submit" [disabled]="!canSubmitOtp() || loading()">
               {{ loading() ? ('AUTH.VERIFYING' | translate) : ('AUTH.VERIFY_OTP' | translate) }}
@@ -103,7 +103,7 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
           </div>
 
           @if (error()) {
-            <div class="error-banner" role="alert">{{ error() }}</div>
+            <div class="error-banner">{{ error() }}</div>
           }
 
           <button type="submit" class="btn-submit" [disabled]="loading()">
@@ -118,7 +118,7 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
           </div>
         }
       </div>
-    </main>
+    </div>
   `,
   styles: [`
     .auth-page {
@@ -138,28 +138,9 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
       max-width: 400px;
       background: var(--color-surface);
       border-radius: var(--radius-lg);
-      border: 1px solid var(--color-border);
+      border-top: 4px solid var(--color-brand-accent);
       box-shadow: var(--shadow-lg);
-      padding: var(--space-8) var(--space-6);
-      animation: auth-card-in var(--duration-base) var(--ease-out) both;
-    }
-
-    @keyframes auth-card-in {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
-      }
-    }
-
-    @media (max-width: 480px) {
-      .auth-page {
-        align-items: flex-start;
-        padding: var(--space-4);
-        padding-top: var(--space-8);
-      }
-      .auth-card {
-        padding: var(--space-6) var(--space-5);
-      }
+      padding: var(--space-8);
     }
 
     .brand-hero {
@@ -190,10 +171,7 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
       transform: translateY(-50%);
       background: none;
       border: none;
-      border-radius: var(--radius-md);
-      min-width: 44px;
-      min-height: 44px;
-      margin-inline-end: calc(var(--space-2) * -1);
+      padding: var(--space-1);
       cursor: pointer;
       color: var(--color-text-muted);
       display: flex;
@@ -203,23 +181,16 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
     .input-with-toggle .pw-toggle:hover {
       color: var(--color-text);
     }
-    .input-with-toggle .pw-toggle:focus-visible {
-      outline: 2px solid var(--color-primary);
-      outline-offset: -2px;
-    }
 
     .auth-header {
       margin-bottom: var(--space-6);
       text-align: center;
 
       h1 {
-        font-family: var(--font-brand);
         font-size: 1.75rem;
         font-weight: 600;
-        line-height: 1.2;
         color: var(--color-text);
         margin-bottom: var(--space-2);
-        text-wrap: balance;
       }
 
       p {
@@ -284,61 +255,28 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
     }
 
     .error-banner {
-      background: rgba(220, 38, 38, 0.08);
-      color: #B91C1C;
-      border: 1px solid rgba(220, 38, 38, 0.25);
+      background: rgba(220, 38, 38, 0.1);
+      color: var(--color-error);
       padding: var(--space-3) var(--space-4);
       border-radius: var(--radius-md);
       font-size: 0.875rem;
       margin-bottom: var(--space-4);
-      animation: auth-error-in var(--duration-base) var(--ease-out) both;
-    }
-
-    @keyframes auth-error-in {
-      from {
-        opacity: 0;
-        transform: translateY(-4px);
-      }
     }
 
     .btn-submit {
       width: 100%;
       padding: var(--space-4);
       background: var(--color-primary);
-      color: var(--color-on-primary);
+      color: white;
       border: none;
       border-radius: var(--radius-md);
-      font-family: inherit;
       font-size: 1rem;
-      font-weight: 600;
-      min-height: 48px;
+      font-weight: 500;
       cursor: pointer;
-      position: relative;
-      isolation: isolate;
-      transition: transform var(--duration-fast) var(--ease-out);
+      transition: background 0.15s ease;
 
-      &::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        border-radius: inherit;
+      &:hover:not(:disabled) {
         background: var(--color-primary-hover);
-        opacity: 0;
-        transition: opacity var(--duration-fast) var(--ease-out);
-      }
-
-      &:hover:not(:disabled)::before {
-        opacity: 1;
-      }
-
-      &:active:not(:disabled) {
-        transform: scale(0.98);
-      }
-
-      &:focus-visible {
-        outline: 2px solid var(--color-primary);
-        outline-offset: 3px;
       }
 
       &:disabled {
@@ -392,17 +330,11 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
       color: var(--color-text-muted);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-md);
-      font-family: inherit;
       font-size: 0.9375rem;
-      min-height: 44px;
       cursor: pointer;
     }
     .btn-back:hover {
       background: var(--color-bg);
-    }
-    .btn-back:focus-visible {
-      outline: 2px solid var(--color-primary);
-      outline-offset: 2px;
     }
     .field-error {
       margin-top: var(--space-2);

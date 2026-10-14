@@ -20,8 +20,7 @@
   /* Light chrome fill for secondary controls; public branding must not override this (#408) */
   --color-subtle: #FBF7F2;
   --color-surface: #FFFFFF;
-  /* Darkened from #C2672C so white text on primary passes WCAG AA (4.5:1) */
-  --color-primary: #B35A20;
+  --color-primary: #C2672C;
   /* Brand accent: the logo's own orange, used for illustrative/light touches
      where AA contrast with white text isn't required (badges, brand chip, etc.) */
   --color-brand-accent: #DE7C34;
