@@ -183,12 +183,22 @@ def _order_total_cents(items: list[models.OrderItem], order: models.Order) -> in
     return max(0, sub + tip)
 
 
-def _build_order_payload(session: Session, order: models.Order, job_type: str) -> dict[str, Any]:
-    items = list(
-        session.exec(
-            select(models.OrderItem).where(models.OrderItem.order_id == order.id)
-        ).all()
-    )
+def _build_order_payload(
+    session: Session,
+    order: models.Order,
+    job_type: str,
+    *,
+    only_items: list[models.OrderItem] | None = None,
+    addition: bool = False,
+) -> dict[str, Any]:
+    """``only_items`` limits the ticket to those lines; ``addition`` marks a follow-up ticket."""
+    items = only_items
+    if items is None:
+        items = list(
+            session.exec(
+                select(models.OrderItem).where(models.OrderItem.order_id == order.id)
+            ).all()
+        )
     items = [i for i in items if not getattr(i, "removed_by_customer", False)]
     lines = []
     for i in items:
@@ -211,6 +221,7 @@ def _build_order_payload(session: Session, order: models.Order, job_type: str) -
     title = "KITCHEN" if job_type == "kitchen" else "RECEIPT"
     plain_lines = [
         title,
+        *(["*** ADICION - solo platos nuevos ***"] if addition else []),
         f"Order #{order.id}",
         f"Table: {table_name or '—'}",
         f"Customer: {order.customer_name or '—'}",
@@ -282,6 +293,68 @@ def create_job(
     session.commit()
     session.refresh(job)
     return job
+
+
+def enqueue_new_kitchen_tickets(session: Session) -> int:
+    """Print every line that reached preparing and was never printed; one ticket per order.
+
+    A follow-up ticket for an order that already had printed lines carries only the new
+    lines and an ADICION header, so the kitchen never sees (or cooks) a dish twice.
+    Only tenants with an active print agent are served. Returns tickets created.
+    """
+    rows = session.exec(
+        select(models.OrderItem)
+        .join(models.Order, models.Order.id == models.OrderItem.order_id)
+        .where(
+            models.OrderItem.status.in_(
+                [models.OrderItemStatus.preparing, models.OrderItemStatus.ready]
+            ),
+            models.OrderItem.kitchen_printed_at.is_(None),
+            models.OrderItem.removed_by_customer == False,  # noqa: E712
+            models.OrderItem.removed_by_user_id.is_(None),
+            models.Order.deleted_at.is_(None),
+            models.Order.status.not_in([models.OrderStatus.paid, models.OrderStatus.cancelled]),
+            select(models.PrintAgent.id)
+            .where(
+                models.PrintAgent.tenant_id == models.Order.tenant_id,
+                models.PrintAgent.revoked_at.is_(None),
+            )
+            .exists(),
+        )
+        .with_for_update(skip_locked=True, of=models.OrderItem)
+    ).all()
+    by_order: dict[int, list[models.OrderItem]] = {}
+    for item in rows:
+        by_order.setdefault(item.order_id, []).append(item)
+
+    now = _now()
+    for order_id, items in by_order.items():
+        order = session.get(models.Order, order_id)
+        already = session.exec(
+            select(models.OrderItem.id).where(
+                models.OrderItem.order_id == order_id,
+                models.OrderItem.kitchen_printed_at.is_not(None),
+            )
+        ).first()
+        payload = _build_order_payload(
+            session, order, "kitchen", only_items=items, addition=already is not None
+        )
+        session.add(
+            models.PrintJob(
+                tenant_id=order.tenant_id,
+                job_type="kitchen",
+                printer_role="kitchen",
+                status="pending",
+                order_id=order_id,
+                payload=payload,
+            )
+        )
+        for item in items:
+            item.kitchen_printed_at = now
+            session.add(item)
+    if by_order:
+        session.commit()
+    return len(by_order)
 
 
 def list_jobs(

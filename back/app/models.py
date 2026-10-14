@@ -894,6 +894,10 @@ class OrderItem(SQLModel, table=True):
     status_updated_at: datetime | None = None  # None until staff/auto changes the status
     # When the line was added (drives the automatic pending → preparing after 1 minute)
     created_at: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # Set when the line was sent to the kitchen printer (auto-print on preparing); never reprinted
+    kitchen_printed_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
     prepared_by_user_id: int | None = None  # Who marked it as ready
     delivered_by_user_id: int | None = None  # Who delivered it
     

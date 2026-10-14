@@ -81,3 +81,13 @@ python3 scripts/print-agent/print_agent.py
 | Browser dialog still appears | Expected when `agent_online` is false |
 
 See also `docs/PRINTING.md` (design background) and `docs/0015-kitchen-display.md` / `docs/0017-billing-customers-factura.md`.
+
+
+## Automatic kitchen tickets
+
+Tenants with at least one active (non-revoked) print agent get kitchen tickets without pressing any button:
+
+- When an order line reaches **preparing** (automatically after 1 minute, or when staff change its status) it is printed within ~5 seconds. Lines in the same moment share one ticket.
+- Each line stores `kitchen_printed_at`, so it is printed once and never again. Lines in preparing cannot be edited or removed, so a printed ticket never goes stale.
+- If the customer orders more later, the new ticket has the header `*** ADICION - solo platos nuevos ***` and lists **only the new lines**.
+- The manual "Imprimir cocina" button in the order editor still reprints the whole order (use it to recover a jammed ticket).

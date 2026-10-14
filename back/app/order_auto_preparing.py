@@ -18,7 +18,7 @@ from .db import engine
 logger = logging.getLogger(__name__)
 
 AUTO_PREPARING_AFTER_SECONDS = 60
-TICK_SECONDS = 10
+TICK_SECONDS = 5
 
 
 def advance_due_items(session: Session, *, now: datetime | None = None) -> int:
@@ -92,8 +92,13 @@ def advance_due_items(session: Session, *, now: datetime | None = None) -> int:
 
 
 def _tick() -> int:
+    from .print_service import enqueue_new_kitchen_tickets
+
     with Session(engine) as session:
-        return advance_due_items(session)
+        moved = advance_due_items(session)
+        # Also catches lines moved to preparing by staff (manual status changes).
+        enqueue_new_kitchen_tickets(session)
+        return moved
 
 
 async def order_auto_preparing_loop(stop: asyncio.Event | None = None) -> None:
