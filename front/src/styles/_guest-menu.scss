@@ -5,30 +5,6 @@
 // Motion: transform + opacity only, <= 280ms, disabled for reduced-motion users.
 // ============================================
 
-.menu-page {
-  --gm-ink: #171210;
-  --gm-ink-2: #2b1d15;
-  --gm-ember: #f08a3c;
-  --gm-cream: #fbf6ee;
-  --gm-line: rgba(23, 18, 16, 0.08);
-  --gm-ease: cubic-bezier(0.23, 1, 0.32, 1);
-  --gm-card-shadow: 0 1px 2px rgba(23, 18, 16, 0.06), 0 14px 30px -16px rgba(23, 18, 16, 0.35);
-}
-
-@keyframes gm-rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-}
-
-@keyframes gm-hero-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.97);
-  }
-}
-
 @keyframes gm-pop {
   0% {
     transform: scale(0.92);
@@ -45,85 +21,6 @@
   from {
     opacity: 0;
     transform: translateY(24px);
-  }
-}
-
-// ---------- Hero ----------
-.menu-page .hero-header,
-.menu-page .hero-header.has-bg-image {
-  background:
-    radial-gradient(120% 90% at 8% 0%, rgba(240, 138, 60, 0.4), transparent 55%),
-    radial-gradient(90% 80% at 100% 100%, rgba(179, 90, 32, 0.32), transparent 60%),
-    linear-gradient(170deg, var(--gm-ink-2), var(--gm-ink));
-  color: #fff;
-  border-bottom: 0;
-  border-radius: 0 0 28px 28px;
-  padding: var(--space-5) var(--space-6) var(--space-6);
-}
-
-.menu-page .hero-banner-img {
-  max-height: 12.5rem;
-  width: auto;
-  max-width: 100%;
-  object-fit: contain;
-  transform: none;
-  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
-}
-
-.menu-page .hero-content {
-  padding-top: var(--space-2);
-}
-
-.menu-page .restaurant-name {
-  font-family: var(--font-brand, inherit);
-  color: #fff;
-  letter-spacing: -0.01em;
-  text-wrap: balance;
-}
-
-.menu-page .restaurant-tagline {
-  color: rgba(255, 255, 255, 0.78);
-  opacity: 1;
-}
-
-.menu-page .hero-meta-bar {
-  background: transparent;
-  border: 0;
-  padding: var(--space-4) 0 0;
-  gap: var(--space-2) var(--space-3);
-
-  .table-pill {
-    min-height: 44px;
-    padding: 0 var(--space-4);
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--gm-cream);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    font-weight: 600;
-  }
-
-  .restaurant-contact {
-    color: rgba(255, 255, 255, 0.78);
-  }
-
-  .contact-link {
-    color: var(--gm-ember);
-    font-weight: 600;
-  }
-
-  .contact-sep {
-    color: rgba(255, 255, 255, 0.4);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .menu-page .hero-banner-img,
-  .menu-page .hero-content > * {
-    animation: gm-hero-in 280ms var(--gm-ease) both;
-  }
-
-  .menu-page .hero-meta-bar > * {
-    animation: gm-rise 280ms var(--gm-ease) both;
-    animation-delay: 80ms;
   }
 }
 
