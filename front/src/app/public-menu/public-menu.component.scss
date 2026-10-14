@@ -1,6 +1,7 @@
 // Public menu + delivery ordering, styled to match the table menu (/menu/:token)
 // exactly for the hero and content width (#{ user request: "que sea literal como el de /menu/" }).
 @use '../../styles/breakpoints' as *;
+@use '../../styles/guest-menu';
 
 .public-menu-page {
   min-height: 100vh;
@@ -651,4 +652,88 @@
 
 .public-menu-back-link:hover {
   text-decoration: underline;
+}
+
+// ============================================
+// GUEST MENU SKIN: public-menu specifics
+// ============================================
+.menu-page .product-info {
+  padding: var(--space-4);
+}
+
+.menu-page .add-to-cart-btn {
+  min-height: 46px;
+  background: var(--color-primary);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: 0 12px 22px -12px color-mix(in srgb, var(--color-primary) 85%, black);
+  transition: transform 160ms var(--gm-ease);
+
+  &:hover {
+    background: var(--color-primary);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.menu-page .qty-stepper-card {
+  padding: 4px;
+  border-radius: 999px;
+  background: #f4ebdf;
+}
+
+.menu-page .qty-stepper button {
+  border: 0;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(23, 18, 16, 0.12);
+}
+
+.menu-page .public-menu-cart-badge {
+  top: var(--space-3);
+  right: var(--space-3);
+  min-width: 1.75rem;
+  height: 1.75rem;
+  background: var(--gm-ink);
+  color: var(--gm-cream);
+  box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.5);
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: gm-pop 240ms var(--gm-ease);
+  }
+}
+
+.menu-page .delivery-floating-bar {
+  left: var(--space-3);
+  right: var(--space-3);
+  bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+  border: 0;
+  border-radius: 26px;
+  box-shadow: 0 24px 48px -16px rgba(23, 18, 16, 0.5), 0 0 0 1px var(--gm-line);
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: gm-float-in 280ms var(--gm-ease) both;
+  }
+
+  @media (min-width: 768px) {
+    left: 50%;
+    right: auto;
+    width: min(34rem, calc(100% - 2rem));
+    translate: -50% 0;
+  }
+}
+
+.menu-page .delivery-floating-cta {
+  min-height: 46px;
+  border-radius: 999px;
+}
+
+.menu-page .public-menu-contact-footer {
+  border: 0;
+  border-radius: 22px;
+  box-shadow: var(--gm-card-shadow);
 }

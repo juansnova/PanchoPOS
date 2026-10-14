@@ -70,3 +70,13 @@ export function contrastRatio(
   const darker = Math.min(La, Lb);
   return (lighter + 0.05) / (darker + 0.05);
 }
+
+/** Brand orange used as the guest-menu CTA default (tenants can still set their own). */
+export const MENU_PRIMARY_COLOR_DEFAULT = '#B35A20';
+
+/** Like {@link resolvePublicPrimaryColor} but falls back to the brand orange (guest menus). */
+export function resolveMenuPrimaryColor(hex: string | null | undefined): string {
+  const v = (hex || '').trim();
+  if (!v) return MENU_PRIMARY_COLOR_DEFAULT;
+  return v.startsWith('#') ? v : `#${v}`;
+}

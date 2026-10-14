@@ -11,7 +11,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { getSubcategoryLabel as resolveSubcategoryLabel } from '../shared/product-subcategory-label.util';
 import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-category-label.util';
 import { productStockLeft } from '../shared/product-stock.util';
-import { resolvePublicPrimaryColor } from '../shared/public-brand-colors';
+import { resolveMenuPrimaryColor } from '../shared/public-brand-colors';
 import { formatMoneyCents } from '../shared/currency-symbol';
 
 interface CartItem {
@@ -42,7 +42,7 @@ interface PlacedOrder {
   styleUrl: './menu.component.scss'
 })
 export class MenuComponent implements OnInit, OnDestroy {
-  readonly resolvePublicPrimaryColor = resolvePublicPrimaryColor;
+  readonly resolvePublicPrimaryColor = resolveMenuPrimaryColor;
   private route = inject(ActivatedRoute);
   private api = inject(ApiService);
   private audio = inject(AudioService);

@@ -23,7 +23,7 @@ import {
   TenantSummary,
 } from '../services/api.service';
 import { PublicGuestHeaderComponent } from '../shared/public-guest-header.component';
-import { resolvePublicPrimaryColor } from '../shared/public-brand-colors';
+import { resolveMenuPrimaryColor } from '../shared/public-brand-colors';
 import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-category-label.util';
 import { publicMenuTenantRef } from '../shared/public-menu-path';
 import { publicBookRouterLink } from '../shared/public-book-path';
@@ -49,7 +49,7 @@ type OrderStep = 'browse' | 'cart' | 'address' | 'success';
   styleUrls: ['../book/book.component.scss', './public-menu.component.scss'],
 })
 export class PublicMenuComponent implements OnInit {
-  readonly resolvePublicPrimaryColor = resolvePublicPrimaryColor;
+  readonly resolvePublicPrimaryColor = resolveMenuPrimaryColor;
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private api = inject(ApiService);
