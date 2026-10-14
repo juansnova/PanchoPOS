@@ -1,0 +1,65 @@
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install git for commit hash generation (needed for build script)
+RUN apk add --no-cache git
+
+# Copy package files and npm config (supply chain: pinned deps, no install scripts)
+COPY package*.json .npmrc ./
+
+# Install dependencies (--ignore-scripts: no lifecycle scripts, supply chain hardening)
+RUN npm ci --ignore-scripts
+
+# Copy source code
+COPY . .
+
+# Ensure runtime-config.js exists for the static build (real ID injected at container start)
+RUN if [ ! -f public/runtime-config.js ]; then \
+      cp public/runtime-config.js.example public/runtime-config.js 2>/dev/null \
+      || printf '%s\n' "window.__GA_MEASUREMENT_ID__ = '';" > public/runtime-config.js; \
+    fi
+
+# Accept commit hash as build argument (can be passed from parent directory)
+# If not provided, the script will try git or use "unknown"
+ARG COMMIT_HASH=
+ENV COMMIT_HASH=${COMMIT_HASH}
+
+# Generate commit hash file (script will use COMMIT_HASH env var if git is not available)
+RUN node scripts/get-commit-hash.js
+
+# Build the application for production (static output)
+RUN npm run build -- --configuration production-static
+
+# Inject app version into built index.html for smoke test (landing page version check without login)
+RUN node scripts/inject-version-into-index.js
+
+# Production stage
+FROM nginx:alpine
+
+# Copy built files from builder
+# Angular 17+ outputs to dist/front/browser for static builds
+COPY --from=builder /app/dist/front/browser /usr/share/nginx/html
+
+# Marketing sites: front/sites/<slug>/ → /usr/share/nginx/html/sites/<slug>/ (URLs /slug/)
+COPY sites/ /usr/share/nginx/html/sites/
+COPY scripts/generate-marketing-nginx-include.sh /docker-gen-marketing.sh
+RUN chmod +x /docker-gen-marketing.sh \
+  && mkdir -p /etc/nginx/snippets \
+  && /docker-gen-marketing.sh > /etc/nginx/snippets/marketing-sites.generated.conf
+
+# Copy custom Nginx configuration (includes marketing-sites.generated.conf)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy entrypoint script
+COPY docker-entrypoint-prod.sh /docker-entrypoint-prod.sh
+RUN chmod +x /docker-entrypoint-prod.sh
+
+# Expose port
+EXPOSE 80
+
+# Use entrypoint to inject environment variables
+ENTRYPOINT ["/docker-entrypoint-prod.sh"]
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

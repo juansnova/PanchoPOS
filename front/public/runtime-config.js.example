@@ -1,0 +1,5 @@
+// Written at container start by docker-entrypoint(.sh|-prod.sh) from
+// GOOGLE_ANALYTICS_MEASUREMENT_ID (.secrets). Safe empty default for local builds
+// without secrets. Do not put a real measurement ID in the committed copy —
+// front/public/runtime-config.js is gitignored and overwritten on start.
+window.__GA_MEASUREMENT_ID__ = window.__GA_MEASUREMENT_ID__ || '';

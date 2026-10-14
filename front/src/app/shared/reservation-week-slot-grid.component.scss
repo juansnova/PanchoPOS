@@ -1,0 +1,410 @@
+// Week column grid (shared: public /book and staff /reservations)
+.book-week-block {
+  .book-week-label {
+    display: block;
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: 0.9375rem;
+    margin-bottom: var(--space-1);
+  }
+
+  .book-week-hint {
+    margin: 0 0 var(--space-3);
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+  }
+
+  .book-same-day-time-hint {
+    margin: var(--space-1) 0 0;
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+  }
+
+  .book-week-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+  }
+
+  .book-week-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--color-text);
+    flex: 1;
+    text-align: center;
+  }
+
+  .btn-cal-nav {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    /* Keep light fill when public pages override --color-bg (#408) */
+    background: var(--color-subtle, var(--color-surface));
+    color: var(--color-text);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: var(--color-border);
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+  }
+
+  .book-week-loading {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-2);
+  }
+
+  .book-week-scroll,
+  .book-month-scroll {
+    overflow-x: auto;
+    margin-top: var(--space-2);
+    padding-bottom: var(--space-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .book-month-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    padding: var(--space-2) var(--space-2) var(--space-1);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .book-month-weekday {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+  }
+
+  .book-month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    padding: var(--space-2);
+    min-width: min(100%, 360px);
+  }
+
+  .book-month-pad {
+    min-height: 2.5rem;
+  }
+
+  .book-month-day {
+    min-height: 2.5rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid #cbd5e1;
+    padding: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background 0.1s ease,
+      border-color 0.1s ease,
+      box-shadow 0.1s ease;
+    background: var(--color-subtle, var(--color-surface));
+    color: var(--color-text);
+
+    &.dm-available {
+      background: #ffffff;
+      border-color: #cbd5e1;
+    }
+
+    &.dm-full {
+      background: #94a3b8;
+      border-color: #64748b;
+      color: #1e293b;
+      cursor: not-allowed;
+    }
+
+    &.dm-muted {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      cursor: not-allowed;
+      opacity: 0.88;
+      color: var(--color-text-muted);
+    }
+
+    &.dm-closed-day {
+      opacity: 0.72;
+      background: #f1f5f9;
+    }
+
+    &.dm-selected {
+      background: #0f172a;
+      border-color: #0f172a;
+      color: #f8fafc;
+      box-shadow: 0 0 0 1px #0f172a;
+      z-index: 1;
+    }
+
+    &.dm-available:hover:not(:disabled) {
+      border-color: #64748b;
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 1px;
+    }
+  }
+
+  .book-day-slots-loading {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+  }
+
+  .book-week-grid {
+    display: grid;
+    grid-template-columns: 3.25rem repeat(7, minmax(2.25rem, 1fr));
+    column-gap: 0;
+    row-gap: 2px;
+    padding: var(--space-2);
+    min-width: min(100%, 520px);
+  }
+
+  .week-corner {
+    min-height: 2.25rem;
+  }
+
+  .week-col-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    line-height: 1.15;
+    padding: 4px 2px;
+    min-height: 2.25rem;
+
+    &.week-col-bordered {
+      border-left: 1px solid var(--color-border);
+    }
+  }
+
+  .week-col-letter {
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--color-text);
+  }
+
+  .week-col-daynum {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .week-row-label {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    text-align: right;
+    padding-right: 4px;
+    align-self: center;
+  }
+
+  .week-slot {
+    min-height: 1.4rem;
+    min-width: 0;
+    border-radius: 2px;
+    border: 1px solid #cbd5e1;
+    padding: 0;
+    cursor: pointer;
+    transition:
+      background 0.1s ease,
+      border-color 0.1s ease,
+      box-shadow 0.1s ease;
+
+    &.week-col-bordered {
+      border-left: 1px solid var(--color-border);
+    }
+
+    /* Available: light cell */
+    &.ws-available {
+      background: #ffffff;
+      border-color: #cbd5e1;
+    }
+
+    /* Full: not enough capacity for party size */
+    &.ws-full {
+      background: #94a3b8;
+      border-color: #64748b;
+      cursor: not-allowed;
+    }
+
+    /* Closed / past / outside hours */
+    &.ws-muted {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      cursor: not-allowed;
+      opacity: 0.88;
+    }
+
+    &.ws-closed-day {
+      opacity: 0.72;
+      background: #f1f5f9;
+    }
+
+    /* Selected available slot */
+    &.ws-selected {
+      background: #0f172a;
+      border-color: #0f172a;
+      box-shadow: 0 0 0 1px #0f172a;
+      z-index: 1;
+    }
+
+    &.ws-available:hover:not(:disabled) {
+      border-color: #64748b;
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 1px;
+    }
+  }
+
+  .book-week-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  .leg-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .leg-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &.leg-dot-available {
+      background: #ffffff;
+      border: 2px solid #64748b;
+    }
+
+    &.leg-dot-selected {
+      background: #0f172a;
+      border: 2px solid #0f172a;
+    }
+
+    &.leg-dot-full {
+      background: #94a3b8;
+      border: 2px solid #64748b;
+    }
+
+    &.leg-dot-closed {
+      background: transparent;
+      border: 2px dashed #94a3b8;
+    }
+  }
+
+  .book-week-summary {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-subtle, var(--color-surface));
+    font-size: 0.875rem;
+    color: var(--color-text);
+  }
+
+  .book-week-summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-4);
+    align-items: baseline;
+  }
+
+  .book-week-summary-main {
+    margin-top: var(--space-2);
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .summary-kv {
+    display: inline-block;
+  }
+
+  .summary-key {
+    font-weight: 600;
+    margin-right: 0.25rem;
+    color: var(--color-text-muted);
+  }
+
+  /* Left-aligned with Party size / Service / Date (issue #369). */
+  .summary-time-control {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .summary-time-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-align: left;
+  }
+
+  .book-week-time-select {
+    display: block;
+    width: 100%;
+    max-width: 12rem;
+    box-sizing: border-box;
+    font: inherit;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    margin: 0;
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

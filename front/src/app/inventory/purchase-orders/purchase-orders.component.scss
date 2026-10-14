@@ -1,0 +1,221 @@
+// Purchase Orders Component Styles
+@use '../../../styles/breakpoints' as *;
+@use 'purchase-order-status-badges';
+
+.header-actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.status-help-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.status-help-toggle {
+    flex-shrink: 0;
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+
+    svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    &:hover {
+        background: var(--color-primary-light);
+        color: var(--color-primary);
+        border-color: var(--color-primary);
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px var(--color-primary-light);
+    }
+
+    &[aria-expanded='true'] {
+        background: var(--color-primary-light);
+        color: var(--color-primary);
+        border-color: var(--color-primary);
+    }
+}
+
+.status-help-panel {
+    flex: 1 1 100%;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    display: grid;
+    gap: var(--space-3);
+
+    @include for-tablet-portrait-up {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @include for-desktop-up {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.status-help-item {
+    p {
+        margin: var(--space-2) 0 0;
+        font-size: 0.8125rem;
+        color: var(--color-text-muted);
+        line-height: 1.45;
+    }
+}
+
+.filters-bar {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+
+    select {
+        padding: var(--space-3);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        background: var(--color-surface);
+        min-width: 150px;
+        min-height: 44px;
+    }
+}
+
+.price {
+    font-weight: 600;
+    color: var(--color-success);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    justify-content: flex-end;
+}
+
+.po-row-action {
+    white-space: nowrap;
+}
+
+.modal-lg {
+    max-width: 800px;
+}
+
+// Form items section
+.items-section {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--space-4);
+
+        h4 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+    }
+}
+
+.empty-items {
+    text-align: center;
+    padding: var(--space-4);
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+}
+
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.item-row {
+    display: grid;
+    grid-template-columns: 2fr 80px 100px minmax(110px, 1.2fr) 100px 32px;
+    gap: var(--space-3);
+    align-items: end;
+    background: var(--color-surface);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+
+    label {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+        margin-bottom: var(--space-1);
+        white-space: nowrap;
+    }
+
+    select,
+    input {
+        padding: var(--space-2);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+        width: 100%;
+        background: var(--color-surface);
+        color: var(--color-text);
+        min-height: 36px;
+    }
+}
+
+.item-total {
+    text-align: right;
+
+    span {
+        font-weight: 600;
+        color: var(--color-success);
+    }
+}
+
+.order-total {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 2px solid var(--color-border);
+    font-size: 1.125rem;
+
+    strong {
+        color: var(--color-success);
+        font-size: 1.25rem;
+    }
+}
+
+@include for-phone-only {
+    .filters-bar {
+        flex-direction: column;
+
+        select {
+            width: 100%;
+        }
+    }
+
+    .item-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}

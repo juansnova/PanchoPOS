@@ -1,0 +1,32 @@
+// Shared PO status badge variants (list, detail header, status-help panel)
+.status-badge {
+    &.draft {
+        background: var(--color-bg);
+        color: var(--color-text-muted);
+    }
+
+    &.submitted {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3B82F6;
+    }
+
+    &.approved {
+        background: var(--color-success-light);
+        color: var(--color-success);
+    }
+
+    &.partially_received {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--color-warning);
+    }
+
+    &.received {
+        background: var(--color-success-light);
+        color: var(--color-success);
+    }
+
+    &.cancelled {
+        background: rgba(220, 38, 38, 0.1);
+        color: var(--color-error);
+    }
+}

@@ -1,0 +1,365 @@
+// ============================================
+// PRODUCTS COMPONENT STYLES
+// ============================================
+// Uses shared modules from styles/*.scss for buttons, forms, tables, modals
+@use '../../styles/breakpoints' as *;
+
+// Component-specific styles only - common patterns use global classes
+
+// Page header action group
+.page-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.btn-delete-all {
+  color: var(--color-error, #dc2626);
+  border-color: rgba(220, 38, 38, 0.35);
+
+  &:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: var(--color-error, #dc2626);
+    color: var(--color-error, #dc2626);
+  }
+}
+
+.success-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(25, 135, 84, 0.12);
+  color: var(--color-success, #198754);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  gap: var(--space-3);
+}
+
+// Main tabs (button-style navigation)
+.main-tabs-container {
+    margin-bottom: var(--space-4);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+.main-tabs {
+    display: flex;
+    gap: var(--space-2);
+    padding-bottom: var(--space-2);
+    width: max-content;
+    min-width: 100%;
+}
+
+.main-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-height: 44px;
+    flex-shrink: 0;
+
+    &:hover {
+        color: var(--color-text);
+        border-color: var(--color-primary);
+    }
+
+    &.active {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        color: white;
+    }
+}
+
+.tab-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+// Products list table: avoid flex-on-<td> row-height glitches (GitHub #33) and clip scroll to card radius
+.products-data-table {
+    overflow: hidden;
+}
+
+.products-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.products-data-table table tbody td {
+    vertical-align: top;
+}
+
+.products-data-table td.actions {
+    display: table-cell;
+}
+
+.products-data-table .actions-inner {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+// Search row
+.search-row {
+    margin-bottom: var(--space-4);
+}
+
+.search-input {
+    width: 100%;
+    max-width: 320px;
+    padding: var(--space-2) var(--space-3);
+    padding-left: 2.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 0.9375rem;
+    background: var(--color-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236b7280' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 0.6rem center;
+    background-size: 1rem;
+    color: var(--color-text);
+
+    &::placeholder {
+        color: var(--color-text-muted);
+    }
+    &:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px var(--color-primary-light, rgba(0,0,0,0.05));
+    }
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+// Filters section
+.filters-section {
+    margin-bottom: var(--space-4);
+}
+
+// Note: .ribbon-container, .ribbon-tab, etc. are in _layout.scss
+
+// Layout styles removed (sidebar covers it via .layout, .main)
+// .sidebar, .nav-link, etc. are in sidebar.component.scss
+
+// Form group size variant
+.form-group-sm {
+    flex: 0 0 150px;
+    min-width: 120px;
+
+    @include for-phone-only {
+        flex: none;
+        min-width: 100%;
+    }
+}
+
+// Pending file name
+.pending-file-name {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+// Ingredients text
+.ingredients {
+    color: var(--color-text-muted);
+    font-size: 0.8125rem;
+    display: block;
+    margin-top: 2px;
+}
+
+// Required field indicator and validation errors (product form)
+.required {
+    color: var(--color-error, #dc2626);
+}
+
+.field-error {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--color-error, #dc2626);
+    margin-top: var(--space-1);
+}
+
+.input-error {
+    border-color: var(--color-error, #dc2626) !important;
+}
+
+// Read-only form hint (waiter / non-owner viewing product)
+.form-inline-error {
+    margin: 0 var(--space-4) var(--space-4);
+}
+
+.form-readonly-hint {
+    margin: 0 0 var(--space-4);
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+}
+
+// Category/subcategory cells: pointer only when user can edit
+.category-cell.clickable {
+    cursor: pointer;
+}
+
+// Mobile responsive overrides
+@include for-phone-only {
+    .form-row {
+        flex-direction: column;
+    }
+
+    .form-group,
+    .form-group-sm {
+        min-width: 100%;
+        flex: none;
+    }
+}
+
+// Product recipe (BOM) list rows, reusing the same list styling as other staff-edit sections.
+.questions-loading,
+.questions-empty {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin: var(--space-2) 0;
+}
+
+.question-list {
+    list-style: none;
+    margin: 0 0 var(--space-3);
+    padding: 0;
+}
+
+.question-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-2);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.question-row-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    flex: 1;
+}
+
+.question-type-badge {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+.question-label-text {
+    font-size: 0.875rem;
+    color: var(--color-text);
+    word-break: break-word;
+}
+
+.question-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    align-items: center;
+}
+
+.btn-danger-ghost {
+    color: var(--color-error, #dc2626);
+
+    &:hover:not(:disabled) {
+        color: var(--color-error, #b91c1c);
+        background: rgba(220, 38, 38, 0.08);
+    }
+}
+
+.flex-grow {
+    flex: 1;
+    min-width: 160px;
+}
+
+.checkbox-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 500;
+}
+.stock-alert-section {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.stock-alert-fields {
+  margin-top: var(--space-3);
+}
+.stock-badge {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.stock-badge small {
+  font-weight: 500;
+  opacity: 0.85;
+}
+.stock-badge--low {
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+}
+.muted {
+  color: var(--color-text-muted);
+}

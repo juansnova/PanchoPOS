@@ -1,0 +1,818 @@
+// Sales & Revenue Reports – clean, catchy layout
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+
+  .header-text h1 {
+    margin: 0 0 var(--space-1);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .subtitle {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--color-text-muted);
+  }
+
+  .header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3);
+  }
+
+  .date-range {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+
+    label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    input[type="date"] {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 0.875rem;
+    }
+  }
+
+  .export-buttons {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .date-presets-bar {
+    flex: 1 1 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--space-1);
+  }
+
+  .presets-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    margin-right: var(--space-1);
+  }
+
+  .date-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+}
+
+.error-banner {
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+  font-size: 0.9375rem;
+}
+
+.loading-state {
+  text-align: center;
+  padding: var(--space-8);
+  color: var(--color-text-muted);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-10);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--space-4);
+    opacity: 0.6;
+  }
+
+  h2 {
+    margin: 0 0 var(--space-2);
+    font-size: 1.25rem;
+    color: var(--color-text);
+  }
+
+  p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+  }
+
+  &.compact {
+    padding: var(--space-4);
+    margin-bottom: var(--space-6);
+
+    p + p.muted {
+      margin-top: var(--space-1);
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+    }
+  }
+}
+
+.report-section {
+  margin-bottom: var(--space-8);
+
+  h2 {
+    margin: 0 0 var(--space-4);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text);
+    padding-bottom: var(--space-2);
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  h3 {
+    margin: 0 0 var(--space-3);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+}
+
+.attendance-excel-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+
+  .attendance-excel-month {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+
+    label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    input[type='month'] {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 0.875rem;
+    }
+  }
+
+  .attendance-excel-staff {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: min(100%, 16rem);
+    position: relative;
+
+    .attendance-excel-staff-field {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    .attendance-excel-staff-dropdown {
+      position: relative;
+      width: 100%;
+    }
+
+    .attendance-excel-staff-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      width: 100%;
+      min-height: 2.25rem;
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 0.875rem;
+      text-align: left;
+      cursor: pointer;
+
+      &:hover {
+        border-color: var(--color-text-muted);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--color-primary, #2563eb);
+        outline-offset: 2px;
+      }
+    }
+
+    .attendance-excel-staff-trigger-text {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .attendance-excel-staff-chevron {
+      flex-shrink: 0;
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid var(--color-text-muted);
+      transition: transform 0.15s ease;
+    }
+
+    .attendance-excel-staff-trigger[aria-expanded='true'] .attendance-excel-staff-chevron {
+      transform: rotate(180deg);
+    }
+
+    .attendance-excel-staff-panel {
+      position: absolute;
+      z-index: 20;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      max-height: min(16rem, 50vh);
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .attendance-excel-staff-search {
+      margin-bottom: var(--space-2);
+    }
+
+    .attendance-excel-staff-search-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 0.8125rem;
+    }
+
+    .attendance-excel-staff-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .attendance-excel-staff-option {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+      padding: var(--space-1) var(--space-1);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.04);
+      }
+
+      input {
+        margin-top: 0.2rem;
+        flex-shrink: 0;
+      }
+
+      span {
+        min-width: 0;
+        word-break: break-word;
+      }
+    }
+
+    .attendance-excel-staff-hint {
+      margin: 0;
+      font-size: 0.75rem;
+      max-width: 20rem;
+    }
+  }
+}
+
+.summary-section {
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+  }
+
+  .summary-card {
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+    .card-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    .card-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    &.revenue {
+      background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+      color: white;
+    }
+
+    &.orders {
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      color: white;
+    }
+
+    &.reservations {
+      background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+      color: white;
+    }
+
+    &.overbooking {
+      background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
+      color: white;
+    }
+  }
+
+  .reservations-block {
+    margin-bottom: var(--space-6);
+
+    h3 {
+      margin: 0 0 var(--space-3);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+  }
+
+  .reservations-by-source {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-width: 320px;
+  }
+
+  .source-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 0.9375rem;
+
+    .source-label {
+      color: var(--color-text);
+    }
+
+    .source-count {
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+  }
+}
+
+.chart-block {
+  margin-top: var(--space-4);
+}
+
+.revenue-graph-block {
+  margin-bottom: var(--space-6);
+
+  .revenue-graph-wrap {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    overflow: hidden;
+  }
+
+  .revenue-graph {
+    display: block;
+    width: 100%;
+    max-width: 560px;
+    height: auto;
+    min-height: 180px;
+  }
+
+  .revenue-graph-y-label,
+  .revenue-graph-x-label {
+    font-size: 11px;
+    fill: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .revenue-graph-x-label {
+    text-anchor: middle;
+  }
+
+  .revenue-graph-area {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .revenue-graph-line {
+    stroke: var(--color-primary, #0d9488);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  &.daily-chart .bar-fill {
+    background: linear-gradient(90deg, #0d9488 0%, #2dd4bf 100%);
+  }
+
+  &.compact {
+    max-width: 420px;
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 1fr minmax(120px, 2fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 0.875rem;
+  }
+
+  .bar-label {
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .bar-track {
+    height: 22px;
+    background: var(--color-bg);
+    border-radius: 11px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 11px;
+    min-width: 4px;
+    transition: width 0.4s ease-out;
+
+    &.product {
+      background: linear-gradient(90deg, #059669 0%, #34d399 100%);
+    }
+
+    &.category {
+      background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%);
+    }
+
+    &.table {
+      background: linear-gradient(90deg, #dc2626 0%, #f87171 100%);
+    }
+
+    &.waiter {
+      background: linear-gradient(90deg, #ea580c 0%, #fb923c 100%);
+    }
+  }
+
+  .bar-value {
+    font-weight: 600;
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+}
+
+.table-and-chart {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.data-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th,
+  td {
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+
+  th {
+    background: var(--color-bg);
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  th.num {
+    text-align: right;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  td.num {
+    font-weight: 600;
+    color: var(--color-success);
+
+    &:not(.share-with-bar) {
+      text-align: right;
+    }
+  }
+
+  td.share-with-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 160px;
+    min-height: 3.25rem;
+    box-sizing: border-box;
+    vertical-align: middle;
+
+    .bar-track.inline {
+      flex: 1;
+      min-width: 48px;
+      height: 14px;
+      background: var(--color-bg);
+      border-radius: 7px;
+      overflow: hidden;
+
+      .bar-fill {
+        height: 100%;
+        border-radius: 7px;
+        min-width: 2px;
+
+        &.product {
+          background: linear-gradient(90deg, #059669 0%, #34d399 100%);
+        }
+        &.category {
+          background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%);
+        }
+        &.table {
+          background: linear-gradient(90deg, #dc2626 0%, #f87171 100%);
+        }
+        &.waiter {
+          background: linear-gradient(90deg, #ea580c 0%, #fb923c 100%);
+        }
+      }
+    }
+
+    .share-value {
+      font-weight: 600;
+      color: var(--color-success);
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 4.5ch;
+      text-align: right;
+    }
+  }
+}
+
+/* Revenue breakdown tables — column count varies (cost/profit/tips are shown conditionally),
+   so let the browser size columns by content instead of a fixed template. */
+.report-section .data-table:not(.work-sessions-attendance-table) {
+  table-layout: auto;
+
+  th:first-child,
+  td:first-child {
+    width: 28%;
+  }
+}
+
+/* On narrow screens a horizontally-scrolling table is hard to read (5-7 columns).
+   Stack each row into a label/value card instead, using data-label for the row title. */
+@media (max-width: 640px) {
+  .report-section .data-table-wrap {
+    overflow-x: visible;
+    border: none;
+  }
+
+  .report-section .data-table:not(.work-sessions-attendance-table) {
+    display: block;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+
+    thead {
+      display: none;
+    }
+
+    tbody {
+      display: block;
+    }
+
+    tr {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    tr:last-child {
+      border-bottom: none;
+    }
+
+    th,
+    td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      width: auto !important;
+      padding: var(--space-2) 0;
+      border-bottom: none;
+      text-align: right;
+    }
+
+    td::before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-align: left;
+    }
+
+    td.share-with-bar {
+      min-width: 0;
+    }
+  }
+}
+
+.work-sessions-attendance-table {
+  table-layout: auto;
+  width: max(100%, 52rem);
+
+  th,
+  td {
+    white-space: nowrap;
+  }
+
+  th.work-sessions-actions,
+  td.work-sessions-actions {
+    width: 1%;
+    text-align: right;
+    padding-left: var(--space-6);
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+}
+
+.btn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: none;
+
+  &.btn-primary {
+    background: var(--color-primary);
+    color: white;
+  }
+
+  &.btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &.btn-sm {
+    padding: var(--space-1) var(--space-2);
+    font-size: 0.8125rem;
+  }
+}
+
+.reports-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.reports-modal-panel {
+  position: relative;
+  z-index: 1001;
+  width: 100%;
+  max-width: 420px;
+  max-height: min(90vh, 640px);
+  overflow: auto;
+  padding: var(--space-5);
+  background: var(--color-surface, #fff);
+  color: var(--color-text);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.reports-modal-title {
+  margin: 0 0 var(--space-2);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.reports-modal-staff {
+  margin: 0 0 var(--space-4);
+  font-size: 0.9375rem;
+}
+
+.reports-modal-error {
+  margin-bottom: var(--space-3);
+}
+
+.reports-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  input[type='datetime-local'],
+  textarea {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 0.875rem;
+    font-family: inherit;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 4rem;
+  }
+}
+
+.reports-modal-hint {
+  margin: 0;
+  font-size: 0.75rem;
+}
+
+.reports-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}

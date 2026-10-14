@@ -1,0 +1,620 @@
+// ============================================
+// SIDEBAR COMPONENT STYLES
+// Dark "asadero" nav rail, branded on Pancho Panza's logo: charcoal-black
+// chrome with the logo's orange as the active-item accent.
+// ============================================
+@use '../../styles/breakpoints' as *;
+
+$sidebar-bg: #000000;
+$sidebar-border: rgba(255, 255, 255, 0.08);
+$sidebar-text: #f2ede6;
+$sidebar-text-muted: #9c9188;
+$sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+$sidebar-active-text: #ffffff;
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+    background: var(--color-bg);
+    overflow-x: hidden;
+}
+
+// Sidebar navigation
+.sidebar {
+    width: 248px;
+    background: $sidebar-bg;
+    border-right: 1px solid $sidebar-border;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+}
+
+.sidebar-header {
+    position: relative;
+    padding: var(--space-5) var(--space-5) var(--space-4);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 1px solid $sidebar-border;
+}
+
+.logo-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    align-items: flex-start;
+    min-width: 0;
+    flex: 1;
+}
+
+.header-corner-actions {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    z-index: 1;
+}
+
+.logo {
+    font-family: var(--font-brand);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-brand-accent);
+    line-height: 1.2;
+    display: block;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+        text-decoration: underline;
+        outline: none;
+    }
+
+    &--image {
+        display: flex;
+        align-items: center;
+        width: 100%;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: none;
+        }
+    }
+}
+
+.sidebar-logo-img {
+    display: block;
+    width: 100%;
+    max-width: 210px;
+    height: auto;
+    object-fit: contain;
+    object-position: left center;
+}
+
+.mobile-brand-logo {
+    display: block;
+    height: 32px;
+    max-width: 150px;
+    width: auto;
+    object-fit: contain;
+    object-position: left center;
+}
+
+.logout-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0.25rem;
+    margin: 0;
+    border: none;
+    background: transparent;
+    color: $sidebar-text-muted;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    line-height: 1;
+    min-width: 28px;
+    min-height: 28px;
+
+    &:hover {
+        color: var(--color-brand-accent);
+        background: $sidebar-hover-bg;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--color-brand-accent);
+        outline-offset: 2px;
+    }
+}
+
+.sidebar-org-name {
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: $sidebar-text-muted;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    display: block;
+    margin-top: 2px;
+    max-width: min(150px, 100%);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.version {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: $sidebar-text-muted;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    display: block;
+    margin-top: 2px;
+}
+
+.version-btn {
+    font-family: inherit;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+}
+
+.version-btn:hover,
+.version-btn:focus-visible {
+    color: var(--color-brand-accent);
+    text-decoration: underline;
+}
+
+.version-btn:focus-visible {
+    outline: 2px solid var(--color-brand-accent);
+    outline-offset: 2px;
+}
+
+.commit-hash,
+.tenant-id {
+    margin-left: 4px;
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    font-size: 0.625rem;
+    color: $sidebar-text-muted;
+    opacity: 0.75;
+}
+
+.close-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: $sidebar-text-muted;
+    cursor: pointer;
+    padding: var(--space-2);
+}
+
+// Navigation
+.nav {
+    flex: 1;
+    padding: var(--space-4) var(--space-3);
+    overflow-y: auto;
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+    }
+}
+
+.nav-group-label {
+    display: block;
+    padding: var(--space-2) var(--space-2) var(--space-1);
+    color: $sidebar-text-muted;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: 2px;
+    color: $sidebar-text-muted;
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    transition: all 0.15s ease;
+    min-height: 44px; // Touch target
+
+    &:hover {
+        color: $sidebar-text;
+        background: $sidebar-hover-bg;
+    }
+
+    &.active {
+        color: $sidebar-active-text;
+        background: var(--color-brand-accent);
+        font-weight: 600;
+        box-shadow: 0 4px 14px color-mix(in srgb, var(--color-brand-accent) 45%, transparent);
+    }
+
+    svg {
+        flex-shrink: 0;
+    }
+}
+
+.nav-update-star {
+    color: var(--color-brand-accent);
+    font-weight: 700;
+    margin-left: 2px;
+}
+
+// Inventory submenu
+.nav-section {
+    margin-top: 2px;
+}
+
+.nav-section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: 2px;
+    background: none;
+    border: none;
+    border-radius: var(--radius-md);
+    color: $sidebar-text-muted;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    // Buttons default to text-align:center; keep labels left like .nav-link.
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-height: 44px;
+
+    &:hover {
+        color: $sidebar-text;
+        background: $sidebar-hover-bg;
+    }
+
+    > svg:first-child {
+        flex-shrink: 0;
+    }
+
+    > span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .chevron {
+        margin-left: auto;
+        flex-shrink: 0;
+        transition: transform 0.2s ease;
+
+        &.open {
+            transform: rotate(180deg);
+        }
+    }
+
+    // Hub link + expand chevron: overlay chevron so label width matches peers.
+    &--split {
+        position: relative;
+        padding: 0;
+        gap: 0;
+        cursor: default;
+
+        &:hover {
+            color: $sidebar-text-muted;
+            background: none;
+        }
+
+        &.active {
+            color: var(--color-brand-accent);
+        }
+    }
+}
+
+.nav-section-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex: 1;
+    min-width: 0;
+    // Same horizontal padding as .nav-section-header; right pad clears overlay chevron.
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    color: inherit;
+    text-decoration: none;
+    text-align: left;
+    font-size: inherit;
+    font-weight: inherit;
+    min-height: 44px;
+
+    > svg {
+        flex-shrink: 0;
+    }
+
+    > span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &:hover {
+        color: $sidebar-text;
+        background: $sidebar-hover-bg;
+    }
+
+    &.active {
+        color: var(--color-brand-accent);
+        font-weight: 600;
+    }
+}
+
+.nav-section-chevron {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+    border-radius: var(--radius-md);
+    color: inherit;
+    cursor: pointer;
+    z-index: 1;
+
+    &:hover {
+        color: $sidebar-text;
+        background: $sidebar-hover-bg;
+    }
+
+    .chevron {
+        margin-left: 0;
+        transition: transform 0.2s ease;
+
+        &.open {
+            transform: rotate(180deg);
+        }
+    }
+}
+
+.nav-submenu {
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 2px solid $sidebar-border;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    margin-left: calc(var(--space-4) + 8px);
+    margin-bottom: 2px;
+}
+
+.nav-sublink {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    color: $sidebar-text-muted;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.15s ease;
+    min-height: 40px;
+
+    &:hover {
+        color: $sidebar-text;
+        background: $sidebar-hover-bg;
+    }
+
+    &.active {
+        color: var(--color-brand-accent);
+        font-weight: 600;
+    }
+
+    &--nested {
+        padding-left: var(--space-5);
+        font-size: 0.8125rem;
+        min-height: 36px;
+    }
+}
+
+// Footer
+.sidebar-footer {
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid $sidebar-border;
+}
+
+.user-info {
+    margin-bottom: 0;
+}
+
+.user-email {
+    font-size: 0.875rem;
+    color: $sidebar-text;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-role {
+    font-size: 0.75rem;
+    color: $sidebar-text-muted;
+    display: block;
+    margin-top: 2px;
+    text-transform: capitalize;
+}
+
+// Mobile header (kept dark to match the drawer it opens)
+.mobile-header {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: $sidebar-bg;
+    border-bottom: 1px solid $sidebar-border;
+    padding: 0 var(--space-4);
+    align-items: center;
+    gap: var(--space-3);
+    z-index: 99;
+    min-width: 0;
+}
+
+.menu-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: var(--space-2);
+    cursor: pointer;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+
+    span {
+        display: block;
+        width: 20px;
+        height: 2px;
+        background: $sidebar-text;
+        border-radius: 1px;
+    }
+}
+
+.mobile-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    min-width: 0;
+    flex: 1;
+    line-height: 1.15;
+}
+
+.header-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--color-brand-accent);
+    min-width: 0;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+        text-decoration: underline;
+        outline: none;
+    }
+}
+
+.header-org-name {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: $sidebar-text-muted;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 99;
+}
+
+// Main content area
+.main {
+    flex: 1;
+    margin-left: 248px;
+    padding: var(--space-6);
+    min-width: 0;
+    max-width: calc(100vw - 248px);
+    overflow-x: hidden;
+}
+
+.connectivity-banner {
+    margin: 0 0 var(--space-4);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+}
+
+.connectivity-banner--offline {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #ef4444;
+}
+
+.connectivity-banner--pending {
+    background: #fffbeb;
+    color: #92400e;
+    border-color: #f59e0b;
+}
+
+// Staff toolbar: hide main sidebar (tablet+) for a wider canvas
+@include for-tablet-portrait-up {
+    .layout.layout--nav-collapsed {
+        .sidebar {
+            transform: translateX(-100%);
+            pointer-events: none;
+        }
+        .main {
+            margin-left: 0;
+            max-width: 100vw;
+        }
+    }
+}
+
+// Mobile responsive
+@include for-phone-only {
+    .mobile-header {
+        display: flex;
+    }
+
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+    }
+
+    .sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+
+    .sidebar-open .overlay {
+        display: block;
+    }
+
+    .close-btn {
+        display: block;
+    }
+
+    .main {
+        margin-left: 0;
+        padding-top: calc(56px + var(--space-4));
+        padding-left: var(--space-4);
+        padding-right: var(--space-4);
+        padding-bottom: var(--space-4);
+        max-width: 100vw;
+    }
+}

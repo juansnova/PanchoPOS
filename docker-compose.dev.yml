@@ -1,0 +1,9 @@
+# Local development overlay. Use with base:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# HAProxy uses haproxy.cfg (no HTTPS, no certs). App on http://localhost:4202
+# Also maps host 127.0.0.1:80 -> HAProxy for parity with the prod HAProxy port (may fail if port 80 is taken).
+services:
+  haproxy:
+    ports:
+      - "0.0.0.0:${FRONTEND_PORT:-4202}:4202"
+      - "127.0.0.1:80:4202"

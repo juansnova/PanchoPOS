@@ -1,0 +1,251 @@
+// ============================================
+// RESPONSIVE BREAKPOINTS SYSTEM
+// ============================================
+// Centralized breakpoint mixins for consistent responsive behavior
+// across all components. Import this file in component styles or
+// include it in the main styles.scss file.
+
+// --------------------------------------------
+// CORE BREAKPOINTS (em-based for accessibility)
+// --------------------------------------------
+
+/// Named breakpoint mixin for common device categories
+/// @param {String} $point - Breakpoint name: 'desktop', 'tablet', or 'mobile'
+/// @example
+///   .element {
+///     @include breakpoint(mobile) {
+///       font-size: 14px;
+///     }
+///   }
+@mixin breakpoint($point) {
+  @if $point == desktop {
+    @media (min-width: 70em) { // ~1120px
+      @content;
+    }
+  } @else if $point == tablet {
+    @media (min-width: 50em) { // ~800px
+      @content;
+    }
+  } @else if $point == mobile {
+    @media (max-width: 37.5em) { // ~600px
+      @content;
+    }
+  }
+}
+
+// --------------------------------------------
+// FLEXIBLE WIDTH/HEIGHT MIXINS
+// --------------------------------------------
+
+/// Custom max-width media query
+/// @param {Length} $point - Maximum width value (e.g., 768px, 50em)
+@mixin maxWidth($point) {
+  @media (max-width: $point) {
+    @content;
+  }
+}
+
+/// Custom min-width media query
+/// @param {Length} $point - Minimum width value (e.g., 768px, 50em)
+@mixin minWidth($point) {
+  @media (min-width: $point) {
+    @content;
+  }
+}
+
+/// Custom max-height media query
+/// @param {Length} $point - Maximum height value
+@mixin maxHeight($point) {
+  @media (max-height: $point) {
+    @content;
+  }
+}
+
+/// Custom min-height media query
+/// @param {Length} $point - Minimum height value
+@mixin minHeight($point) {
+  @media (min-height: $point) {
+    @content;
+  }
+}
+
+// --------------------------------------------
+// DEVICE-SPECIFIC BREAKPOINTS
+// --------------------------------------------
+
+/// Phone only (up to 599px)
+@mixin for-phone-only {
+  @media (max-width: 599px) {
+    @content;
+  }
+}
+
+/// Phone landscape mode
+@mixin for-phone-landscape-only {
+  @media (max-height: 500px) and (orientation: landscape) {
+    @content;
+  }
+}
+
+/// Phone landscape and up (min-width: 500px)
+@mixin for-phone-landscape-up {
+  @media (min-width: 500px) {
+    @content;
+  }
+}
+
+/// Tablet portrait and up (min-width: 600px)
+@mixin for-tablet-portrait-up {
+  @media (min-width: 600px) {
+    @content;
+  }
+}
+
+/// Tablet portrait + 30px buffer (min-width: 630px)
+@mixin for-tablet-portrait-up-plus30 {
+  @media (min-width: 630px) {
+    @content;
+  }
+}
+
+/// Tablet portrait only (600px - 899px)
+@mixin for-tablet-portrait-only {
+  @media (min-width: 600px) and (max-width: 899px) {
+    @content;
+  }
+}
+
+/// Tablet only (600px - 1199px)
+@mixin for-tablet-only {
+  @media (min-width: 900px) and (max-width: 1199px) {
+    @content;
+  }
+  @media (min-width: 600px) and (max-width: 899px) {
+    @content;
+  }
+}
+
+/// Phone and tablet only (up to 1199px)
+@mixin for-phone-and-tablet-only {
+  @media (min-width: 900px) and (max-width: 1199px) {
+    @content;
+  }
+  @media (min-width: 600px) and (max-width: 899px) {
+    @content;
+  }
+  @media (max-width: 599px) {
+    @content;
+  }
+}
+
+/// Tablet landscape and up (min-width: 900px)
+@mixin for-tablet-landscape-up {
+  @media (min-width: 900px) {
+    @content;
+  }
+}
+
+/// Tablet landscape only (900px - 1199px)
+@mixin for-tablet-landscape-only {
+  @media (min-width: 900px) and (max-width: 1199px) {
+    @content;
+  }
+}
+
+/// Desktop and up (min-width: 1200px)
+@mixin for-desktop-up {
+  @media (min-width: 1200px) {
+    @content;
+  }
+}
+
+/// Desktop container selector (non-mobile)
+@mixin for-desktop-detail-up {
+  .container:not(.mobile) {
+    @content;
+  }
+}
+
+/// Desktop only (1200px - 1799px)
+@mixin for-desktop-only {
+  @media (min-width: 1200px) and (max-width: 1799px) {
+    @content;
+  }
+}
+
+/// Big desktop and up (min-width: 1800px)
+@mixin for-big-desktop-up {
+  @media (min-width: 1800px) {
+    @content;
+  }
+}
+
+/// Super large displays (min-width: 3300px)
+@mixin for-super-large-desktop {
+  @media (min-width: 3300px) {
+    @content;
+  }
+}
+
+// --------------------------------------------
+// SPECIAL DEVICE QUERIES
+// --------------------------------------------
+
+/// iPad Pro specific
+@mixin for-ipad-pro {
+  @media only screen and (min-width: 1024px) and (max-height: 1366px) and (-webkit-min-device-pixel-ratio: 1.5) {
+    @content;
+  }
+}
+
+/// iPhone 6/7/8 and Plus variants
+@mixin for-iphone7 {
+  @media only screen and (min-device-width: 375px) and (max-device-width: 667px) {
+    @supports (-webkit-overflow-scrolling: touch) {
+      @content;
+    }
+  }
+  @media only screen and (min-device-width: 414px) and (max-device-width: 736px) {
+    @supports (-webkit-overflow-scrolling: touch) {
+      @content;
+    }
+  }
+}
+
+/// iPhone 5/SE (first gen)
+@mixin for-iphone5 {
+  @media only screen and (min-device-width: 320px) and (max-device-width: 568px) {
+    @supports (-webkit-overflow-scrolling: touch) {
+      @content;
+    }
+  }
+}
+
+// --------------------------------------------
+// ORIENTATION
+// --------------------------------------------
+
+/// Portrait orientation only
+@mixin portrait {
+  @media only screen and (orientation: portrait) {
+    @content;
+  }
+}
+
+/// Landscape orientation only
+@mixin landscape {
+  @media only screen and (orientation: landscape) {
+    @content;
+  }
+}
+
+// --------------------------------------------
+// PAGINATION MOBILE (special case)
+// --------------------------------------------
+
+/// Mobile pagination breakpoint (max-width: 440px)
+@mixin pagination-mobile {
+  @media (max-width: 440px) {
+    @content;
+  }
+}

@@ -1,0 +1,255 @@
+.delivery-track-page {
+  min-height: 60vh;
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.delivery-track-page h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.tenant-name {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.order-ref {
+  margin: 0;
+  font-weight: 600;
+}
+
+.current-status {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+}
+
+.hint {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.status-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 1rem;
+  text-align: left;
+}
+
+.status-steps li {
+  padding: 0.45rem 0.65rem;
+  margin-bottom: 0.35rem;
+  border-left: 3px solid #ccc;
+  opacity: 0.55;
+}
+
+.status-steps li.done {
+  border-left-color: #2e7d32;
+  opacity: 1;
+}
+
+.status-steps li.current {
+  border-left-color: #1565c0;
+  font-weight: 700;
+  opacity: 1;
+  background: rgba(21, 101, 192, 0.06);
+}
+
+.address,
+.totals {
+  margin: 0;
+  text-align: left;
+}
+
+.order-items {
+  list-style: none;
+  padding: 0.25rem 0;
+  margin: 0.25rem 0;
+  text-align: left;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.order-items li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.35rem 0;
+}
+
+.order-items .qty {
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.order-items .name {
+  flex: 1;
+}
+
+.order-items .line-price {
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.totals .subtotal,
+.totals .fee {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.totals .grand-total {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.error {
+  color: var(--color-error, #c00);
+}
+
+.rate-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: center;
+  padding: 1.5rem 1.25rem;
+  margin: 0.25rem 0 0.75rem;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #fff7e6 0%, #fff1d6 55%, #ffe9c2 100%);
+  border: 1px solid rgba(214, 158, 46, 0.25);
+  box-shadow: 0 4px 18px rgba(214, 158, 46, 0.15);
+  animation: rate-card-in 0.4s ease-out;
+}
+
+@keyframes rate-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rate-card-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.rate-card-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #7a4a00;
+}
+
+.rate-card-subtitle {
+  margin: 0 0 0.25rem;
+  font-size: 0.9rem;
+  color: #8a6a2f;
+}
+
+.rate-card-stars {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.rate-star {
+  font-size: 2rem;
+  line-height: 1;
+  color: #e0a530;
+  text-decoration: none;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+  transition: transform 0.15s ease;
+}
+
+.rate-star:hover,
+.rate-star:focus-visible {
+  transform: scale(1.2) rotate(-4deg);
+}
+
+.rate-star:active {
+  transform: scale(0.95);
+}
+
+.btn-google-rate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  background: #fff;
+  color: #1f1f1f;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.btn-google-rate:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  transform: translateY(-1px);
+}
+
+.google-g {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #fff;
+  background: conic-gradient(
+    from -45deg,
+    #4285f4 0deg 90deg,
+    #34a853 90deg 180deg,
+    #fbbc05 180deg 270deg,
+    #ea4335 270deg 360deg
+  );
+}
+
+.rate-card-hint {
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+  color: #8a6a2f;
+  opacity: 0.85;
+}
+
+.btn {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.55rem 1rem;
+  text-decoration: none;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #1565c0;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: #999;
+}

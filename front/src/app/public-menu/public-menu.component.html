@@ -1,0 +1,416 @@
+<div
+  class="menu-page public-menu-page"
+  [style.--hero-header-bg]="tenant()?.public_background_color ?? null"
+  [style.--color-bg]="tenant()?.public_background_color ?? null"
+  [style.--color-primary]="resolvePublicPrimaryColor(tenant()?.public_primary_color)"
+>
+  <app-public-guest-header
+    [tenantId]="tenantId()"
+    [publicMenuRef]="tenant()?.public_slug?.trim() || tenantId()"
+    [publicBookSlug]="tenant()?.public_slug?.trim() || null"
+    [tenantName]="tenant()?.name ?? null"
+    [logoUrl]="logoUrl()"
+    [headerBackgroundColor]="tenant()?.public_background_color ?? null"
+    activePage="menu"
+  />
+  @if (loading()) {
+    <div class="loading-screen">
+      <p>{{ 'PUBLIC_MENU.LOADING' | translate }}</p>
+    </div>
+  } @else if (errorKind()) {
+    <div class="public-menu-shell">
+      <main class="menu-content">
+        <div class="book-card public-menu-error-card">
+          <h1>{{ 'PUBLIC_MENU.PAGE_TITLE' | translate }}</h1>
+          <p class="form-error">
+            @if (errorKind() === 'invalid_tenant') {
+              {{ 'PUBLIC_MENU.INVALID_TENANT' | translate }}
+            } @else if (errorKind() === 'tenant_not_found') {
+              {{ 'PUBLIC_MENU.TENANT_NOT_FOUND' | translate }}
+            } @else {
+              {{ 'PUBLIC_MENU.LOAD_FAILED' | translate }}
+            }
+          </p>
+          @if (tenantId() > 0) {
+            <a
+              [routerLink]="bookRouterLink()"
+              class="public-menu-back-link"
+              data-testid="public-menu-back-home"
+            >{{ 'PUBLIC_MENU.BACK_HOME' | translate }}</a>
+          } @else {
+            <a routerLink="/features" class="public-menu-back-link" data-testid="public-menu-back-home">{{
+              'PUBLIC_MENU.BACK_HOME' | translate
+            }}</a>
+          }
+        </div>
+      </main>
+    </div>
+  } @else {
+    <!-- Hero Header: same layout/classes as the table menu (/menu/:token) -->
+    <header class="hero-header" [class.has-bg-image]="tenant()?.header_background_filename">
+      @if (headerBackgroundImgUrl(); as bannerUrl) {
+        <img [src]="bannerUrl" alt="" class="hero-banner-img" />
+      } @else {
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <div class="hero-top-row">
+            @if (logoUrl()) {
+              <div class="logo-container">
+                <img [src]="getLogoSafeUrl(logoUrl())" [alt]="displayName()" class="tenant-logo" />
+              </div>
+            }
+          </div>
+          <div class="hero-info">
+            <h1 class="restaurant-name">{{ displayName() }}</h1>
+            @if (tenant()?.description?.trim()) {
+              <p class="restaurant-tagline">{{ tenant()!.description }}</p>
+            }
+          </div>
+        </div>
+      }
+
+      @if (tenant()?.phone || tenant()?.whatsapp || tenant()?.address?.trim()) {
+        <div class="hero-meta-bar">
+          @if (tenant()?.address?.trim()) {
+            <span class="table-pill">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span>{{ tenant()!.address }}</span>
+            </span>
+          }
+          @if (tenant()?.phone || tenant()?.whatsapp) {
+            <div class="restaurant-contact">
+              @if (tenant()?.phone) {
+                <a [href]="'tel:' + tenant()!.phone" class="contact-link">{{ tenant()!.phone }}</a>
+              }
+              @if (tenant()?.phone && tenant()?.whatsapp) {
+                <span class="contact-sep">·</span>
+              }
+              @if (tenant()?.whatsapp) {
+                <a
+                  [href]="getWhatsAppUrl(tenant()?.whatsapp ?? '')"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="contact-link contact-link-whatsapp"
+                >
+                  <svg class="whatsapp-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  <span>{{ 'SETTINGS.WHATSAPP' | translate }}</span>
+                </a>
+              }
+            </div>
+          }
+        </div>
+      }
+    </header>
+
+    <!-- Sticky Category Navigation: same layout/classes as the table menu -->
+    @if (!menuLoading() && categories().length > 0) {
+      <nav class="category-nav">
+        <div class="category-scroll-container">
+          <button type="button" class="category-chip" [class.active]="selectedCategoryId() === null" (click)="selectCategory(null)">
+            <span class="category-label">{{ 'COMMON.ALL' | translate }}</span>
+          </button>
+          @for (cat of categories(); track cat.id) {
+            <button type="button" class="category-chip" [class.active]="selectedCategoryId() === cat.id" (click)="selectCategory(cat.id)">
+              <span class="category-label">{{ getCategoryLabel(cat.name) }}</span>
+            </button>
+          }
+        </div>
+      </nav>
+    }
+
+    <main class="menu-content public-menu-content">
+      @if (step() === 'browse') {
+        @if (menuLoading()) {
+          <p class="public-menu-status">{{ 'COMMON.LOADING' | translate }}</p>
+        } @else if (categories().length === 0) {
+          <p class="public-menu-status public-menu-empty">{{ 'PUBLIC_MENU.EMPTY_MENU' | translate }}</p>
+        } @else {
+          @for (cat of visibleCategories(); track cat.id) {
+            <section class="public-menu-category" [attr.aria-labelledby]="'cat-' + cat.id">
+              <h2 class="public-menu-category-title" [id]="'cat-' + cat.id">
+                {{ getCategoryLabel(cat.name) }}
+              </h2>
+              <div class="products-grid">
+                @for (product of cat.products; track product.id) {
+                  <article class="product-card" [class.unavailable]="!product.available">
+                    <div class="product-image-container">
+                      @if (product.image_url) {
+                        <img
+                          [src]="productImageUrl(product.image_url)"
+                          class="product-image"
+                          [alt]="product.name"
+                          loading="lazy"
+                          (error)="$any($event.target).style.display = 'none'"
+                        />
+                      } @else {
+                        <div class="product-image-placeholder">
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <path d="M21 15l-5-5L5 21" />
+                          </svg>
+                        </div>
+                      }
+                      @if (cartQtyFor(product.id) > 0) {
+                        <span class="public-menu-cart-badge">{{ cartQtyFor(product.id) }}</span>
+                      }
+                    </div>
+                    <div class="product-info">
+                      <div class="product-header-row">
+                        <h3 class="product-name">{{ product.name }}</h3>
+                        <span class="product-price">{{ formatPrice(product) }}</span>
+                      </div>
+                      @if (stockLeft(product); as left) {
+                        <p class="stock-left-hint">{{ 'MENU.STOCK_ONLY_LEFT' | translate:{ count: left } }}</p>
+                      }
+                      @if (product.description?.trim()) {
+                        <p class="product-description">{{ product.description }}</p>
+                      }
+                      @if (!product.available) {
+                        <span class="unavailable-badge">{{ 'DELIVERY_CHECKOUT.UNAVAILABLE' | translate }}</span>
+                      } @else if (cartQtyFor(product.id) > 0) {
+                        <div class="qty-stepper qty-stepper-card">
+                          <button type="button" (click)="setQty(product.id, cartQtyFor(product.id) - 1)">−</button>
+                          <span>{{ cartQtyFor(product.id) }}</span>
+                          <button type="button" (click)="setQty(product.id, cartQtyFor(product.id) + 1)">+</button>
+                        </div>
+                      } @else {
+                        <button type="button" class="btn btn-secondary add-to-cart-btn" (click)="addToCart(product)">
+                          {{ 'DELIVERY_CHECKOUT.ADD' | translate }}
+                        </button>
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+            </section>
+          }
+        }
+      }
+
+      @if (step() === 'cart') {
+        <div class="order-step-narrow">
+        <h2>{{ 'DELIVERY_CHECKOUT.CART_TITLE' | translate }}</h2>
+        @if (cart().length === 0) {
+          <p>{{ 'DELIVERY_CHECKOUT.CART_EMPTY' | translate }}</p>
+          <button type="button" class="btn btn-secondary" (click)="goToMenu()">
+            {{ 'DELIVERY_CHECKOUT.BACK_TO_MENU' | translate }}
+          </button>
+        } @else {
+          <ul class="cart-list">
+            @for (line of cart(); track line.product.id) {
+              <li class="cart-row">
+                <div>
+                  <strong>{{ line.product.name }}</strong>
+                  <span class="cart-line-price">{{ formatCents(line.product.price_cents * line.quantity) }}</span>
+                </div>
+                <div class="qty-stepper">
+                  <button type="button" (click)="setQty(line.product.id, line.quantity - 1)">−</button>
+                  <span>{{ line.quantity }}</span>
+                  <button type="button" (click)="setQty(line.product.id, line.quantity + 1)">+</button>
+                </div>
+              </li>
+            }
+          </ul>
+          <p class="order-total">
+            <strong>{{ 'DELIVERY_CHECKOUT.TOTAL' | translate }}:</strong>
+            {{ formatCents(cartTotalCents()) }}
+          </p>
+          <div class="step-actions">
+            <button type="button" class="btn btn-secondary" (click)="goToMenu()">
+              {{ 'DELIVERY_CHECKOUT.BACK_TO_MENU' | translate }}
+            </button>
+            <button type="button" class="btn btn-primary" (click)="goToAddress()">
+              {{ 'DELIVERY_CHECKOUT.CONTINUE_ADDRESS' | translate }}
+            </button>
+          </div>
+        }
+        </div>
+      }
+
+      @if (step() === 'address') {
+        <div class="order-step-narrow">
+        <h2>{{ 'DELIVERY_CHECKOUT.ADDRESS_TITLE' | translate }}</h2>
+        <p class="public-menu-hint">{{ 'DELIVERY_CHECKOUT.ADDRESS_HINT' | translate }}</p>
+        @if (formError()) {
+          <p class="form-error">{{ formError() }}</p>
+        }
+        <form class="order-form" (ngSubmit)="submitAddress()">
+          <label>
+            {{ 'DELIVERY_CHECKOUT.NAME' | translate }}
+            <input type="text" name="name" [(ngModel)]="customerName" autocomplete="name" />
+          </label>
+          <label>
+            {{ 'DELIVERY_CHECKOUT.PHONE' | translate }} *
+            <input type="tel" name="phone" [(ngModel)]="customerPhone" required autocomplete="tel" />
+          </label>
+          <label>
+            {{ 'DELIVERY_CHECKOUT.ADDRESS' | translate }} *
+            <textarea name="address" rows="3" [(ngModel)]="deliveryAddress" required autocomplete="street-address"></textarea>
+          </label>
+          @if (deliveryConfig()?.postal_codes_required) {
+            <label>
+              {{ 'DELIVERY_CHECKOUT.POSTAL_CODE' | translate }} *
+              <input type="text" name="postal" [(ngModel)]="postalCode" required autocomplete="postal-code" />
+            </label>
+            @if (deliveryConfig()?.postal_codes?.length) {
+              <p class="public-menu-hint">
+                {{ 'DELIVERY_CHECKOUT.POSTAL_HINT' | translate }}: {{ deliveryConfig()!.postal_codes.join(', ') }}
+              </p>
+            }
+          }
+          @if (deliveryConfig()?.delivery_radius_meters) {
+            <p class="public-menu-hint">
+              {{ 'DELIVERY_CHECKOUT.RADIUS_HINT' | translate: { meters: deliveryConfig()!.delivery_radius_meters } }}
+            </p>
+            <button type="button" class="btn btn-secondary btn-sm" (click)="requestDeliveryLocation()">
+              {{ 'DELIVERY_CHECKOUT.SHARE_LOCATION' | translate }}
+            </button>
+          }
+          @if ((deliveryConfig()?.delivery_fee_cents ?? 0) > 0) {
+            <p class="public-menu-hint">
+              {{ 'DELIVERY_CHECKOUT.DELIVERY_FEE' | translate }}: {{ formatCents(deliveryConfig()!.delivery_fee_cents) }}
+            </p>
+          }
+          <label>
+            {{ 'DELIVERY_CHECKOUT.NOTES' | translate }}
+            <textarea name="notes" rows="2" [(ngModel)]="deliveryNotes"></textarea>
+          </label>
+          <div class="step-actions">
+            <button type="button" class="btn btn-secondary" (click)="goToCart()" [disabled]="submitting()">
+              {{ 'COMMON.BACK' | translate }}
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+              {{ submitting() ? ('COMMON.LOADING' | translate) : ('DELIVERY_CHECKOUT.CONTINUE_PAY' | translate) }}
+            </button>
+          </div>
+        </form>
+        </div>
+      }
+
+      @if (step() === 'success') {
+        <div class="order-success">
+          <h2>{{ 'DELIVERY_CHECKOUT.SUCCESS_TITLE' | translate }}</h2>
+          <p>{{ 'DELIVERY_CHECKOUT.SUCCESS_MESSAGE' | translate }}</p>
+          @if (orderId(); as oid) {
+            <p class="order-ref">{{ 'DELIVERY_CHECKOUT.ORDER_REF' | translate: { id: oid } }}</p>
+          }
+          <button type="button" class="btn btn-primary" (click)="goToTrack()">
+            {{ 'DELIVERY_CHECKOUT.TRACK_ORDER' | translate }}
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="orderAgain()">
+            {{ 'DELIVERY_CHECKOUT.ORDER_AGAIN' | translate }}
+          </button>
+        </div>
+      }
+
+      @if (
+        step() === 'browse' &&
+        (tenant()?.phone || tenant()?.email || tenant()?.whatsapp || tenant()?.address?.trim() || googleMapsUrl() || openstreetmapUrl() || facebookUrl() || instagramUrl())
+      ) {
+        <footer class="public-menu-contact-footer" data-testid="public-menu-contact-footer">
+          <h2 class="public-menu-contact-title">{{ 'BOOK.CONTACT_RESTAURANT' | translate }}</h2>
+          @if (tenant()?.phone || tenant()?.email || tenant()?.whatsapp) {
+            <div class="restaurant-contact">
+              @if (tenant()?.phone) {
+                <a [href]="'tel:' + tenant()!.phone" class="contact-link">{{ tenant()!.phone }}</a>
+              }
+              @if (tenant()?.phone && (tenant()?.email || tenant()?.whatsapp)) {
+                <span class="contact-sep">·</span>
+              }
+              @if (tenant()?.whatsapp) {
+                <a
+                  [href]="getWhatsAppUrl(tenant()?.whatsapp ?? '')"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="contact-link contact-link-whatsapp"
+                >
+                  <svg class="whatsapp-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  <span>{{ 'SETTINGS.WHATSAPP' | translate }}</span>
+                </a>
+              }
+              @if (tenant()?.whatsapp && tenant()?.email) {
+                <span class="contact-sep">·</span>
+              }
+              @if (tenant()?.email) {
+                <a [href]="'mailto:' + tenant()!.email" class="contact-link">{{ tenant()!.email }}</a>
+              }
+            </div>
+          }
+          @if (facebookUrl() || instagramUrl()) {
+            <div class="restaurant-social-links">
+              @if (facebookUrl()) {
+                <a [href]="facebookUrl()!" target="_blank" rel="noopener noreferrer" class="contact-link contact-link-social" [attr.aria-label]="'BOOK.FACEBOOK' | translate">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.89h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94Z"/>
+                  </svg>
+                  <span>{{ 'BOOK.FACEBOOK' | translate }}</span>
+                </a>
+              }
+              @if (instagramUrl()) {
+                <a [href]="instagramUrl()!" target="_blank" rel="noopener noreferrer" class="contact-link contact-link-social" [attr.aria-label]="'BOOK.INSTAGRAM' | translate">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="5" ry="5"/>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37Z"/>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                  </svg>
+                  <span>{{ 'BOOK.INSTAGRAM' | translate }}</span>
+                </a>
+              }
+            </div>
+          }
+          @if (tenant()?.address?.trim() || googleMapsUrl() || openstreetmapUrl()) {
+            <div class="restaurant-location">
+              @if (tenant()?.address?.trim()) {
+                <p class="restaurant-address">
+                  <span class="oh-label">{{ 'BOOK.ADDRESS' | translate }}:</span>
+                  {{ tenant()!.address }}
+                </p>
+              }
+              @if (googleMapsUrl() || openstreetmapUrl()) {
+                <div class="book-maps-actions">
+                  @if (googleMapsUrl()) {
+                    <a [href]="googleMapsUrl()!" target="_blank" rel="noopener noreferrer" class="btn btn-secondary book-maps-btn">
+                      {{ 'BOOK.OPEN_IN_GOOGLE_MAPS' | translate }}
+                    </a>
+                  }
+                  @if (openstreetmapUrl()) {
+                    <a [href]="openstreetmapUrl()!" target="_blank" rel="noopener noreferrer" class="btn btn-secondary book-maps-btn">
+                      {{ 'BOOK.OPEN_IN_OPENSTREETMAP' | translate }}
+                    </a>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </footer>
+      }
+
+      <div class="public-menu-footer-actions">
+        <a [routerLink]="bookRouterLink()" class="public-menu-back-link" data-testid="public-menu-back-home">{{
+          'PUBLIC_MENU.BACK_HOME' | translate
+        }}</a>
+        <app-legal-links [termsUrl]="tenant()?.terms_of_service_url" [privacyUrl]="tenant()?.privacy_policy_url" />
+      </div>
+    </main>
+
+    @if (showFloatingCheckoutBar()) {
+      <div class="delivery-floating-bar" role="region" [attr.aria-label]="'DELIVERY_CHECKOUT.FLOATING_BAR_ARIA' | translate">
+        <div class="delivery-floating-meta">
+          <span class="delivery-floating-count">{{ cartCount() }} {{ 'COMMON.ITEMS' | translate }}</span>
+          <strong class="delivery-floating-total">{{ formatCents(cartTotalCents()) }}</strong>
+        </div>
+        <button type="button" class="btn btn-primary delivery-floating-cta" (click)="onFloatingCta()">
+          {{ 'DELIVERY_CHECKOUT.VIEW_CART' | translate }}
+        </button>
+      </div>
+    }
+  }
+</div>

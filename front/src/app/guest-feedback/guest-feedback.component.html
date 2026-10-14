@@ -1,0 +1,201 @@
+<app-sidebar>
+  @if (tenantId != null) {
+    <section class="feedback-qr-card" aria-labelledby="feedback-qr-heading">
+      <h2 id="feedback-qr-heading" class="feedback-qr-title">{{ 'FEEDBACK.QR_CARD_TITLE' | translate }}</h2>
+      <p class="feedback-qr-hint">{{ 'FEEDBACK.QR_CARD_HINT' | translate }}</p>
+      <div class="feedback-qr-wrap">
+        <qrcode
+          [qrdata]="feedbackPublicUrl()"
+          [width]="220"
+          [errorCorrectionLevel]="'M'"
+          cssClass="feedback-qr-code"
+        ></qrcode>
+      </div>
+      <p class="feedback-qr-url">
+        <code>{{ feedbackPublicUrl() }}</code>
+      </p>
+      <div class="feedback-qr-actions no-print-on-feedback-qr">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="copyFeedbackUrl()">
+          {{ 'FEEDBACK.COPY_FEEDBACK_URL' | translate }}
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="printFeedbackQr()">
+          {{ 'FEEDBACK.PRINT_QR' | translate }}
+        </button>
+        <a [routerLink]="['/feedback', tenantId]" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">
+          {{ 'FEEDBACK.VIEW_PUBLIC_FORM' | translate }}
+        </a>
+      </div>
+      @if (urlCopied()) {
+        <p class="feedback-url-copied no-print-on-feedback-qr" role="status">{{ 'FEEDBACK.URL_COPIED' | translate }}</p>
+      }
+    </section>
+  }
+
+  <div class="page-header no-print-on-feedback-qr">
+    <h1>{{ 'FEEDBACK.STAFF_TITLE' | translate }}</h1>
+    <div class="page-header-actions">
+      @if (tenantId != null) {
+        <a [routerLink]="['/feedback', tenantId]" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">
+          {{ 'FEEDBACK.VIEW_PUBLIC_FORM' | translate }}
+        </a>
+      }
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        data-testid="feedback-export-csv"
+        (click)="exportCsv()"
+        [disabled]="exporting()"
+      >
+        {{ exporting() ? ('FEEDBACK.EXPORTING' | translate) : ('FEEDBACK.EXPORT_CSV' | translate) }}
+      </button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="load()">{{ 'ORDERS.REFRESH' | translate }}</button>
+    </div>
+  </div>
+
+  @if (summary(); as s) {
+    <section
+      class="feedback-analytics no-print-on-feedback-qr"
+      data-testid="feedback-analytics"
+      aria-labelledby="feedback-analytics-heading"
+    >
+      <div class="feedback-analytics-header">
+        <h2 id="feedback-analytics-heading">{{ 'FEEDBACK.ANALYTICS_TITLE' | translate }}</h2>
+        <div class="feedback-days-toggle" role="group" [attr.aria-label]="'FEEDBACK.LOOKBACK' | translate">
+          @for (d of [30, 90, 365]; track d) {
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-primary]="summaryDays() === d"
+              [class.btn-ghost]="summaryDays() !== d"
+              (click)="setSummaryDays(d)"
+            >
+              {{ ('FEEDBACK.DAYS_' + d) | translate }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="summary-cards">
+        <div class="summary-card">
+          <span class="summary-label">{{ 'FEEDBACK.STAT_TOTAL' | translate }}</span>
+          <span class="summary-value">{{ s.total_count }}</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">{{ 'FEEDBACK.STAT_AVERAGE' | translate }}</span>
+          <span class="summary-value">
+            @if (s.average_rating != null) {
+              {{ s.average_rating }}★
+            } @else {
+              —
+            }
+          </span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">{{ 'FEEDBACK.STAT_WITH_COMMENT' | translate }}</span>
+          <span class="summary-value">{{ s.with_comment_count }}</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">{{ 'FEEDBACK.STAT_WITH_CONTACT' | translate }}</span>
+          <span class="summary-value">{{ s.with_contact_count }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-grid">
+        <div class="rating-bars" [attr.aria-label]="'FEEDBACK.RATING_DISTRIBUTION' | translate">
+          <h3>{{ 'FEEDBACK.RATING_DISTRIBUTION' | translate }}</h3>
+          @for (stars of starLevels; track stars) {
+            <div class="bar-row">
+              <span class="bar-label">{{ stars }}★</span>
+              <div class="bar-track">
+                <div
+                  class="bar-fill"
+                  [style.width.%]="(ratingCount(stars) / maxRatingCount()) * 100"
+                ></div>
+              </div>
+              <span class="bar-count">{{ ratingCount(stars) }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="daily-trend" [attr.aria-label]="'FEEDBACK.DAILY_TREND' | translate">
+          <h3>{{ 'FEEDBACK.DAILY_TREND' | translate }}</h3>
+          @if (recentDays().length === 0) {
+            <p class="trend-empty">{{ 'FEEDBACK.TREND_EMPTY' | translate }}</p>
+          } @else {
+            <div class="trend-bars">
+              @for (day of recentDays(); track day.date) {
+                <div class="trend-col" [title]="day.date + ': ' + day.count">
+                  <div class="trend-bar-wrap">
+                    <div
+                      class="trend-bar"
+                      [style.height.%]="(day.count / maxDayCount()) * 100"
+                    ></div>
+                  </div>
+                  <span class="trend-date">{{ day.date.slice(5) }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (loading()) {
+    <div class="empty-state no-print-on-feedback-qr"><p>{{ 'FEEDBACK.LOADING' | translate }}</p></div>
+  } @else if (error()) {
+    <div class="empty-state no-print-on-feedback-qr"><p class="form-error">{{ error() }}</p></div>
+  } @else if (items().length === 0) {
+    <div class="empty-state no-print-on-feedback-qr"><p>{{ 'FEEDBACK.NONE' | translate }}</p></div>
+  } @else {
+    <div class="feedback-table-wrap no-print-on-feedback-qr">
+      <table class="feedback-table">
+        <thead>
+          <tr>
+            <th>{{ 'FEEDBACK.COL_DATE' | translate }}</th>
+            <th>{{ 'FEEDBACK.COL_RATING' | translate }}</th>
+            <th>{{ 'FEEDBACK.COL_COMMENT' | translate }}</th>
+            <th>{{ 'FEEDBACK.COL_CONTACT' | translate }}</th>
+            <th>{{ 'FEEDBACK.COL_RESERVATION' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of items(); track f.id) {
+            <tr>
+              <td class="cell-nowrap">{{ (f.created_at || '').slice(0, 16) || '—' }}</td>
+              <td>{{ f.rating }}★</td>
+              <td class="cell-comment">{{ f.comment || '—' }}</td>
+              <td class="cell-contact">
+                @if (f.contact_name) {
+                  <div>{{ f.contact_name }}</div>
+                }
+                @if (f.contact_email) {
+                  <div><a [href]="'mailto:' + f.contact_email">{{ f.contact_email }}</a></div>
+                }
+                @if (f.contact_phone) {
+                  <div><a [href]="'tel:' + f.contact_phone">{{ f.contact_phone }}</a></div>
+                }
+                @if (!f.contact_name && !f.contact_email && !f.contact_phone) {
+                  —
+                }
+              </td>
+              <td class="cell-res">
+                @if (f.reservation_id) {
+                  <span>#{{ f.reservation_id }}</span>
+                  @if (f.reservation_date) {
+                    <div class="res-meta">{{ f.reservation_date }} {{ f.reservation_time || '' }}</div>
+                  }
+                  @if (f.reservation_customer_name) {
+                    <div class="res-meta">{{ f.reservation_customer_name }}</div>
+                  }
+                } @else {
+                  —
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</app-sidebar>

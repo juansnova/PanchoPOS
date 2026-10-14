@@ -1,0 +1,65 @@
+claude-session.log
+tmp/*
+# Local diagnostics archives (do not commit)
+diagnostics_*.zip
+.tmp/
+.DS_Store
+*.swp
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments (keep venv out of git)
+back/venv/
+back/.venv/
+.venv/
+venv/
+
+# Local config (copy from config.env.example)
+config.env
+# Demo/local credentials (do not commit)
+.env
+
+# Uploads directory (user-uploaded files)
+back/uploads/
+
+# Pre-deploy database backups (created on server by deploy script)
+backups/
+
+# Certbot webroot and HAProxy combined PEM (host-specific; certbot/README.md is tracked)
+certbot/www/
+certbot/haproxy-certs/*.pem
+certbot/haproxy-certs/*.crt
+certbot/haproxy-certs/*.key
+# HAProxy base compose self-signed dev cert (generate locally; see haproxy/certs/README.md)
+haproxy/certs/*.pem
+haproxy/certs/*.crt
+haproxy/certs/*.key
+# Legacy path if used
+certs/*.pem
+certs/*.crt
+certs/*.key
+
+# Revolut sandbox certificates and private key (never commit)
+revolut-certs/
+
+# Node / Angular (front has its own .gitignore too, this is just extra safety)
+node_modules/
+dist/
+.angular/cache/
+
+# IDEs / AI agent tooling (local only, not part of the app)
+.idea/
+.cursor/
+.factory/
+.claude/
+
+# Local secrets (GA measurement ID, etc. — never commit)
+.secrets
+# Keep .secrets.example committed as the template
