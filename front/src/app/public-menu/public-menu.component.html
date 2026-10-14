@@ -113,10 +113,12 @@
         <div class="category-scroll-container">
           <button type="button" class="category-chip" [class.active]="selectedCategoryId() === null" (click)="selectCategory(null)">
             <span class="category-label">{{ 'COMMON.ALL' | translate }}</span>
+            <span class="category-count">{{ totalProducts() }}</span>
           </button>
           @for (cat of categories(); track cat.id) {
             <button type="button" class="category-chip" [class.active]="selectedCategoryId() === cat.id" (click)="selectCategory(cat.id)">
               <span class="category-label">{{ getCategoryLabel(cat.name) }}</span>
+              <span class="category-count">{{ cat.products.length }}</span>
             </button>
           }
         </div>

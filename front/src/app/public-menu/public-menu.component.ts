@@ -237,6 +237,11 @@ export class PublicMenuComponent implements OnInit {
     return this.menu()?.categories ?? [];
   }
 
+  /** Total dishes across categories (shown in the "all" filter chip). */
+  totalProducts(): number {
+    return this.categories().reduce((n, c) => n + c.products.length, 0);
+  }
+
   /** Categories to render: all of them, or just the one picked from the sticky chip nav. */
   visibleCategories(): PublicTenantMenuCategory[] {
     const sel = this.selectedCategoryId();
