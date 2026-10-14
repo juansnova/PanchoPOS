@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "front/src/app/shared/sidebar.component.ts"
+        ],
+        "createdAt": "2026-10-14T02:33:43.007Z",
+        "reason": "agent: false positive, [src] is a dynamic Angular binding to tenant logo"
+      }
+    ]
+  }
+}

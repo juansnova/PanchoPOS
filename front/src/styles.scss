@@ -52,6 +52,19 @@
   --radius-md: 10px;
   --radius-lg: 16px;
 
+  /* Navigation chrome (warm charcoal, matches --color-text) */
+  --color-nav-bg: #1C1917;
+  --color-nav-border: rgba(255, 255, 255, 0.08);
+  --color-nav-text: #F2EDE6;
+  --color-nav-muted: #A8A097;
+  --color-nav-hover: rgba(255, 255, 255, 0.07);
+  --color-nav-active: color-mix(in srgb, var(--color-brand-accent) 20%, transparent);
+
+  /* Motion: fast, transform/opacity only */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --duration-fast: 150ms;
+  --duration-base: 240ms;
+
   /* Spacing */
   --space-1: 4px;
   --space-2: 8px;
@@ -60,6 +73,16 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-8: 48px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 * {
