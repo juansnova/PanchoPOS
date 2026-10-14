@@ -20,7 +20,7 @@ type NavGroupKey = 'operations' | 'planning' | 'catalog' | 'admin';
   template: `
     <div class="layout" [class.sidebar-open]="sidebarOpen()" [class.layout--nav-collapsed]="staffLayout.sidebarCollapsed()">
       <header class="mobile-header">
-        <button class="menu-toggle" (click)="toggleSidebar()" [attr.aria-expanded]="sidebarOpen()" [attr.aria-label]="'NAV.MENU' | translate" aria-controls="staff-sidebar-nav">
+        <button class="menu-toggle" (click)="toggleSidebar()" [attr.aria-expanded]="sidebarOpen()" aria-controls="staff-sidebar-nav">
           <span></span>
           <span></span>
           <span></span>
