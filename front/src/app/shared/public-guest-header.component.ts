@@ -90,9 +90,9 @@ export type PublicGuestNavKey = 'menu' | 'book' | 'waitlist' | 'feedback';
       gap: 0.5rem;
       min-height: 3.25rem;
       padding: calc(0.35rem + env(safe-area-inset-top, 0px)) 0.75rem 0.35rem;
-      background: var(--hero-header-bg, var(--color-primary, #d35233));
+      background: var(--hero-header-bg, #171210);
       color: var(--hero-header-fg, #ffffff);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 20px -12px rgba(0, 0, 0, 0.5);
     }
 
     .public-guest-header__brand {
@@ -115,8 +115,9 @@ export type PublicGuestNavKey = 'menu' | 'book' | 'waitlist' | 'feedback';
     }
 
     .public-guest-header__name {
+      font-family: var(--font-brand, inherit);
       font-weight: 600;
-      font-size: 0.875rem;
+      font-size: 1rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -140,19 +141,43 @@ export type PublicGuestNavKey = 'menu' | 'book' | 'waitlist' | 'feedback';
 
     .public-guest-header__link {
       flex-shrink: 0;
-      padding: 0.3rem 0.55rem;
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.25rem;
+      padding: 0.3rem 0.8rem;
       border-radius: 999px;
-      color: color-mix(in srgb, var(--hero-header-fg, #ffffff) 92%, transparent);
+      color: color-mix(in srgb, var(--hero-header-fg, #ffffff) 80%, transparent);
       text-decoration: none;
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 500;
       white-space: nowrap;
+      transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .public-guest-header__link:hover {
+      color: var(--hero-header-fg, #ffffff);
+    }
+
+    .public-guest-header__link:active {
+      transform: scale(0.96);
+    }
+
+    .public-guest-header__link:focus-visible,
+    .public-guest-header__brand:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
     }
 
     .public-guest-header__link.is-active {
-      background: color-mix(in srgb, var(--hero-header-fg, #ffffff) 22%, transparent);
-      color: var(--hero-header-fg, #ffffff);
-      font-weight: 650;
+      background: #f08a3c;
+      color: #171210;
+      font-weight: 700;
+    }
+
+    :host([data-ink='dark']) .public-guest-header__link.is-active,
+    .public-guest-header[data-header-ink='dark'] .public-guest-header__link.is-active {
+      background: #171210;
+      color: #fbf6ee;
     }
 
     @media (max-width: 480px) {

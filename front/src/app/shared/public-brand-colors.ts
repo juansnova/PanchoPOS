@@ -2,7 +2,7 @@
  * Public guest-page branding tokens (#370).
  * Primary CTA default is blue (go/confirm), not terracotta/stop.
  */
-export const PUBLIC_PRIMARY_COLOR_DEFAULT = '#2563EB';
+export const PUBLIC_PRIMARY_COLOR_DEFAULT = '#B35A20';
 
 /** Dark ink for light washes (matches global `--color-text`). */
 export const PUBLIC_ON_LIGHT_INK = '#1C1917';
