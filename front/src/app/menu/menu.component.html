@@ -129,10 +129,12 @@
     <div class="category-scroll-container">
       <button class="category-chip" [class.active]="selectedCategory() === null" (click)="selectCategory(null)">
         <span class="category-label">{{ 'COMMON.ALL' | translate }}</span>
+        <span class="category-count">{{ categoryCount(null) }}</span>
       </button>
       @for (category of availableCategories(); track category) {
       <button class="category-chip" [class.active]="selectedCategory() === category" (click)="selectCategory(category)">
         <span class="category-label">{{ getCategoryLabel(category) }}</span>
+        <span class="category-count">{{ categoryCount(category) }}</span>
       </button>
       }
     </div>

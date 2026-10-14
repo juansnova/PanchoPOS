@@ -244,3 +244,212 @@
     transform: scale(0.9);
   }
 }
+
+// ============================================
+// CREATIVE LAYER (shared): category counters, signature dish, palette rhythm
+// ============================================
+
+// ---------- Category bar with counters ----------
+.menu-page .category-chip {
+  gap: 0.5rem;
+  padding-right: 0.55rem;
+
+  .category-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: var(--gm-sand);
+    color: var(--gm-ink);
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &.active .category-count {
+    background: var(--gm-ember);
+    color: var(--gm-ink);
+  }
+}
+
+// ---------- Dish cards: rhythm through colour and format ----------
+// Photoless placeholders cycle through the palette so the grid never looks like one grey block.
+.menu-page .products-grid > .product-card:nth-child(4n + 2) .product-image-container {
+  background: linear-gradient(135deg, #f6e8c9, var(--gm-saffron));
+}
+
+.menu-page .products-grid > .product-card:nth-child(4n + 3) .product-image-container {
+  background: linear-gradient(135deg, #e3e8d3, #b9c79d);
+}
+
+.menu-page .products-grid > .product-card:nth-child(4n + 4) .product-image-container {
+  background: linear-gradient(135deg, #f3d9cc, #e5a98a);
+}
+
+.menu-page .products-grid > .product-card:nth-child(4n + 2) .product-image-placeholder {
+  color: rgba(130, 90, 10, 0.5);
+}
+
+.menu-page .products-grid > .product-card:nth-child(4n + 3) .product-image-placeholder {
+  color: rgba(60, 80, 35, 0.5);
+}
+
+.menu-page .products-grid > .product-card:nth-child(4n + 4) .product-image-placeholder {
+  color: rgba(120, 50, 20, 0.5);
+}
+
+.menu-page .product-name {
+  font-family: var(--font-brand, inherit);
+  font-size: 1.1875rem;
+  font-weight: 600;
+}
+
+// Signature dish: the first card of every category is dark and, from tablet up, spans two columns.
+.menu-page .products-grid > .product-card:first-child {
+  background: linear-gradient(160deg, var(--gm-ink-2), var(--gm-ink));
+
+  .product-info {
+    color: var(--gm-cream);
+  }
+
+  .product-name {
+    color: #fff;
+    font-size: 1.375rem;
+  }
+
+  .product-description {
+    color: rgba(251, 246, 238, 0.78);
+    -webkit-line-clamp: 4;
+  }
+
+  .product-price {
+    background: var(--gm-ember);
+    color: var(--gm-ink);
+
+    .promo-badge {
+      background: var(--gm-ink);
+      color: var(--gm-saffron);
+    }
+  }
+
+  .stock-left-hint {
+    background: rgba(242, 184, 75, 0.16);
+    color: var(--gm-saffron);
+  }
+
+  .unavailable-badge {
+    color: rgba(251, 246, 238, 0.7);
+  }
+
+  .add-to-cart-btn {
+    background: var(--gm-ember);
+    color: var(--gm-ink);
+    box-shadow: 0 12px 22px -10px rgba(240, 138, 60, 0.8);
+  }
+
+  &.in-cart {
+    box-shadow: 0 0 0 2px var(--gm-ember), var(--gm-card-shadow);
+  }
+}
+
+@media (min-width: 600px) {
+  .menu-page .products-grid > .product-card:first-child {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+
+    .product-image-container {
+      aspect-ratio: auto;
+      min-height: 17rem;
+      height: 100%;
+    }
+
+    .product-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: var(--space-6);
+    }
+
+    .product-header-row {
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .product-name {
+      font-size: 1.75rem;
+      line-height: 1.15;
+    }
+
+    .product-price {
+      align-self: flex-start;
+      font-size: 1.0625rem;
+    }
+
+    // The wide card is not 4:3, so its add button/stepper sit in the info column instead of straddling the image.
+    .add-to-cart-btn,
+    .qty-stepper-card {
+      top: auto;
+      bottom: var(--space-5);
+      right: var(--space-5);
+    }
+  }
+}
+
+// Unavailable dishes: calm and clearly out of play.
+.menu-page .product-card.unavailable {
+  opacity: 1;
+
+  .product-image-container,
+  .product-info > :not(.unavailable-badge) {
+    opacity: 0.55;
+  }
+
+  .unavailable-badge {
+    align-self: flex-start;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    background: var(--gm-sand);
+    color: var(--gm-ink);
+    font-weight: 700;
+  }
+}
+
+// Promo / stock accents use the warm palette instead of bare colours.
+.menu-page .stock-left-hint {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: var(--space-2);
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gm-saffron) 28%, white);
+  color: #7a4a05;
+}
+
+// Table menu uses .stock-left-badge / .product-origin / .product-ingredients inside the dark signature card.
+.menu-page .products-grid > .product-card:first-child {
+  .stock-left-badge {
+    background: rgba(242, 184, 75, 0.16);
+    color: var(--gm-saffron);
+  }
+
+  .product-origin,
+  .product-ingredients {
+    color: rgba(251, 246, 238, 0.7);
+  }
+
+  .quick-add-btn,
+  .add-to-cart-btn {
+    background: var(--gm-ember);
+    color: var(--gm-ink);
+  }
+}
+
+.menu-page .stock-left-badge {
+  background: color-mix(in srgb, var(--gm-saffron) 28%, white);
+  color: #7a4a05;
+}

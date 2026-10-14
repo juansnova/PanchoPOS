@@ -569,6 +569,12 @@ export class MenuComponent implements OnInit, OnDestroy {
     return null;
   }
 
+  /** Number of dishes in a category chip (null = all), for the filter counters. */
+  categoryCount(category: string | null): number {
+    const all = this.products();
+    return category ? all.filter((p) => p.category === category).length : all.length;
+  }
+
   applyFilter(category: string | null, subcategoryCode: string | null) {
     let filtered = this.products();
 
