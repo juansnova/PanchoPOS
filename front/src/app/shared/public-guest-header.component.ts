@@ -92,7 +92,7 @@ export type PublicGuestNavKey = 'menu' | 'book' | 'waitlist' | 'feedback';
       padding: calc(0.35rem + env(safe-area-inset-top, 0px)) 0.75rem 0.35rem;
       background: var(--hero-header-bg, var(--color-primary, #d35233));
       color: var(--hero-header-fg, #ffffff);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08), 0 4px 14px rgba(0, 0, 0, 0.12);
     }
 
     .public-guest-header__brand {
@@ -115,8 +115,9 @@ export type PublicGuestNavKey = 'menu' | 'book' | 'waitlist' | 'feedback';
     }
 
     .public-guest-header__name {
+      font-family: var(--font-brand);
       font-weight: 600;
-      font-size: 0.875rem;
+      font-size: 1rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -140,13 +141,27 @@ export type PublicGuestNavKey = 'menu' | 'book' | 'waitlist' | 'feedback';
 
     .public-guest-header__link {
       flex-shrink: 0;
-      padding: 0.3rem 0.55rem;
+      padding: 0.3rem 0.7rem;
       border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.25rem;
       color: color-mix(in srgb, var(--hero-header-fg, #ffffff) 92%, transparent);
       text-decoration: none;
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 500;
       white-space: nowrap;
+      transition: transform 150ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .public-guest-header__link:active {
+      transform: scale(0.96);
+    }
+
+    .public-guest-header__link:focus-visible,
+    .public-guest-header__brand:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
     }
 
     .public-guest-header__link.is-active {
