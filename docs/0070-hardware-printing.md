@@ -55,8 +55,13 @@ Unauthenticated print endpoints are not exposed. Agent routes are SaaS-paywall e
 ```bash
 export PRINT_AGENT_API_BASE=https://satisfecho.de/api   # or http://127.0.0.1:4202/api
 export PRINT_AGENT_TOKEN='…'                            # from step 1
-export KITCHEN_PRINTER_HOST=192.168.1.50
-export RECEIPT_PRINTER_HOST=192.168.1.51
+# Ordered list; the first target that works wins (automatic fallback):
+#   tcp:IP[:PORT]  Ethernet or WiFi printer (port 9100)
+#   win:NAME       USB printer installed in Windows (RAW, no extra packages)
+#   file:PATH      Linux USB device, e.g. /dev/usb/lp0
+export KITCHEN_PRINTER="tcp:192.168.1.50,win:DigitalPOS,file:/dev/usb/lp0"
+# RECEIPT_PRINTER works the same; if unset it reuses the kitchen list.
+# Legacy KITCHEN_PRINTER_HOST / RECEIPT_PRINTER_HOST still work.
 # optional dry-run (writes tmp/print-agent-last.bin):
 export PRINT_AGENT_DRY_RUN=1
 python3 scripts/print-agent/print_agent.py
