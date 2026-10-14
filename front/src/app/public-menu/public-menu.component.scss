@@ -277,10 +277,23 @@
   margin: 0 0 var(--space-4);
 }
 
+// Same column steps as the table menu (/menu/:token) so cards are the same size on both.
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12.65rem, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--space-4);
+
+  @include for-tablet-portrait-up {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include for-tablet-landscape-up {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @include for-desktop-up {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .product-card {
