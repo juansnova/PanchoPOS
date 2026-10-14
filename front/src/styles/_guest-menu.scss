@@ -307,8 +307,8 @@
   font-weight: 600;
 }
 
-// Signature dish: the first card of every category is dark and, from tablet up, spans two columns.
-.menu-page .products-grid > .product-card:first-child {
+// Signature dish: dark card (every 9th, starting with the first); from tablet up it spans two columns.
+.menu-page .products-grid > .product-card:nth-child(9n + 1) {
   background: linear-gradient(160deg, var(--gm-ink-2), var(--gm-ink));
 
   .product-info {
@@ -356,7 +356,7 @@
 }
 
 @media (min-width: 600px) {
-  .menu-page .products-grid > .product-card:first-child {
+  .menu-page .products-grid > .product-card:nth-child(9n + 1) {
     grid-column: span 2;
     display: grid;
     grid-template-columns: 1.15fr 1fr;
@@ -431,7 +431,7 @@
 }
 
 // Table menu uses .stock-left-badge / .product-origin / .product-ingredients inside the dark signature card.
-.menu-page .products-grid > .product-card:first-child {
+.menu-page .products-grid > .product-card:nth-child(9n + 1) {
   .stock-left-badge {
     background: rgba(242, 184, 75, 0.16);
     color: var(--gm-saffron);
@@ -452,4 +452,131 @@
 .menu-page .stock-left-badge {
   background: color-mix(in srgb, var(--gm-saffron) 28%, white);
   color: #7a4a05;
+}
+
+// ============================================
+// CARD RHYTHM: a repeating cycle of 9 presentations so long menus never look like one pattern
+//   1 signature (dark, wide)   3 terracotta block   5 saffron block
+//   6 horizontal (blush, photo on the other side, wide)   8 sage block   others: classic white
+// ============================================
+@mixin gm-tone($bg, $fg, $muted, $chip-bg, $chip-fg, $btn-bg, $btn-fg) {
+  background: $bg;
+
+  .product-info {
+    color: $fg;
+  }
+
+  .product-name {
+    color: $fg;
+  }
+
+  .product-description,
+  .product-origin,
+  .product-ingredients,
+  .unavailable-badge {
+    color: $muted;
+  }
+
+  .product-price {
+    background: $chip-bg;
+    color: $chip-fg;
+
+    .promo-badge {
+      background: $chip-fg;
+      color: $chip-bg;
+    }
+  }
+
+  .stock-left-hint,
+  .stock-left-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: $fg;
+  }
+
+  .add-to-cart-btn,
+  .quick-add-btn {
+    background: $btn-bg;
+    color: $btn-fg;
+  }
+}
+
+.menu-page .products-grid > .product-card:nth-child(9n + 3) {
+  @include gm-tone(var(--gm-terracotta), #fff, rgba(255, 255, 255, 0.82), var(--gm-cream), var(--gm-ink), var(--gm-ink), var(--gm-cream));
+}
+
+.menu-page .products-grid > .product-card:nth-child(9n + 5) {
+  @include gm-tone(var(--gm-saffron), var(--gm-ink), rgba(23, 18, 16, 0.78), var(--gm-ink), var(--gm-cream), var(--gm-ink), var(--gm-saffron));
+}
+
+.menu-page .products-grid > .product-card:nth-child(9n + 8) {
+  @include gm-tone(#46543a, #fff, rgba(255, 255, 255, 0.82), var(--gm-cream), #2c3724, var(--gm-cream), #2c3724);
+}
+
+.menu-page .products-grid > .product-card:nth-child(9n + 6) {
+  @include gm-tone(var(--gm-blush), var(--gm-ink), #5f554e, var(--gm-ink), var(--gm-cream), var(--color-primary), #fff);
+
+  display: grid;
+  grid-template-columns: minmax(8.5rem, 42%) 1fr;
+
+  .product-image-container {
+    aspect-ratio: auto;
+    height: 100%;
+    min-height: 11rem;
+  }
+
+  .product-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--space-4) var(--space-4) calc(var(--space-4) + 52px);
+  }
+
+  .product-header-row {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .product-price {
+    align-self: flex-start;
+  }
+
+  .add-to-cart-btn,
+  .qty-stepper-card {
+    top: auto;
+    bottom: var(--space-3);
+    right: var(--space-3);
+  }
+}
+
+@media (min-width: 600px) {
+  .menu-page .products-grid {
+    grid-auto-flow: dense;
+  }
+
+  .menu-page .products-grid > .product-card:nth-child(9n + 6) {
+    grid-column: span 2;
+    grid-template-columns: 1fr 1.1fr;
+
+    // Photo on the right, text on the left: breaks the left-to-right monotony.
+    .product-image-container {
+      order: 2;
+      min-height: 15rem;
+    }
+
+    .product-info {
+      order: 1;
+      padding: var(--space-6) var(--space-6) calc(var(--space-6) + 40px);
+    }
+
+    .product-name {
+      font-size: 1.5rem;
+    }
+
+    .add-to-cart-btn,
+    .qty-stepper-card {
+      right: auto;
+      left: var(--space-5);
+      bottom: var(--space-5);
+    }
+  }
 }
