@@ -140,7 +140,7 @@
               <div class="products-grid">
                 @for (product of cat.products; track product.id) {
                   <article class="product-card" [class.unavailable]="!product.available">
-                    <div class="product-image-container">
+                    <div class="product-image-container" [attr.data-initial]="product.name.charAt(0)">
                       @if (product.image_url) {
                         <img
                           [src]="productImageUrl(product.image_url)"

@@ -336,7 +336,7 @@
         <article class="product-card" (click)="openProductDetail(product)"
           [class.in-cart]="isProductInMenuCart(product)" [class.just-added]="isProductJustAdded(product)">
           <!-- Product Image -->
-          <div class="product-image-container">
+          <div class="product-image-container" [attr.data-initial]="product.name.charAt(0)">
             @if (product.image_filename) {
             <img [src]="getProductImageUrl(product)" class="product-image" alt="{{ product.name }}" loading="lazy">
             } @else {

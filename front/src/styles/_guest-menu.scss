@@ -456,8 +456,8 @@
 
 // ============================================
 // CARD RHYTHM: a repeating cycle of 9 presentations so long menus never look like one pattern
-//   1 signature (dark, wide)   3 terracotta block   5 saffron block
-//   6 horizontal (blush, photo on the other side, wide)   8 sage block   others: classic white
+//   1 signature (dark, wide)   3 poster (tall, text over photo)   5 stamp (round price seal)
+//   6 horizontal (blush, photo on the other side, wide)   8 menu line (dotted leader, full width)   others: classic
 // ============================================
 @mixin gm-tone($bg, $fg, $muted, $chip-bg, $chip-fg, $btn-bg, $btn-fg) {
   background: $bg;
@@ -500,16 +500,206 @@
   }
 }
 
+// ---- Monogram: photoless dishes get a huge Fredoka initial instead of a grey picture icon.
+.menu-page .product-image-container:not(:has(.product-image))::before {
+  content: attr(data-initial);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-brand, inherit);
+  font-size: clamp(6rem, 48cqw, 11rem);
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.55);
+  text-shadow: 0 6px 30px rgba(23, 18, 16, 0.12);
+  pointer-events: none;
+}
+
+.menu-page .product-image-placeholder svg {
+  opacity: 0;
+}
+
+// ---- 3: POSTER. Tall card, photo fills it, text sits on a dark gradient over the image.
 .menu-page .products-grid > .product-card:nth-child(9n + 3) {
-  @include gm-tone(var(--gm-terracotta), #fff, rgba(255, 255, 255, 0.82), var(--gm-cream), var(--gm-ink), var(--gm-ink), var(--gm-cream));
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 26rem;
+  color: #fff;
+
+  .product-image-container {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
+    height: 100%;
+  }
+
+  .product-info {
+    position: relative;
+    z-index: 1;
+    padding: calc(var(--space-8) + 2rem) var(--space-5) var(--space-5);
+    background: linear-gradient(to top, rgba(23, 18, 16, 0.92) 30%, rgba(23, 18, 16, 0.55) 62%, transparent);
+    color: #fff;
+  }
+
+  .product-header-row {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .product-name {
+    color: #fff;
+    font-size: 1.625rem;
+    line-height: 1.1;
+  }
+
+  .product-description,
+  .product-origin,
+  .product-ingredients,
+  .unavailable-badge {
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  .product-price {
+    align-self: flex-start;
+    background: var(--gm-cream);
+    color: var(--gm-ink);
+  }
+
+  .stock-left-hint,
+  .stock-left-badge {
+    background: rgba(242, 184, 75, 0.2);
+    color: var(--gm-saffron);
+  }
+
+  .add-to-cart-btn,
+  .qty-stepper-card {
+    top: var(--space-4);
+    right: var(--space-4);
+  }
+
+  @media (min-width: 600px) {
+    grid-row: span 2;
+    min-height: 0;
+  }
 }
 
+// ---- 5: STAMP. Classic card, but the price becomes a tilted round seal on the photo.
 .menu-page .products-grid > .product-card:nth-child(9n + 5) {
-  @include gm-tone(var(--gm-saffron), var(--gm-ink), rgba(23, 18, 16, 0.78), var(--gm-ink), var(--gm-cream), var(--gm-ink), var(--gm-saffron));
+  .product-price {
+    position: absolute;
+    top: var(--space-3);
+    left: var(--space-3);
+    z-index: 2;
+    width: 5rem;
+    height: 5rem;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--gm-saffron);
+    color: var(--gm-ink);
+    font-size: 0.8125rem;
+    text-align: center;
+    box-shadow: 0 10px 20px -8px rgba(23, 18, 16, 0.5), inset 0 0 0 4px var(--gm-saffron),
+      inset 0 0 0 5.5px rgba(23, 18, 16, 0.55);
+    transform: rotate(-10deg);
+
+    .list-price {
+      display: none;
+    }
+
+    .promo-badge {
+      position: absolute;
+      bottom: -0.5rem;
+      background: var(--gm-ink);
+      color: var(--gm-saffron);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      animation: gm-pop 320ms var(--gm-ease) 120ms both;
+    }
+  }
 }
 
+// ---- 8: MENU LINE. Full-width strip like a printed menu: round thumb, name .......... price.
 .menu-page .products-grid > .product-card:nth-child(9n + 8) {
-  @include gm-tone(#46543a, #fff, rgba(255, 255, 255, 0.82), var(--gm-cream), #2c3724, var(--gm-cream), #2c3724);
+  display: grid;
+  grid-template-columns: 4.75rem 1fr;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  box-shadow: none;
+  border: 1px solid rgba(23, 18, 16, 0.14);
+  border-radius: 999px 28px 28px 999px;
+
+  @media (min-width: 600px) {
+    grid-column: 1 / -1;
+  }
+
+  &.in-cart {
+    background: transparent;
+    box-shadow: 0 0 0 2px var(--color-primary);
+  }
+
+  .product-image-container {
+    width: 4.75rem;
+    height: 4.75rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 6px 14px -6px rgba(23, 18, 16, 0.4);
+
+    &::before {
+      font-size: 3rem;
+    }
+  }
+
+  .product-info {
+    padding: 0 4.5rem 0 0;
+  }
+
+  .product-header-row {
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+
+  .product-name {
+    flex: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+
+    &::after {
+      content: '';
+      flex: 1;
+      min-width: 1.5rem;
+      border-bottom: 2px dotted rgba(23, 18, 16, 0.35);
+      transform: translateY(-0.25em);
+    }
+  }
+
+  .product-price {
+    background: transparent;
+    color: var(--color-primary);
+    padding: 0;
+    font-size: 1.125rem;
+  }
+
+  .product-description {
+    margin-top: var(--space-1);
+    -webkit-line-clamp: 2;
+  }
+
+  .add-to-cart-btn,
+  .qty-stepper-card {
+    top: 50%;
+    margin-top: -26px;
+    right: var(--space-4);
+  }
 }
 
 .menu-page .products-grid > .product-card:nth-child(9n + 6) {
