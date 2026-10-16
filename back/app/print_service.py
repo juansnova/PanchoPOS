@@ -177,6 +177,20 @@ def _order_table_name(session: Session, order: models.Order) -> str | None:
     return table.name if table else None
 
 
+def _local_time_label(session: Session, tenant_id: int) -> str:
+    """Current time as ``dd/mm HH:MM`` in the tenant's timezone (UTC when unknown)."""
+    from zoneinfo import ZoneInfo
+
+    now = _now()
+    tenant = session.get(models.Tenant, tenant_id)
+    try:
+        if tenant is not None and tenant.timezone:
+            now = now.astimezone(ZoneInfo(tenant.timezone))
+    except Exception:
+        pass
+    return now.strftime("%d/%m %H:%M")
+
+
 def _order_total_cents(items: list[models.OrderItem], order: models.Order) -> int:
     tip = int(order.tip_amount_cents or 0)
     sub = sum(int(i.price_cents or 0) * int(i.quantity or 1) for i in items)
@@ -213,24 +227,31 @@ def _build_order_payload(
                 "quantity": qty,
                 "price_cents": i.price_cents or 0,
                 "notes": " · ".join(note_bits) if note_bits else None,
+                # Free-text note written by the guest/staff (allergies, "sin cebolla"...)
+                "item_note": (getattr(i, "notes", None) or "").strip() or None,
                 "station_route": getattr(i, "kitchen_station_route", None),
             }
         )
     table_name = _order_table_name(session, order)
     total_cents = _order_total_cents(items, order)
     title = "KITCHEN" if job_type == "kitchen" else "RECEIPT"
+    is_delivery = order.table_id is None and table_name == "Domicilio"
+    service_label = (table_name or "PARA LLEVAR").upper()
+    time_label = _local_time_label(session, order.tenant_id)
     plain_lines = [
-        title,
         *(["*** ADICION - solo platos nuevos ***"] if addition else []),
-        f"Order #{order.id}",
-        f"Table: {table_name or '—'}",
-        f"Customer: {order.customer_name or '—'}",
+        f"{title} - {service_label}",
+        f"Pedido #{order.id}   {time_label}",
+        f"Cliente: {order.customer_name or '—'}",
         "-" * 32,
     ]
     for line in lines:
         plain_lines.append(f"{line['quantity']}x {line['name']}")
-        if line.get("notes"):
-            plain_lines.append(f"  {line['notes']}")
+        for extra in (line.get("notes"), line.get("item_note")):
+            if extra:
+                plain_lines.append(f"  >> {extra}")
+    if order.notes:
+        plain_lines.extend(["-" * 32, f"NOTA: {order.notes}"])
     if job_type == "receipt":
         plain_lines.append("-" * 32)
         plain_lines.append(f"TOTAL: {total_cents / 100:.2f}")
@@ -243,6 +264,13 @@ def _build_order_payload(
         "total_cents": total_cents,
         "lines": lines,
         "plain_text": "\n".join(plain_lines),
+        # Structured fields: the print agent lays out the kitchen ticket from these.
+        "addition": addition,
+        "service_label": service_label,
+        "time_label": time_label,
+        "order_notes": (order.notes or "").strip() or None,
+        "delivery_address": order.delivery_address if is_delivery else None,
+        "customer_phone": order.customer_phone if is_delivery else None,
     }
     return out
 

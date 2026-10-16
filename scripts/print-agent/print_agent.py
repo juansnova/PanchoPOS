@@ -35,7 +35,9 @@ import json
 import os
 import socket
 import sys
+import textwrap
 import time
+import unicodedata
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -119,6 +121,84 @@ def render_escpos(plain_text: str, *, big: bool = False) -> bytes:
             out.extend(b"\n")
     out.extend(ESC + b"d" + bytes([FEED_BEFORE_CUT]))
     out.extend(GS + b"V\x00")  # full cut (many printers ignore if unsupported)
+    return bytes(out)
+
+
+def _enc(text: str) -> bytes:
+    """CP437 bytes; characters it lacks (e.g. capital Ú) fall back to their plain letter."""
+    out = bytearray()
+    for ch in text:
+        try:
+            out.extend(ch.encode("cp437"))
+        except UnicodeEncodeError:
+            base = unicodedata.normalize("NFKD", ch).encode("ascii", "ignore")
+            out.extend(base or b"?")
+    return bytes(out)
+
+
+def _wrap(text: str, width: int, indent: int = 0) -> list[str]:
+    """Wrap to ``width`` columns, continuation lines indented by ``indent``."""
+    lines = textwrap.wrap(text, width=width, subsequent_indent=" " * indent) or [""]
+    return lines
+
+
+def render_kitchen_ticket(payload: dict, *, cols: int = 48) -> bytes:
+    """Kitchen ticket laid out from the job payload (Spanish, large, scannable at a glance)."""
+    out = bytearray()
+
+    def put(text: str, *, size: int = 0x00, bold: bool = False, align: str = "left",
+            reverse: bool = False) -> None:
+        # Width of one character depends on the size byte: bit 4-6 = width multiplier - 1.
+        per_char = ((size >> 4) & 0x07) + 1
+        usable = cols // per_char
+        for line in _wrap(text, usable):
+            out.extend(ESC + b"a" + bytes([{"left": 0, "center": 1, "right": 2}[align]]))
+            out.extend(ESC + b"E" + bytes([1 if bold else 0]))
+            out.extend(GS + b"!" + bytes([size]))
+            out.extend(GS + b"B" + bytes([1 if reverse else 0]))
+            out.extend(_enc(f" {line} " if reverse else line) + b"\n")
+        out.extend(GS + b"B\x00" + GS + b"!\x00" + ESC + b"E\x00" + ESC + b"a\x00")
+
+    out.extend(ESC + b"@")  # init
+    out.extend(ESC + b"t\x00")  # code page 437
+    addition = bool(payload.get("addition"))
+    put("** ADICION **" if addition else "COMANDA", size=0x11, bold=True, align="center", reverse=True)
+    if addition:
+        put("solo platos nuevos", bold=True, align="center")
+    put(str(payload.get("service_label") or "PARA LLEVAR"), size=0x22, bold=True, align="center")
+    meta = f"Pedido #{payload.get('order_id', '')}   {payload.get('time_label', '')}".strip()
+    put(meta, bold=True, align="center")
+    if payload.get("customer_name"):
+        put(f"Cliente: {payload['customer_name']}", bold=True)
+    if payload.get("delivery_address"):
+        put(f"Dir: {payload['delivery_address']}")
+    if payload.get("customer_phone"):
+        put(f"Tel: {payload['customer_phone']}")
+    put("=" * cols)
+
+    total = 0
+    lines = payload.get("lines") or []
+    for idx, line in enumerate(lines):
+        qty = int(line.get("quantity") or 1)
+        total += qty
+        head = f"{qty:>2} x "
+        wrapped = _wrap(str(line.get("name") or ""), cols - len(head), indent=0)
+        for n, part in enumerate(wrapped):
+            put((head if n == 0 else " " * len(head)) + part, size=0x01, bold=True)
+        if line.get("notes"):
+            put(f"     > {line['notes']}", bold=True)
+        if line.get("item_note"):
+            put(f"NOTA: {line['item_note']}", bold=True, reverse=True)
+        if idx < len(lines) - 1:
+            put("- " * (cols // 2))
+    put("=" * cols)
+    put(f"{total} plato{'s' if total != 1 else ''}", size=0x01, bold=True, align="center")
+    if payload.get("order_notes"):
+        put("NOTA DEL PEDIDO", bold=True, align="center", reverse=True)
+        put(str(payload["order_notes"]), size=0x01, bold=True)
+
+    out.extend(ESC + b"d" + bytes([FEED_BEFORE_CUT]))
+    out.extend(GS + b"V\x00")
     return bytes(out)
 
 
@@ -232,7 +312,10 @@ def process_job(token: str, base: str, job: dict, *, dry_run: bool) -> None:
     if not plain and payload.get("lines"):
         lines = [f"{ln.get('quantity', 1)}x {ln.get('name', '')}" for ln in payload["lines"]]
         plain = "\n".join(lines) + "\n"
-    data = render_escpos(plain, big=role == "kitchen")
+    if role == "kitchen" and payload.get("lines") and payload.get("service_label"):
+        data = render_kitchen_ticket(payload, cols=int(_env("PRINTER_COLUMNS", "48") or "48"))
+    else:
+        data = render_escpos(plain, big=role == "kitchen")
     try:
         send_to_printer(role, data, dry_run=dry_run)
         _request(
