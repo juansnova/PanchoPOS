@@ -2,12 +2,17 @@
 Seed default demo products for every tenant (including partial menus).
 Idempotent: creates only DEMO_PRODUCTS names that are missing for that tenant;
 does not delete or alter existing catalog/wine/beer/pizza rows.
-No image filenames so it works on any new deployment.
+Photos come from menu_images/ and are copied into uploads/ when missing.
 
 Usage:
   docker compose exec back python -m app.seeds.seed_demo_products
   cd back && python -m app.seeds.seed_demo_products
 """
+
+import re
+import shutil
+import unicodedata
+from pathlib import Path
 
 from sqlalchemy import text
 from sqlmodel import Session
@@ -84,6 +89,32 @@ _MENU_PESOS = [
 # price_cents convention in this app: pesos * 100
 DEMO_PRODUCTS = [(n, pesos * 100, c, d) for n, pesos, c, d in _MENU_PESOS]
 
+# Photos live in menu_images/<slug>.jpg (credits in menu_images/CREDITS.md); they are
+# copied into uploads/<tenant>/products/ so the app serves them. Products without a
+# matching file simply have no image.
+IMAGES_DIR = Path(__file__).parent / "menu_images"
+UPLOADS_DIR = Path(__file__).parent.parent.parent / "uploads"
+
+
+def _slug(name: str) -> str:
+    ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", ascii_name.lower()).strip("-")
+
+
+def _ensure_image(tenant_id: int, name: str) -> str | None:
+    """Copy the product's photo into the tenant uploads dir; return its filename."""
+    src = IMAGES_DIR / f"{_slug(name)}.jpg"
+    if not src.is_file():
+        return None
+    filename = f"menu-{src.name}"
+    dest_dir = UPLOADS_DIR / str(tenant_id) / "products"
+    dest = dest_dir / filename
+    if not dest.is_file():
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, dest)
+    return filename
+
+
 DEMO_PRODUCT_NAMES = [name for name, *_ in DEMO_PRODUCTS]
 
 
@@ -95,6 +126,19 @@ def _seed_tenant_products(session, tenant_id: int) -> int:
     )
     existing_names = {row[0] for row in result.fetchall()}
     created = 0
+    # Attach photos to demo products that exist without one (e.g. seeded before photos).
+    for name, *_ in DEMO_PRODUCTS:
+        if name not in existing_names:
+            continue
+        filename = _ensure_image(tenant_id, name)
+        if filename:
+            session.execute(
+                text(
+                    "UPDATE product SET image_filename = :f "
+                    "WHERE tenant_id = :tid AND name = :n AND image_filename IS NULL"
+                ),
+                {"f": filename, "tid": tenant_id, "n": name},
+            )
     for name, price_cents, category, description in DEMO_PRODUCTS:
         if name in existing_names:
             continue
@@ -104,7 +148,7 @@ def _seed_tenant_products(session, tenant_id: int) -> int:
             price_cents=price_cents,
             category=category,
             ingredients=None,
-            image_filename=None,
+            image_filename=_ensure_image(tenant_id, name),
             description=description,
         )
         session.add(product)
@@ -130,21 +174,13 @@ def run() -> None:
             print("No tenants found.")
             return
 
-        # Repair every tenant: empty and partial menus (create missing DEMO_PRODUCTS
-        # names only). Idempotent; never deletes existing products.
-        any_created = False
+        # Repair every tenant: create missing DEMO_PRODUCTS names and attach photos to
+        # demo products that lack one. Idempotent; never deletes existing products.
         for tenant_id in tenant_ids:
-            missing = _tenant_missing_demo_names(session, tenant_id)
-            if not missing:
-                continue
             created = _seed_tenant_products(session, tenant_id)
+            session.commit()
             if created:
-                session.commit()
-                any_created = True
                 print(f"Tenant {tenant_id}: created {created} demo products.")
-
-        if not any_created:
-            print("All tenants already have the full demo product set. Nothing to seed.")
 
     print("Done.")
 
