@@ -2924,6 +2924,18 @@ def get_tenant_branding(
     return {"name": tenant.name, "logo_filename": tenant.logo_filename}
 
 
+def _parse_bank_accounts(tenant) -> list[dict]:
+    """Bank transfer accounts are stored as a JSON array in a text column."""
+    raw = getattr(tenant, "payment_bank_accounts", None) if tenant else None
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        return []
+    return data if isinstance(data, list) else []
+
+
 @app.get("/tenant/settings")
 @limiter.limit(
     f"{getattr(settings, 'rate_limit_admin_per_minute', 30)}/minute",
@@ -2955,6 +2967,7 @@ def get_tenant_settings(
     # Exclude relationship to avoid serialization issues (users list)
     tenant_dict = tenant.model_dump(exclude={"users"})
     tenant_dict["id"] = tenant.id
+    tenant_dict["payment_bank_accounts"] = _parse_bank_accounts(tenant)
     tenant_dict["logo_size_bytes"] = logo_size
     tenant_dict["logo_size_formatted"] = format_file_size(logo_size)
 
@@ -3136,6 +3149,17 @@ def update_tenant_settings(
         if _pay_field in tenant_update.model_fields_set:
             _val = getattr(tenant_update, _pay_field)
             setattr(tenant, _pay_field, _val.strip() or None if isinstance(_val, str) else None)
+
+    if "payment_bank_accounts" in tenant_update.model_fields_set:
+        _accounts = []
+        for _acc in (tenant_update.payment_bank_accounts or [])[:10]:
+            _clean = {
+                k: str(_acc.get(k) or "").strip()[:120]
+                for k in ("bank", "account_type", "account_number", "holder")
+            }
+            if _clean["bank"] and _clean["account_number"]:
+                _accounts.append(_clean)
+        tenant.payment_bank_accounts = json.dumps(_accounts, ensure_ascii=False) if _accounts else None
 
     if tenant_update.dian_mode is not None:
         dm = tenant_update.dian_mode.strip().lower() if isinstance(tenant_update.dian_mode, str) else ""
@@ -10707,6 +10731,7 @@ def get_menu(
         "tenant_payment_llave": tenant.payment_llave if tenant else None,
         "tenant_payment_account_holder": tenant.payment_account_holder if tenant else None,
         "tenant_payment_qr_filename": tenant.payment_qr_filename if tenant else None,
+        "tenant_payment_bank_accounts": _parse_bank_accounts(tenant),
         "tenant_immediate_payment_required": tenant.immediate_payment_required
         if tenant
         else False,

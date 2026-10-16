@@ -3,7 +3,7 @@ import { DomSanitizer, SafeResourceUrl, SafeStyle } from '@angular/platform-brow
 import { FormsModule } from '@angular/forms';
 import { CommonModule, SlicePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService, Product, OrderItemCreate, TableCartResponse } from '../services/api.service';
+import { ApiService, BankAccount, Product, OrderItemCreate, TableCartResponse } from '../services/api.service';
 import { AudioService } from '../services/audio.service';
 import { environment } from '../../environments/environment';
 import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
@@ -81,9 +81,16 @@ export class MenuComponent implements OnInit, OnDestroy {
   tenantPaymentNequi = signal<string | null>(null);
   tenantPaymentLlave = signal<string | null>(null);
   tenantPaymentHolder = signal<string | null>(null);
+  tenantBankAccounts = signal<BankAccount[]>([]);
   tenantPaymentQrUrl = signal<string | null>(null);
   hasTransferOptions = computed(
-    () => !!(this.tenantPaymentNequi() || this.tenantPaymentLlave() || this.tenantPaymentQrUrl()),
+    () =>
+      !!(
+        this.tenantPaymentNequi() ||
+        this.tenantPaymentLlave() ||
+        this.tenantPaymentQrUrl() ||
+        this.tenantBankAccounts().length
+      ),
   );
   tenantHeaderBackgroundFilename = signal<string | null>(null);
 
@@ -141,7 +148,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   // True when the "message" step was opened directly (header call-waiter button), not via checkout
   callWaiterDirectEntry = signal(false);
   paymentMessageTarget = signal<'waiter' | null>(null);
-  transferMethod = signal<'nequi' | 'qr' | 'llave' | null>(null);
+  transferMethod = signal<'nequi' | 'qr' | 'llave' | 'bank' | null>(null);
   transferCopied = signal(false);
   paymentMessage = signal('');
   paymentRequestSending = signal(false);
@@ -292,6 +299,7 @@ export class MenuComponent implements OnInit, OnDestroy {
         this.tenantPaymentNequi.set(data.tenant_payment_nequi_number || null);
         this.tenantPaymentLlave.set(data.tenant_payment_llave || null);
         this.tenantPaymentHolder.set(data.tenant_payment_account_holder || null);
+        this.tenantBankAccounts.set(data.tenant_payment_bank_accounts || []);
         this.tenantPaymentQrUrl.set(
           data.tenant_payment_qr_filename && data.tenant_id
             ? `${environment.apiUrl}/uploads/${data.tenant_id}/payment_qr/${data.tenant_payment_qr_filename}`
@@ -1373,7 +1381,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   // --- Payment options handlers ---
 
   /** Show where to transfer (informational only — staff confirms the payment in Orders). */
-  selectTransfer(method: 'nequi' | 'qr' | 'llave') {
+  selectTransfer(method: 'nequi' | 'qr' | 'llave' | 'bank') {
     this.transferMethod.set(method);
     this.transferCopied.set(false);
     this.paymentOptionsStep.set('transfer');
@@ -1387,7 +1395,10 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   copyTransferValue() {
-    const value = this.transferValue();
+    this.copyText(this.transferValue());
+  }
+
+  copyText(value: string) {
     if (!value || !navigator.clipboard) return;
     navigator.clipboard.writeText(value).then(
       () => {

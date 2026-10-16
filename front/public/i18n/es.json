@@ -1984,6 +1984,14 @@
     "PAYMENT_ACCOUNT_HOLDER": "Titular de la cuenta",
     "PAYMENT_QR": "Imagen del QR de pago",
     "PAYMENT_QR_REMOVE": "Quitar QR",
+    "BANK_ACCOUNTS_TITLE": "Cuentas bancarias",
+    "BANK_ACCOUNTS_HINT": "Bancolombia, Davivienda, etc. El cliente las ve al elegir pagar por transferencia.",
+    "BANK_NAME": "Banco",
+    "BANK_ACCOUNT_TYPE": "Tipo de cuenta",
+    "BANK_TYPE_SAVINGS": "Ahorros",
+    "BANK_TYPE_CHECKING": "Corriente",
+    "BANK_ACCOUNT_NUMBER": "Número de cuenta",
+    "BANK_ADD": "Agregar cuenta",
     "PAYMENT_QR_HINT": "Sube el QR de tu app Nequi o del banco (PNG o JPG). Se guarda al instante."
   },
   "PAYMENTS": {
@@ -2014,6 +2022,8 @@
     "QR": "Código QR",
     "QR_DESC": "Escanea el QR con la app de tu banco",
     "LLAVE": "Llave",
+    "BANK": "Cuenta bancaria",
+    "BANK_DESC": "Ver las cuentas de Bancolombia, Davivienda y otros bancos",
     "LLAVE_DESC": "Ver la llave para transferir desde cualquier banco",
     "NO_TRANSFER_OPTIONS": "Pregunta al camarero cómo pagar.",
     "NEQUI_NUMBER": "Número de Nequi",

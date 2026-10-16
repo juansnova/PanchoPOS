@@ -89,6 +89,19 @@ class TestTransferPaymentOptions(PgClientTestCase):
         self.assertIsNone(menu["tenant_payment_qr_filename"])
         self.assertEqual(menu["tenant_payment_nequi_number"], "3001234567")
 
+    def test_bank_accounts_saved_and_shown_on_menu(self) -> None:
+        h = _bearer_headers(self.owner)
+        accounts = [
+            {"bank": "Bancolombia", "account_type": "Ahorros", "account_number": "123-456", "holder": "Pancho"},
+            {"bank": "", "account_type": "", "account_number": "999", "holder": ""},
+        ]
+        r = self.client.put("/tenant/settings", json={"payment_bank_accounts": accounts}, headers=h)
+        self.assertEqual(r.status_code, 200, r.text)
+        got = self.client.get("/tenant/settings", headers=h).json()["payment_bank_accounts"]
+        self.assertEqual([a["bank"] for a in got], ["Bancolombia"])
+        menu = self.client.get(f"/menu/{self.table.token}").json()
+        self.assertEqual(menu["tenant_payment_bank_accounts"][0]["account_number"], "123-456")
+
     def test_waiter_cannot_change_payment_details(self) -> None:
         r = self.client.post(
             "/tenant/payment-qr",

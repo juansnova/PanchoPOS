@@ -135,6 +135,8 @@ class Tenant(SQLModel, table=True):
     payment_llave: str | None = Field(default=None, max_length=120)  # Bre-B key
     payment_account_holder: str | None = Field(default=None, max_length=120)
     payment_qr_filename: str | None = None  # Stored in uploads/{tenant_id}/payment_qr/
+    # JSON array of {bank, account_type, account_number, holder}
+    payment_bank_accounts: str | None = Field(default=None, max_length=4000)
 
     # Inventory Management (commented out - migration not applied)
     # inventory_tracking_enabled: bool = Field(
@@ -1387,6 +1389,7 @@ class TenantUpdate(SQLModel):
     payment_nequi_number: str | None = Field(default=None, max_length=40)
     payment_llave: str | None = Field(default=None, max_length=120)
     payment_account_holder: str | None = Field(default=None, max_length=120)
+    payment_bank_accounts: list[dict] | None = None
     # inventory_tracking_enabled: bool | None = None  # Commented out - migration not applied
 
     # Location verification settings

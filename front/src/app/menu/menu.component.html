@@ -870,6 +870,23 @@
           </button>
           }
 
+          @if (tenantBankAccounts().length) {
+          <button class="payment-option-btn" (click)="selectTransfer('bank')" data-testid="pay-bank">
+            <div class="payment-option-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18" />
+              </svg>
+            </div>
+            <div class="payment-option-text">
+              <span class="payment-option-title">{{ 'PAYMENTS.BANK' | translate }}</span>
+              <span class="payment-option-desc">{{ 'PAYMENTS.BANK_DESC' | translate }}</span>
+            </div>
+            <svg class="payment-option-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9,18 15,12 9,6" />
+            </svg>
+          </button>
+          }
+
           @if (!hasTransferOptions()) {
           <p class="modal-subtitle" data-testid="pay-no-options">{{ 'PAYMENTS.NO_TRANSFER_OPTIONS' | translate }}</p>
           }
@@ -899,6 +916,8 @@
           <h3 class="modal-title">
             @if (transferMethod() === 'nequi') {
               {{ 'PAYMENTS.NEQUI' | translate }}
+            } @else if (transferMethod() === 'bank') {
+              {{ 'PAYMENTS.BANK' | translate }}
             } @else if (transferMethod() === 'qr') {
               {{ 'PAYMENTS.QR' | translate }}
             } @else {
@@ -920,6 +939,21 @@
         <div class="transfer-details" data-testid="transfer-details">
           @if (transferMethod() === 'qr') {
             <img class="transfer-qr" [src]="tenantPaymentQrUrl()" [alt]="'PAYMENTS.QR' | translate" />
+          } @else if (transferMethod() === 'bank') {
+            @for (acc of tenantBankAccounts(); track $index) {
+              <div class="transfer-bank" data-testid="transfer-bank">
+                <span class="transfer-label">{{ acc.bank }}@if (acc.account_type) { · {{ acc.account_type }} }</span>
+                <div class="transfer-value-row">
+                  <span class="transfer-value">{{ acc.account_number }}</span>
+                  <button type="button" class="btn-secondary transfer-copy" (click)="copyText(acc.account_number)">
+                    {{ 'PAYMENTS.COPY' | translate }}
+                  </button>
+                </div>
+                @if (acc.holder) {
+                  <span class="transfer-holder">{{ 'PAYMENTS.ACCOUNT_HOLDER' | translate }}: {{ acc.holder }}</span>
+                }
+              </div>
+            }
           } @else {
             <span class="transfer-label">
               {{ (transferMethod() === 'nequi' ? 'PAYMENTS.NEQUI_NUMBER' : 'PAYMENTS.LLAVE_KEY') | translate }}
@@ -931,7 +965,7 @@
               </button>
             </div>
           }
-          @if (tenantPaymentHolder()) {
+          @if (tenantPaymentHolder() && transferMethod() !== 'bank') {
             <span class="transfer-holder">{{ 'PAYMENTS.ACCOUNT_HOLDER' | translate }}: {{ tenantPaymentHolder() }}</span>
           }
         </div>

@@ -673,6 +673,36 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <input type="text" id="payment_account_holder" [(ngModel)]="formData.payment_account_holder" name="payment_account_holder" maxlength="120" class="input-medium" />
                   </div>
                   <div class="form-group">
+                    <label>{{ 'SETTINGS.BANK_ACCOUNTS_TITLE' | translate }}</label>
+                    <p class="hint">{{ 'SETTINGS.BANK_ACCOUNTS_HINT' | translate }}</p>
+                    @for (acc of formData.payment_bank_accounts; track $index) {
+                      <div class="form-row" data-testid="settings-bank-account">
+                        <input type="text" [(ngModel)]="acc.bank" [name]="'bank_' + $index" maxlength="120" list="bank-suggestions" [placeholder]="'SETTINGS.BANK_NAME' | translate" />
+                        <select [(ngModel)]="acc.account_type" [name]="'bank_type_' + $index">
+                          <option value="">{{ 'SETTINGS.BANK_ACCOUNT_TYPE' | translate }}</option>
+                          <option value="Ahorros">{{ 'SETTINGS.BANK_TYPE_SAVINGS' | translate }}</option>
+                          <option value="Corriente">{{ 'SETTINGS.BANK_TYPE_CHECKING' | translate }}</option>
+                        </select>
+                        <input type="text" [(ngModel)]="acc.account_number" [name]="'bank_num_' + $index" maxlength="120" [placeholder]="'SETTINGS.BANK_ACCOUNT_NUMBER' | translate" />
+                        <input type="text" [(ngModel)]="acc.holder" [name]="'bank_holder_' + $index" maxlength="120" [placeholder]="'SETTINGS.PAYMENT_ACCOUNT_HOLDER' | translate" />
+                        <button type="button" class="btn btn-link danger" (click)="removeBankAccount($index)">{{ 'COMMON.DELETE' | translate }}</button>
+                      </div>
+                    }
+                    <datalist id="bank-suggestions">
+                      <option value="Bancolombia"></option>
+                      <option value="Davivienda"></option>
+                      <option value="Banco de Bogotá"></option>
+                      <option value="BBVA"></option>
+                      <option value="Banco de Occidente"></option>
+                      <option value="Banco Popular"></option>
+                      <option value="Banco Caja Social"></option>
+                      <option value="Scotiabank Colpatria"></option>
+                      <option value="Nu"></option>
+                      <option value="Daviplata"></option>
+                    </datalist>
+                    <button type="button" class="btn btn-secondary" (click)="addBankAccount()" data-testid="settings-bank-add">{{ 'SETTINGS.BANK_ADD' | translate }}</button>
+                  </div>
+                  <div class="form-group">
                     <label>{{ 'SETTINGS.PAYMENT_QR' | translate }}</label>
                     @if (paymentQrUrl(); as qrUrl) {
                       <img [src]="qrUrl" alt="QR" class="payment-qr-preview" data-testid="settings-payment-qr-preview" />
@@ -2368,6 +2398,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     payment_nequi_number: null,
     payment_llave: null,
     payment_account_holder: null,
+    payment_bank_accounts: [],
     immediate_payment_required: false,
     timezone: null,
     country_code: null,
@@ -2604,6 +2635,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
           payment_nequi_number: settings.payment_nequi_number ?? null,
           payment_llave: settings.payment_llave ?? null,
           payment_account_holder: settings.payment_account_holder ?? null,
+          payment_bank_accounts: settings.payment_bank_accounts ?? [],
           immediate_payment_required: settings.immediate_payment_required || false,
           timezone: settings.timezone || null,
           country_code: settings.country_code ?? null,
@@ -3603,6 +3635,20 @@ export class SettingsComponent implements OnInit, OnDestroy {
       next: (res) => this.settings.update((cur) => (cur ? { ...cur, payment_qr_filename: res.payment_qr_filename } : cur)),
       error: (err) => this.error.set(err?.error?.detail || this.translate.instant('COMMON.API_REQUEST_FAILED')),
     });
+  }
+
+  addBankAccount() {
+    const list = this.formData.payment_bank_accounts ?? [];
+    this.formData.payment_bank_accounts = [
+      ...list,
+      { bank: '', account_type: '', account_number: '', holder: '' },
+    ];
+  }
+
+  removeBankAccount(index: number) {
+    this.formData.payment_bank_accounts = (this.formData.payment_bank_accounts ?? []).filter(
+      (_, i) => i !== index,
+    );
   }
 
   removePaymentQr() {

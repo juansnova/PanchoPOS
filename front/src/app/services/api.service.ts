@@ -37,6 +37,13 @@ export const DEFAULT_TENANT_UI_MODULES: Record<TenantUiModuleKey, boolean> = {
   users: true,
 };
 
+export interface BankAccount {
+  bank: string;
+  account_type: string;
+  account_number: string;
+  holder: string;
+}
+
 export interface User {
   id?: number;
   username: string;
@@ -1209,6 +1216,7 @@ export interface MenuResponse {
   tenant_payment_nequi_number?: string | null;
   tenant_payment_llave?: string | null;
   tenant_payment_account_holder?: string | null;
+  tenant_payment_bank_accounts?: BankAccount[] | null;
   tenant_payment_qr_filename?: string | null;
   tenant_immediate_payment_required?: boolean;
   tenant_location_check_enabled?: boolean;
@@ -1284,6 +1292,7 @@ export interface TenantSettings {
   payment_nequi_number?: string | null;
   payment_llave?: string | null;
   payment_account_holder?: string | null;
+  payment_bank_accounts?: BankAccount[] | null;
   payment_qr_filename?: string | null;
   logo_size_bytes?: number | null;
   logo_size_formatted?: string | null;
