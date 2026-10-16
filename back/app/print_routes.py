@@ -90,6 +90,21 @@ def list_print_jobs(
     return [print_svc.job_to_dict(j) for j in jobs]
 
 
+@staff_router.post("/print-jobs/{job_id}/retry")
+@admin_user_limit()
+def retry_print_job(
+    request: Request,
+    response: Response,
+    job_id: int,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.ORDER_READ))],
+    session: Session = Depends(get_session),
+):
+    if current_user.tenant_id is None:
+        raise HTTPException(status_code=403, detail="Tenant required")
+    job = print_svc.retry_job(session, current_user.tenant_id, job_id)
+    return print_svc.job_to_dict(job)
+
+
 @staff_router.get("/tenant/print-agents")
 @admin_user_limit()
 def list_print_agents(

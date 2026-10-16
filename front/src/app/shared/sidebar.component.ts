@@ -299,6 +299,9 @@ type NavGroupKey = 'operations' | 'planning' | 'catalog' | 'admin';
                     </a>
                   }
                   @if (canViewSettings()) {
+                    <a routerLink="/printing" routerLinkActive="active" class="nav-sublink" (click)="closeSidebar()">
+                      <span>{{ 'NAV.PRINTING' | translate }}</span>
+                    </a>
                     <a routerLink="/settings" routerLinkActive="active" class="nav-sublink" (click)="closeSidebar()">
                       <span>{{ 'NAV.SETTINGS' | translate }}</span>
                     </a>
@@ -523,6 +526,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (
       path.startsWith('/reports') ||
       path.startsWith('/users') ||
+      path.startsWith('/printing') ||
       path.startsWith('/settings')
     ) {
       this.adminOpen.set(true);

@@ -20,6 +20,9 @@ Environment:
   RECEIPT_PRINTER_PORT   Port (default 9100)
   PRINT_AGENT_DRY_RUN    If 1/true, write bytes to tmp/print-agent-last.bin instead of TCP
 
+List the printer names Windows knows (for win:NAME):
+  python scripts/print-agent/print_agent.py --list-printers
+
 Usage (from repo root):
   PRINT_AGENT_API_BASE=http://127.0.0.1:4202/api \\
   PRINT_AGENT_TOKEN=... PRINT_AGENT_DRY_RUN=1 \\
@@ -228,7 +231,25 @@ def process_job(token: str, base: str, job: dict, *, dry_run: bool) -> None:
             print(f"[warn] could not ack failure for job {job_id}: {ack_exc}", flush=True)
 
 
+def list_printers() -> int:
+    """Print the names Windows knows, to use after ``win:`` in KITCHEN_PRINTER."""
+    if os.name != "nt":
+        print("Linux: use file:/dev/usb/lp0 (see ls /dev/usb) or tcp:IP", file=sys.stderr)
+        return 1
+    import subprocess
+
+    out = subprocess.run(
+        ["powershell", "-NoProfile", "-Command", "Get-Printer | Select-Object -ExpandProperty Name"],
+        capture_output=True,
+        text=True,
+    )
+    print(out.stdout.strip() or "No printers found")
+    return 0
+
+
 def main() -> int:
+    if "--list-printers" in sys.argv:
+        return list_printers()
     token = _env("PRINT_AGENT_TOKEN")
     if not token:
         print("PRINT_AGENT_TOKEN is required", file=sys.stderr)

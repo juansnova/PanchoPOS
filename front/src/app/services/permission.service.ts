@@ -99,6 +99,7 @@ const ROUTE_ROLES: Record<string, UserRole[]> = {
   '/inventory': ['owner'],
   '/reports': ['owner'],
   '/settings': ['owner'],
+  '/printing': ['owner'],
   '/users': ['owner'],
   '/working-plan': STAFF_ROLES,
   '/my-shift': STAFF_ROLES,

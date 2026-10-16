@@ -79,6 +79,7 @@ export const routes: Routes = [
 
   // Admin-only routes
   { path: 'settings', canActivate: [authGuard, adminGuard], loadComponent: () => import('./settings/settings.component').then(m => m.SettingsComponent) },
+  { path: 'printing', canActivate: [authGuard, adminGuard], loadComponent: () => import('./printing/printing.component').then(m => m.PrintingComponent) },
   { path: 'users', canActivate: [authGuard, adminGuard, uiModuleGuard('users')], loadComponent: () => import('./users/users.component').then(m => m.UsersComponent) },
 
   // Inventory module (lazy loaded) - admin only
@@ -100,3 +101,4 @@ export const routes: Routes = [
 
   { path: '**', redirectTo: '' }
 ];
+

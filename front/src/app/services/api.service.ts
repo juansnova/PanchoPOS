@@ -2934,6 +2934,10 @@ export class ApiService {
     return this.http.get<PrintJob[]>(`${this.apiUrl}/print-jobs`, { params });
   }
 
+  retryPrintJob(jobId: number): Observable<PrintJob> {
+    return this.http.post<PrintJob>(`${this.apiUrl}/print-jobs/${jobId}/retry`, {});
+  }
+
   listPrintAgents(): Observable<PrintAgent[]> {
     return this.http.get<PrintAgent[]>(`${this.apiUrl}/tenant/print-agents`);
   }

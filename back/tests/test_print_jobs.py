@@ -197,6 +197,30 @@ class TestPrintJobs(PgClientTestCase):
         self.assertEqual(len(claimed_a.json()), 1)
         self.assertIn("SECRET-A", claimed_a.json()[0]["payload"]["plain_text"])
 
+    def test_failed_job_can_be_retried(self) -> None:
+        h = _bearer_headers(self.owner_a)
+        agent = self.client.post(
+            "/tenant/print-agents", headers=h, json={"device_id": "usb-pc", "display_name": "USB"}
+        ).json()
+        job = self.client.post(
+            "/print-jobs",
+            headers=h,
+            json={"job_type": "kitchen", "payload": {"plain_text": "RETRY-ME"}},
+        ).json()["job"]
+        ah = {"Authorization": f"Bearer {agent['token']}"}
+        self.assertEqual(len(self.client.get("/print-agent/jobs", headers=ah).json()), 1)
+        self.client.post(
+            f"/print-agent/jobs/{job['id']}/complete",
+            headers=ah,
+            json={"status": "failed", "error_message": "cannot open Windows printer"},
+        )
+        # Done jobs cannot be retried; failed ones go back to the queue.
+        r = self.client.post(f"/print-jobs/{job['id']}/retry", headers=h)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["status"], "pending")
+        self.assertIsNone(r.json()["error_message"])
+        self.assertEqual(self.client.post(f"/print-jobs/{job['id']}/retry", headers=h).status_code, 400)
+
     def test_unauthenticated_agent_rejected(self) -> None:
         r = self.client.get("/print-agent/jobs")
         self.assertEqual(r.status_code, 401)

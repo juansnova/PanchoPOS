@@ -374,6 +374,24 @@ def list_jobs(
     return list(session.exec(q).all())
 
 
+def retry_job(session: Session, tenant_id: int, job_id: int) -> models.PrintJob:
+    """Put a failed (or stuck claimed) job back in the queue so an agent prints it again."""
+    job = session.get(models.PrintJob, job_id)
+    if job is None or job.tenant_id != tenant_id:
+        raise HTTPException(status_code=404, detail="Print job not found")
+    if job.status not in ("failed", "claimed"):
+        raise HTTPException(status_code=400, detail="Only failed or stuck jobs can be retried")
+    job.status = "pending"
+    job.claimed_by_agent_id = None
+    job.claimed_at = None
+    job.completed_at = None
+    job.error_message = None
+    session.add(job)
+    session.commit()
+    session.refresh(job)
+    return job
+
+
 def claim_pending_jobs(
     session: Session,
     agent: models.PrintAgent,
