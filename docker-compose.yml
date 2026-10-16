@@ -9,10 +9,11 @@ services:
     container_name: pos-back
     restart: unless-stopped
     user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
-    # Migrate, ensure default admin (non-fatal), then serve.
+    # Migrate, ensure default admin and default menu (non-fatal), then serve.
     command: >
       sh -c "python -m app.migrate;
       python -m app.seeds.ensure_default_admin;
+      python -m app.seeds.seed_demo_products;
       exec uvicorn app.main:app --host 0.0.0.0 --port 8020 --reload"
     expose:
       - "8020"
