@@ -18,7 +18,8 @@ from sqlalchemy import text
 from sqlmodel import Session
 
 from app.db import engine
-from app.models import Product
+from app.models import Product, Tenant
+from app.tenant_ui_modules import new_tenant_ui_modules_stored
 
 # Default menu (Pancho Panza): name, price in COP pesos, category, description (optional)
 _MENU_PESOS = [
@@ -171,8 +172,14 @@ def run() -> None:
         result = session.execute(text("SELECT id FROM tenant ORDER BY id"))
         tenant_ids = [row[0] for row in result.fetchall()]
         if not tenant_ids:
-            print("No tenants found.")
-            return
+            # Fresh install without config.env (no default admin): create the single
+            # restaurant so the menu exists before the owner registers (register() reuses it).
+            tenant = Tenant(name="Pancho Panza", ui_modules=new_tenant_ui_modules_stored())
+            session.add(tenant)
+            session.commit()
+            session.refresh(tenant)
+            tenant_ids = [tenant.id]
+            print(f"Created tenant id={tenant.id} (Pancho Panza).")
 
         # Repair every tenant: create missing DEMO_PRODUCTS names and attach photos to
         # demo products that lack one. Idempotent; never deletes existing products.
