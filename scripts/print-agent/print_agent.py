@@ -82,18 +82,42 @@ def _request(method: str, url: str, token: str, body: dict | None = None) -> obj
         raise RuntimeError(f"HTTP {e.code} {url}: {detail}") from e
 
 
-def render_escpos(plain_text: str) -> bytes:
-    """Minimal ESC/POS: init, text, feed, partial cut."""
+# Paper lines fed before the cut: the cutter sits below the print head, so without
+# this the last lines of the ticket are cut off.
+FEED_BEFORE_CUT = 7
+
+
+def render_escpos(plain_text: str, *, big: bool = False) -> bytes:
+    """ESC/POS: init, text, feed, cut. ``big`` = kitchen layout with large, bold text.
+
+    Header lines (up to the first dashed separator) are double width + height; the
+    lines below are double height, which keeps 48 columns on 80 mm paper.
+    """
     text = (plain_text or "").replace("\r\n", "\n").replace("\r", "\n")
-    # Prefer CP437-safe ASCII; drop unsupported chars.
-    payload = text.encode("cp437", errors="replace")
     out = bytearray()
-    out.extend(ESC + b"@" )  # init
+    out.extend(ESC + b"@")  # init
     out.extend(ESC + b"a\x00")  # left align
-    out.extend(payload)
-    if not payload.endswith(b"\n"):
-        out.extend(b"\n")
-    out.extend(b"\n\n\n")
+    if big:
+        out.extend(ESC + b"E\x01")  # bold
+        in_header = True
+        for line in text.split("\n"):
+            is_separator = line.startswith("-" * 8)
+            if is_separator:
+                in_header = False
+                out.extend(GS + b"!\x00")  # normal size for the separator
+            elif in_header:
+                out.extend(GS + b"!\x11")  # double width + height
+            else:
+                out.extend(GS + b"!\x01")  # double height
+            # Prefer CP437-safe text; drop unsupported chars.
+            out.extend(line.encode("cp437", errors="replace") + b"\n")
+        out.extend(GS + b"!\x00" + ESC + b"E\x00")
+    else:
+        payload = text.encode("cp437", errors="replace")
+        out.extend(payload)
+        if not payload.endswith(b"\n"):
+            out.extend(b"\n")
+    out.extend(ESC + b"d" + bytes([FEED_BEFORE_CUT]))
     out.extend(GS + b"V\x00")  # full cut (many printers ignore if unsupported)
     return bytes(out)
 
@@ -208,7 +232,7 @@ def process_job(token: str, base: str, job: dict, *, dry_run: bool) -> None:
     if not plain and payload.get("lines"):
         lines = [f"{ln.get('quantity', 1)}x {ln.get('name', '')}" for ln in payload["lines"]]
         plain = "\n".join(lines) + "\n"
-    data = render_escpos(plain)
+    data = render_escpos(plain, big=role == "kitchen")
     try:
         send_to_printer(role, data, dry_run=dry_run)
         _request(
