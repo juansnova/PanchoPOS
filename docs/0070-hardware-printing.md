@@ -91,3 +91,15 @@ Tenants with at least one active (non-revoked) print agent get kitchen tickets w
 - Each line stores `kitchen_printed_at`, so it is printed once and never again. Lines in preparing cannot be edited or removed, so a printed ticket never goes stale.
 - If the customer orders more later, the new ticket has the header `*** ADICION - solo platos nuevos ***` and lists **only the new lines**.
 - The manual "Imprimir cocina" button in the order editor still reprints the whole order (use it to recover a jammed ticket).
+
+## Start the agent automatically (Windows)
+
+1. Copy `scripts/print-agent/agent.env.example` to `scripts/print-agent/agent.env` and set `PRINT_AGENT_TOKEN` (the file is git-ignored).
+2. Register the task (no admin needed; starts hidden at every logon and restarts the agent if it exits):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\print-agent\install-autostart.ps1
+```
+
+3. Log: `tmp\print-agent.log`. Remove with `... install-autostart.ps1 -Remove`.
+4. The backend must be up too: Docker Desktop starting with Windows brings the containers back (`restart: unless-stopped`). The agent keeps retrying until the API answers.
