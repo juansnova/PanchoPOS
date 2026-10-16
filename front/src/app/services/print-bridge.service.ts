@@ -30,6 +30,7 @@ export class PrintBridgeService {
     jobType: 'kitchen' | 'receipt',
     orderId: number,
     printerRole?: string,
+    payload?: Record<string, unknown>,
   ): Promise<PrintViaBridgeResult> {
     try {
       const status = await this.getStatus();
@@ -42,6 +43,7 @@ export class PrintBridgeService {
           job_type: jobType,
           order_id: orderId,
           printer_role: printerRole ?? null,
+          payload: payload ?? null,
         }),
       );
       if (!response.bridge?.agent_online) {

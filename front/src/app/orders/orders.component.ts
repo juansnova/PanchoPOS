@@ -3596,7 +3596,13 @@ export class OrdersComponent implements OnInit, OnDestroy {
     billingCustomer?: BillingCustomer | null,
   ) {
     if (order.id != null) {
-      const result = await this.printBridge.tryEnqueue('receipt', order.id, 'receipt');
+      // The chosen billing customer is saved after printing, so send it with the job.
+      const result = await this.printBridge.tryEnqueue(
+        'receipt',
+        order.id,
+        'receipt',
+        billingCustomer?.id != null ? { billing_customer_id: billingCustomer.id } : undefined,
+      );
       if (result.ok) {
         this.showToast(this.translate.instant('ORDERS.PRINT_BRIDGE_SENT'), 'success');
         return;

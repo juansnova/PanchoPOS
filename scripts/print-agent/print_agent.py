@@ -142,9 +142,8 @@ def _wrap(text: str, width: int, indent: int = 0) -> list[str]:
     return lines
 
 
-def render_kitchen_ticket(payload: dict, *, cols: int = 48) -> bytes:
-    """Kitchen ticket laid out from the job payload (Spanish, large, scannable at a glance)."""
-    out = bytearray()
+def _make_put(out: bytearray, cols: int):
+    """Return ``put(text, ...)`` that appends styled, wrapped lines to ``out``."""
 
     def put(text: str, *, size: int = 0x00, bold: bool = False, align: str = "left",
             reverse: bool = False) -> None:
@@ -159,6 +158,105 @@ def render_kitchen_ticket(payload: dict, *, cols: int = 48) -> bytes:
             out.extend(_enc(f" {line} " if reverse else line) + b"\n")
         out.extend(GS + b"B\x00" + GS + b"!\x00" + ESC + b"E\x00" + ESC + b"a\x00")
 
+    return put
+
+
+def money(cents: int) -> str:
+    """COP style: ``$12.500`` (thousands with dots, decimals only when there are cents)."""
+    value = (cents or 0) / 100
+    if value == int(value):
+        return "$" + f"{int(value):,}".replace(",", ".")
+    return "$" + f"{value:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
+
+
+PAYMENT_LABELS = {
+    "cash": "Efectivo",
+    "terminal": "Datáfono",
+    "stripe": "Tarjeta (online)",
+    "revolut": "Revolut",
+}
+
+
+def _two_cols(left: str, right: str, cols: int) -> str:
+    """``left`` flush left and ``right`` flush right on one line."""
+    gap = max(1, cols - len(left) - len(right))
+    return left + " " * gap + right
+
+
+def render_receipt_ticket(payload: dict, *, cols: int = 48) -> bytes:
+    """Customer invoice: business header, itemised lines, tax breakdown, total."""
+    out = bytearray()
+    put = _make_put(out, cols)
+    out.extend(ESC + b"@")  # init
+    out.extend(ESC + b"t\x00")  # code page 437
+
+    biz = payload.get("business") or {}
+    put(str(biz.get("name") or "Factura"), size=0x11, bold=True, align="center")
+    for part in (
+        ", ".join(x for x in (biz.get("address"), biz.get("city")) if x),
+        f"Tel: {biz['phone']}" if biz.get("phone") else "",
+        "  ".join(x for x in (f"NIT/ID: {biz['tax_id']}" if biz.get("tax_id") else "",
+                             f"CIF: {biz['cif']}" if biz.get("cif") else "") if x),
+    ):
+        if part:
+            put(part, align="center")
+    put("=" * cols)
+    put("FACTURA", size=0x11, bold=True, align="center", reverse=True)
+    put(_two_cols(f"No. {payload.get('order_id', '')}", str(payload.get("date_label") or ""), cols), bold=True)
+    put(_two_cols(f"Mesa: {payload.get('table_name') or '-'}",
+                  f"Cliente: {payload['customer_name']}" if payload.get("customer_name") else "", cols))
+    billing = payload.get("billing")
+    if billing:
+        put("-" * cols)
+        put("FACTURAR A", bold=True)
+        put(str(billing.get("name") or ""), bold=True)
+        for key, label in (("tax_id", "NIT/ID: "), ("address", ""), ("email", "")):
+            if billing.get(key):
+                put(f"{label}{billing[key]}")
+    put("=" * cols)
+
+    # Columns: qty | description | unit | total
+    w_qty, w_unit, w_total = 3, 9, 10
+    w_name = cols - w_qty - w_unit - w_total - 3
+    put(f"{'CAN':<{w_qty}} {'DESCRIPCION':<{w_name}} {'P.UNIT':>{w_unit}} {'TOTAL':>{w_total}}", bold=True)
+    put("-" * cols)
+    for line in payload.get("lines") or []:
+        qty = int(line.get("quantity") or 1)
+        name_lines = _wrap(str(line.get("name") or ""), w_name)
+        put(f"{qty:<{w_qty}} {name_lines[0]:<{w_name}} "
+            f"{money(line.get('price_cents') or 0):>{w_unit}} "
+            f"{money(line.get('line_total_cents') or 0):>{w_total}}")
+        for extra in name_lines[1:]:
+            put(" " * (w_qty + 1) + extra)
+        for note in (line.get("notes"), line.get("item_note")):
+            if note:
+                put(" " * (w_qty + 1) + f"> {note}")
+    put("-" * cols)
+
+    put(_two_cols("Subtotal", money(payload.get("subtotal_cents") or 0), cols))
+    if payload.get("tip_cents"):
+        pct = payload.get("tip_percent")
+        put(_two_cols(f"Propina {pct}%" if pct else "Propina", money(payload["tip_cents"]), cols))
+    for tax in payload.get("tax_summary") or []:
+        put(_two_cols(f"IVA {tax['rate']}% (incluido)", money(tax["cents"]), cols))
+    put("=" * cols)
+    put(_two_cols("TOTAL", money(payload.get("total_cents") or 0), cols // 2), size=0x11, bold=True)
+    put("=" * cols)
+
+    if payload.get("paid"):
+        method = PAYMENT_LABELS.get(str(payload.get("payment_method") or ""), payload.get("payment_method"))
+        put("PAGADO" + (f" - {method}" if method else ""), bold=True, align="center")
+    put("Gracias por su visita", size=0x01, bold=True, align="center")
+    put("¡Esperamos verle pronto!", align="center")
+    out.extend(ESC + b"d" + bytes([FEED_BEFORE_CUT]))
+    out.extend(GS + b"V\x00")
+    return bytes(out)
+
+
+def render_kitchen_ticket(payload: dict, *, cols: int = 48) -> bytes:
+    """Kitchen ticket laid out from the job payload (Spanish, large, scannable at a glance)."""
+    out = bytearray()
+    put = _make_put(out, cols)
     out.extend(ESC + b"@")  # init
     out.extend(ESC + b"t\x00")  # code page 437
     addition = bool(payload.get("addition"))
@@ -314,6 +412,8 @@ def process_job(token: str, base: str, job: dict, *, dry_run: bool) -> None:
         plain = "\n".join(lines) + "\n"
     if role == "kitchen" and payload.get("lines") and payload.get("service_label"):
         data = render_kitchen_ticket(payload, cols=int(_env("PRINTER_COLUMNS", "48") or "48"))
+    elif role == "receipt" and payload.get("business") and payload.get("lines"):
+        data = render_receipt_ticket(payload, cols=int(_env("PRINTER_COLUMNS", "48") or "48"))
     else:
         data = render_escpos(plain, big=role == "kitchen")
     try:

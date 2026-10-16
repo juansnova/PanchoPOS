@@ -177,18 +177,84 @@ def _order_table_name(session: Session, order: models.Order) -> str | None:
     return table.name if table else None
 
 
-def _local_time_label(session: Session, tenant_id: int) -> str:
-    """Current time as ``dd/mm HH:MM`` in the tenant's timezone (UTC when unknown)."""
+def _tenant_tz(session: Session, tenant_id: int):
+    """The tenant's timezone (UTC when unset or unknown)."""
     from zoneinfo import ZoneInfo
 
-    now = _now()
     tenant = session.get(models.Tenant, tenant_id)
     try:
         if tenant is not None and tenant.timezone:
-            now = now.astimezone(ZoneInfo(tenant.timezone))
+            return ZoneInfo(tenant.timezone)
     except Exception:
         pass
-    return now.strftime("%d/%m %H:%M")
+    return timezone.utc
+
+
+def _local_time_label(session: Session, tenant_id: int) -> str:
+    """Current time as ``dd/mm HH:MM`` in the tenant's timezone."""
+    return _now().astimezone(_tenant_tz(session, tenant_id)).strftime("%d/%m %H:%M")
+
+
+def _receipt_fields(
+    session: Session,
+    order: models.Order,
+    items: list[models.OrderItem],
+    lines: list[dict[str, Any]],
+    billing_customer_id: int | None,
+) -> dict[str, Any]:
+    """Structured data for the invoice layout: business, billing party, tax breakdown, tip."""
+    tenant = session.get(models.Tenant, order.tenant_id)
+    business = {
+        "name": getattr(tenant, "name", None),
+        "address": getattr(tenant, "address", None),
+        "city": getattr(tenant, "city", None),
+        "phone": getattr(tenant, "phone", None),
+        "tax_id": getattr(tenant, "tax_id", None),
+        "cif": getattr(tenant, "cif", None),
+    }
+    bc = None
+    bc_id = billing_customer_id or order.billing_customer_id
+    if bc_id:
+        bc = session.get(models.BillingCustomer, bc_id)
+        if bc is not None and bc.tenant_id != order.tenant_id:
+            bc = None
+    billing = (
+        {
+            "name": bc.company_name or bc.name,
+            "tax_id": bc.tax_id,
+            "address": bc.address,
+            "email": bc.email,
+        }
+        if bc
+        else None
+    )
+
+    subtotal = sum(int(i.price_cents or 0) * int(i.quantity or 1) for i in items)
+    tip = int(order.tip_amount_cents or 0)
+    tax_by_rate: dict[int, int] = {}
+    for line, i in zip(lines, items):
+        rate, cents = int(i.tax_rate_percent or 0), int(i.tax_amount_cents or 0)
+        line["tax_rate"] = rate
+        line["line_total_cents"] = int(i.price_cents or 0) * int(i.quantity or 1)
+        if rate > 0 and cents > 0:
+            tax_by_rate[rate] = tax_by_rate.get(rate, 0) + cents
+    tip_tax_rate = max(0, min(100, int(getattr(tenant, "tip_tax_rate_percent", 0) or 0)))
+    if tip > 0 and tip_tax_rate > 0:
+        den = 100 + tip_tax_rate
+        tax_by_rate[tip_tax_rate] = tax_by_rate.get(tip_tax_rate, 0) + (
+            (tip * tip_tax_rate + den // 2) // den
+        )
+    paid = order.paid_at is not None
+    return {
+        "business": business,
+        "billing": billing,
+        "subtotal_cents": subtotal,
+        "tip_cents": tip,
+        "tip_percent": order.tip_percent_applied,
+        "tax_summary": [{"rate": r, "cents": c} for r, c in sorted(tax_by_rate.items())],
+        "paid": paid,
+        "payment_method": order.payment_method if paid else None,
+    }
 
 
 def _order_total_cents(items: list[models.OrderItem], order: models.Order) -> int:
@@ -204,6 +270,7 @@ def _build_order_payload(
     *,
     only_items: list[models.OrderItem] | None = None,
     addition: bool = False,
+    billing_customer_id: int | None = None,
 ) -> dict[str, Any]:
     """``only_items`` limits the ticket to those lines; ``addition`` marks a follow-up ticket."""
     items = only_items
@@ -271,7 +338,12 @@ def _build_order_payload(
         "order_notes": (order.notes or "").strip() or None,
         "delivery_address": order.delivery_address if is_delivery else None,
         "customer_phone": order.customer_phone if is_delivery else None,
+        "date_label": order.created_at.astimezone(_tenant_tz(session, order.tenant_id)).strftime("%d/%m/%Y %H:%M")
+        if order.created_at
+        else time_label,
     }
+    if job_type == "receipt":
+        out.update(_receipt_fields(session, order, items, lines, billing_customer_id))
     return out
 
 
@@ -297,7 +369,9 @@ def create_job(
 
     body = dict(payload or {})
     if order is not None and not body.get("plain_text"):
-        built = _build_order_payload(session, order, jt)
+        built = _build_order_payload(
+            session, order, jt, billing_customer_id=body.get("billing_customer_id")
+        )
         for k, v in built.items():
             body.setdefault(k, v)
 

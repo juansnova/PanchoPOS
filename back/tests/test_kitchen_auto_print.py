@@ -95,3 +95,28 @@ class TestKitchenAutoPrint(PgClientTestCase):
             kitchen_printed_at=datetime.now(timezone.utc),
         )
         self.assertEqual(print_service.enqueue_new_kitchen_tickets(self.session), 0)
+
+    def test_receipt_payload_has_business_billing_taxes_and_tip(self) -> None:
+        self.tenant.address = "Calle 1 #2-3"
+        self.tenant.tax_id = "900123"
+        self.tenant.tip_tax_rate_percent = 8
+        bc = models.BillingCustomer(tenant_id=self.tenant.id, name="Ana", company_name="Ana SAS", tax_id="NIT-9")
+        self.session.add(bc)
+        self.session.commit()
+        self.session.refresh(bc)
+        self.order.tip_amount_cents = 1080
+        self.order.tip_percent_applied = 10
+        self.session.add(self.order)
+        self._item("Taco", tax_rate_percent=8, tax_amount_cents=148)
+
+        payload = print_service._build_order_payload(
+            self.session, self.order, "receipt", billing_customer_id=bc.id
+        )
+        self.assertEqual(payload["business"]["name"], "Auto Print Cafe")
+        self.assertEqual(payload["business"]["tax_id"], "900123")
+        self.assertEqual(payload["billing"]["name"], "Ana SAS")
+        self.assertEqual(payload["subtotal_cents"], 2000)
+        self.assertEqual(payload["total_cents"], 3080)
+        self.assertEqual(payload["lines"][0]["line_total_cents"], 2000)
+        # Line tax 148 + tip tax 1080*8/108 = 80
+        self.assertEqual(payload["tax_summary"], [{"rate": 8, "cents": 228}])
