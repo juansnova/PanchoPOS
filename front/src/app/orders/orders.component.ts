@@ -16,7 +16,6 @@ import {
   OrderDeliveryUpdate,
 } from '../services/api.service';
 import { AudioService } from '../services/audio.service';
-import { WaiterAlertService, WaiterAlertItem } from '../services/waiter-alert.service';
 import { PermissionService, Permission } from '../services/permission.service';
 import { PrintBridgeService } from '../services/print-bridge.service';
 import { Subscription } from 'rxjs';
@@ -1370,36 +1369,6 @@ ModuleRegistry.registerModules([
           </div>
         }
 
-        <!-- Waiter Alert Banner -->
-        @if (waiterAlert()) {
-          <div class="waiter-alert-banner" [class.payment]="waiterAlert()!.type === 'payment_requested'">
-            <div class="waiter-alert-icon">
-              @if (waiterAlert()!.type === 'call_waiter') {
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94"/>
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 3 5.18 2 2 0 0 1 5 3h3a2 2 0 0 1 2 1.72c.13.81.36 1.61.68 2.36a2 2 0 0 1-.45 2.11L8.91 10.5a16 16 0 0 0 6.59 6.59l1.31-1.32a2 2 0 0 1 2.11-.45c.75.32 1.55.55 2.36.68A2 2 0 0 1 22 16.92z"/>
-                </svg>
-              } @else {
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                  <line x1="1" y1="10" x2="23" y2="10"/>
-                </svg>
-              }
-            </div>
-            <div class="waiter-alert-text">
-              <strong>{{ waiterAlert()!.tableName }}</strong>
-              <span>{{ waiterAlert()!.type === 'call_waiter' ? ('NOTIFICATIONS.CALL_WAITER_YOURS' | translate) : ('NOTIFICATIONS.PAYMENT_REQUEST_YOURS' | translate) }}</span>
-              @if (waiterAlert()!.message) {
-                <span class="waiter-alert-message">"{{ waiterAlert()!.message }}"</span>
-              }
-            </div>
-            <button class="waiter-alert-dismiss" (click)="dismissWaiterAlert()">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 6L6 18M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
-        }
     </app-sidebar>
   `,
   styles: [`
@@ -2314,62 +2283,6 @@ ModuleRegistry.registerModules([
       margin: 4px 0;
     }
 
-    /* Waiter Alert Banner */
-    .waiter-alert-banner {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1200;
-      display: flex;
-      align-items: center;
-      gap: var(--space-4);
-      padding: var(--space-4) var(--space-5);
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: white;
-      animation: slideDown 0.3s ease, pulse 1.5s ease-in-out 3;
-      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
-    }
-    .waiter-alert-banner.payment {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
-    }
-    .waiter-alert-icon {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      animation: ring 0.6s ease-in-out 3;
-    }
-    .waiter-alert-text {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .waiter-alert-text strong {
-      font-size: 1rem;
-    }
-    .waiter-alert-text span {
-      font-size: 0.875rem;
-      opacity: 0.9;
-    }
-    .waiter-alert-message {
-      font-style: italic;
-      margin-top: 2px;
-    }
-    .waiter-alert-dismiss {
-      background: rgba(255,255,255,0.2);
-      border: none;
-      border-radius: var(--radius-sm);
-      color: white;
-      cursor: pointer;
-      padding: var(--space-2);
-      display: flex;
-      transition: background 0.15s;
-    }
-    .waiter-alert-dismiss:hover {
-      background: rgba(255,255,255,0.35);
-    }
     .split-pay-summary {
       margin: var(--space-3) 0;
       padding: var(--space-3) 0;
@@ -2439,7 +2352,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private audio = inject(AudioService);
   private translate = inject(TranslateService);
-  private waiterAlerts = inject(WaiterAlertService);
   private permissions = inject(PermissionService);
   private printBridge = inject(PrintBridgeService);
 
@@ -2548,7 +2460,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   // Toast notification system (replaces native alerts)
   toast = signal<{ message: string; type: 'success' | 'error' } | null>(null);
-  waiterAlert = signal<WaiterAlertItem | null>(null);
 
   // Confirmation modal (replaces native confirm)
   confirmAction = signal<{
@@ -2792,30 +2703,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
       this.api.connectWebSocket();
       this.wsSub = this.api.orderUpdates$.subscribe((update: any) => {
         if (update && update.type) {
-          // Check for waiter-specific notifications
-          if (update.type === 'call_waiter' || update.type === 'payment_requested') {
-            const currentUser = this.api.getCurrentUser();
-            const isMyTable = currentUser?.id && update.assigned_waiter_id === currentUser.id;
-            const isManager = currentUser?.role === 'owner';
-
-            if (isMyTable || isManager) {
-              const item = this.waiterAlerts.add(
-                update.table_name || 'Table',
-                update.message || '',
-                update.type
-              );
-              this.waiterAlert.set(item);
-              this.audio.playUrgentWaiterAlert();
-            } else {
-              // Regular notification for other staff
-              this.audio.playRestaurantOrderChange();
-            }
-          } else {
-            // Play sound notification for order changes
-            const changeTypes = ['item_removed', 'item_updated', 'order_cancelled', 'new_order', 'items_added'];
-            if (changeTypes.includes(update.type)) {
-              this.audio.playRestaurantOrderChange();
-            }
+          // call_waiter / payment_requested alerts are handled globally by WaiterAlertBannerComponent
+          const changeTypes = ['item_removed', 'item_updated', 'order_cancelled', 'new_order', 'items_added'];
+          if (changeTypes.includes(update.type)) {
+            this.audio.playRestaurantOrderChange();
           }
         }
         this.loadOrders();
@@ -2828,13 +2719,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
     // awaiting payment confirmation) don't push a WebSocket event, so without this the
     // list only picks them up on a manual refresh.
     this.refreshIntervalId = setInterval(() => this.loadOrders(true), 15000);
-
-    // Restore any unconfirmed waiter alerts when (re)entering Orders
-    const first = this.waiterAlerts.firstPending();
-    if (first) {
-      this.waiterAlert.set(first);
-      this.audio.playUrgentWaiterAlert();
-    }
 
     // Close dropdowns when clicking outside
     document.addEventListener('click', (e) => {
@@ -3461,15 +3345,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
         this.showToast(this.translate.instant('ORDERS.FAILED_TO_UPDATE_ITEM'), 'error');
       },
     });
-  }
-
-  dismissWaiterAlert(): void {
-    const current = this.waiterAlert();
-    if (current) {
-      this.waiterAlerts.remove(current.id);
-      const next = this.waiterAlerts.firstPending();
-      this.waiterAlert.set(next ?? null);
-    }
   }
 
   showToast(message: string, type: 'success' | 'error') {

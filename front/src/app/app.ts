@@ -4,10 +4,11 @@ import { filter, Subscription } from 'rxjs';
 import { LanguageService } from './services/language.service';
 import { SeoService } from './services/seo.service';
 import { environment } from '../environments/environment';
+import { WaiterAlertBannerComponent } from './waiter-alert-banner/waiter-alert-banner.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, WaiterAlertBannerComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
