@@ -5,6 +5,10 @@ from __future__ import annotations
 from . import models
 
 
+# Product categories that go to the bar when the product has no explicit station.
+BEVERAGE_CATEGORIES = frozenset({"beverages", "bebidas"})
+
+
 def resolve_order_item_kds(
     product: models.Product | None,
     tenant: models.Tenant,
@@ -18,7 +22,9 @@ def resolve_order_item_kds(
         st = station_by_id.get(product.kitchen_station_id)
         if st:
             return st.id, st.name, st.display_route or "kitchen"
-    is_beverages = bool(product and (product.category or "") == "Beverages")
+    is_beverages = bool(
+        product and (product.category or "").strip().lower() in BEVERAGE_CATEGORIES
+    )
     if is_beverages:
         did = tenant.default_bar_station_id
         if did and did in station_by_id:

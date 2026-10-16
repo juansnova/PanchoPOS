@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from sqlmodel import Session, select
 
 from . import models
+from .kitchen_stations_util import resolve_order_item_kds
 
 # Agent considered online if heartbeat within this window.
 AGENT_ONLINE_SECONDS = 60
@@ -368,6 +369,24 @@ def create_job(
             raise HTTPException(status_code=404, detail="Order not found")
 
     body = dict(payload or {})
+    if jt == "kitchen" and order is not None and not body:
+        # Manual (re)print of a whole order: one ticket per station, like the automatic ones.
+        items = [
+            i
+            for i in session.exec(
+                select(models.OrderItem).where(models.OrderItem.order_id == order.id)
+            ).all()
+            if not i.removed_by_customer
+        ]
+        jobs = [
+            _kitchen_job(session, order, route, route_items, addition=False, user_id=user_id)
+            for route, route_items in _group_by_route(session, order, items).items()
+        ]
+        if jobs:
+            session.add_all(jobs)
+            session.commit()
+            session.refresh(jobs[0])
+            return jobs[0]
     if order is not None and not body.get("plain_text"):
         built = _build_order_payload(
             session, order, jt, billing_customer_id=body.get("billing_customer_id")
@@ -397,8 +416,61 @@ def create_job(
     return job
 
 
+STATION_LABELS = {"kitchen": "COCINA", "bar": "BARRA"}
+
+
+def _group_by_route(
+    session: Session, order: models.Order, items: list[models.OrderItem]
+) -> dict[str, list[models.OrderItem]]:
+    """Split lines by prep station route ('kitchen' or 'bar'), the same rule the KDS uses."""
+    if not items:
+        return {}
+    tenant = session.get(models.Tenant, order.tenant_id)
+    stations = {
+        s.id: s
+        for s in session.exec(
+            select(models.KitchenStation).where(models.KitchenStation.tenant_id == order.tenant_id)
+        ).all()
+    }
+    products = {
+        p.id: p
+        for p in session.exec(
+            select(models.Product).where(models.Product.id.in_({i.product_id for i in items}))
+        ).all()
+    }
+    groups: dict[str, list[models.OrderItem]] = {}
+    for item in items:
+        route = resolve_order_item_kds(products.get(item.product_id), tenant, stations)[2]
+        groups.setdefault(route, []).append(item)
+    return groups
+
+
+def _kitchen_job(
+    session: Session,
+    order: models.Order,
+    route: str,
+    items: list[models.OrderItem],
+    *,
+    addition: bool,
+    user_id: int | None = None,
+) -> models.PrintJob:
+    """Unsaved kitchen/bar ticket for ``items``; the route picks the printer (KITCHEN_/BAR_PRINTER)."""
+    payload = _build_order_payload(session, order, "kitchen", only_items=items, addition=addition)
+    payload["station"] = route
+    payload["station_label"] = STATION_LABELS.get(route, route.upper())
+    return models.PrintJob(
+        tenant_id=order.tenant_id,
+        job_type="kitchen",
+        printer_role=route[:32],
+        status="pending",
+        order_id=order.id,
+        payload=payload,
+        created_by_user_id=user_id,
+    )
+
+
 def enqueue_new_kitchen_tickets(session: Session) -> int:
-    """Print every line that reached preparing and was never printed; one ticket per order.
+    """Print every line that reached preparing and was never printed; one ticket per order and station.
 
     A follow-up ticket for an order that already had printed lines carries only the new
     lines and an ADICION header, so the kitchen never sees (or cooks) a dish twice.
@@ -430,33 +502,30 @@ def enqueue_new_kitchen_tickets(session: Session) -> int:
         by_order.setdefault(item.order_id, []).append(item)
 
     now = _now()
+    created = 0
     for order_id, items in by_order.items():
         order = session.get(models.Order, order_id)
-        already = session.exec(
-            select(models.OrderItem.id).where(
-                models.OrderItem.order_id == order_id,
-                models.OrderItem.kitchen_printed_at.is_not(None),
-            )
-        ).first()
-        payload = _build_order_payload(
-            session, order, "kitchen", only_items=items, addition=already is not None
+        printed = list(
+            session.exec(
+                select(models.OrderItem).where(
+                    models.OrderItem.order_id == order_id,
+                    models.OrderItem.kitchen_printed_at.is_not(None),
+                )
+            ).all()
         )
-        session.add(
-            models.PrintJob(
-                tenant_id=order.tenant_id,
-                job_type="kitchen",
-                printer_role="kitchen",
-                status="pending",
-                order_id=order_id,
-                payload=payload,
+        # A ticket is an ADICION only when its own station already printed lines for this order.
+        printed_routes = set(_group_by_route(session, order, printed))
+        for route, route_items in _group_by_route(session, order, items).items():
+            session.add(
+                _kitchen_job(session, order, route, route_items, addition=route in printed_routes)
             )
-        )
+            created += 1
         for item in items:
             item.kitchen_printed_at = now
             session.add(item)
     if by_order:
         session.commit()
-    return len(by_order)
+    return created
 
 
 def list_jobs(

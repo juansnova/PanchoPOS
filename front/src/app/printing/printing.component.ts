@@ -252,6 +252,7 @@ export class PrintingComponent implements OnInit {
   }
 
   typeLabel(job: PrintJob): string {
+    if (job.printer_role === 'bar') return this.translate.instant('PRINTING.TYPE_BAR');
     return this.translate.instant(job.job_type === 'kitchen' ? 'PRINTING.TYPE_KITCHEN' : 'PRINTING.TYPE_RECEIPT');
   }
 

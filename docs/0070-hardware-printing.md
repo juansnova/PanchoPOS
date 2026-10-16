@@ -60,7 +60,8 @@ export PRINT_AGENT_TOKEN='…'                            # from step 1
 #   win:NAME       USB printer installed in Windows (RAW, no extra packages)
 #   file:PATH      Linux USB device, e.g. /dev/usb/lp0
 export KITCHEN_PRINTER="tcp:192.168.1.50,win:DigitalPOS,file:/dev/usb/lp0"
-# RECEIPT_PRINTER works the same; if unset it reuses the kitchen list.
+# BAR_PRINTER (drinks) and RECEIPT_PRINTER (invoices) work the same; if unset they reuse the
+# kitchen list, so a single printer serves everything. Two printers: set BAR_PRINTER.
 # Legacy KITCHEN_PRINTER_HOST / RECEIPT_PRINTER_HOST still work.
 # optional dry-run (writes tmp/print-agent-last.bin):
 export PRINT_AGENT_DRY_RUN=1
@@ -103,3 +104,7 @@ powershell -ExecutionPolicy Bypass -File scripts\print-agent\install-autostart.p
 
 3. Log: `tmp\print-agent.log`. Remove with `... install-autostart.ps1 -Remove`.
 4. The backend must be up too: Docker Desktop starting with Windows brings the containers back (`restart: unless-stopped`). The agent keeps retrying until the API answers.
+
+## Two printers (kitchen and bar)
+
+Kitchen tickets are split by prep station using the same rule as the KDS screens (`resolve_order_item_kds`): a product's own station, otherwise category `Bebidas`/`Beverages` goes to **bar** and the rest to **kitchen**. Each station gets its own ticket (banner `COMANDA COCINA` / `COMANDA BARRA`, `ADICION ...` for follow-ups), queued with `printer_role` = `kitchen` or `bar`. The agent maps the role to a printer: `KITCHEN_PRINTER`, `BAR_PRINTER`, `RECEIPT_PRINTER`; a missing one falls back to the kitchen list. The manual kitchen reprint also creates one ticket per station.

@@ -10,7 +10,8 @@ Es una aplicación propia, de un solo restaurante, que corre en contenedores Doc
 
 | Área | Qué hace |
 |------|----------|
-| **Pedidos** | Ciclo completo: pendiente → preparando → listo → entregado → pagado. Impresión de factura/recibo desde el navegador. |
+| **Pedidos** | Ciclo completo: pendiente → preparando → listo → entregado → pagado. La comanda sale sola en la impresora térmica al pasar a "preparando" y la factura se imprime desde el botón del pedido (ver [Impresión](#impresión-de-comandas-y-facturas)). |
+| **Impresión** | Impresora térmica de 80 mm por USB, red o WiFi. Comandas automáticas separadas por cocina y barra, facturas con IVA y propina, y la página `/printing` para ver la cola, los errores y reintentar. |
 | **Menú para clientes** | El cliente escanea el QR de su mesa, ve el menú, agrega al carrito y pide sin instalar nada. PIN de mesa opcional para evitar pedidos de otras mesas. |
 | **Cocina / Bar** | Pantallas de solo lectura (`/kitchen`, `/bar`) con las órdenes en tiempo real y sonido opcional al llegar un pedido nuevo. |
 | **Mesas** | Gestión de mesas, código QR por mesa, vista de plano (canvas). |
@@ -100,6 +101,7 @@ Esto apaga los contenedores sin borrar la base de datos (los datos quedan guarda
 | Bar | http://localhost:4202/bar |
 | Reservas (personal) | http://localhost:4202/reservations |
 | Reportes | http://localhost:4202/reports |
+| Impresión (cola y errores) | http://localhost:4202/printing |
 | Configuración | http://localhost:4202/settings |
 | Usuarios | http://localhost:4202/users |
 | Reserva pública (cliente) | http://localhost:4202/book/{tenantId} |
@@ -110,6 +112,36 @@ Esto apaga los contenedores sin borrar la base de datos (los datos quedan guarda
 | Estado del sistema | http://localhost:4202/api/health |
 
 > `{tenantId}` es el identificador del restaurante en el sistema; se obtiene desde Configuración.
+
+---
+
+## Impresión de comandas y facturas
+
+La app no habla directo con la impresora: un pequeño programa, el **agente de impresión** (`scripts/print-agent/`), corre en el PC que tiene la impresora, consulta la cola cada segundo y manda los tickets en formato ESC/POS.
+
+**Qué sale solo**
+- **Comanda:** cuando un plato pasa a *preparando* (automático al minuto, o antes si el personal lo cambia). Cada plato sale una sola vez; si el cliente pide más, sale otra comanda `ADICION` solo con lo nuevo. Los platos se separan por estación: **cocina** y **barra** (las categorías `Bebidas`/`Beverages` van a barra, o la estación que asignes al producto).
+- **Factura:** al pulsar *Imprimir factura* en el pedido (negocio, cliente de facturación, detalle, propina, IVA y total).
+- Si no hay agente conectado, el botón cae al diálogo de impresión del navegador.
+
+**Puesta en marcha (Windows, impresora USB)**
+1. Conecta la impresora, instálala en Windows y anota su nombre (`python scripts/print-agent/print_agent.py --list-printers`). Si Windows no la lista, créala con el driver "Generic / Text Only" en el puerto USB.
+2. En **Administración → Impresión** pulsa *Crear agente* y copia el token (se muestra una sola vez).
+3. Copia `scripts/print-agent/agent.env.example` a `scripts/print-agent/agent.env` (no se sube a git) y completa el token y los destinos.
+4. Registra el arranque automático al iniciar sesión: `powershell -ExecutionPolicy Bypass -File scripts\print-agent\install-autostart.ps1` (quitar con `-Remove`).
+5. Pulsa *Imprimir prueba* en la página Impresión.
+
+**Destinos de impresión** (en `agent.env`; lista separada por comas, se usa el primero que funcione):
+
+| Valor | Para qué |
+|-------|----------|
+| `win:NOMBRE` | Impresora instalada en Windows (USB) |
+| `tcp:IP[:9100]` | Impresora de red (cable o WiFi) |
+| `file:/dev/usb/lp0` | USB en Linux |
+
+Variables: `KITCHEN_PRINTER` (cocina), `BAR_PRINTER` (barra) y `RECEIPT_PRINTER` (facturas). **Con una sola impresora** basta `KITCHEN_PRINTER`: barra y facturas la usan también. **Con dos**, pon la segunda en `BAR_PRINTER` y las bebidas salen allí. Ejemplo: `KITCHEN_PRINTER=win:DigitalPOS` y `BAR_PRINTER=win:DigitalPOS-Barra,tcp:192.168.1.60`.
+
+**Ver qué pasa:** la página `/printing` muestra si el agente está conectado, la cola con el estado de cada ticket (en cola, impreso, error con su motivo), el botón *Reintentar* y *Ver ticket*. El log del agente está en `tmp/print-agent.log`. Más detalle técnico en [docs/0070-hardware-printing.md](docs/0070-hardware-printing.md).
 
 ---
 
@@ -200,6 +232,9 @@ Navegador → Frontend (Angular) → Backend (FastAPI) → PostgreSQL
 | El frontend no carga datos | Revisar la consola del navegador y los logs de `back`; confirmar que `db` esté sano con `docker compose ... ps`. |
 | No carga en el puerto esperado | Confirmar el puerto real con `docker compose ... ps` (columna `PORTS` de `haproxy`). |
 | Errores de base de datos | Confirmar credenciales en `config.env` y que el servicio `db` esté arriba. |
+| No imprime | Abrir `/printing`: si el indicador está en rojo el agente no corre (revisar `tmp/print-agent.log` y la tarea "PanchoPOS Print Agent"); si el ticket está en *Error*, leer el motivo y pulsar *Reintentar*. Sin ningún agente creado la app no genera comandas. |
+| Windows dice que no encuentra la impresora | Comprobar el nombre exacto con `--list-printers` y que `win:NOMBRE` en `agent.env` coincida. |
+| Las bebidas salen en la impresora de cocina | Falta `BAR_PRINTER` en `agent.env`, o el producto no está en la categoría `Bebidas` ni tiene estación de barra. |
 
 ---
 

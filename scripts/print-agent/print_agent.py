@@ -260,7 +260,9 @@ def render_kitchen_ticket(payload: dict, *, cols: int = 48) -> bytes:
     out.extend(ESC + b"@")  # init
     out.extend(ESC + b"t\x00")  # code page 437
     addition = bool(payload.get("addition"))
-    put("** ADICION **" if addition else "COMANDA", size=0x11, bold=True, align="center", reverse=True)
+    station = str(payload.get("station_label") or "").strip()
+    banner = ("ADICION" if addition else "COMANDA") + (f" {station}" if station else "")
+    put(banner, size=0x11, bold=True, align="center", reverse=True)
     if addition:
         put("solo platos nuevos", bold=True, align="center")
     put(str(payload.get("service_label") or "PARA LLEVAR"), size=0x22, bold=True, align="center")
@@ -309,14 +311,16 @@ def printer_targets(role: str) -> list[str]:
       file:PATH         device file, e.g. /dev/usb/lp0 on Linux
     Without it, falls back to the legacy *_PRINTER_HOST / *_PRINTER_PORT vars.
     """
-    role = (role or "receipt").lower()
-    other = "RECEIPT" if role == "kitchen" else "KITCHEN"
-    own = role.upper() if role in ("kitchen", "receipt") else "RECEIPT"
-    spec = _env(f"{own}_PRINTER") or _env(f"{other}_PRINTER")
-    if spec:
-        return [t.strip() for t in spec.split(",") if t.strip()]
-    host = _env(f"{own}_PRINTER_HOST", _env(f"{other}_PRINTER_HOST", "127.0.0.1"))
-    port = _env(f"{own}_PRINTER_PORT", _env(f"{other}_PRINTER_PORT", "9100")) or "9100"
+    # Roles: kitchen, bar, receipt. A role without its own printer uses KITCHEN_PRINTER
+    # (then RECEIPT_PRINTER), so one printer can serve everything.
+    role = (role or "receipt").upper()
+    chain = [role] + [r for r in ("KITCHEN", "RECEIPT") if r != role]
+    for name in chain:
+        spec = _env(f"{name}_PRINTER")
+        if spec:
+            return [t.strip() for t in spec.split(",") if t.strip()]
+    host = next((_env(f"{n}_PRINTER_HOST") for n in chain if _env(f"{n}_PRINTER_HOST")), "127.0.0.1")
+    port = next((_env(f"{n}_PRINTER_PORT") for n in chain if _env(f"{n}_PRINTER_PORT")), "9100")
     return [f"tcp:{host}:{port}"]
 
 
@@ -410,12 +414,15 @@ def process_job(token: str, base: str, job: dict, *, dry_run: bool) -> None:
     if not plain and payload.get("lines"):
         lines = [f"{ln.get('quantity', 1)}x {ln.get('name', '')}" for ln in payload["lines"]]
         plain = "\n".join(lines) + "\n"
-    if role == "kitchen" and payload.get("lines") and payload.get("service_label"):
-        data = render_kitchen_ticket(payload, cols=int(_env("PRINTER_COLUMNS", "48") or "48"))
-    elif role == "receipt" and payload.get("business") and payload.get("lines"):
-        data = render_receipt_ticket(payload, cols=int(_env("PRINTER_COLUMNS", "48") or "48"))
+    # Layout follows the job type; the role (kitchen / bar / receipt) only picks the printer.
+    kind = job.get("job_type") or role
+    cols = int(_env("PRINTER_COLUMNS", "48") or "48")
+    if kind == "kitchen" and payload.get("lines") and payload.get("service_label"):
+        data = render_kitchen_ticket(payload, cols=cols)
+    elif kind == "receipt" and payload.get("business") and payload.get("lines"):
+        data = render_receipt_ticket(payload, cols=cols)
     else:
-        data = render_escpos(plain, big=role == "kitchen")
+        data = render_escpos(plain, big=kind == "kitchen")
     try:
         send_to_printer(role, data, dry_run=dry_run)
         _request(

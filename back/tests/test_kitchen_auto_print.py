@@ -120,3 +120,48 @@ class TestKitchenAutoPrint(PgClientTestCase):
         self.assertEqual(payload["lines"][0]["line_total_cents"], 2000)
         # Line tax 148 + tip tax 1080*8/108 = 80
         self.assertEqual(payload["tax_summary"], [{"rate": 8, "cents": 228}])
+
+    def test_beverages_go_to_the_bar_printer_as_a_separate_ticket(self) -> None:
+        self._add_agent()
+        drink = models.Product(
+            tenant_id=self.tenant.id, name="Limonada", price_cents=500, category="Beverages"
+        )
+        self.session.add(drink)
+        self.session.commit()
+        self.session.refresh(drink)
+        self._item("Taco", models.OrderItemStatus.preparing)
+        self.session.add(
+            models.OrderItem(
+                order_id=self.order.id,
+                product_id=drink.id,
+                product_name="Limonada",
+                quantity=1,
+                price_cents=500,
+                status=models.OrderItemStatus.preparing,
+            )
+        )
+        self.session.commit()
+        self.assertEqual(print_service.enqueue_new_kitchen_tickets(self.session), 2)
+        by_role = {j.printer_role: j for j in self._jobs()}
+        self.assertEqual(set(by_role), {"kitchen", "bar"})
+        self.assertIn("Taco", by_role["kitchen"].payload["plain_text"])
+        self.assertNotIn("Limonada", by_role["kitchen"].payload["plain_text"])
+        self.assertEqual(by_role["bar"].payload["station_label"], "BARRA")
+        self.assertIn("Limonada", by_role["bar"].payload["plain_text"])
+
+        # A new drink is an ADICION for the bar only; a new dish would be for the kitchen.
+        self.session.add(
+            models.OrderItem(
+                order_id=self.order.id,
+                product_id=drink.id,
+                product_name="Cerveza",
+                quantity=1,
+                price_cents=500,
+                status=models.OrderItemStatus.preparing,
+            )
+        )
+        self.session.commit()
+        self.assertEqual(print_service.enqueue_new_kitchen_tickets(self.session), 1)
+        newest = self._jobs()[-1]
+        self.assertEqual(newest.printer_role, "bar")
+        self.assertIn("ADICION", newest.payload["plain_text"])

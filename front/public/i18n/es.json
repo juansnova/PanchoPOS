@@ -2357,6 +2357,7 @@
     "COL_STATUS": "Estado",
     "COL_DETAIL": "Detalle",
     "TYPE_KITCHEN": "Cocina",
+    "TYPE_BAR": "Barra",
     "TYPE_RECEIPT": "Factura",
     "STATUS_PENDING": "En cola",
     "STATUS_CLAIMED": "Imprimiendo",
