@@ -778,7 +778,7 @@
     "INVOICE_TIP_LINE": "Propina ({{percent}}%)",
     "CASH": "Efectivo",
     "CARD_TERMINAL": "Tarjeta (Datáfono)",
-    "STRIPE_ONLINE": "Stripe (en línea)",
+    "TRANSFER": "Transferencia",
     "OTHER": "Otro",
     "PROCESSING": "Procesando...",
     "CANCEL": "Cancelar",

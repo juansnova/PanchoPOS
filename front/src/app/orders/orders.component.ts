@@ -1301,7 +1301,7 @@ ModuleRegistry.registerModules([
                   <select id="payment-method" [(ngModel)]="paymentMethod" class="form-select">
                     <option value="cash">{{ 'ORDERS.CASH' | translate }}</option>
                     <option value="terminal">{{ 'ORDERS.CARD_TERMINAL' | translate }}</option>
-                    <option value="stripe">{{ 'ORDERS.STRIPE_ONLINE' | translate }}</option>
+                    <option value="transfer">{{ 'ORDERS.TRANSFER' | translate }}</option>
                     <option value="other">{{ 'ORDERS.OTHER' | translate }}</option>
                   </select>
                 </div>
