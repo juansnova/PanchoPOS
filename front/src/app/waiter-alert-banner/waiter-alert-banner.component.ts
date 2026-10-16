@@ -99,7 +99,10 @@ export class WaiterAlertBannerComponent implements OnInit, OnDestroy {
       if (update?.type !== 'call_waiter' && update?.type !== 'payment_requested') return;
       const user = this.api.getCurrentUser();
       if (!user) return;
-      if (user.role === 'owner' || (user.id && update.assigned_waiter_id === user.id)) {
+      // Only the assigned waiter is alerted; if the table has nobody assigned, fall back to the owner.
+      const assignedId = update.assigned_waiter_id;
+      const isForMe = assignedId ? assignedId === user.id : user.role === 'owner';
+      if (isForMe) {
         this.alerts.add(update.table_name || 'Table', update.message || '', update.type);
         this.audio.playUrgentWaiterAlert();
       }
