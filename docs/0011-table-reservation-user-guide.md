@@ -17,7 +17,7 @@ This document describes how table reservations work for **staff** and **end user
 
 ### End users (public, no login)
 
-- **Book a table**: Public page at **`/{public_slug}/book`** when the restaurant has a public slug (e.g. `/demo-restaurant-barcelona/book`), or **`/book/:tenantId`** (numeric id still works and redirects to the slug form when set). Form: date, time, party size, name, phone. Submit creates a reservation (status `booked`). Success screen shows a link to view/cancel. When no slot is available, guests can follow **“Join the waiting list”** to **`/waitlist/:tenantId`**.
+- **Book a table**: Public page at **`/{public_slug}/book`** when the restaurant has a public slug (e.g. `/demo-restaurant-bogota/book`), or **`/book/:tenantId`** (numeric id still works and redirects to the slug form when set). Form: date, time, party size, name, phone. Submit creates a reservation (status `booked`). Success screen shows a link to view/cancel. When no slot is available, guests can follow **“Join the waiting list”** to **`/waitlist/:tenantId`**.
 - **Service labels**: Under **Settings → Opening hours**, staff can set an optional **service label** on each day (continuous hours) or **morning / evening** labels when the day has a break. The public book page and staff reservation form show those labels for **Service** (empty = default “Lunch” / “Dinner” / “Lunch and dinner”). API values stay `lunch` / `dinner` for filtering.
 - **Join the waiting list**: Public page at **`/waitlist/:tenantId`**. Form: name, party size, phone (no date/time). Submit adds the guest to the tenant queue (status `waiting`). Also reachable from the book page link above.
 - **View or cancel**: Public page at **`/reservation?token=...`**. Shows reservation details and status; allows cancelling if status is `booked` or `seated`.
@@ -37,7 +37,7 @@ This document describes how table reservations work for **staff** and **end user
 
 1. **Get the booking link**  
    The restaurant shares a link that uses the **public slug** when set (Settings → Business profile), or the numeric tenant ID:
-   - **Preferred URL**: `https://your-domain.com/demo-restaurant-barcelona/book`  
+   - **Preferred URL**: `https://your-domain.com/demo-restaurant-bogota/book`  
    - **Legacy URL**: `https://your-domain.com/book/1` (still works; redirects to the slug form when a slug exists)  
    - Replace `your-domain.com` with your app host (e.g. `localhost:4202` for local, or your production domain).  
    - Set the slug under **Settings → Business profile** (same name-city slug as the public menu).

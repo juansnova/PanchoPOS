@@ -810,7 +810,7 @@
     "PRINT_INVOICE": "Imprimir factura",
     "INVOICE": "Factura",
     "INVOICE_FOOTER": "Gracias por su pedido.",
-    "INVOICE_OSS_PREFIX": "Open source · Hecho con ♥ en Barcelona y México",
+    "INVOICE_OSS_PREFIX": "Open source · Hecho con ♥ en Colombia",
     "DIAN_SECTION_TITLE": "Factura electrónica DIAN (simulación)",
     "DIAN_SECTION_HINT": "Modo prueba: usa un simulador local, no presenta ante la DIAN de verdad. Actívalo en Configuración.",
     "DIAN_STATUS": "Estado",
