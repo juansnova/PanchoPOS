@@ -89,7 +89,7 @@ class Settings(BaseSettings):
         description="E.g. +14155238886 (Twilio sandbox) or your WhatsApp Business number",
     )
     default_phone_country: str = Field(
-        default="ES",
+        default="CO",
         validation_alias="DEFAULT_PHONE_COUNTRY",
         description="ISO 3166-1 alpha-2 country code for normalizing phone numbers without + prefix",
     )

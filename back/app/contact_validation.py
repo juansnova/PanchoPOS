@@ -42,14 +42,14 @@ def normalize_email_address(raw: str) -> str:
 def normalize_phone_e164(raw: str, default_region: str) -> str:
     """
     Parse and validate phone; return E.164 (e.g. +34912345678).
-    default_region: ISO 3166-1 alpha-2 (e.g. ES) for numbers without country code.
+    default_region: ISO 3166-1 alpha-2 (e.g. CO) for numbers without country code.
     """
     if not raw or not isinstance(raw, str):
         raise ValueError("empty phone")
     s = raw.strip()
     if not s:
         raise ValueError("empty phone")
-    region = (default_region or "ES").upper()[:2]
+    region = (default_region or "CO").upper()[:2]
     try:
         num = parse(s, region)
     except NumberParseException as e:

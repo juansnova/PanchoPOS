@@ -9969,7 +9969,7 @@ async def send_reservation_reminder(
     tenant_name = tenant.name if tenant else "Restaurant"
     date_str = reservation.reservation_date.isoformat() if reservation.reservation_date else ""
     time_str = reservation.reservation_time.strftime("%H:%M") if reservation.reservation_time else ""
-    default_country = settings.default_phone_country or "ES"
+    default_country = settings.default_phone_country or "CO"
     if tenant and tenant.timezone:
         # Optional: derive country from timezone (e.g. Europe/Madrid -> ES); for now use global default
         pass
