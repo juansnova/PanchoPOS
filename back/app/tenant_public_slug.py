@@ -116,10 +116,6 @@ def backfill_all_public_slugs(session: Session) -> dict[str, int]:
     tenants = session.exec(select(models.Tenant).order_by(models.Tenant.id)).all()
     updated = 0
     for t in tenants:
-        # Demo restaurant: seed city so slug is name-city (issue #413).
-        if t.id == 1 and not (getattr(t, "city", None) or "").strip():
-            t.city = "Barcelona"
-            session.add(t)
         before = (getattr(t, "public_slug", None) or "").strip()
         # If city exists but slug is still name-only, clear so ensure rebuilds name-city.
         name_only = build_name_city_base(t.name, None)
