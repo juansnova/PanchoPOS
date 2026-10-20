@@ -284,11 +284,6 @@ ModuleRegistry.registerModules([
                         }
                       </div>
                       <div class="order-actions">
-                        @if (canUpdateStatus() && order.status !== 'cancelled') {
-                          <button type="button" class="btn btn-urgent" (click)="toggleStaffUrgent(order, $event)">
-                            {{ order.staff_urgent ? ('ORDERS.CLEAR_URGENT' | translate) : ('ORDERS.MARK_URGENT' | translate) }}
-                          </button>
-                        }
                         <button type="button" class="btn btn-edit-order" (click)="openOrderEdit(order)" [title]="'ORDERS.EDIT_ORDER' | translate">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -306,6 +301,7 @@ ModuleRegistry.registerModules([
                             {{ 'ORDERS.FINISH_ORDER' | translate }}
                           </button>
                         }
+                        @if (order.status === 'paid' && canMarkPaid()) {
                         <div class="status-control">
                           <button
                             class="status-badge-btn"
@@ -376,6 +372,7 @@ ModuleRegistry.registerModules([
                             </div>
                           }
                         </div>
+                        }
                         @if (canDeleteOrder()) {
                           <button type="button" class="btn btn-delete-order" (click)="deleteOrder(order)" [title]="'ORDERS.DELETE_ORDER' | translate">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -565,11 +562,6 @@ ModuleRegistry.registerModules([
                           }
                         </div>
                         <div class="order-actions">
-                          @if (canUpdateStatus() && order.status !== 'cancelled') {
-                            <button type="button" class="btn btn-urgent" (click)="toggleStaffUrgent(order, $event)">
-                              {{ order.staff_urgent ? ('ORDERS.CLEAR_URGENT' | translate) : ('ORDERS.MARK_URGENT' | translate) }}
-                            </button>
-                          }
                           <button type="button" class="btn btn-edit-order" (click)="openOrderEdit(order)" [title]="'ORDERS.EDIT_ORDER' | translate">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                               <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -587,6 +579,7 @@ ModuleRegistry.registerModules([
                               {{ 'ORDERS.FINISH_ORDER' | translate }}
                             </button>
                           }
+                          @if (order.status === 'paid' && canMarkPaid()) {
                           <div class="status-control">
                             <button
                               class="status-badge-btn"
@@ -657,6 +650,7 @@ ModuleRegistry.registerModules([
                               </div>
                             }
                           </div>
+                          }
                           @if (canDeleteOrder()) {
                             <button type="button" class="btn btn-delete-order" (click)="deleteOrder(order)" [title]="'ORDERS.DELETE_ORDER' | translate">
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1554,14 +1548,6 @@ ModuleRegistry.registerModules([
       color: var(--color-text); cursor: pointer; transition: all 0.15s;
     }
     .btn-edit-order:hover { background: var(--color-bg); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-    .btn-urgent {
-      display: inline-flex; align-items: center; gap: var(--space-2);
-      padding: var(--space-2) var(--space-3); min-height: 44px;
-      border-radius: 14px; font-size: 0.8125rem; font-weight: 600;
-      border: 1px solid rgba(220, 38, 38, 0.35); background: rgba(220, 38, 38, 0.08);
-      color: #b91c1c; cursor: pointer; transition: all 0.15s;
-    }
-    .btn-urgent:hover { background: rgba(220, 38, 38, 0.14); }
     .order-urgent-badge {
       font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
       color: #b91c1c; background: rgba(220, 38, 38, 0.1);
@@ -3929,20 +3915,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
     if (dash <= 0) return false;
     const oid = Number(key.slice(0, dash));
     return oid === orderId;
-  }
-
-  toggleStaffUrgent(order: Order, event?: Event): void {
-    event?.stopPropagation();
-    if (!this.canUpdateStatus()) return;
-    if (order.status === 'cancelled') return;
-    const next = !order.staff_urgent;
-    this.api.setOrderStaffUrgent(order.id, next).subscribe({
-      next: (res) => {
-        this.orders.update((list) =>
-          list.map((o) => (o.id === order.id ? { ...o, staff_urgent: res.staff_urgent } : o))
-        );
-      },
-    });
   }
 
   updateStatus(order: Order, status: string) {
