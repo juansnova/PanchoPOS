@@ -182,12 +182,11 @@ ModuleRegistry.registerModules([
                           <div class="item-name-row">
                             <span class="item-qty">
                               @if (!item.removed_by_customer && item.status !== 'cancelled' && item.status !== 'delivered') {
-                                <input type="number" 
-                                  [value]="item.quantity" 
-                                  (change)="updateItemQuantity(order.id, item.id!, +$any($event.target).value)"
-                                  min="1" 
-                                  class="quantity-input"
-                                />
+                                <span class="qty-stepper">
+                                  <button type="button" class="qty-btn qty-minus" (click)="stepItemQuantity(order, item, -1)" [disabled]="item.quantity <= 1" aria-label="-1">−</button>
+                                  <span class="qty-value">{{ item.quantity }}</span>
+                                  <button type="button" class="qty-btn qty-plus" (click)="stepItemQuantity(order, item, 1)" aria-label="+1">+</button>
+                                </span>
                               } @else {
                                 {{ item.quantity }}x
                               }
@@ -469,12 +468,11 @@ ModuleRegistry.registerModules([
                             <div class="item-name-row">
                               <span class="item-qty">
                                 @if (!item.removed_by_customer && item.status !== 'cancelled' && item.status !== 'delivered') {
-                                  <input type="number"
-                                    [value]="item.quantity"
-                                    (change)="updateItemQuantity(order.id, item.id!, +$any($event.target).value)"
-                                    min="1"
-                                    class="quantity-input"
-                                  />
+                                  <span class="qty-stepper">
+                                    <button type="button" class="qty-btn qty-minus" (click)="stepItemQuantity(order, item, -1)" [disabled]="item.quantity <= 1" aria-label="-1">−</button>
+                                    <span class="qty-value">{{ item.quantity }}</span>
+                                    <button type="button" class="qty-btn qty-plus" (click)="stepItemQuantity(order, item, 1)" aria-label="+1">+</button>
+                                  </span>
                                 } @else {
                                   {{ item.quantity }}x
                                 }
@@ -1539,7 +1537,7 @@ ModuleRegistry.registerModules([
         z-index: 9998;
       }
       &.status-pending { border-left-color: var(--color-warning); }
-      &.status-preparing { border-left-color: #3B82F6; }
+      &.status-preparing { border-left-color: var(--color-primary); }
       &.status-ready { border-left-color: var(--color-success); }
       &.status-paid { border-left-color: var(--color-success); }
       &.status-completed { border-left-color: var(--color-text-muted); }
@@ -1593,7 +1591,7 @@ ModuleRegistry.registerModules([
     .status-badge {
       padding: var(--space-1) var(--space-3); border-radius: 20px; font-size: 0.75rem; font-weight: 600;
       &.pending { background: rgba(245, 158, 11, 0.15); color: var(--color-warning); }
-      &.preparing { background: rgba(59, 130, 246, 0.15); color: #3B82F6; }
+      &.preparing { background: rgba(194, 103, 44, 0.15); color: var(--color-primary); }
       &.ready { background: var(--color-success-light); color: var(--color-success); }
       &.paid { background: var(--color-success-light); color: var(--color-success); }
       &.completed { background: var(--color-bg); color: var(--color-text-muted); }
@@ -1731,11 +1729,11 @@ ModuleRegistry.registerModules([
       transform: scale(1.05);
     }
     .item-status-badge.status-preparing { 
-      background: rgba(59, 130, 246, 0.15); 
-      color: #3B82F6;
+      background: rgba(194, 103, 44, 0.15); 
+      color: var(--color-primary);
     }
     .item-status-badge.status-preparing.clickable:hover {
-      background: #3B82F6;
+      background: var(--color-primary);
       color: white;
       transform: scale(1.05);
     }
@@ -1768,9 +1766,9 @@ ModuleRegistry.registerModules([
       border: 1px solid var(--color-border);
     }
     .item-status-badge.status-delivered.clickable:hover {
-      background: rgba(59, 130, 246, 0.15);
-      color: #3B82F6;
-      border-color: #3B82F6;
+      background: rgba(194, 103, 44, 0.15);
+      color: var(--color-primary);
+      border-color: var(--color-primary);
       transform: scale(1.05);
     }
     .item-status-badge.status-cancelled { background: var(--color-bg); color: var(--color-text-muted); }
@@ -1784,7 +1782,7 @@ ModuleRegistry.registerModules([
       font-size: 0.75rem;
     }
     .btn-info {
-      background: #3B82F6;
+      background: var(--color-primary);
       color: white;
     }
     .btn-info:hover {
@@ -1906,7 +1904,7 @@ ModuleRegistry.registerModules([
       transform: rotate(180deg);
     }
     .status-badge-btn.pending { background: rgba(245, 158, 11, 0.15); color: var(--color-warning); }
-    .status-badge-btn.preparing { background: rgba(59, 130, 246, 0.15); color: #3B82F6; }
+    .status-badge-btn.preparing { background: rgba(194, 103, 44, 0.15); color: var(--color-primary); }
     .status-badge-btn.ready { background: var(--color-success-light); color: var(--color-success); }
     .status-badge-btn.completed { background: var(--color-bg); color: var(--color-text-muted); }
     .status-badge-btn.paid { background: var(--color-success-light); color: var(--color-success); }
@@ -2477,7 +2475,7 @@ ModuleRegistry.registerModules([
     .order-card:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 18px 34px -14px rgba(0,0,0,.28); }
     .order-card.status-dropdown-open { overflow: visible; }
     .order-card.status-pending { --st: #f59e0b; --st-soft: rgba(245, 158, 11, 0.14); }
-    .order-card.status-preparing { --st: #3b82f6; --st-soft: rgba(59, 130, 246, 0.14); }
+    .order-card.status-preparing { --st: var(--color-primary); --st-soft: rgba(194, 103, 44, 0.14); }
     .order-card.status-ready { --st: #16a34a; --st-soft: rgba(22, 163, 74, 0.14); }
     .order-card.status-paid { --st: #16a34a; --st-soft: rgba(22, 163, 74, 0.14); }
     .order-card.status-completed { --st: #78716c; --st-soft: rgba(120, 113, 108, 0.12); }
@@ -2547,6 +2545,21 @@ ModuleRegistry.registerModules([
     }
     .order-card .btn-success:hover { filter: brightness(1.06); transform: translateY(-1px); }
     .order-card .btn-delete-order, .order-card .btn-menu-link, .order-card .btn-print { flex: 0 0 auto; border-radius: 14px; }
+    .order-card .qty-stepper {
+      display: inline-flex; align-items: center; gap: 4px; padding: 3px; border-radius: 999px;
+      background: var(--color-primary-light);
+    }
+    .order-card .qty-btn {
+      width: 34px; height: 34px; border: 0; border-radius: 50%; color: #fff; font-size: 1.3rem; font-weight: 700; line-height: 1;
+      cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      transition: transform .12s, background .15s, opacity .15s;
+    }
+    .order-card .qty-minus { background: color-mix(in srgb, var(--color-primary) 38%, #fff); }
+    .order-card .qty-plus { background: var(--color-primary); box-shadow: 0 2px 6px color-mix(in srgb, var(--color-primary) 40%, transparent); }
+    .order-card .qty-btn:hover:not(:disabled) { filter: brightness(.94); }
+    .order-card .qty-btn:active:not(:disabled) { transform: scale(.88); }
+    .order-card .qty-btn:disabled { opacity: .4; cursor: default; }
+    .order-card .qty-value { min-width: 26px; text-align: center; font-size: 1.05rem; font-weight: 800; color: var(--color-text); }
     @media (prefers-reduced-motion: reduce) {
       .order-card, .order-card:hover { transition: none; transform: none; }
       .order-card .order-status-pill.preparing::before { animation: none; }
@@ -4111,6 +4124,34 @@ export class OrdersComponent implements OnInit, OnDestroy {
         });
       },
       { requireReason: true, confirmText: this.translate.instant('COMMON.CONFIRM') }
+    );
+  }
+
+  private qtyTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
+  /** +/- on a line: shows the new quantity at once and saves it shortly after the last tap. */
+  stepItemQuantity(order: Order, item: OrderItem, delta: number): void {
+    const quantity = Math.max(1, item.quantity + delta);
+    if (quantity === item.quantity || item.id == null) return;
+    const itemId = item.id;
+    this.orders.update((list) =>
+      list.map((o) =>
+        o.id === order.id ? { ...o, items: o.items.map((i) => (i.id === itemId ? { ...i, quantity } : i)) } : o
+      )
+    );
+    clearTimeout(this.qtyTimers.get(itemId));
+    this.qtyTimers.set(
+      itemId,
+      setTimeout(() => {
+        this.qtyTimers.delete(itemId);
+        this.api.updateOrderItemQuantityStaff(order.id, itemId, quantity).subscribe({
+          next: () => this.loadOrders(),
+          error: () => {
+            this.showToast(this.translate.instant('ORDERS.FAILED_TO_UPDATE_ITEM'), 'error');
+            this.loadOrders();
+          },
+        });
+      }, 400)
     );
   }
 
