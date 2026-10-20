@@ -1,0 +1,305 @@
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostListener,
+  ViewChild,
+  forwardRef,
+  inject,
+  input,
+  output,
+  signal,
+  computed,
+} from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+export interface AppSelectOption {
+  value: unknown;
+  label: string;
+  /** Small secondary line (e.g. SKU). */
+  sub?: string;
+}
+
+/**
+ * Drop-in replacement for a native <select> that matches the app: rounded trigger, floating panel
+ * with optional search, check mark on the selected row, keyboard support. Works with ngModel.
+ */
+@Component({
+  selector: 'app-select',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => AppSelectComponent), multi: true }],
+  template: `
+    <button
+      #trigger
+      type="button"
+      class="as-trigger"
+      [class.as-open]="open()"
+      [class.as-placeholder]="!hasValue()"
+      [disabled]="isDisabled()"
+      role="combobox"
+      aria-haspopup="listbox"
+      [attr.aria-expanded]="open()"
+      (click)="toggle()"
+      (keydown)="onTriggerKey($event)"
+    >
+      <span class="as-label">{{ selectedLabel() }}</span>
+      <svg class="as-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="6 9 12 15 18 9" />
+      </svg>
+    </button>
+
+    @if (open()) {
+      <div class="as-panel" [style.top.px]="panelTop()" [style.left.px]="panelLeft()" [style.width.px]="panelWidth()"
+        [style.max-height.px]="panelMaxHeight()" role="presentation" (mousedown)="$event.stopPropagation()">
+        @if (showSearch()) {
+          <div class="as-search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+            <input #searchBox type="search" autocomplete="off" [value]="query()" (input)="onQuery($event)" (keydown)="onPanelKey($event)" placeholder="…" />
+          </div>
+        }
+        <ul class="as-list" role="listbox" tabindex="-1" (keydown)="onPanelKey($event)" #list>
+          @if (clearable() && !query()) {
+            <li class="as-opt as-opt-empty" role="option" [class.as-active]="activeIndex() === -1" (mouseenter)="activeIndex.set(-1)" (click)="clear()">
+              {{ placeholder() }}
+            </li>
+          }
+          @for (opt of filtered(); track $index; let i = $index) {
+            <li class="as-opt" role="option" [attr.aria-selected]="isSelected(opt)" [class.as-selected]="isSelected(opt)"
+              [class.as-active]="activeIndex() === i" (mouseenter)="activeIndex.set(i)" (click)="choose(opt)">
+              <span class="as-opt-text">
+                <span class="as-opt-label">{{ opt.label }}</span>
+                @if (opt.sub) {
+                  <small class="as-opt-sub">{{ opt.sub }}</small>
+                }
+              </span>
+              @if (isSelected(opt)) {
+                <svg class="as-check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+              }
+            </li>
+          } @empty {
+            <li class="as-none">—</li>
+          }
+        </ul>
+      </div>
+    }
+  `,
+  styles: [`
+    :host { display: block; position: relative; min-width: 0; }
+    .as-trigger {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 46px; padding: 0 14px;
+      border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); color: var(--color-text);
+      font: inherit; text-align: left; cursor: pointer; box-sizing: border-box; touch-action: manipulation;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    .as-trigger:hover:not(:disabled) { border-color: var(--color-primary); }
+    .as-trigger.as-open, .as-trigger:focus-visible {
+      outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+    .as-trigger:disabled { opacity: .55; cursor: not-allowed; background: var(--color-bg); }
+    .as-placeholder .as-label { color: var(--color-text-muted); }
+    .as-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .as-chevron { flex: none; color: var(--color-text-muted); transition: transform .18s; }
+    .as-open .as-chevron { transform: rotate(180deg); color: var(--color-primary); }
+
+    .as-panel {
+      position: fixed; z-index: 4000; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
+      border-radius: 16px; background: var(--color-surface); border: 1px solid var(--color-border);
+      box-shadow: 0 24px 50px -18px rgba(0, 0, 0, .45); animation: as-in .14s ease-out;
+    }
+    @keyframes as-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+    .as-search { position: relative; display: flex; align-items: center; padding: 10px 10px 6px; flex: none; }
+    .as-search svg { position: absolute; left: 22px; color: var(--color-text-muted); pointer-events: none; }
+    .as-search input {
+      width: 100%; min-height: 40px; padding: 0 12px 0 36px; border: 1px solid var(--color-border); border-radius: 999px;
+      background: var(--color-bg); color: var(--color-text); font: inherit; box-sizing: border-box;
+    }
+    .as-search input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+    .as-list { list-style: none; margin: 0; padding: 6px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+    .as-opt {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 6px 12px;
+      border-radius: 12px; cursor: pointer; touch-action: manipulation;
+    }
+    .as-opt-text { display: flex; flex-direction: column; min-width: 0; }
+    .as-opt-label { font-weight: 600; overflow-wrap: anywhere; }
+    .as-opt-sub { color: var(--color-text-muted); font-size: .75rem; }
+    .as-opt-empty { color: var(--color-text-muted); font-style: italic; }
+    .as-active { background: var(--color-primary-light); }
+    .as-selected { color: var(--color-primary); }
+    .as-selected .as-opt-label { font-weight: 800; }
+    .as-check { flex: none; color: var(--color-primary); }
+    .as-none { padding: 14px; text-align: center; color: var(--color-text-muted); }
+    @media (prefers-reduced-motion: reduce) { .as-panel { animation: none; } .as-chevron { transition: none; } }
+  `],
+})
+export class AppSelectComponent implements ControlValueAccessor {
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private cdr = inject(ChangeDetectorRef);
+
+  readonly options = input<AppSelectOption[]>([]);
+  readonly placeholder = input('');
+  /** Adds a first row that sets the value back to `emptyValue`. */
+  readonly clearable = input(false);
+  readonly emptyValue = input<unknown>('');
+  /** Force the search box on/off; by default it appears with more than 7 options. */
+  readonly searchable = input<boolean | null>(null);
+  readonly disabled = input(false);
+  readonly changed = output<unknown>();
+
+  @ViewChild('trigger') private triggerRef?: ElementRef<HTMLButtonElement>;
+  @ViewChild('searchBox') private searchRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('list') private listRef?: ElementRef<HTMLElement>;
+
+  protected value = signal<unknown>(null);
+  protected open = signal(false);
+  protected query = signal('');
+  protected activeIndex = signal(-1);
+  protected panelTop = signal(0);
+  protected panelLeft = signal(0);
+  protected panelWidth = signal(240);
+  protected panelMaxHeight = signal(320);
+  private cvaDisabled = signal(false);
+
+  private onChange: (v: unknown) => void = () => {};
+  private onTouched: () => void = () => {};
+
+  isDisabled = computed(() => this.disabled() || this.cvaDisabled());
+  showSearch = computed(() => (this.searchable() ?? this.options().length > 7));
+  filtered = computed(() => {
+    const q = this.query().trim().toLowerCase();
+    const all = this.options();
+    if (!q) return all;
+    return all.filter((o) => (o.label + ' ' + (o.sub || '')).toLowerCase().includes(q));
+  });
+  hasValue = computed(() => {
+    const v = this.value();
+    return v !== null && v !== undefined && v !== '' && this.options().some((o) => o.value === v);
+  });
+  selectedLabel = computed(() => {
+    const v = this.value();
+    const found = this.options().find((o) => o.value === v);
+    return found && this.hasValue() ? found.label : this.placeholder() || '';
+  });
+
+  writeValue(v: unknown): void {
+    this.value.set(v);
+    this.cdr.markForCheck();
+  }
+  registerOnChange(fn: (v: unknown) => void): void { this.onChange = fn; }
+  registerOnTouched(fn: () => void): void { this.onTouched = fn; }
+  setDisabledState(d: boolean): void {
+    this.cvaDisabled.set(d);
+    this.cdr.markForCheck();
+  }
+
+  isSelected(opt: AppSelectOption): boolean {
+    return opt.value === this.value();
+  }
+
+  toggle(): void {
+    if (this.isDisabled()) return;
+    this.open() ? this.close() : this.openPanel();
+  }
+
+  private openPanel(): void {
+    const el = this.triggerRef?.nativeElement;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const below = window.innerHeight - r.bottom - 12;
+    const above = r.top - 12;
+    const openUp = below < 220 && above > below;
+    const room = Math.max(160, Math.min(360, openUp ? above : below));
+    this.panelWidth.set(Math.max(r.width, 220));
+    this.panelLeft.set(Math.min(r.left, Math.max(8, window.innerWidth - Math.max(r.width, 220) - 8)));
+    this.panelMaxHeight.set(room);
+    // Opening upwards: anchor the panel's bottom edge to the trigger (estimate height from the option count).
+    const est = Math.min(room, (this.showSearch() ? 60 : 12) + (this.options().length + (this.clearable() ? 1 : 0)) * 46);
+    this.panelTop.set(openUp ? Math.max(8, r.top - est - 6) : r.bottom + 6);
+    this.query.set('');
+    const idx = this.options().findIndex((o) => o.value === this.value());
+    this.activeIndex.set(idx);
+    this.open.set(true);
+    this.cdr.markForCheck();
+    setTimeout(() => {
+      if (this.showSearch()) this.searchRef?.nativeElement.focus();
+      else this.listRef?.nativeElement.focus();
+      this.scrollActiveIntoView();
+    });
+  }
+
+  private close(focusTrigger = true): void {
+    this.open.set(false);
+    this.onTouched();
+    if (focusTrigger) this.triggerRef?.nativeElement.focus();
+    this.cdr.markForCheck();
+  }
+
+  choose(opt: AppSelectOption): void {
+    this.value.set(opt.value);
+    this.onChange(opt.value);
+    this.changed.emit(opt.value);
+    this.close();
+  }
+
+  clear(): void {
+    const v = this.emptyValue();
+    this.value.set(v);
+    this.onChange(v);
+    this.changed.emit(v);
+    this.close();
+  }
+
+  onQuery(event: Event): void {
+    this.query.set((event.target as HTMLInputElement).value);
+    this.activeIndex.set(this.filtered().length ? 0 : -1);
+  }
+
+  onTriggerKey(event: KeyboardEvent): void {
+    if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key) && !this.open()) {
+      event.preventDefault();
+      this.openPanel();
+    }
+  }
+
+  onPanelKey(event: KeyboardEvent): void {
+    const n = this.filtered().length;
+    const min = this.clearable() && !this.query() ? -1 : 0;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.close();
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.activeIndex.set(Math.min(n - 1, this.activeIndex() + 1));
+      this.scrollActiveIntoView();
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.activeIndex.set(Math.max(min, this.activeIndex() - 1));
+      this.scrollActiveIntoView();
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const i = this.activeIndex();
+      if (i === -1 && min === -1) this.clear();
+      else if (this.filtered()[i]) this.choose(this.filtered()[i]);
+    } else if (event.key === 'Tab') {
+      this.close(false);
+    }
+  }
+
+  private scrollActiveIntoView(): void {
+    setTimeout(() => {
+      this.listRef?.nativeElement.querySelector('.as-active')?.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  @HostListener('document:mousedown', ['$event'])
+  onDocumentDown(event: Event): void {
+    if (this.open() && !this.host.nativeElement.contains(event.target as Node)) this.close(false);
+  }
+
+  @HostListener('window:resize')
+  @HostListener('window:scroll')
+  onViewportChange(): void {
+    if (this.open()) this.close(false);
+  }
+}

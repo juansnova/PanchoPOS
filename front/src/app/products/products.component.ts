@@ -11,6 +11,7 @@ import { getSubcategoryLabel as resolveSubcategoryLabel } from '../shared/produc
 import { MAX_IMAGE_UPLOAD_BYTES, MAX_IMAGE_UPLOAD_MB } from '../shared/image-upload-limits';
 import { CopAmountDirective } from '../shared/cop-amount.directive';
 import { CategoriesComponent } from './categories.component';
+import { AppSelectComponent, AppSelectOption } from '../shared/app-select.component';
 import { ProductBulkImportComponent } from './product-bulk-import.component';
 import { InventoryService } from '../inventory/inventory.service';
 import { InventoryItem, ProductRecipeItem, UnitOfMeasure, inventoryUnitKey } from '../inventory/inventory.types';
@@ -27,6 +28,7 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
     TranslateModule,
     CategoriesComponent,
     ProductBulkImportComponent,
+    AppSelectComponent,
   ],
   template: `
     <app-sidebar>
@@ -154,21 +156,28 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                    <div class="form-row">
                      <div class="form-group">
                        <label for="category">{{ 'PRODUCTS.CATEGORY_LABEL' | translate }}</label>
-                       <select id="category" [(ngModel)]="formData.category" name="category" (change)="onCategoryChange()" [disabled]="!canEditProducts()">
-                         <option value="">{{ 'PRODUCTS.SELECT_CATEGORY' | translate }}</option>
-                         @for (category of getCategoryKeys(); track category) {
-                           <option [value]="category">{{ getCategoryLabel(category) }}</option>
-                         }
-                       </select>
+                       <app-select
+                         id="category"
+                         name="category"
+                         [(ngModel)]="formData.category"
+                         [options]="categoryOptions()"
+                         [placeholder]="'PRODUCTS.SELECT_CATEGORY' | translate"
+                         [clearable]="true"
+                         [emptyValue]="''"
+                         [disabled]="!canEditProducts()"
+                         (changed)="onCategoryChange()" />
                      </div>
                      <div class="form-group">
                        <label for="subcategory">{{ 'PRODUCTS.SUBCATEGORY_LABEL' | translate }}</label>
-                       <select id="subcategory" [(ngModel)]="formData.subcategory" name="subcategory" [disabled]="!canEditProducts() || !formData.category || availableSubcategories().length === 0">
-                         <option value="">{{ 'PRODUCTS.SELECT_SUBCATEGORY' | translate }}</option>
-                         @for (subcat of availableSubcategories(); track subcat) {
-                           <option [value]="subcat">{{ getSubcategoryLabel(subcat) }}</option>
-                         }
-                       </select>
+                       <app-select
+                         id="subcategory"
+                         name="subcategory"
+                         [(ngModel)]="formData.subcategory"
+                         [options]="subcategoryOptions()"
+                         [placeholder]="'PRODUCTS.SELECT_SUBCATEGORY' | translate"
+                         [clearable]="true"
+                         [emptyValue]="''"
+                         [disabled]="!canEditProducts() || !formData.category || availableSubcategories().length === 0" />
                      </div>
                    </div>
                   </section>
@@ -309,12 +318,15 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                              <div class="pf-recipe-fields">
                                <div class="form-group pf-rf-item">
                                  <label for="recipe-item">{{ 'PRODUCTS.RECIPE_ITEM_LABEL' | translate }}</label>
-                                 <select id="recipe-item" name="recipe-item" [(ngModel)]="recipeDraft.inventory_item_id" [disabled]="recipeSaving()">
-                                   <option [ngValue]="null">-- {{ 'COMMON.SELECT' | translate }} --</option>
-                                   @for (inv of inventoryItems(); track inv.id) {
-                                     <option [ngValue]="inv.id">{{ inv.name }} ({{ inv.sku }})</option>
-                                   }
-                                 </select>
+                                 <app-select
+                                   id="recipe-item"
+                                   name="recipe-item"
+                                   [(ngModel)]="recipeDraft.inventory_item_id"
+                                   [options]="inventoryOptions()"
+                                   [placeholder]="'COMMON.SELECT' | translate"
+                                   [searchable]="true"
+                                   [emptyValue]="null"
+                                   [disabled]="recipeSaving()" />
                                </div>
                                <div class="form-group pf-rf-qty">
                                  <label for="recipe-qty">{{ 'PRODUCTS.RECIPE_QTY_LABEL' | translate }}</label>
@@ -322,11 +334,12 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                                </div>
                                <div class="form-group pf-rf-unit">
                                  <label for="recipe-unit">{{ 'PRODUCTS.RECIPE_UNIT_LABEL' | translate }}</label>
-                                 <select id="recipe-unit" name="recipe-unit" [(ngModel)]="recipeDraft.unit" [disabled]="recipeSaving()">
-                                   @for (unit of recipeUnits; track unit) {
-                                     <option [value]="unit">{{ unitKey(unit) | translate }}</option>
-                                   }
-                                 </select>
+                                 <app-select
+                                   id="recipe-unit"
+                                   name="recipe-unit"
+                                   [(ngModel)]="recipeDraft.unit"
+                                   [options]="unitOptions()"
+                                   [disabled]="recipeSaving()" />
                                </div>
                              </div>
                              <button type="button" class="pf-recipe-btn" (click)="addRecipeRow()" [disabled]="recipeSaving() || recipeDraft.inventory_item_id == null">
@@ -727,6 +740,22 @@ export class ProductsComponent implements OnInit {
       },
       error: (err) => this.error.set(err.error?.detail || 'Failed to update'),
     });
+  }
+
+  categoryOptions(): AppSelectOption[] {
+    return this.getCategoryKeys().map((k) => ({ value: k, label: this.getCategoryLabel(k) }));
+  }
+
+  subcategoryOptions(): AppSelectOption[] {
+    return this.availableSubcategories().map((k) => ({ value: k, label: this.getSubcategoryLabel(k) }));
+  }
+
+  inventoryOptions(): AppSelectOption[] {
+    return this.inventoryItems().map((inv) => ({ value: inv.id, label: inv.name, sub: inv.sku }));
+  }
+
+  unitOptions(): AppSelectOption[] {
+    return this.recipeUnits.map((u) => ({ value: u, label: this.translate.instant(this.unitKey(u)) }));
   }
 
   setProductsView(view: 'cards' | 'table'): void {
