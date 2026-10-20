@@ -7,7 +7,6 @@ import {
   OrderItem,
   TenantSettings,
   BillingCustomer,
-  TenantProduct,
   OrderItemCreate,
   OrderLineModifiers,
   DianInvoicePublic,
@@ -24,6 +23,7 @@ import { SidebarComponent } from '../shared/sidebar.component';
 import { StaffPosToolbarComponent } from '../shared/staff-pos-toolbar.component';
 import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
 import { QuickSaleComponent } from './quick-sale.component';
+import { ProductPickerComponent, PickedLine, PickerProduct } from './product-picker.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { formatMoneyCents } from '../shared/currency-symbol';
 import {
@@ -47,7 +47,7 @@ ModuleRegistry.registerModules([
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [AgGridAngular, SidebarComponent, StaffPosToolbarComponent, FormsModule, FocusFirstInputDirective, TranslateModule, QuickSaleComponent],
+  imports: [AgGridAngular, SidebarComponent, StaffPosToolbarComponent, FormsModule, FocusFirstInputDirective, TranslateModule, QuickSaleComponent, ProductPickerComponent],
   template: `
     <app-sidebar>
         <div class="page-header page-header--staff-flow">
@@ -912,34 +912,17 @@ ModuleRegistry.registerModules([
                 }
 
                 @if (canAddItemsToOrder(order)) {
+                  <button type="button" class="eo-pill" (click)="editAddOpen.set(true)">
+                    <span class="eo-plus">+</span> {{ 'ORDERS.EDIT_ADD_PRODUCT' | translate }}
+                  </button>
                   @if (editAddOpen()) {
-                    <div class="eo-add">
-                      <div class="eo-add-row">
-                        <select class="form-select" [(ngModel)]="addItemProductId" name="addProduct">
-                          <option [ngValue]="null">{{ 'COMMON.SELECT' | translate }}</option>
-                          @for (p of editOrderTenantProducts(); track p.id) {
-                            <option [ngValue]="p.id">{{ p.name }} — {{ formatPrice(p.price_cents) }}</option>
-                          }
-                        </select>
-                        <div class="eo-stepper">
-                          <button type="button" [disabled]="addItemQuantity <= 1" (click)="addItemQuantity = addItemQuantity - 1" aria-label="-">−</button>
-                          <span>{{ addItemQuantity }}</span>
-                          <button type="button" (click)="addItemQuantity = addItemQuantity + 1" aria-label="+">+</button>
-                        </div>
-                      </div>
-                      <input type="text" class="form-input" [(ngModel)]="addItemNotes" name="addItemNotes" maxlength="500"
-                        [placeholder]="'ORDERS.ITEM_NOTES_PLACEHOLDER' | translate" />
-                      <div class="eo-add-actions">
-                        <button type="button" class="btn btn-secondary" (click)="editAddOpen.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
-                        <button type="button" class="btn btn-primary" (click)="addItemToEditOrder()" [disabled]="!addItemProductId || addItemQuantity < 1 || addingItem()">
-                          {{ addingItem() ? ('COMMON.LOADING' | translate) : ('COMMON.ADD' | translate) }}
-                        </button>
-                      </div>
-                    </div>
-                  } @else {
-                    <button type="button" class="eo-pill" (click)="editAddOpen.set(true)">
-                      <span class="eo-plus">+</span> {{ 'ORDERS.EDIT_ADD_PRODUCT' | translate }}
-                    </button>
+                    <app-product-picker
+                      [products]="editOrderProducts()"
+                      [title]="('ORDERS.EDIT_ADD_PRODUCT' | translate) + ' · #' + order.id"
+                      [confirmLabel]="'ORDERS.EDIT_ADD_TO_ORDER' | translate"
+                      [busy]="addingItem()"
+                      (confirmed)="addPickedProducts($event)"
+                      (closed)="editAddOpen.set(false)" />
                   }
                 }
 
@@ -2245,12 +2228,6 @@ ModuleRegistry.registerModules([
       background: var(--color-primary-light); color: var(--color-primary); font-weight: 600; touch-action: manipulation; }
     .eo-plus { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
       border-radius: 50%; background: var(--color-primary); color: #fff; font-size: 1.125rem; line-height: 1; }
-    .eo-add { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 14px;
-      background: linear-gradient(160deg, var(--color-primary-light), transparent 75%);
-      border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent); }
-    .eo-add-row { display: flex; align-items: center; gap: 8px; }
-    .eo-add-row .form-select { flex: 1; min-width: 0; }
-    .eo-add-actions { display: flex; justify-content: flex-end; gap: 8px; }
     .eo-bill { display: flex; flex-direction: column; gap: 4px; }
     .eo-bill label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-muted); }
     .eo-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
@@ -2582,15 +2559,9 @@ export class OrdersComponent implements OnInit, OnDestroy {
   editOrder = signal<Order | null>(null);
   /** "Agregar producto" panel of the edit-order modal; collapsed until needed. */
   editAddOpen = signal(false);
-  editOrderTenantProducts = signal<TenantProduct[]>([]);
+  editOrderProducts = signal<PickerProduct[]>([]);
   editOrderBillingCustomers = signal<BillingCustomer[]>([]);
   editOrderBillingId: number | null = null;
-  addItemProductId: number | null = null;
-  addItemQuantity = 1;
-  addItemNotes = '';
-  addItemModifiersRemove = '';
-  addItemModifiersAdd = '';
-  addItemModifiersSubstitute = '';
   addingItem = signal(false);
   /** Edit modifiers for a line in the order edit modal (item id). */
   modifierEditItemId: number | null = null;
@@ -3220,34 +3191,20 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.removeItemStaff(orderId, itemId, itemStatus, () => this.refreshEditOrder(orderId));
   }
 
-  addItemToEditOrder() {
+  /** Lines chosen in the product picker are added to the open order in one request. */
+  addPickedProducts(lines: PickedLine[]) {
     const order = this.editOrder();
-    if (!order?.table_token || !this.addItemProductId || this.addItemQuantity < 1) return;
+    if (!order?.table_token || lines.length === 0) return;
     this.addingItem.set(true);
-    const lm = this.buildLineModifiersFromStrings(
-      this.addItemModifiersRemove,
-      this.addItemModifiersAdd,
-      this.addItemModifiersSubstitute,
-    );
-    const row: OrderItemCreate = {
-      product_id: this.addItemProductId,
-      quantity: this.addItemQuantity,
-      source: 'tenant_product',
-    };
-    const note = this.addItemNotes.trim();
-    if (note) row.notes = note;
-    if (lm) row.line_modifiers = lm;
-    const items: OrderItemCreate[] = [row];
+    const items: OrderItemCreate[] = lines.map(l => ({
+      product_id: l.product_id,
+      quantity: l.quantity,
+      source: 'product',
+    }));
     this.api.submitOrder(order.table_token, { items }).subscribe({
       next: () => {
         this.addingItem.set(false);
-        this.addItemProductId = null;
         this.editAddOpen.set(false);
-        this.addItemQuantity = 1;
-        this.addItemNotes = '';
-        this.addItemModifiersRemove = '';
-        this.addItemModifiersAdd = '';
-        this.addItemModifiersSubstitute = '';
         this.refreshEditOrder(order.id);
       },
       error: () => {
@@ -3615,19 +3572,23 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.editOrder.set(order);
     this.editOrderBillingId = order.billing_customer_id ?? null;
     this.editAddOpen.set(false);
-    this.addItemProductId = null;
-    this.addItemQuantity = 1;
-    this.addItemNotes = '';
-    this.addItemModifiersRemove = '';
-    this.addItemModifiersAdd = '';
-    this.addItemModifiersSubstitute = '';
     this.modifierEditItemId = null;
     this.modifierEditRemove = '';
     this.modifierEditAdd = '';
     this.modifierEditSubstitute = '';
-    this.api.getTenantProducts(true).subscribe({
-      next: list => this.editOrderTenantProducts.set(list),
-      error: () => this.editOrderTenantProducts.set([])
+    this.api.getProducts().subscribe({
+      next: list => this.editOrderProducts.set(
+        (list || [])
+          .filter(p => p.id != null)
+          .map(p => ({
+            id: p.id as number,
+            name: p.name,
+            price_cents: p.price_cents,
+            category: p.category ?? null,
+            image_url: this.api.getProductImageUrl(p),
+          }))
+      ),
+      error: () => this.editOrderProducts.set([])
     });
     this.api.getBillingCustomers().subscribe({
       next: list => this.editOrderBillingCustomers.set(list),
@@ -3637,12 +3598,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   closeOrderEdit() {
     this.editOrder.set(null);
-    this.editOrderTenantProducts.set([]);
+    this.editOrderProducts.set([]);
+    this.editAddOpen.set(false);
     this.editOrderBillingCustomers.set([]);
     this.modifierEditItemId = null;
-    this.addItemModifiersRemove = '';
-    this.addItemModifiersAdd = '';
-    this.addItemModifiersSubstitute = '';
   }
 
   openEditOrderModal(order: Order) {

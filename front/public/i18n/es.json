@@ -778,6 +778,7 @@
     "INVOICE_SUBTOTAL": "Subtotal (artículos)",
     "EDIT_WHAT_ORDERED": "Lo que pidieron",
     "EDIT_ADD_PRODUCT": "Agregar producto",
+    "EDIT_ADD_TO_ORDER": "Agregar al pedido",
     "EDIT_CUSTOMIZE": "Nota y cambios",
     "EDIT_NOTE": "Nota para cocina",
     "EDIT_BILL_TO": "Factura a nombre de",
