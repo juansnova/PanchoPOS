@@ -1437,9 +1437,9 @@ export class KitchenDisplayComponent implements OnInit, AfterViewInit, OnDestroy
 
   getItemStatusTransitions(currentStatus: string): { forward: string[]; backward: string[] } {
     const transitions: Record<string, { forward: string[]; backward: string[] }> = {
-      // Ready and delivered happen in a single step now (skip the separate "ready" click).
+      // Kitchen/bar marks lines as ready; delivering to the table is done from the orders screen.
       pending: { forward: ['preparing'], backward: [] },
-      preparing: { forward: ['delivered'], backward: ['pending'] },
+      preparing: { forward: ['ready'], backward: ['pending'] },
       ready: { forward: ['delivered'], backward: ['preparing'] },
       delivered: { forward: [], backward: ['preparing'] },
       cancelled: { forward: [], backward: [] },
