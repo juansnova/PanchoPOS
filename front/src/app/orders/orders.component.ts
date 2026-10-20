@@ -1060,31 +1060,35 @@ ModuleRegistry.registerModules([
         <!-- Edit Satisfecho Delivery metadata Modal -->
         @if (editDeliveryOrder(); as dOrder) {
           <div class="modal-overlay">
-            <div class="modal modal-order-edit" (click)="$event.stopPropagation()" appFocusFirstInput>
-              <div class="modal-header">
-                <h3>{{ 'ORDERS.EDIT_DELIVERY' | translate }} — #{{ dOrder.id }}</h3>
-                <button class="icon-btn" (click)="closeEditDeliveryModal()">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                  </svg>
+            <div class="modal modal-order-edit mx mx-delivery" (click)="$event.stopPropagation()" appFocusFirstInput>
+              <div class="mx-head">
+                <span class="mx-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                <div class="mx-head-text">
+                  <h3>{{ 'ORDERS.EDIT_DELIVERY' | translate }}</h3>
+                  <p>{{ 'ORDERS.ORDER_ID' | translate }}{{ dOrder.id }}@if (dOrder.customer_name) { · {{ dOrder.customer_name }} }</p>
+                </div>
+                <button class="mx-close" (click)="closeEditDeliveryModal()" [attr.aria-label]="'COMMON.CANCEL' | translate">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
               <div class="modal-body">
+                <div class="mx-total">
+                  <span>{{ 'ORDERS.TOTAL' | translate }}</span>
+                  <strong>{{ formatPrice(dOrder.total_cents) }}</strong>
+                </div>
                 <div class="form-group">
                   <label for="edit-delivery-address">{{ 'ORDERS.DELIVERY_ADDRESS' | translate }} *</label>
                   <input id="edit-delivery-address" type="text" class="form-input" [(ngModel)]="deliveryFormAddress" name="editDeliveryAddress" />
                 </div>
-                <div class="form-group">
-                  <label for="edit-delivery-phone">{{ 'ORDERS.DELIVERY_PHONE' | translate }}</label>
-                  <input id="edit-delivery-phone" type="tel" class="form-input" [(ngModel)]="deliveryFormPhone" name="editDeliveryPhone" />
-                </div>
-                <div class="form-group">
-                  <label for="edit-delivery-customer">{{ 'ORDERS.CUSTOMER' | translate }}</label>
-                  <input id="edit-delivery-customer" type="text" class="form-input" [(ngModel)]="deliveryFormCustomerName" name="editDeliveryCustomer" />
-                </div>
-                <div class="form-group">
-                  <label for="edit-delivery-notes">{{ 'ORDERS.ORDER_NOTES' | translate }}</label>
-                  <textarea id="edit-delivery-notes" class="form-input modifier-textarea" rows="2" [(ngModel)]="deliveryFormNotes" name="editDeliveryNotes"></textarea>
+                <div class="dv-two">
+                  <div class="form-group">
+                    <label for="edit-delivery-phone">{{ 'ORDERS.DELIVERY_PHONE' | translate }}</label>
+                    <input id="edit-delivery-phone" type="tel" class="form-input" [(ngModel)]="deliveryFormPhone" name="editDeliveryPhone" />
+                  </div>
+                  <div class="form-group">
+                    <label for="edit-delivery-customer">{{ 'ORDERS.CUSTOMER' | translate }}</label>
+                    <input id="edit-delivery-customer" type="text" class="form-input" [(ngModel)]="deliveryFormCustomerName" name="editDeliveryCustomer" />
+                  </div>
                 </div>
                 <div class="form-group">
                   <label for="edit-delivery-courier">{{ 'ORDERS.COURIER' | translate }}</label>
@@ -1095,10 +1099,14 @@ ModuleRegistry.registerModules([
                     }
                   </select>
                 </div>
+                <div class="form-group">
+                  <label for="edit-delivery-notes">{{ 'ORDERS.ORDER_NOTES' | translate }}</label>
+                  <textarea id="edit-delivery-notes" class="form-input modifier-textarea" rows="2" [(ngModel)]="deliveryFormNotes" name="editDeliveryNotes"></textarea>
+                </div>
               </div>
               <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" (click)="closeEditDeliveryModal()">{{ 'COMMON.CANCEL' | translate }}</button>
-                <button type="button" class="btn btn-primary" (click)="submitEditDelivery()" [disabled]="savingDelivery() || !deliveryFormAddress.trim()">
+                <button type="button" class="btn btn-secondary mx-ghost" (click)="closeEditDeliveryModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button type="button" class="btn btn-primary mx-main" (click)="submitEditDelivery()" [disabled]="savingDelivery() || !deliveryFormAddress.trim()">
                   {{ savingDelivery() ? ('COMMON.LOADING' | translate) : ('COMMON.SAVE' | translate) }}
                 </button>
               </div>
