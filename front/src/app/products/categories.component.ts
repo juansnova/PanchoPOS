@@ -12,20 +12,20 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
   imports: [CommonModule, FormsModule, TranslateModule],
   template: `
     <div class="categories-container">
-      <!-- Split View Layout -->
       <div class="split-view">
-        <!-- Sidebar: Categories List -->
-        <div class="category-sidebar">
+        <!-- Sidebar: categories -->
+        <aside class="category-sidebar">
           <div class="sidebar-header">
-            <h3>{{ 'CATALOG.CATEGORY_LABEL' | translate }}</h3>
-            <button class="icon-btn" (click)="showAddCategoryForm.set(!showAddCategoryForm())" [title]="'PRODUCTS.ADD_CATEGORY' | translate">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
+            <div>
+              <h3>{{ 'CATALOG.CATEGORY_LABEL' | translate }}</h3>
+              <small>{{ mainCategories().length }}</small>
+            </div>
+            <button type="button" class="round-add" [class.on]="showAddCategoryForm()" (click)="showAddCategoryForm.set(!showAddCategoryForm())" [title]="'PRODUCTS.ADD_CATEGORY' | translate" [attr.aria-label]="'PRODUCTS.ADD_CATEGORY' | translate">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
           </div>
           @if (showAddCategoryForm()) {
-            <div class="form-card add-category-form">
+            <div class="add-category-form">
               <div class="form-group">
                 <label>{{ 'PRODUCTS.NEW_CATEGORY_NAME' | translate }}</label>
                 <input type="text" [(ngModel)]="newCategoryName" [placeholder]="'PRODUCTS.ENTER_CATEGORY_NAME' | translate">
@@ -35,118 +35,86 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                 <input type="text" [(ngModel)]="newCategoryFirstSubcategory" [placeholder]="'PRODUCTS.ENTER_SUBCATEGORY_NAME' | translate" (keyup.enter)="addCategory()">
               </div>
               <div class="input-row">
-                <button class="btn btn-secondary btn-sm" (click)="cancelAddCategory()">{{ 'COMMON.CANCEL' | translate }}</button>
-                <button class="btn btn-primary btn-sm" (click)="addCategory()" [disabled]="!newCategoryName.trim() || !newCategoryFirstSubcategory.trim()">{{ 'COMMON.OK' | translate }}</button>
+                <button type="button" class="pill pill-ghost" (click)="cancelAddCategory()">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button type="button" class="pill pill-main" (click)="addCategory()" [disabled]="!newCategoryName.trim() || !newCategoryFirstSubcategory.trim()">{{ 'COMMON.OK' | translate }}</button>
               </div>
             </div>
           }
           <div class="sidebar-list">
             @for (category of mainCategories(); track category) {
-              <button
-                class="category-item"
-                [class.active]="selectedCategory() === category"
-                (click)="selectCategory(category)">
-                <span>{{ getCategoryLabel(category) }}</span>
+              <button type="button" class="category-item" [class.active]="selectedCategory() === category" [style.--h]="hue(category)" (click)="selectCategory(category)">
+                <span class="cat-avatar" aria-hidden="true">{{ initial(category) }}</span>
+                <span class="cat-text">
+                  <span class="cat-name">{{ getCategoryLabel(category) }}</span>
+                  <small>{{ productCount(category) }} {{ 'PRODUCTS.STATS_PRODUCTS' | translate }}</small>
+                </span>
                 <span class="count">{{ getSubcategoryCount(category) }}</span>
               </button>
             }
           </div>
-        </div>
+        </aside>
 
-        <!-- Main: Subcategories Management -->
-        <div class="subcategory-main">
+        <!-- Main: subcategories -->
+        <section class="subcategory-main">
           @if (selectedCategory()) {
-            <div class="main-header">
-              @if (renamingCategory()) {
-                <div class="input-row rename-category-row">
-                  <input type="text" [(ngModel)]="renameCategoryName" (keyup.enter)="saveRenameCategory()" (keyup.escape)="cancelRenameCategory()" autofocus>
-                  <button class="btn btn-secondary btn-sm" (click)="cancelRenameCategory()">{{ 'COMMON.CANCEL' | translate }}</button>
-                  <button class="btn btn-primary btn-sm" (click)="saveRenameCategory()" [disabled]="!renameCategoryName.trim()">{{ 'COMMON.OK' | translate }}</button>
-                </div>
-              } @else {
-                <h2>{{ 'PRODUCTS.MANAGE_SUBCATEGORIES_FOR' | translate:{category: getCategoryLabel(selectedCategory()!) } }}</h2>
-              }
-              @if (!renamingCategory()) {
-              <div class="main-header-actions">
-                <button class="icon-btn" (click)="startRenameCategory()" [title]="'PRODUCTS.RENAME_CATEGORY' | translate">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button class="icon-btn danger" (click)="confirmDeleteCategory()" [title]="'PRODUCTS.DELETE_CATEGORY' | translate">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                  </svg>
-                </button>
-                <button class="btn btn-primary btn-sm" (click)="showAddForm.set(true)">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                  {{ 'PRODUCTS.ADD_SUBCATEGORY' | translate }}
-                </button>
+            <header class="main-header" [style.--h]="hue(selectedCategory()!)">
+              <span class="hero-avatar" aria-hidden="true">{{ initial(selectedCategory()!) }}</span>
+              <div class="hero-text">
+                @if (renamingCategory()) {
+                  <div class="input-row rename-category-row">
+                    <input type="text" [(ngModel)]="renameCategoryName" (keyup.enter)="saveRenameCategory()" (keyup.escape)="cancelRenameCategory()" autofocus>
+                    <button type="button" class="pill pill-ghost" (click)="cancelRenameCategory()">{{ 'COMMON.CANCEL' | translate }}</button>
+                    <button type="button" class="pill pill-main" (click)="saveRenameCategory()" [disabled]="!renameCategoryName.trim()">{{ 'COMMON.OK' | translate }}</button>
+                  </div>
+                } @else {
+                  <h2>{{ getCategoryLabel(selectedCategory()!) }}</h2>
+                  <p>
+                    <span class="stat-chip"><b>{{ currentSubcategories().length }}</b> {{ 'PRODUCTS.SUBCATEGORY_HEADER' | translate }}</span>
+                    <span class="stat-chip"><b>{{ productCount(selectedCategory()!) }}</b> {{ 'PRODUCTS.STATS_PRODUCTS' | translate }}</span>
+                  </p>
+                }
               </div>
+              @if (!renamingCategory()) {
+                <div class="main-header-actions">
+                  <button type="button" class="round-btn" (click)="startRenameCategory()" [title]="'PRODUCTS.RENAME_CATEGORY' | translate" [attr.aria-label]="'PRODUCTS.RENAME_CATEGORY' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button type="button" class="round-btn danger" (click)="confirmDeleteCategory()" [title]="'PRODUCTS.DELETE_CATEGORY' | translate" [attr.aria-label]="'PRODUCTS.DELETE_CATEGORY' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                  <button type="button" class="pill pill-main" (click)="showAddForm.set(true)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    {{ 'PRODUCTS.ADD_SUBCATEGORY' | translate }}
+                  </button>
+                </div>
               }
-            </div>
+            </header>
 
             @if (showAddForm()) {
-              <div class="form-card add-form">
-                <div class="form-group">
-                  <label>{{ 'PRODUCTS.SUBCATEGORY_NAME' | translate }}</label>
-                  <div class="input-row">
-                    <input 
-                      type="text" 
-                      [(ngModel)]="newSubcategoryName" 
-                      [placeholder]="'PRODUCTS.ENTER_SUBCATEGORY_NAME' | translate"
-                      (keyup.enter)="addSubcategory()">
-                    <button class="btn btn-secondary" (click)="showAddForm.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
-                    <button class="btn btn-primary" (click)="addSubcategory()" [disabled]="!newSubcategoryName.trim()">{{ 'COMMON.OK' | translate }}</button>
-                  </div>
+              <div class="add-form">
+                <label>{{ 'PRODUCTS.SUBCATEGORY_NAME' | translate }}</label>
+                <div class="input-row">
+                  <input type="text" [(ngModel)]="newSubcategoryName" [placeholder]="'PRODUCTS.ENTER_SUBCATEGORY_NAME' | translate" (keyup.enter)="addSubcategory()" autofocus>
+                  <button type="button" class="pill pill-ghost" (click)="showAddForm.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
+                  <button type="button" class="pill pill-main" (click)="addSubcategory()" [disabled]="!newSubcategoryName.trim()">{{ 'COMMON.OK' | translate }}</button>
                 </div>
               </div>
             }
 
-            <div class="subcategories-grid">
+            <div class="subcategories-grid" [style.--h]="hue(selectedCategory()!)">
               @for (subcat of currentSubcategories(); track subcat) {
-                <div class="subcat-card">
+                <div class="subcat-card" [class.editing]="editingSubcategory() === subcat">
                   @if (editingSubcategory() === subcat) {
                     <div class="edit-mode">
-                      <input 
-                        type="text" 
-                        [(ngModel)]="editName" 
-                        class="edit-input"
-                        (keyup.enter)="saveEdit(subcat)"
-                        (keyup.escape)="editingSubcategory.set(null)"
-                        #editInput
-                        autofocus>
-                      <div class="edit-actions">
-                        <button class="icon-btn success" (click)="saveEdit(subcat)">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"/>
-                          </svg>
-                        </button>
-                        <button class="icon-btn" (click)="editingSubcategory.set(null)">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                          </svg>
-                        </button>
+                      <input type="text" [(ngModel)]="editName" class="edit-input" (keyup.enter)="saveEdit(subcat)" (keyup.escape)="editingSubcategory.set(null)" #editInput autofocus>
+                      <div class="subcat-actions always">
+                        <button type="button" class="round-btn success" (click)="saveEdit(subcat)" [attr.aria-label]="'COMMON.OK' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+                        <button type="button" class="round-btn" (click)="editingSubcategory.set(null)" [attr.aria-label]="'COMMON.CANCEL' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                       </div>
                     </div>
                   } @else {
                     <div class="view-mode">
+                      <span class="subcat-dot" aria-hidden="true"></span>
                       <span class="subcat-name">{{ subcat }}</span>
                       <div class="subcat-actions">
-                        <button class="icon-btn" (click)="startEdit(subcat)" title="{{ 'COMMON.EDIT' | translate }}">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                          </svg>
-                        </button>
-                        <button class="icon-btn danger" (click)="deleteSubcategory(subcat)" title="{{ 'COMMON.DELETE' | translate }}">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                          </svg>
-                        </button>
+                        <button type="button" class="round-btn" (click)="startEdit(subcat)" [title]="'COMMON.EDIT' | translate" [attr.aria-label]="'COMMON.EDIT' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button type="button" class="round-btn danger" (click)="deleteSubcategory(subcat)" [title]="'COMMON.DELETE' | translate" [attr.aria-label]="'COMMON.DELETE' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
                       </div>
                     </div>
                   }
@@ -156,252 +124,184 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                   <p>{{ 'PRODUCTS.NO_SUBCATEGORIES_FOUND' | translate }}</p>
                 </div>
               }
+              <button type="button" class="subcat-add" (click)="showAddForm.set(true)">
+                <span>+</span> {{ 'PRODUCTS.ADD_SUBCATEGORY' | translate }}
+              </button>
             </div>
           } @else {
             <div class="select-prompt">
               <div class="prompt-icon">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                 </svg>
               </div>
               <p>{{ 'PRODUCTS.SELECT_CATEGORY_TO_MANAGE' | translate }}</p>
             </div>
           }
-        </div>
+        </section>
       </div>
 
-      <!-- Toasts/Messages -->
       @if (success()) { <div class="toast success">{{ success() }}</div> }
       @if (error()) { <div class="toast error">{{ error() }}</div> }
       @if (loading()) { <div class="loading-overlay"><div class="spinner"></div></div> }
     </div>
   `,
   styles: [`
-    .categories-container {
-      height: calc(100vh - 250px);
-      min-height: 500px;
-      position: relative;
-    }
+    :host { display: block; }
+    .categories-container { height: calc(100vh - 250px); min-height: 520px; position: relative; }
 
     .split-view {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 0;
-      height: 100%;
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
+      display: grid; grid-template-columns: 320px 1fr; height: 100%; overflow: hidden;
+      background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 24px;
+      box-shadow: 0 20px 44px -30px rgba(0, 0, 0, .45);
     }
 
-    /* Sidebar */
-    .category-sidebar {
-      border-right: 1px solid var(--color-border);
-      background: var(--color-bg);
-      display: flex;
-      flex-direction: column;
-    }
-
+    /* ---------- Sidebar ---------- */
+    .category-sidebar { display: flex; flex-direction: column; min-height: 0; background: var(--color-bg); border-right: 1px solid var(--color-border); }
     .sidebar-header {
-      padding: var(--space-4);
-      border-bottom: 1px solid var(--color-border);
-      background: var(--color-surface);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      h3 { margin: 0; font-size: 0.875rem; text-transform: uppercase; color: var(--color-text-muted); }
+      display: flex; align-items: center; justify-content: space-between; padding: 18px 18px 12px;
+      h3 { margin: 0; font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); }
+      small { font-size: 1.4rem; font-weight: 800; color: var(--color-text); line-height: 1.1; }
     }
-
+    .round-add {
+      display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; cursor: pointer; color: #fff;
+      background: var(--color-primary); box-shadow: 0 10px 18px -8px var(--color-primary); touch-action: manipulation;
+      transition: transform .18s, filter .15s;
+      &:hover { filter: brightness(1.08); }
+      &.on { transform: rotate(45deg); }
+    }
     .add-category-form {
-      margin: var(--space-3);
-      padding: var(--space-3);
-      background: var(--color-bg);
-      border: 1px dashed var(--color-primary);
-      border-radius: var(--radius-md);
-
-      .form-group { margin-bottom: var(--space-2); }
-      label { display: block; font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: var(--space-1); }
-      input { width: 100%; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-sizing: border-box; }
-      .input-row { justify-content: flex-end; margin-top: var(--space-2); }
+      margin: 0 12px 10px; padding: 14px; border-radius: 18px; background: var(--color-surface);
+      border: 1.5px dashed var(--color-primary);
+      .form-group { margin-bottom: 10px; }
+      label { display: block; margin-bottom: 4px; font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); }
+      input { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-bg); box-sizing: border-box; font: inherit; }
+      input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+      .input-row { justify-content: flex-end; }
     }
-
-    .sidebar-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: var(--space-2);
-    }
+    .sidebar-list { flex: 1; overflow-y: auto; padding: 4px 12px 16px; display: flex; flex-direction: column; gap: 6px; scrollbar-width: thin; }
 
     .category-item {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--space-3) var(--space-4);
-      background: none;
-      border: none;
-      border-radius: var(--radius-md);
-      color: var(--color-text);
-      font-weight: 500;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      margin-bottom: 2px;
-
-      &:hover { background: var(--color-surface); }
-      &.active { background: var(--color-primary); color: white; .count { background: rgba(255,255,255,0.2); color: white; } }
-
-      .count {
-        font-size: 0.75rem;
-        background: var(--color-bg);
-        color: var(--color-text-muted);
-        padding: 2px 8px;
-        border-radius: 10px;
+      --h: 20;
+      display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 1px solid transparent; border-radius: 18px;
+      background: transparent; color: var(--color-text); text-align: left; cursor: pointer; font: inherit; touch-action: manipulation;
+      transition: background .15s, border-color .15s, transform .12s, box-shadow .15s;
+      &:hover { background: var(--color-surface); transform: translateX(2px); }
+      &.active {
+        background: var(--color-surface); border-color: hsl(var(--h) 70% 50%); box-shadow: 0 12px 24px -18px hsl(var(--h) 70% 40%);
+        .cat-name { color: hsl(var(--h) 65% 38%); }
+        .count { background: hsl(var(--h) 70% 50%); color: #fff; }
       }
     }
-
-    /* Main Area */
-    .subcategory-main {
-      padding: var(--space-6);
-      overflow-y: auto;
-      background: var(--color-surface);
+    .cat-avatar {
+      flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; font-weight: 800; font-size: 1.1rem;
+      color: #fff; background: linear-gradient(135deg, hsl(var(--h) 75% 58%), hsl(var(--h) 70% 42%));
+      box-shadow: 0 8px 14px -8px hsl(var(--h) 70% 40%);
+    }
+    .cat-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .cat-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cat-text small { color: var(--color-text-muted); font-size: .75rem; }
+    .count {
+      flex: none; display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px;
+      font-size: .78rem; font-weight: 800; background: var(--color-surface); color: var(--color-text-muted); border: 1px solid var(--color-border);
     }
 
+    /* ---------- Main ---------- */
+    .subcategory-main { min-height: 0; overflow-y: auto; padding: 22px; background: var(--color-surface); }
     .main-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: var(--space-6);
-      gap: var(--space-3);
-      h2 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+      --h: 20;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; padding: 18px; border-radius: 22px;
+      background: linear-gradient(135deg, hsl(var(--h) 85% 94%), var(--color-surface) 75%);
+      border: 1px solid hsl(var(--h) 60% 82%);
     }
-
-    .main-header-actions {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      flex-shrink: 0;
+    .hero-avatar {
+      flex: none; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; font-size: 1.7rem; font-weight: 800; color: #fff;
+      background: linear-gradient(135deg, hsl(var(--h) 75% 58%), hsl(var(--h) 70% 42%)); box-shadow: 0 14px 24px -12px hsl(var(--h) 70% 40%);
     }
-
-    .rename-category-row {
-      flex: 1;
-      input { padding: var(--space-2) var(--space-3); border: 1px solid var(--color-primary); border-radius: var(--radius-md); font-size: 1.125rem; font-weight: 600; flex: 1; max-width: 20rem; }
+    .hero-text { flex: 1; min-width: 200px;
+      h2 { margin: 0 0 6px; font-size: 1.6rem; font-weight: 800; letter-spacing: -.01em; }
+      p { margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
     }
+    .stat-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: .8rem; font-weight: 600; color: var(--color-text-muted); background: var(--color-surface); border: 1px solid var(--color-border); b { color: var(--color-text); font-weight: 800; } }
+    .main-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .rename-category-row { flex-wrap: wrap; input { flex: 1; min-width: 160px; max-width: 22rem; min-height: 46px; padding: 0 14px; border: 1.5px solid var(--color-primary); border-radius: 14px; font: inherit; font-size: 1.1rem; font-weight: 700; } }
 
-    .select-prompt {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: var(--color-text-muted);
-      text-align: center;
-      .prompt-icon { margin-bottom: var(--space-4); opacity: 0.3; }
+    .round-btn {
+      display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 50%; cursor: pointer;
+      background: var(--color-surface); color: var(--color-text-muted); box-shadow: inset 0 0 0 1px var(--color-border); touch-action: manipulation;
+      transition: background .15s, color .15s, transform .12s;
+      &:hover { background: var(--color-primary-light); color: var(--color-primary); }
+      &:active { transform: scale(.92); }
+      &.danger:hover { background: rgba(220, 38, 38, .1); color: #dc2626; }
+      &.success { background: rgba(22, 163, 74, .12); color: #15803d; box-shadow: none; }
     }
-
-    .subcategories-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: var(--space-4);
+    .pill {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px;
+      font: inherit; font-size: .88rem; font-weight: 800; cursor: pointer; touch-action: manipulation; transition: filter .15s, transform .12s;
+      &:active:not(:disabled) { transform: scale(.97); }
+      &:disabled { opacity: .45; cursor: default; box-shadow: none; }
     }
-
-    .subcat-card {
-      background: var(--color-bg);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      padding: var(--space-3) var(--space-4);
-      transition: border-color 0.15s;
-
-      &:hover { border-color: var(--color-primary); }
-    }
-
-    .view-mode, .edit-mode {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--space-2);
-    }
-
-    .subcat-name { font-weight: 500; }
-
-    .subcat-actions, .edit-actions {
-      display: flex;
-      gap: var(--space-1);
-    }
-
-    .edit-input {
-      flex: 1;
-      padding: var(--space-1) var(--space-2);
-      border: 1px solid var(--color-primary);
-      border-radius: var(--radius-sm);
-      font-size: 0.9375rem;
-      &:focus { outline: none; }
-    }
-
-    .icon-btn {
-      background: none;
-      border: none;
-      padding: var(--space-2);
-      border-radius: var(--radius-sm);
-      color: var(--color-text-muted);
-      cursor: pointer;
-      &:hover { background: rgba(0,0,0,0.05); color: var(--color-text); }
-      &.danger:hover { background: rgba(220, 38, 38, 0.1); color: var(--color-error); }
-      &.success:hover { background: rgba(22, 163, 74, 0.1); color: var(--color-success); }
-    }
-
-    .btn-sm { padding: var(--space-2) var(--space-3); font-size: 0.8125rem; }
+    .pill-main { background: var(--color-primary); color: #fff; box-shadow: 0 10px 20px -10px var(--color-primary); &:hover:not(:disabled) { filter: brightness(1.07); } }
+    .pill-ghost { background: transparent; color: var(--color-text); box-shadow: inset 0 0 0 1px var(--color-border); &:hover { background: var(--color-bg); } }
 
     .add-form {
-      margin-bottom: var(--space-6);
-      padding: var(--space-4);
-      background: var(--color-bg);
-      border: 1px dashed var(--color-primary);
+      margin-bottom: 18px; padding: 16px; border-radius: 20px; background: var(--color-primary-light); border: 1.5px dashed var(--color-primary);
+      label { display: block; margin-bottom: 8px; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-primary); }
     }
-
     .input-row {
-      display: flex;
-      gap: var(--space-2);
-      input { flex: 1; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+      display: flex; gap: 8px; flex-wrap: wrap;
+      input { flex: 1; min-width: 160px; min-height: 46px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); font: inherit; }
+      input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
     }
 
-    /* Toasts & Overlay */
-    .toast {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      padding: 1rem 1.5rem;
-      border-radius: var(--radius-md);
-      color: white;
-      z-index: 1000;
-      box-shadow: var(--shadow-lg);
-      &.success { background: var(--color-success); }
-      &.error { background: var(--color-error); }
+    .subcategories-grid { --h: 20; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+    .subcat-card {
+      position: relative; overflow: hidden; padding: 12px 14px; border-radius: 18px; background: var(--color-bg); border: 1px solid var(--color-border);
+      transition: border-color .15s, transform .15s, box-shadow .15s;
+      &::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 5px; background: hsl(var(--h) 70% 52%); }
+      &:hover { border-color: hsl(var(--h) 60% 62%); transform: translateY(-2px); box-shadow: 0 14px 24px -18px rgba(0, 0, 0, .5); }
+      &.editing { border-color: var(--color-primary); }
+    }
+    .view-mode, .edit-mode { display: flex; align-items: center; gap: 10px; min-height: 42px; padding-left: 4px; }
+    .subcat-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: hsl(var(--h) 70% 52%); }
+    .subcat-name { flex: 1; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+    .subcat-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; &.always { opacity: 1; } }
+    .subcat-card:hover .subcat-actions, .subcat-card:focus-within .subcat-actions { opacity: 1; }
+    @media (hover: none) { .subcat-actions { opacity: 1; } }
+    .edit-input { flex: 1; min-width: 0; min-height: 40px; padding: 0 12px; border: 1.5px solid var(--color-primary); border-radius: 12px; font: inherit; &:focus { outline: none; } }
+    .subcat-add {
+      display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 66px; border-radius: 18px; cursor: pointer;
+      border: 1.5px dashed hsl(var(--h) 55% 62%); background: hsl(var(--h) 90% 97%); color: hsl(var(--h) 65% 38%); font: inherit; font-weight: 800;
+      touch-action: manipulation; transition: background .15s, transform .12s;
+      span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: hsl(var(--h) 70% 52%); color: #fff; font-size: 1.2rem; line-height: 1; }
+      &:hover { background: hsl(var(--h) 90% 94%); }
+      &:active { transform: scale(.98); }
+    }
+    .empty-subcategories { grid-column: 1 / -1; padding: 8px 4px; color: var(--color-text-muted); p { margin: 0; } }
+
+    .select-prompt {
+      height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--color-text-muted);
+      .prompt-icon { display: grid; place-items: center; width: 110px; height: 110px; margin-bottom: 14px; border-radius: 32px; background: var(--color-primary-light); color: var(--color-primary); }
     }
 
-    .loading-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-
-    .spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid var(--color-border);
-      border-top-color: var(--color-primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
+    /* ---------- Toasts & overlay ---------- */
+    .toast { position: fixed; bottom: 2rem; right: 2rem; padding: 14px 22px; border-radius: 16px; color: #fff; font-weight: 700; z-index: 1000; box-shadow: var(--shadow-lg);
+      &.success { background: var(--color-success); } &.error { background: var(--color-error); } }
+    .loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,.7); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: 24px; }
+    .spinner { width: 32px; height: 32px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    @media (max-width: 768px) {
-      .split-view { grid-template-columns: 1fr; }
-      .category-sidebar { border-right: none; border-bottom: 1px solid var(--color-border); max-height: 200px; }
+    @media (prefers-reduced-motion: reduce) {
+      .category-item, .subcat-card, .round-add { transition: none; }
+      .category-item:hover, .subcat-card:hover { transform: none; }
+    }
+    @media (max-width: 860px) {
+      .categories-container { height: auto; }
+      .split-view { grid-template-columns: 1fr; height: auto; }
+      .category-sidebar { border-right: 0; border-bottom: 1px solid var(--color-border); }
+      .sidebar-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding-bottom: 12px; }
+      .category-item { flex: none; width: auto; min-width: 210px; }
+      .subcategory-main { overflow: visible; }
     }
   `]
 })
@@ -482,6 +382,23 @@ export class CategoriesComponent implements OnInit {
       return this.translate.instant('PRODUCTS.CATEGORY_DELETE_IN_USE_BLOCKED');
     }
     return this.translate.instant(fallbackKey);
+  }
+
+  private static readonly HUES = [14, 32, 48, 98, 150, 186, 212, 262, 300, 340];
+
+  /** Stable accent colour per category (hue in degrees). */
+  hue(category: string): number {
+    let h = 0;
+    for (const ch of category) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return CategoriesComponent.HUES[h % CategoriesComponent.HUES.length];
+  }
+
+  initial(category: string): string {
+    return (this.getCategoryLabel(category) || '?').trim().charAt(0).toUpperCase();
+  }
+
+  productCount(category: string): number {
+    return this.products().filter((p) => p.category === category).length;
   }
 
   getSubcategoryCount(category: string): number {
