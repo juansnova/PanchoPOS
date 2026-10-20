@@ -101,10 +101,35 @@ _REGROUP = {
 }
 _CATEGORY_LABELS = {"Main Course": "Platos Fuertes"}
 
+# "Comidas Rápidas" stays a category; its products are split into subcategories by name.
+_FAST_FOOD_CATEGORY = "Comidas Rápidas"
+_FAST_FOOD_SUBCATEGORY = {
+    "Hamburguesa Clásica": "Hamburguesas",
+    "Hamburguesa Pancho": "Hamburguesas",
+    "Hamburguesa Ranchera": "Hamburguesas",
+    "Perro Granjero": "Perros",
+    "Picada Pancho Panza": "Picadas y Papas",
+    "Papitas Pancho": "Picadas y Papas",
+    "Salchichoripapa": "Picadas y Papas",
+    "Desgranado": "Picadas y Papas",
+    "Porción Papa Francesa": "Picadas y Papas",
+    "Menú Infantil": "Infantil",
+}
+
 # price_cents convention in this app: pesos * 100
 # (name, price_cents, category, subcategory, description)
 DEMO_PRODUCTS = [
-    (n, pesos * 100, *_REGROUP.get(c, (c, None)), d) for n, pesos, c, d in _MENU_PESOS
+    (
+        n,
+        pesos * 100,
+        *(
+            (c, _FAST_FOOD_SUBCATEGORY.get(n))
+            if c == _FAST_FOOD_CATEGORY
+            else _REGROUP.get(c, (c, None))
+        ),
+        d,
+    )
+    for n, pesos, c, d in _MENU_PESOS
 ]
 
 # Photos live in menu_images/<slug>.jpg (credits in menu_images/CREDITS.md); they are
@@ -192,6 +217,16 @@ def _regroup_categories(session, tenant_id: int) -> int:
             {"cat": category, "sub": subcategory, "old": old, "tid": tenant_id},
         )
         moved += result.rowcount or 0
+    for name, subcategory in _FAST_FOOD_SUBCATEGORY.items():
+        result = session.execute(
+            text(
+                "UPDATE product SET subcategory = :sub "
+                "WHERE tenant_id = :tid AND category = :cat AND name = :name "
+                "AND (subcategory IS NULL OR subcategory = '')"
+            ),
+            {"sub": subcategory, "cat": _FAST_FOOD_CATEGORY, "name": name, "tid": tenant_id},
+        )
+        moved += result.rowcount or 0
     return moved
 
 
@@ -245,7 +280,7 @@ def run() -> None:
             if created:
                 print(f"Tenant {tenant_id}: created {created} demo products.")
             if moved:
-                print(f"Tenant {tenant_id}: regrouped {moved} products under Platos Fuertes / Pollos.")
+                print(f"Tenant {tenant_id}: regrouped {moved} products into subcategories.")
 
     print("Done.")
 
