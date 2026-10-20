@@ -1156,19 +1156,25 @@ ModuleRegistry.registerModules([
                 <p class="payment-amount-line">
                   {{ 'ORDERS.SUBTOTAL' | translate }}: {{ formatPrice(orderPaymentSubtotal(orderToMarkPaid()!)) }}
                 </p>
-                <div class="extra-inline">
-                  <input id="payment-extra-amount" class="extra-amount" type="text" inputmode="decimal"
-                    [placeholder]="('ORDERS.EXTRA_CHARGE' | translate) + ' $'"
-                    [value]="extraChargeInputValue(orderToMarkPaid()!)"
-                    (input)="paymentExtraInput = $any($event.target).value" />
-                  <button type="button" class="extra-ok" (click)="applyExtraCharge()"
-                    [attr.aria-label]="'ORDERS.EXTRA_CHARGE_APPLY' | translate">✓</button>
-                </div>
-                <div class="extra-chips">
-                  @for (v of extraQuickAmounts; track v) {
-                  <button type="button" class="extra-chip" (click)="addExtraAmount(v)">+{{ formatPrice(v * 100) }}</button>
-                  }
-                </div>
+                @if (extraEditorOpen()) {
+                  <div class="extra-inline">
+                    <input id="payment-extra-amount" class="extra-amount" type="text" inputmode="decimal"
+                      [placeholder]="('ORDERS.EXTRA_CHARGE' | translate) + ' $'"
+                      [value]="extraChargeInputValue(orderToMarkPaid()!)"
+                      (input)="paymentExtraInput = $any($event.target).value" />
+                    <button type="button" class="extra-ok" (click)="applyExtraCharge()"
+                      [attr.aria-label]="'ORDERS.EXTRA_CHARGE_APPLY' | translate">✓</button>
+                  </div>
+                  <div class="extra-chips">
+                    @for (v of extraQuickAmounts; track v) {
+                    <button type="button" class="extra-chip" (click)="addExtraAmount(v)">+{{ formatPrice(v * 100) }}</button>
+                    }
+                  </div>
+                } @else {
+                  <button type="button" class="extra-add-btn" (click)="extraEditorOpen.set(true)">
+                    + {{ 'ORDERS.EXTRA_CHARGE' | translate }}@if ((orderToMarkPaid()!.extra_charge_cents || 0) > 0) {: {{ formatPrice(orderToMarkPaid()!.extra_charge_cents || 0) }} }
+                  </button>
+                }
                 @if (paymentModalFinishMode()) {
                   <p class="modal-hint">{{ 'ORDERS.FINISH_ORDER_HELP' | translate }}</p>
                 } @else {
@@ -2073,6 +2079,11 @@ ModuleRegistry.registerModules([
     }
     .extra-inline input:focus { outline: none; border-color: var(--color-primary); }
     .extra-inline .extra-amount { flex: 1 1 0; font-weight: 600; }
+    .extra-add-btn {
+      align-self: flex-start; padding: 6px 2px; border: none; background: none;
+      color: var(--color-primary); font-size: 0.875rem; font-weight: 600; cursor: pointer;
+      touch-action: manipulation;
+    }
     .extra-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--space-2); }
     .extra-chip {
       padding: 0 12px; height: 32px; border-radius: 999px; cursor: pointer;
@@ -4119,6 +4130,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   closePaymentModal() {
     this.orderToMarkPaid.set(null);
     this.paymentExtraInput = null;
+    this.extraEditorOpen.set(false);
     this.paymentModalFinishMode.set(false);
     this.processingPayment.set(false);
     this.paymentTipPercent = 0;
@@ -4276,6 +4288,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   /** Additional-charge amount typed in the payment modal; null = show the order's saved value. */
   paymentExtraInput: string | null = null;
+  /** The extra-charge row and quick amounts stay hidden until staff asks for them. */
+  extraEditorOpen = signal(false);
 
   readonly extraQuickAmounts = [1000, 2000, 5000, 10000];
 
@@ -4305,6 +4319,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
           extra_charge_note: res.extra_charge_note,
         });
         this.paymentExtraInput = null;
+        this.extraEditorOpen.set(false);
         this.paymentAmountPaidInput = '';
         this.paymentTipAmountInput = '';
         this.loadOrders();
