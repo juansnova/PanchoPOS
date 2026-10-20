@@ -201,11 +201,11 @@ ModuleRegistry.registerModules([
                           </div>
                           <div class="item-details-row">
                             <span class="item-price">
-                              {{ formatPrice(item.price_cents) }}
-                              @if (item.quantity > 1) {
-                                <span class="price-total">({{ formatPrice(item.price_cents * item.quantity) }} total)</span>
-                              }
-                            </span>
+                                <b class="price-main">{{ formatPrice(item.price_cents * item.quantity) }}</b>
+                                @if (item.quantity > 1) {
+                                  <span class="price-total">{{ item.quantity }} × {{ formatPrice(item.price_cents) }}</span>
+                                }
+                              </span>
                             <div class="item-actions">
                               @if (!item.removed_by_customer && item.status !== 'cancelled') {
                                 <button class="btn-remove-item" (click)="removeItemStaff(order.id, item.id!, item.status ?? 'pending')" [title]="'ORDERS.REMOVE_ITEM' | translate">
@@ -487,9 +487,9 @@ ModuleRegistry.registerModules([
                             </div>
                             <div class="item-details-row">
                               <span class="item-price">
-                                {{ formatPrice(item.price_cents) }}
+                                <b class="price-main">{{ formatPrice(item.price_cents * item.quantity) }}</b>
                                 @if (item.quantity > 1) {
-                                  <span class="price-total">({{ formatPrice(item.price_cents * item.quantity) }} total)</span>
+                                  <span class="price-total">{{ item.quantity }} × {{ formatPrice(item.price_cents) }}</span>
                                 }
                               </span>
                               <div class="item-actions">
@@ -2581,6 +2581,9 @@ ModuleRegistry.registerModules([
       min-height: 32px; padding: 0 10px; gap: 4px; border-radius: 999px; font-size: .78rem; font-weight: 700; white-space: nowrap;
     }
     .order-card .item-status-badge svg { width: 12px; height: 12px; }
+    .order-card .item-price { gap: 1px; }
+    .order-card .price-main { font-size: 1.05rem; font-weight: 800; color: var(--color-text); font-variant-numeric: tabular-nums; }
+    .order-card .price-total { font-size: .72rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
     @media (prefers-reduced-motion: reduce) {
       .order-card, .order-card:hover { transition: none; transform: none; }
       .order-card .order-status-pill.preparing::before { animation: none; }
