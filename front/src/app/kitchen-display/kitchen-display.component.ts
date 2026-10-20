@@ -100,7 +100,14 @@ const VIEW_CATEGORY: Record<string, string> = {
           </svg>
           {{ 'KITCHEN_DISPLAY.BACK_TO_ORDERS' | translate }}
         </a>
-        <h1 class="kitchen-title">{{ pageTitle() }}</h1>
+        <div class="kd-title-wrap">
+          <h1 class="kitchen-title">{{ pageTitle() }}</h1>
+          <div class="kd-stats" data-testid="kitchen-stats">
+            <span class="kd-stat kd-stat-pending"><i></i><b>{{ orderCounts().pending }}</b> {{ 'KITCHEN_DISPLAY.STAT_PENDING' | translate }}</span>
+            <span class="kd-stat kd-stat-preparing"><i></i><b>{{ orderCounts().preparing }}</b> {{ 'KITCHEN_DISPLAY.STAT_PREPARING' | translate }}</span>
+            <span class="kd-stat kd-stat-ready"><i></i><b>{{ orderCounts().ready }}</b> {{ 'KITCHEN_DISPLAY.STAT_READY' | translate }}</span>
+          </div>
+        </div>
         <div class="header-actions">
           @if (stationsForCurrentView().length > 0) {
             <label class="station-filter">
@@ -144,6 +151,7 @@ const VIEW_CATEGORY: Record<string, string> = {
             <input type="checkbox" [checked]="soundEnabled()" (change)="toggleSound($event)" />
             <span class="sound-label">{{ soundEnabled() ? ('KITCHEN_DISPLAY.SOUND_ON' | translate) : ('KITCHEN_DISPLAY.SOUND_OFF' | translate) }}</span>
           </label>
+          <span class="kd-clock" aria-hidden="true">{{ clockLabel() }}</span>
           <span class="last-refresh" [title]="lastRefreshExact()">{{ 'KITCHEN_DISPLAY.LAST_REFRESH' | translate }}: {{ lastRefreshRelative() }}</span>
         </div>
       </header>
@@ -804,6 +812,159 @@ const VIEW_CATEGORY: Record<string, string> = {
       color: var(--color-text);
       border: 1px solid var(--color-border);
     }
+
+    /* ===== Cocina / Bar: rediseño (pantalla oscura de alto contraste) ===== */
+    .kitchen-view {
+      --color-bg: #0a0e14;
+      --color-surface: #131a24;
+      --color-border: #243044;
+      --color-text: #f1f5f9;
+      --color-text-muted: #94a3b8;
+      --color-primary-light: rgba(222, 124, 52, 0.16);
+      --color-success-light: rgba(34, 197, 94, 0.16);
+      --color-warning: #fbbf24;
+      color: var(--color-text);
+      background:
+        radial-gradient(1100px 520px at 12% -10%, rgba(222, 124, 52, 0.16), transparent 60%),
+        radial-gradient(900px 480px at 100% 0%, rgba(59, 130, 246, 0.10), transparent 60%),
+        var(--color-bg);
+    }
+    .kitchen-header {
+      gap: 14px 24px; padding: 14px 28px; border-bottom: 0; box-shadow: none;
+      background: linear-gradient(180deg, rgba(19, 26, 36, .96), rgba(19, 26, 36, .78));
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      position: sticky; top: 0; z-index: 20;
+    }
+    .kitchen-header::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, #de7c34 30%, #f59e0b 60%, transparent);
+    }
+    .back-link {
+      min-height: 44px; padding: 0 16px 0 10px; border-radius: 999px; background: rgba(255,255,255,.06); color: var(--color-text);
+      font-weight: 700; transition: background .15s;
+    }
+    .back-link:hover { text-decoration: none; background: rgba(255,255,255,.12); }
+    .kd-title-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
+    .kitchen-title { font-size: clamp(1.6rem, 3.4vw, 2.4rem); font-weight: 800; letter-spacing: -0.01em; }
+    .kd-stats { display: flex; flex-wrap: wrap; gap: 8px; }
+    .kd-stat {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; font-size: .85rem; font-weight: 700;
+      color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
+    }
+    .kd-stat b { font-size: 1.15rem; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+    .kd-stat i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+    .kd-stat-pending { --c: #fbbf24; }
+    .kd-stat-preparing { --c: #de7c34; }
+    .kd-stat-ready { --c: #22c55e; }
+    .header-actions { gap: 12px; }
+    .timer-settings-btn, .fullscreen-btn {
+      min-height: 44px; padding: 0 16px; border-radius: 999px; font-weight: 700; color: var(--color-text);
+      background: rgba(255,255,255,.06); border: 1px solid var(--color-border); transition: background .15s, border-color .15s;
+    }
+    .timer-settings-btn:hover, .fullscreen-btn:hover { background: rgba(222, 124, 52, .16); border-color: #de7c34; }
+    .sound-toggle { min-height: 44px; padding: 0 14px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--color-border); font-weight: 700; }
+    .sound-toggle input { accent-color: #de7c34; }
+    .station-filter-select { min-height: 44px; border-radius: 999px; padding: 0 16px; background: rgba(255,255,255,.06); font-weight: 700; }
+    .kd-clock {
+      min-width: 86px; text-align: center; padding: 6px 16px; border-radius: 14px; font-size: 1.6rem; font-weight: 800; letter-spacing: .02em;
+      font-variant-numeric: tabular-nums; color: #fff; background: rgba(255,255,255,.07); border: 1px solid var(--color-border);
+    }
+    .last-refresh { font-size: .8rem; }
+
+    .kitchen-main { padding: 26px 28px 40px; }
+    .empty-state { padding: 70px 24px; border-radius: 28px; border: 1.5px dashed var(--color-border); background: rgba(19, 26, 36, .6); }
+    .empty-state .empty-icon { display: inline-grid; place-items: center; width: 110px; height: 110px; border-radius: 32px; background: var(--color-primary-light); color: #de7c34; }
+    .empty-state h2 { font-size: 1.9rem; font-weight: 800; }
+
+    .order-grid { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 22px; }
+    .order-card {
+      --tc: #22c55e;
+      position: relative; overflow: visible; border: 1px solid var(--color-border); border-left-width: 1px; border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,.035), transparent 40%), var(--color-surface);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--tc) 22%, transparent), 0 24px 40px -28px var(--tc);
+      animation: kd-in .25s ease-out;
+    }
+    .order-card::before {
+      content: ''; position: absolute; left: 0; right: 0; top: 0; height: 6px; border-radius: 24px 24px 0 0;
+      background: linear-gradient(90deg, var(--tc), color-mix(in srgb, var(--tc) 55%, #fff));
+    }
+    @keyframes kd-in { from { opacity: 0; transform: translateY(10px) scale(.985); } }
+    .order-card.timer-green { --tc: #22c55e; border-left-color: var(--color-border); }
+    .order-card.timer-yellow { --tc: #eab308; border-left-color: var(--color-border); }
+    .order-card.timer-orange { --tc: #f97316; border-left-color: var(--color-border); }
+    .order-card.timer-red { --tc: #ef4444; border-left-color: var(--color-border); animation: kd-in .25s ease-out, kd-alert 1.6s ease-in-out infinite .3s; }
+    @keyframes kd-alert {
+      50% { box-shadow: 0 0 0 2px rgba(239, 68, 68, .55), 0 0 34px -4px rgba(239, 68, 68, .55); }
+    }
+    .order-card.status-preparing, .order-card.status-ready { border-left-color: var(--color-border); }
+    .order-card-urgent { outline: 2px solid #ef4444; outline-offset: 3px; }
+
+    .order-header { padding: 22px 20px 12px; border-bottom: 0; background: transparent; align-items: flex-start; gap: 10px; }
+    .order-meta { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 10px; flex: 1; min-width: 0; }
+    .order-table { order: 0; flex: 1 1 100%; font-size: 2rem; font-weight: 800; line-height: 1.05; color: #fff; letter-spacing: -0.01em; }
+    .order-id {
+      order: 1; padding: 3px 12px; border-radius: 999px; font-size: .85rem; font-weight: 800; color: #fff;
+      background: color-mix(in srgb, var(--tc) 55%, #1b2330);
+    }
+    .urgent-badge {
+      order: 2; padding: 3px 12px; border-radius: 999px; font-size: .75rem; font-weight: 800; color: #fff; background: #dc2626;
+      animation: kd-blink 1.1s ease-in-out infinite;
+    }
+    @keyframes kd-blink { 50% { opacity: .55; } }
+    .order-customer { order: 3; padding: 3px 12px; border-radius: 999px; font-size: .85rem; font-weight: 700; color: #fcd9bd; background: var(--color-primary-light); }
+    .order-time { order: 4; font-size: .9rem; font-weight: 600; }
+    .order-waiting {
+      order: 5; margin-left: auto; display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 14px;
+      font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--tc);
+      background: color-mix(in srgb, var(--tc) 14%, transparent); border: 1px solid color-mix(in srgb, var(--tc) 40%, transparent);
+    }
+    .order-waiting::before { content: '⏱'; font-size: 1.05rem; }
+    .status-badge { padding: 7px 14px; font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+    .status-badge.pending { background: rgba(251, 191, 36, .16); color: #fbbf24; }
+    .status-badge.preparing { background: rgba(222, 124, 52, .2); color: #fdba74; }
+    .status-badge.ready, .status-badge.partially_delivered { background: rgba(34, 197, 94, .18); color: #4ade80; }
+
+    .order-timer-bar-wrap { padding: 0 20px 14px; }
+    .order-timer-bar-track { height: 10px; border-radius: 999px; background: rgba(255,255,255,.07); }
+    .order-timer-bar-fill { border-radius: 999px; box-shadow: 0 0 14px -2px var(--tc); }
+
+    .order-items { padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .order-item {
+      grid-template-columns: auto 1fr auto; padding: 12px; border: 1px solid var(--color-border); border-radius: 18px;
+      background: rgba(255,255,255,.03); font-size: 1.2rem;
+    }
+    .order-item:last-child { border-bottom: 1px solid var(--color-border); }
+    .item-qty {
+      display: grid; place-items: center; min-width: 48px; height: 48px; padding: 0 8px; border-radius: 14px; font-size: 1.45rem; font-weight: 800;
+      color: #fff; background: linear-gradient(135deg, #de7c34, #b8561a); box-shadow: 0 8px 16px -10px #de7c34;
+    }
+    .item-name { font-size: 1.25rem; font-weight: 700; line-height: 1.2; }
+    .item-customization { grid-column: 2 / -1; font-size: .9rem; color: #cbd5e1; }
+    .item-notes { border-radius: 12px; border-left-width: 4px; background: rgba(251, 191, 36, .13); color: #fde68a; }
+    .item-notes strong { color: #fbbf24; }
+    .item-status { padding: 4px 12px; font-size: .78rem; font-weight: 800; border-radius: 999px; }
+    .item-status.status-pending, .item-status-badge.status-pending.clickable { background: rgba(251, 191, 36, .16); color: #fbbf24; }
+    .item-status.status-preparing, .item-status-badge.status-preparing.clickable { background: rgba(222, 124, 52, .2); color: #fdba74; }
+    .item-status.status-ready, .item-status-badge.status-ready.clickable { background: rgba(34, 197, 94, .18); color: #4ade80; }
+    .item-status-badge.clickable { min-height: 44px; padding: 0 14px; border-radius: 999px; border-color: transparent; font-weight: 800; }
+    .item-status-badge.clickable:hover { filter: brightness(1.15); transform: scale(1.04); }
+    .status-dropdown { background: #1a2332; border-color: #2d3b52; border-radius: 16px; box-shadow: 0 24px 40px -16px rgba(0,0,0,.7); }
+    .dropdown-item:hover { background: rgba(255,255,255,.07); }
+
+    .order-notes {
+      margin: 0 16px 16px; padding: 12px 14px; border-radius: 16px; border-left: 4px solid #fbbf24;
+      background: rgba(251, 191, 36, .12); color: #fde68a; font-weight: 700;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .order-card, .order-card.timer-red, .urgent-badge { animation: none; }
+    }
+    @media (max-width: 720px) {
+      .kitchen-header { padding: 12px 14px; }
+      .kitchen-main { padding: 16px 12px 30px; }
+      .order-grid { grid-template-columns: 1fr; }
+      .kd-clock { display: none; }
+    }
   `],
 })
 export class KitchenDisplayComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -918,6 +1079,22 @@ export class KitchenDisplayComponent implements OnInit, AfterViewInit, OnDestroy
       const tb = new Date(b.created_at).getTime();
       return ta - tb;
     });
+  });
+
+  /** Orders on screen by overall status (header chips). */
+  orderCounts = computed(() => {
+    const out = { pending: 0, preparing: 0, ready: 0 };
+    for (const o of this.activeOrders()) {
+      if (o.status === 'pending') out.pending++;
+      else if (o.status === 'preparing') out.preparing++;
+      else if (o.status === 'ready' || o.status === 'partially_delivered') out.ready++;
+    }
+    return out;
+  });
+
+  /** Wall clock for the header (ticks with the per-second `now` signal). */
+  clockLabel = computed(() => {
+    return new Date(this.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   });
 
   lastRefreshRelative = computed(() => {
