@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import secrets
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -12,11 +13,15 @@ from sqlmodel import Session, select
 
 from . import models
 from .kitchen_stations_util import resolve_order_item_kds
+from .receipt_logo import tenant_logo_raster
 
 # Agent considered online if heartbeat within this window.
 AGENT_ONLINE_SECONDS = 60
 JOB_TYPES = frozenset({"kitchen", "receipt"})
 JOB_STATUSES = frozenset({"pending", "claimed", "done", "failed", "cancelled"})
+
+
+_UPLOADS_DIR = Path(__file__).parent.parent / "uploads"
 
 
 def _now() -> datetime:
@@ -212,6 +217,8 @@ def _receipt_fields(
         "phone": getattr(tenant, "phone", None),
         "tax_id": getattr(tenant, "tax_id", None),
         "cif": getattr(tenant, "cif", None),
+        "website": getattr(tenant, "website", None),
+        "whatsapp": getattr(tenant, "whatsapp", None),
     }
     bc = None
     bc_id = billing_customer_id or order.billing_customer_id
@@ -248,6 +255,8 @@ def _receipt_fields(
     paid = order.paid_at is not None
     return {
         "business": business,
+        # 1-bit raster of the uploaded logo (None when the restaurant has none)
+        "logo": tenant_logo_raster(_UPLOADS_DIR, tenant),
         "billing": billing,
         "subtotal_cents": subtotal,
         "tip_cents": tip,

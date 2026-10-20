@@ -12,12 +12,40 @@ and opening http://localhost:4210/ (do not serve tmp/ itself: it holds the agent
 """
 from __future__ import annotations
 
+import base64
 import html
+import struct
 import sys
+import zlib
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(ROOT / "back" / "app"))
 import print_agent as agent  # noqa: E402
+import receipt_logo  # noqa: E402
+
+
+def sample_logo() -> dict | None:
+    """Raster of the first uploaded restaurant logo found (same conversion the API uses)."""
+    for path in sorted((ROOT / "back" / "uploads").glob("*/logo/*")):
+        return receipt_logo.logo_to_raster(path)
+    return None
+
+
+def _png_1bit(width: int, rows: list[bytes]) -> str:
+    """Data URI of a 1-bit PNG; ESC/POS bit 1 = black dot, PNG gray bit 1 = white, so invert."""
+    def chunk(kind: bytes, body: bytes) -> bytes:
+        return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body))
+
+    raw = b"".join(b"\x00" + bytes(b ^ 0xFF for b in row) for row in rows)
+    png = (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", width, len(rows), 1, 0, 0, 0, 0))
+        + chunk(b"IDAT", zlib.compress(raw))
+        + chunk(b"IEND", b"")
+    )
+    return "data:image/png;base64," + base64.b64encode(png).decode("ascii")
 
 COLS = 48
 ESC, GS = b"\x1b", b"\x1d"
@@ -44,6 +72,7 @@ DELIVERY = {
     "lines": KITCHEN["lines"][:1],
 }
 RECEIPT = {
+    "logo": sample_logo(),
     "order_id": 128,
     "date_label": "20/10/2026 14:05",
     "table_name": "Mesa 5",
@@ -54,6 +83,8 @@ RECEIPT = {
         "city": "Bogotá",
         "phone": "601 555 0123",
         "tax_id": "900.123.456-7",
+        "website": "www.panchopanza.co",
+        "whatsapp": "300 123 4567",
     },
     "billing": {"name": "Inversiones Andina S.A.S.", "tax_id": "901.222.333-4", "address": "Calle 80 # 12-34", "email": "compras@andina.co"},
     "lines": [
@@ -126,6 +157,13 @@ def interpret(data: bytes) -> str:
         elif b == GS and data[i + 1 : i + 2] == b"B":
             reverse = bool(data[i + 2])
             i += 3
+        elif b == GS and data[i + 1 : i + 3] == b"v0":  # raster image: GS v 0 m xL xH yL yH data
+            wb, rows_n = struct.unpack("<HH", data[i + 4 : i + 8])
+            body = data[i + 8 : i + 8 + wb * rows_n]
+            img = _png_1bit(wb * 8, [body[r * wb : (r + 1) * wb] for r in range(rows_n)])
+            cls = f"a{align}"
+            rows.append(f'<div class="img {cls}"><img src="{img}" alt="logo" width="{wb * 8}" height="{rows_n}"></div>')
+            i += 8 + wb * rows_n
         elif b == GS and data[i + 1 : i + 2] == b"V":
             rows.append('<div class="cut">✂ corte</div>')
             i += 3
@@ -155,6 +193,7 @@ section h2{{font-size:.95rem;margin:0 0 8px}}
 .ln{{white-space:pre;transform-origin:top left;line-height:var(--lh);height:var(--lh);font-size:var(--fs)}}
 .ln.a1{{text-align:center;width:100%}} .ln.a2{{text-align:right;width:100%}}
 .ln.b{{font-weight:700}} .ln.r i{{font-style:normal;background:#000;color:#fff}}
+.img{{line-height:0}} .img img{{display:block}} .img.a1{{text-align:center}} .img.a1 img{{margin:0 auto}}
 .cut{{text-align:center;color:#9ca3af;font-size:12px;border-top:2px dashed #9ca3af;margin-top:8px;padding-top:4px}}
 </style></head><body>
 <h1>Vista previa de tickets</h1>

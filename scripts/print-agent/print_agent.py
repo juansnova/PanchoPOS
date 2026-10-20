@@ -34,6 +34,7 @@ from __future__ import annotations
 import json
 import os
 import socket
+import struct
 import sys
 import textwrap
 import time
@@ -161,6 +162,26 @@ def _make_put(out: bytearray, cols: int):
     return put
 
 
+def _logo_raster(logo: dict | None, align: int = 1) -> bytes:
+    """ESC/POS raster image (``GS v 0``) for the 1-bit logo in the job payload, centred."""
+    if not logo or not logo.get("data_b64") or not logo.get("height"):
+        return b""
+    import base64
+
+    width_bytes, height = int(logo["width_bytes"]), int(logo["height"])
+    data = base64.b64decode(logo["data_b64"])
+    if len(data) != width_bytes * height:
+        return b""
+    out = bytearray(ESC + b"a" + bytes([align]))
+    strip = 128  # rows per command: keeps small printer buffers happy; strips join seamlessly
+    for y in range(0, height, strip):
+        rows = min(strip, height - y)
+        out.extend(GS + b"v0\x00" + struct.pack("<HH", width_bytes, rows))
+        out.extend(data[y * width_bytes : (y + rows) * width_bytes])
+    out.extend(ESC + b"a\x00")
+    return bytes(out)
+
+
 def money(cents: int) -> str:
     """COP style: ``$12.500`` (thousands with dots, decimals only when there are cents)."""
     value = (cents or 0) / 100
@@ -191,7 +212,12 @@ def render_receipt_ticket(payload: dict, *, cols: int = 48) -> bytes:
     out.extend(ESC + b"t\x00")  # code page 437
 
     biz = payload.get("business") or {}
-    put(str(biz.get("name") or "Factura"), size=0x11, bold=True, align="center")
+    logo = _logo_raster(payload.get("logo"))
+    if logo:
+        out.extend(logo)  # the logo already carries the restaurant name
+        out.extend(b"\n")
+    else:
+        put(str(biz.get("name") or "Factura"), size=0x11, bold=True, align="center")
     for part in (
         ", ".join(x for x in (biz.get("address"), biz.get("city")) if x),
         f"Tel: {biz['phone']}" if biz.get("phone") else "",
@@ -253,6 +279,9 @@ def render_receipt_ticket(payload: dict, *, cols: int = 48) -> bytes:
         put("PAGADO" + (f" - {method}" if method else ""), bold=True, align="center")
     put("Gracias por su visita", size=0x01, bold=True, align="center")
     put("¡Esperamos verle pronto!", align="center")
+    contact = "   ".join(x for x in (biz.get("website"), f"WhatsApp {biz['whatsapp']}" if biz.get("whatsapp") else "") if x)
+    if contact:
+        put(contact, align="center")
     out.extend(ESC + b"d" + bytes([FEED_BEFORE_CUT]))
     out.extend(GS + b"V\x00")
     return bytes(out)
