@@ -181,7 +181,7 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
                           <button type="button" class="btn-ghost btn-expand-group" (click)="toggleListGroupExpand(row.groupId); $event.stopPropagation()"
                             [attr.aria-expanded]="isListGroupExpanded(row.groupId)"
                             [title]="(isListGroupExpanded(row.groupId) ? 'TABLES.GROUP_COLLAPSE_MEMBERS' : 'TABLES.GROUP_EXPAND_MEMBERS') | translate">
-                            {{ isListGroupExpanded(row.groupId) ? '▾' : '▸' }}
+                            <svg class="chev" [class.open]="isListGroupExpanded(row.groupId)" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                           </button>
                           <span class="group-label">{{ row.label }}</span>
                           @if (groupMembersHaveActivity(row.members)) {
@@ -219,7 +219,7 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
                     @if (editingTableId() === table.id) {
                       <input type="text" [(ngModel)]="editingName" class="edit-input-inline" (keydown.enter)="saveTable(table)" (keydown.escape)="cancelEdit()">
                     } @else {
-                      <span class="table-name" (click)="startEdit(table)">{{ table.name }}</span>
+                      <span class="table-name" (click)="startEdit(table)"><span class="tn-ico" [class.on]="table.is_active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h18M5 10v9M19 10v9M7 10V6h10v4"/></svg></span>{{ table.name }}</span>
                     }
                   </td>
                   <td>
@@ -276,21 +276,24 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
                     }
                   </td>
                   <td class="td-actions">
+                    <div class="row-actions">
                     @if (editingTableId() === table.id) {
-                      <button type="button" class="icon-btn icon-btn-success" (click)="saveTable(table)" [title]="'COMMON.SAVE' | translate">✓</button>
-                      <button type="button" class="icon-btn" (click)="cancelEdit()" [title]="'COMMON.CANCEL' | translate">✕</button>
+                      <button type="button" class="ra ra-ok" (click)="saveTable(table)" [title]="'COMMON.SAVE' | translate" [attr.aria-label]="'COMMON.SAVE' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></button>
+                      <button type="button" class="ra" (click)="cancelEdit()" [title]="'COMMON.CANCEL' | translate" [attr.aria-label]="'COMMON.CANCEL' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
                     } @else {
-                      <button type="button" class="icon-btn icon-btn-edit" (click)="startEdit(table)" [title]="'COMMON.EDIT' | translate">✎</button>
                       @if (table.is_active) {
-                        <button type="button" class="btn btn-sm btn-warning" (click)="confirmCloseTable(table)" [disabled]="activatingTableId() === table.id" [title]="'TABLES.CLOSE_TABLE' | translate">⌫</button>
+                        <button type="button" class="ra-main ra-close" (click)="confirmCloseTable(table)" [disabled]="activatingTableId() === table.id" [title]="'TABLES.CLOSE_TABLE' | translate"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg><span>{{ 'TABLES.CLOSE_TABLE' | translate }}</span></button>
                       } @else {
-                        <button type="button" class="btn btn-sm btn-success" (click)="activateTableSession(table)" [disabled]="activatingTableId() === table.id" [title]="'TABLES.ACTIVATE' | translate">▶</button>
+                        <button type="button" class="ra-main ra-open" (click)="activateTableSession(table)" [disabled]="activatingTableId() === table.id" [title]="'TABLES.ACTIVATE' | translate"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg><span>{{ 'TABLES.ACTIVATE' | translate }}</span></button>
                       }
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="openStaffMenu(table)"
-                        [title]="'TABLES.OPEN_MENU' | translate">↗</button>
-                      <button type="button" class="icon-btn" (click)="copyLink(table)" [title]="'COMMON.COPY' | translate">⎘</button>
-                      <button type="button" class="icon-btn icon-btn-danger" (click)="deleteTable(table)" [title]="'COMMON.DELETE' | translate">🗑</button>
+                      <button type="button" class="ra" (click)="openStaffMenu(table)" [title]="'TABLES.OPEN_MENU' | translate" [attr.aria-label]="'TABLES.OPEN_MENU' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></button>
+                      <button type="button" class="ra" [class.ra-done]="copiedTableId() === table.id" (click)="copyLink(table)" [title]="'COMMON.COPY' | translate" [attr.aria-label]="'COMMON.COPY' | translate">
+                        @if (copiedTableId() === table.id) { <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> } @else { <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> }
+                      </button>
+                      <button type="button" class="ra" (click)="startEdit(table)" [title]="'COMMON.EDIT' | translate" [attr.aria-label]="'COMMON.EDIT' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                      <button type="button" class="ra ra-danger" (click)="deleteTable(table)" [title]="'COMMON.DELETE' | translate" [attr.aria-label]="'COMMON.DELETE' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
                     }
+                    </div>
                   </td>
                 </ng-template>
               </table>
@@ -1254,6 +1257,42 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
 
     @media (prefers-reduced-motion: reduce) { .table-card, .table-card:hover { transition: none; transform: none; } }
     @media (max-width: 768px) { .page-header h1 { font-size: 1.5rem; } }
+
+    /* ===== Vista de lista: íconos y acciones ===== */
+    .tables-data-table .table-name { display: inline-flex; align-items: center; gap: 10px; }
+    .tn-ico {
+      display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 12px;
+      background: var(--color-bg); color: #78716c; flex: none;
+    }
+    .tn-ico.on { background: rgba(34,197,94,.14); color: #15803d; }
+    .tables-data-table td.td-actions { display: table-cell; }
+    .row-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; flex-wrap: nowrap; }
+    .ra {
+      display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 12px;
+      background: transparent; color: var(--color-text-muted); cursor: pointer; touch-action: manipulation;
+      transition: background .15s, color .15s, transform .12s;
+    }
+    .ra:hover { background: var(--color-primary-light); color: var(--color-primary); }
+    .ra:active { transform: scale(.92); }
+    .ra-danger:hover { background: rgba(220,38,38,.1); color: #dc2626; }
+    .ra-ok { background: rgba(34,197,94,.14); color: #15803d; }
+    .ra-ok:hover { background: rgba(34,197,94,.24); color: #15803d; }
+    .ra-done { color: #15803d; background: rgba(34,197,94,.14); }
+    .ra-main {
+      display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; margin-right: 6px; border: 0;
+      border-radius: 999px; color: #fff; font: inherit; font-size: .82rem; font-weight: 800; cursor: pointer; white-space: nowrap;
+      touch-action: manipulation; transition: filter .15s, transform .12s;
+    }
+    .ra-main:hover:not(:disabled) { filter: brightness(1.07); }
+    .ra-main:active:not(:disabled) { transform: scale(.96); }
+    .ra-main:disabled { opacity: .6; cursor: default; }
+    .ra-open { background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 6px 12px -6px #15803d; }
+    .ra-close { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 6px 12px -6px #d97706; }
+    .btn-expand-group { width: 32px; height: 32px; border-radius: 10px; padding: 0; }
+    .btn-expand-group .chev { transition: transform .18s; }
+    .btn-expand-group .chev.open { transform: rotate(90deg); }
+    .tables-data-table .waiter-select-inline { border-radius: 10px; min-height: 34px; font-weight: 600; }
+    @media (max-width: 720px) { .ra-main span { display: none; } .ra-main { padding: 0; width: 36px; justify-content: center; } }
   `]
 })
 export class TablesComponent implements OnInit {
