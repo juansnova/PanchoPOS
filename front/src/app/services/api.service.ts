@@ -627,8 +627,6 @@ export interface Product {
   available_until?: string | null; // YYYY-MM-DD; customer menu shows until this date
   /** Temporarily hidden from the customer menu ("Fuera de stock"). */
   out_of_stock?: boolean;
-  /** Temporarily hidden from the customer menu ("Fuera de stock"). */
-  out_of_stock?: boolean;
   // Legacy fields (for menu products from catalog)
   category_code?: string; // Category code for i18n: "STARTERS", "MAIN_COURSE", "BEVERAGES", etc.
   subcategory_codes?: string[]; // Subcategory codes for i18n: ["WINE_RED", "WINE_BY_GLASS"], etc.
