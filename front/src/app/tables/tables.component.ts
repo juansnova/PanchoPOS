@@ -89,6 +89,13 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
         </div>
 
         <div class="content">
+          @if (!loading() && tables().length > 0) {
+            <div class="tb-stats" data-testid="tables-stats">
+              <span class="tb-stat"><b>{{ tableStats().total }}</b> {{ 'TABLES.STATS_TABLES' | translate }}</span>
+              <span class="tb-stat tb-stat-on"><i></i><b>{{ tableStats().active }}</b> {{ 'TABLES.STATS_ACTIVE' | translate }}</span>
+              <span class="tb-stat tb-stat-off"><i></i><b>{{ tableStats().total - tableStats().active }}</b> {{ 'TABLES.STATS_FREE' | translate }}</span>
+            </div>
+          }
           @if (showForm()) {
             <div class="form-card">
               <form (submit)="createTable($event)">
@@ -358,7 +365,7 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
                   <div class="table-grid">
                     @for (block of tileBlocksForFloor(floor.id!); track trackTileBlock($index, block)) {
                       @if (block.kind === 'single') {
-                        <div class="table-card" (dblclick)="onTableCardDoubleClick(block.table)">
+                        <div class="table-card" [class.is-active]="block.table.is_active" (dblclick)="onTableCardDoubleClick(block.table)">
                           <ng-container *ngTemplateOutlet="tableTileInner; context: {$implicit: block.table}" />
                         </div>
                       } @else {
@@ -623,13 +630,13 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="20,6 9,17 4,12"/>
                     </svg>
-                    Copied!
+                    {{ 'TABLES.COPIED' | translate }}
                   } @else {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                       <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
                     </svg>
-                    Copy
+                    {{ 'COMMON.COPY' | translate }}
                   }
                 </button>
               </div>
@@ -1156,6 +1163,97 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
     @media (max-width: 768px) {
       .table-grid { grid-template-columns: 1fr; }
     }
+
+    /* ===== Mesas: rediseño ===== */
+    .page-header h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.01em; }
+    .view-toggle { padding: 3px; border-radius: 999px; background: var(--color-bg); border: 1px solid var(--color-border); gap: 2px; }
+    .view-toggle .btn { border-radius: 999px; font-weight: 600; }
+    .view-toggle .btn.active { background: var(--color-surface); color: var(--color-primary); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+    .page-header .btn-primary { border-radius: 999px; font-weight: 700; padding: 0 20px; min-height: 44px; box-shadow: 0 8px 18px -8px var(--color-primary); }
+
+    .tb-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: var(--space-5); }
+    .tb-stat {
+      display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 999px; font-size: .85rem;
+      font-weight: 600; color: var(--color-text-muted); background: var(--color-surface); border: 1px solid var(--color-border);
+    }
+    .tb-stat b { color: var(--color-text); font-size: 1rem; font-weight: 800; }
+    .tb-stat i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+    .tb-stat-on { color: #15803d; background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.3); }
+    .tb-stat-off { color: #78716c; }
+
+    .floor-section { margin-bottom: 40px; }
+    .floor-section .section-header {
+      padding: 12px 16px; margin-bottom: var(--space-4); border: 1px solid var(--color-border); border-radius: 16px;
+      background: linear-gradient(135deg, var(--color-primary-light), var(--color-surface) 70%);
+    }
+    .floor-section h2 { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.01em; }
+    .floor-section .badge { background: var(--color-primary); color: #fff; padding: 2px 10px; }
+    .floor-waiter-assign, .floor-admin-actions { padding: 4px 10px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); }
+
+    .table-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
+    .table-card {
+      position: relative; overflow: hidden; padding: 20px 16px 16px; text-align: left; border-radius: 22px;
+      border: 1px solid var(--color-border); background: var(--color-surface);
+      box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 10px 26px -16px rgba(0,0,0,.22);
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s;
+    }
+    .table-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 5px; background: #d6d3d1; }
+    .table-card.is-active { border-color: rgba(34,197,94,.45); }
+    .table-card.is-active::before { background: linear-gradient(90deg, #22c55e, #16a34a); }
+    .table-card:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(0,0,0,.05), 0 20px 34px -16px rgba(0,0,0,.3); }
+    .table-card--group { border-color: rgba(168,85,247,.4); }
+    .table-card--group::before { background: linear-gradient(90deg, #a855f7, #7c3aed); }
+
+    .table-header { align-items: flex-start; margin-bottom: 12px; }
+    .editable-name { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; }
+    .seat-count {
+      display: inline-flex; margin-top: 6px; padding: 3px 10px; border-radius: 999px; font-weight: 600;
+      background: var(--color-bg); color: var(--color-text-muted);
+    }
+    .header-actions { opacity: .55; transition: opacity .15s; }
+    .table-card:hover .header-actions, .header-actions:focus-within { opacity: 1; }
+    .icon-btn { width: 34px; height: 34px; border-radius: 50%; display: inline-grid; place-items: center; padding: 0; }
+    .icon-btn-edit:hover { background: var(--color-primary-light); color: var(--color-primary); }
+
+    .status-section {
+      flex-direction: row; flex-wrap: wrap; justify-content: flex-start; gap: 8px; padding: 0; margin-bottom: 12px; background: none;
+    }
+    .status-badge { border-radius: 999px; padding: 5px 12px; font-weight: 800; letter-spacing: .04em; }
+    .status-active { background: rgba(34,197,94,.14); color: #15803d; }
+    .status-inactive { background: var(--color-bg); color: #78716c; }
+    .status-section .active-session-meta { width: auto; text-align: left; margin: 0; align-self: center; }
+    .order-code-badge { margin-top: 0; padding: 3px 12px; border-radius: 10px; border-style: solid; background: var(--color-bg); }
+    .order-code-value { color: var(--color-primary); }
+
+    .waiter-assign-section { padding: 8px 10px; margin-bottom: 10px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-bg); }
+    .waiter-select { border: 0; background: transparent; font-weight: 600; min-height: 30px; }
+    .waiter-select:focus { outline: 2px solid var(--color-primary); border-radius: 8px; }
+    .waiter-inherited { padding-left: 22px; }
+
+    .qr-toggle { border-radius: 14px; min-height: 42px; border-style: dashed; font-weight: 700; }
+    .qr-card { border-radius: 18px; border-width: 1px; }
+
+    .session-actions { margin-top: auto; padding-top: 6px; margin-bottom: 10px; }
+    .session-actions .btn, .session-actions--inactive .btn { width: 100%; min-height: 46px; border-radius: 14px; font-weight: 800; font-size: .9rem; justify-content: center; }
+    .btn-success { background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 8px 16px -8px #15803d; }
+    .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 8px 16px -8px #d97706; }
+    .btn-success:hover:not(:disabled), .btn-warning:hover:not(:disabled) { filter: brightness(1.06); }
+    .table-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .table-actions .btn { min-height: 40px; border-radius: 12px; justify-content: center; font-weight: 700; }
+    .table-actions .btn-secondary { background: var(--color-primary-light); border-color: transparent; color: var(--color-primary); }
+    .table-actions .btn-ghost { border: 1px solid var(--color-border); }
+    .btn-copied { border-radius: 12px; }
+
+    .table-responsive { border-radius: 18px; border: 1px solid var(--color-border); background: var(--color-surface); overflow-x: auto; }
+    .tables-data-table { border: 0; border-radius: 0; }
+    .tables-data-table th { padding: 14px 16px; letter-spacing: .06em; }
+    .tables-data-table td { padding: 14px 16px; border-bottom: 1px solid var(--color-border); }
+    .tables-data-table tbody tr:last-child td { border-bottom: 0; }
+    .tables-data-table .table-name { font-size: 1rem; font-weight: 800; }
+    .tables-data-table .btn-sm, .tables-data-table .icon-btn { border-radius: 10px; }
+
+    @media (prefers-reduced-motion: reduce) { .table-card, .table-card:hover { transition: none; transform: none; } }
+    @media (max-width: 768px) { .page-header h1 { font-size: 1.5rem; } }
   `]
 })
 export class TablesComponent implements OnInit {
@@ -1175,6 +1273,10 @@ export class TablesComponent implements OnInit {
   private viewResolvedFromQuery = false;
 
   tables = signal<Table[]>([]);
+  tableStats = computed(() => {
+    const list = this.tables();
+    return { total: list.length, active: list.filter(t => t.is_active).length };
+  });
   /** Tables whose QR card is expanded (collapsed by default). */
   private qrOpenIds = signal<Set<number>>(new Set());
   isQrOpen(table: Table): boolean {
