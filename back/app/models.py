@@ -903,7 +903,7 @@ class OrderItem(SQLModel, table=True):
     # Item-level status tracking
     status: OrderItemStatus = Field(default=OrderItemStatus.pending, index=True)
     status_updated_at: datetime | None = None  # None until staff/auto changes the status
-    # When the line was added (drives the automatic pending → preparing after 1 minute)
+    # When the line was added (drives the automatic pending → preparing after 30 seconds)
     created_at: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc))
     # Set when the line was sent to the kitchen printer (auto-print on preparing); never reprinted
     kitchen_printed_at: datetime | None = Field(

@@ -88,7 +88,7 @@ See also `docs/PRINTING.md` (design background) and `docs/0015-kitchen-display.m
 
 Tenants with at least one active (non-revoked) print agent get kitchen tickets without pressing any button:
 
-- When an order line reaches **preparing** (automatically after 1 minute, or when staff change its status) it is printed within ~5 seconds. Lines in the same moment share one ticket.
+- When an order line reaches **preparing** (automatically after 30 seconds, or when staff change its status) it is printed within ~5 seconds. Lines in the same moment share one ticket.
 - Each line stores `kitchen_printed_at`, so it is printed once and never again. Lines in preparing cannot be edited or removed, so a printed ticket never goes stale.
 - If the customer orders more later, the new ticket has the header `*** ADICION - solo platos nuevos ***` and lists **only the new lines**.
 - The manual "Imprimir cocina" button in the order editor still reprints the whole order (use it to recover a jammed ticket).

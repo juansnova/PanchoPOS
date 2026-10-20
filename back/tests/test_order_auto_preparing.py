@@ -1,4 +1,4 @@
-"""New order lines move from pending to preparing automatically after one minute."""
+"""New order lines move from pending to preparing automatically after 30 seconds."""
 
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ class TestOrderAutoPreparing(PgClientTestCase):
         self.session.expire_all()
         return self.session.get(type(obj), obj.id)
 
-    def test_pending_line_older_than_a_minute_becomes_preparing(self) -> None:
+    def test_pending_line_older_than_30_seconds_becomes_preparing(self) -> None:
         order, item = self._order_with_item(age_seconds=90)
         # The live background worker may advance it first; either way the end state must match.
         advance_due_items(self.session, now=self.now)

@@ -17,7 +17,7 @@ from .db import engine
 
 logger = logging.getLogger(__name__)
 
-AUTO_PREPARING_AFTER_SECONDS = 60
+AUTO_PREPARING_AFTER_SECONDS = 30
 TICK_SECONDS = 5
 
 

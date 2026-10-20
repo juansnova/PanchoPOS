@@ -244,7 +244,7 @@ async def _app_lifespan(app: FastAPI):
     auto_prep_task = asyncio.create_task(order_auto_preparing_loop(stop=stop_auto_prep))
     app.state.auto_preparing_stop = stop_auto_prep
     app.state.auto_preparing_task = auto_prep_task
-    logger.info("Order auto-preparing worker started (pending -> preparing after 1 minute)")
+    logger.info("Order auto-preparing worker started (pending -> preparing after 30 seconds)")
 
     from .table_idle_close import IDLE_CLOSE_AFTER_MINUTES, table_idle_close_loop
 
