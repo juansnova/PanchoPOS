@@ -522,13 +522,21 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
           <!-- Properties Panel (shown when table selected) - Bottom sheet on mobile -->
           @if (selectedTable()) {
             <div class="properties-panel-backdrop" (click)="selectedTable.set(null); joinSelectionIds.set([])"></div>
-            <div class="properties-panel" [class.expanded]="propertiesPanelExpanded">
+            <div class="properties-panel pp" [class.expanded]="propertiesPanelExpanded"
+              [class.pp-op-available]="operationalKey(selectedTable()!) === 'available'"
+              [class.pp-op-reserved]="operationalKey(selectedTable()!) === 'reserved'"
+              [class.pp-op-occupied]="operationalKey(selectedTable()!) === 'occupied'"
+              [class.pp-op-open-order]="operationalKey(selectedTable()!) === 'open_order'"
+              [class.pp-op-ready-serve]="operationalKey(selectedTable()!) === 'ready_to_serve'">
               <!-- Drag handle for mobile -->
               <div class="panel-drag-handle" (click)="propertiesPanelExpanded = !propertiesPanelExpanded">
                 <span class="drag-indicator"></span>
               </div>
-              <div class="panel-header">
-                  <div class="panel-title-row">
+              <div class="pp-head">
+                <span class="pp-avatar" aria-hidden="true">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18M5 10v9M19 10v9M7 10V6h10v4"/></svg>
+                </span>
+                <div class="pp-head-text">
                   <h3>{{ selectedTableName }}</h3>
                   <div class="panel-badges">
                     <div
@@ -539,7 +547,7 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
                       [class.op-open-order]="operationalKey(selectedTable()!) === 'open_order'"
                       [class.op-ready-serve]="operationalKey(selectedTable()!) === 'ready_to_serve'"
                     >
-                      {{ operationalStatusLabelKey(selectedTable()!) | translate }}
+                      <i class="pp-dot"></i>{{ operationalStatusLabelKey(selectedTable()!) | translate }}
                     </div>
                     @if (paymentStatusKey(selectedTable()!) !== 'none') {
                       <div
@@ -552,22 +560,51 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
                     }
                   </div>
                 </div>
-                <button class="close-btn" (click)="selectedTable.set(null); joinSelectionIds.set([])">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button class="close-btn" (click)="selectedTable.set(null); joinSelectionIds.set([])" [attr.aria-label]="'COMMON.CLOSE' | translate">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
                     <path d="M18 6L6 18M6 6l12 12"/>
                   </svg>
                 </button>
               </div>
               <div class="panel-body">
                 @if (selectedActiveSessionMeta(); as meta) {
-                  <p class="panel-active-session" data-testid="table-active-duration">
+                  <div class="pp-chip pp-chip-session" data-testid="table-active-duration">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
                     {{ 'TABLES.ACTIVE_SESSION_META' | translate: meta }}
-                  </p>
+                  </div>
                 }
                 @if (selectedTable()?.table_group_id) {
-                  <p class="panel-group-line">{{ 'TABLES.GROUP_MEMBERS' | translate }}: {{ groupLineForSelected() }}</p>
+                  <div class="pp-chip pp-chip-group">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 007.07 0l3-3a5 5 0 00-7.07-7.07l-1 1"/><path d="M14 11a5 5 0 00-7.07 0l-3 3a5 5 0 007.07 7.07l1-1"/></svg>
+                    {{ 'TABLES.GROUP_MEMBERS' | translate }}: {{ groupLineForSelected() }}
+                  </div>
                 }
-                <div class="form-row">
+
+                @if (canOpenStaffOrders() && selectedTable()?.id != null) {
+                  <div class="panel-order-link">
+                    @if (selectedTable()!.active_order_id) {
+                      <a
+                        class="btn btn-primary panel-order-btn"
+                        routerLink="/staff/orders"
+                        [queryParams]="{ focusOrder: selectedTable()!.active_order_id, table: selectedTable()!.id }"
+                        data-testid="canvas-open-order-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6"/></svg>
+                        {{ 'TABLES.OPEN_STAFF_ORDER' | translate }}
+                      </a>
+                    } @else {
+                      <a
+                        class="btn btn-primary panel-order-btn"
+                        routerLink="/staff/orders"
+                        [queryParams]="{ focusTableId: selectedTable()!.id, table: selectedTable()!.id }"
+                        data-testid="canvas-table-orders-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6"/></svg>
+                        {{ 'TABLES.VIEW_TABLE_ORDERS' | translate }}
+                      </a>
+                    }
+                  </div>
+                }
+
+                <div class="pp-card">
                   <div class="form-group">
                     <label>{{ 'TABLES.NAME' | translate }}</label>
                     <input
@@ -579,56 +616,40 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
                   </div>
                   <div class="form-group">
                     <label>{{ 'TABLES.SEATS' | translate }}</label>
-                    <input type="number" min="1" max="20" [(ngModel)]="selectedTableSeats" (blur)="updateSelectedTable()">
-                  </div>
-                </div>
-                <div class="form-group">
-                    <label>{{ 'TABLES.ASSIGNED_WAITER' | translate }}</label>
-                  @if (canManageTableAssignments()) {
-                    <select class="panel-select" (change)="onCanvasWaiterAssign($event)">
-                      <option value="" [selected]="!selectedTable()?.assigned_waiter_id">{{ 'TABLES.UNASSIGNED' | translate }}</option>
-                      @for (w of waiters(); track w.id) {
-                        <option [value]="w.id" [selected]="selectedTable()?.assigned_waiter_id === w.id">{{ w.full_name || w.username }}</option>
-                      }
-                    </select>
-                    @if (!selectedTable()?.assigned_waiter_id && selectedTable()?.effective_waiter_name) {
-                      <div class="waiter-inherited-panel">{{ 'TABLES.SECTION_DEFAULT' | translate }}: {{ selectedTable()?.effective_waiter_name }}</div>
-                    }
-                  } @else {
-                    <div class="panel-waiter-readonly">
-                      @if (selectedTable()?.assigned_waiter_id) {
-                        {{ selectedTable()?.assigned_waiter_name || selectedTable()?.effective_waiter_name || '—' }}
-                      } @else if (selectedTable()?.effective_waiter_name) {
-                        {{ 'TABLES.SECTION_DEFAULT' | translate }}: {{ selectedTable()?.effective_waiter_name }}
-                      } @else {
-                        {{ 'TABLES.UNASSIGNED' | translate }}
-                      }
+                    <div class="pp-stepper">
+                      <button type="button" class="pp-step" (click)="stepSelectedSeats(-1)" [disabled]="selectedTableSeats <= 1" aria-label="-1">−</button>
+                      <input type="number" min="1" max="20" [(ngModel)]="selectedTableSeats" (blur)="updateSelectedTable()">
+                      <button type="button" class="pp-step pp-step-plus" (click)="stepSelectedSeats(1)" [disabled]="selectedTableSeats >= 20" aria-label="+1">+</button>
                     </div>
-                  }
-                </div>
-                @if (canOpenStaffOrders() && selectedTable()?.id != null) {
-                  <div class="panel-order-link">
-                    @if (selectedTable()!.active_order_id) {
-                      <a
-                        class="btn btn-primary panel-order-btn"
-                        routerLink="/staff/orders"
-                        [queryParams]="{ focusOrder: selectedTable()!.active_order_id, table: selectedTable()!.id }"
-                        data-testid="canvas-open-order-btn">
-                        {{ 'TABLES.OPEN_STAFF_ORDER' | translate }}
-                      </a>
+                  </div>
+                  <div class="form-group">
+                    <label>{{ 'TABLES.ASSIGNED_WAITER' | translate }}</label>
+                    @if (canManageTableAssignments()) {
+                      <select class="panel-select" (change)="onCanvasWaiterAssign($event)">
+                        <option value="" [selected]="!selectedTable()?.assigned_waiter_id">{{ 'TABLES.UNASSIGNED' | translate }}</option>
+                        @for (w of waiters(); track w.id) {
+                          <option [value]="w.id" [selected]="selectedTable()?.assigned_waiter_id === w.id">{{ w.full_name || w.username }}</option>
+                        }
+                      </select>
+                      @if (!selectedTable()?.assigned_waiter_id && selectedTable()?.effective_waiter_name) {
+                        <div class="waiter-inherited-panel">{{ 'TABLES.SECTION_DEFAULT' | translate }}: {{ selectedTable()?.effective_waiter_name }}</div>
+                      }
                     } @else {
-                      <a
-                        class="btn btn-primary panel-order-btn"
-                        routerLink="/staff/orders"
-                        [queryParams]="{ focusTableId: selectedTable()!.id, table: selectedTable()!.id }"
-                        data-testid="canvas-table-orders-btn">
-                        {{ 'TABLES.VIEW_TABLE_ORDERS' | translate }}
-                      </a>
+                      <div class="panel-waiter-readonly">
+                        @if (selectedTable()?.assigned_waiter_id) {
+                          {{ selectedTable()?.assigned_waiter_name || selectedTable()?.effective_waiter_name || '—' }}
+                        } @else if (selectedTable()?.effective_waiter_name) {
+                          {{ 'TABLES.SECTION_DEFAULT' | translate }}: {{ selectedTable()?.effective_waiter_name }}
+                        } @else {
+                          {{ 'TABLES.UNASSIGNED' | translate }}
+                        }
+                      </div>
                     }
                   </div>
-                }
+                </div>
+
                 <button class="delete-btn" (click)="deleteSelectedTable()">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3,6 5,6 21,6"/>
                     <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                   </svg>
@@ -1725,6 +1746,64 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
     .close-btn { border-radius: 50%; width: 36px; height: 36px; display: grid; place-items: center; }
 
     @media (prefers-reduced-motion: reduce) { .table-group { transition: none; } }
+
+    /* ===== Panel de mesa ===== */
+    .pp { --pp-accent: #9ca3af; overflow: hidden; }
+    .pp.pp-op-available { --pp-accent: #6b7280; }
+    .pp.pp-op-reserved { --pp-accent: #d97706; }
+    .pp.pp-op-occupied { --pp-accent: #059669; }
+    .pp.pp-op-open-order { --pp-accent: #2563eb; }
+    .pp.pp-op-ready-serve { --pp-accent: #7c3aed; }
+    .pp-head {
+      display: flex; align-items: center; gap: 12px; padding: 14px 16px 16px;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--pp-accent) 22%, var(--color-surface)), var(--color-surface) 85%);
+      border-top: 5px solid var(--pp-accent);
+    }
+    .pp-avatar {
+      flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 16px;
+      background: var(--pp-accent); color: #fff; box-shadow: 0 10px 18px -10px var(--pp-accent);
+    }
+    .pp-head-text { flex: 1; min-width: 0; }
+    .pp-head-text h3 { margin: 0 0 6px; font-size: 1.35rem; font-weight: 800; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pp .panel-header { display: none; }
+    .pp .status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: .72rem; letter-spacing: .03em; }
+    .pp-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    /* Badge colours that stay readable on the light panel */
+    .pp .status-badge.op-available { background: rgba(107,114,128,.15); color: #4b5563; }
+    .pp .status-badge.op-reserved { background: rgba(217,119,6,.16); color: #b45309; }
+    .pp .status-badge.op-occupied { background: rgba(5,150,105,.15); color: #047857; }
+    .pp .status-badge.op-open-order { background: rgba(37,99,235,.14); color: #1d4ed8; }
+    .pp .status-badge.op-ready-serve { background: rgba(124,58,237,.14); color: #6d28d9; }
+    .pp .status-badge.op-payment-pending { background: rgba(234,88,12,.15); color: #c2410c; }
+    .pp .status-badge.op-paid { background: rgba(5,150,105,.15); color: #047857; }
+    .pp .panel-body { padding: 4px 16px 18px; gap: 12px; }
+    .pp-chip {
+      display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 14px;
+      font-size: .82rem; font-weight: 600; background: var(--color-bg); color: var(--color-text-muted);
+    }
+    .pp-chip-session { background: color-mix(in srgb, var(--pp-accent) 12%, var(--color-surface)); color: var(--color-text); }
+    .pp-chip-session svg { color: var(--pp-accent); flex: none; }
+    .pp-chip-group { background: rgba(168,85,247,.12); color: #7e22ce; }
+    .pp .panel-order-link { margin: 0; }
+    .pp .panel-order-btn { display: flex; align-items: center; gap: 8px; min-height: 50px; border-radius: 16px; font-size: .95rem; }
+    .pp-card { display: flex; flex-direction: column; gap: 14px; padding: 14px; border-radius: 18px; background: var(--color-bg); border: 1px solid var(--color-border); }
+    .pp-card .form-group input, .pp-card .panel-select { background: var(--color-surface); }
+    .pp-stepper { display: flex; align-items: center; gap: 8px; }
+    .pp-stepper input { flex: 1; min-width: 0; text-align: center; font-size: 1.1rem; font-weight: 800; -moz-appearance: textfield; appearance: textfield; }
+    .pp-stepper input::-webkit-outer-spin-button, .pp-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .pp-step {
+      flex: none; width: 42px; height: 42px; border-radius: 14px; border: 1px solid var(--color-border);
+      background: var(--color-surface); color: var(--color-text); font-size: 1.4rem; line-height: 1; cursor: pointer; touch-action: manipulation;
+      transition: background .15s, border-color .15s, transform .12s;
+    }
+    .pp-step:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+    .pp-step:active:not(:disabled) { transform: scale(.92); }
+    .pp-step:disabled { opacity: .4; cursor: default; }
+    .pp-step-plus { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+    .pp-step-plus:hover:not(:disabled) { color: #fff; filter: brightness(1.08); }
+    .pp .delete-btn { background: transparent; border: 1px dashed rgba(220,38,38,.4); }
+    .pp .delete-btn:hover { background: rgba(220,38,38,.08); }
+    .pp .close-btn { flex: none; }
   `]
 })
 export class TablesCanvasComponent implements OnInit, OnDestroy {
@@ -2321,6 +2400,11 @@ export class TablesCanvasComponent implements OnInit, OnDestroy {
 
   tableSurfaceFill(table: CanvasTable): string {
     return `url(#tbl-${this.operationalKey(table)})`;
+  }
+
+  stepSelectedSeats(delta: number): void {
+    this.selectedTableSeats = Math.min(20, Math.max(1, (Number(this.selectedTableSeats) || 1) + delta));
+    this.updateSelectedTable();
   }
 
   tablesOnFloorCount(floorId: number): number {
