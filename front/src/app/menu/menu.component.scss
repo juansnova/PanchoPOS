@@ -758,21 +758,37 @@ $cart-expanded-max: 60vh;
     min-width: 40px;
   }
 
-  .quantity-input {
-    width: 60px;
-    min-height: 44px; // touch target on phone/tablet
-    padding: 4px 6px;
+  // −/+ stepper: works the same with mouse, touch and keyboard (no native number spinners)
+  .qty-stepper {
+    display: inline-flex;
+    align-items: center;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
-    font-size: 1rem; // >=16px avoids iOS zoom on focus
-    text-align: center;
     background: var(--color-surface);
-    color: var(--color-text);
+  }
 
-    &:focus {
-      outline: none;
-      border-color: var(--color-primary);
+  .qty-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: none;
+    color: var(--color-text);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: default;
     }
+  }
+
+  .qty-value {
+    min-width: 24px;
+    text-align: center;
+    font-weight: 600;
   }
 
   .item-name-block {

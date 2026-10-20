@@ -207,9 +207,13 @@
               <div class="item-status-dot" [class]="'status-' + (item.status || 'pending')"></div>
               <span class="item-qty-badge">
                 @if (canEditItem(item)) {
-                <input type="number" [value]="item.quantity"
-                  (change)="updateItemQuantity(order.id, item.itemId!, +$any($event.target).value)" min="1"
-                  class="quantity-input" />
+                <span class="qty-stepper">
+                  <button type="button" class="qty-btn" [disabled]="item.quantity <= 1"
+                    (click)="updateItemQuantity(order.id, item.itemId!, item.quantity - 1)" aria-label="-">−</button>
+                  <span class="qty-value">{{ item.quantity }}</span>
+                  <button type="button" class="qty-btn"
+                    (click)="updateItemQuantity(order.id, item.itemId!, item.quantity + 1)" aria-label="+">+</button>
+                </span>
                 } @else {
                 {{ item.quantity }}×
                 }
@@ -228,8 +232,9 @@
               }
               @if (canEditItem(item)) {
               <button class="remove-item-btn" (click)="removeItemFromOrder(order.id, item.itemId!)" title="Remove item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6" />
                 </svg>
               </button>
               }
