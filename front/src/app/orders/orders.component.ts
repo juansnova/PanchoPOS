@@ -827,96 +827,126 @@ ModuleRegistry.registerModules([
         <!-- Order Edit Widget Modal (add/remove/change items, billing, print) -->
         @if (editOrder(); as order) {
           <div class="modal-overlay">
-            <div class="modal modal-order-edit" (click)="$event.stopPropagation()" appFocusFirstInput>
-              <div class="modal-header">
-                <h3>{{ 'ORDERS.EDIT_ORDER' | translate }} — #{{ order.id }} {{ order.table_name }}</h3>
-                <button class="icon-btn" (click)="closeOrderEdit()">
+            <div class="modal modal-order-edit eo" (click)="$event.stopPropagation()" appFocusFirstInput>
+              <div class="eo-head">
+                <div class="eo-head-main">
+                  <h3>#{{ order.id }} · {{ order.table_name }}</h3>
+                  <span class="eo-status" [class]="'status-' + order.status">{{ getStatusLabel(order.status) }}</span>
+                  @if (order.customer_name) {
+                    <span class="eo-customer">{{ order.customer_name }}</span>
+                  }
+                </div>
+                <div class="eo-total">
+                  <small>{{ 'ORDERS.TOTAL' | translate }}</small>
+                  <strong>{{ formatPrice(order.total_cents) }}</strong>
+                </div>
+                <button class="icon-btn" (click)="closeOrderEdit()" [attr.aria-label]="'COMMON.CLOSE' | translate">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M18 6L6 18M6 6l12 12"/>
                   </svg>
                 </button>
               </div>
-              <div class="modal-body">
-                <p class="order-summary">{{ 'ORDERS.TOTAL' | translate }}: {{ formatPrice(order.total_cents) }}{{ order.customer_name ? ' · ' + ('ORDERS.CUSTOMER' | translate) + ': ' + order.customer_name : '' }}</p>
 
-                <div class="edit-order-items">
-                  <div class="edit-order-label">{{ 'ORDERS.ITEMS' | translate }}</div>
-                  @for (item of getSortedItems(order.items); track item.id) {
-                    @if (!item.removed_by_customer) {
-                      <div class="edit-order-item-block">
-                        <div class="edit-order-row">
-                          <span class="edit-item-name">{{ item.product_name }}</span>
-                          <input type="number" class="quantity-input" [value]="item.quantity" min="1"
-                            (change)="updateEditItemQuantity(order.id, item.id!, +$any($event.target).value)"
-                          />
-                          <select class="form-select edit-item-status" [ngModel]="item.status"
-                            (ngModelChange)="updateEditItemStatus(order.id, item.id!, $event)"
-                            [name]="'edit-status-' + item.id">
-                            @for (s of ['pending','preparing','delivered','cancelled']; track s) {
-                              <option [value]="s">{{ getItemStatusLabel(s) }}</option>
-                            }
-                          </select>
-                          <button type="button" class="btn btn-sm btn-secondary" (click)="toggleModifierEdit(item)">
-                            {{ modifierEditItemId === item.id ? ('COMMON.CANCEL' | translate) : ('ORDERS.MODIFIERS' | translate) }}
-                          </button>
-                          <button type="button" class="btn btn-sm btn-remove-item" (click)="removeEditItem(order.id, item.id!, item.status ?? 'pending')" [title]="'ORDERS.REMOVE_ITEM' | translate">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <div class="eo-body">
+                <div class="eo-section-title">{{ 'ORDERS.EDIT_WHAT_ORDERED' | translate }}</div>
+                @for (item of getSortedItems(order.items); track item.id) {
+                  @if (!item.removed_by_customer) {
+                    <div class="eo-item" [class.eo-item-cancelled]="item.status === 'cancelled'">
+                      <div class="eo-item-main">
+                        <div class="eo-stepper">
+                          <button type="button" [disabled]="item.quantity <= 1"
+                            (click)="updateEditItemQuantity(order.id, item.id!, item.quantity - 1)" aria-label="-">−</button>
+                          <span>{{ item.quantity }}</span>
+                          <button type="button"
+                            (click)="updateEditItemQuantity(order.id, item.id!, item.quantity + 1)" aria-label="+">+</button>
+                        </div>
+                        <div class="eo-item-text">
+                          <span class="eo-item-name">{{ item.product_name }}</span>
+                          @if (item.notes?.trim() && modifierEditItemId !== item.id) {
+                            <span class="eo-item-note">{{ item.notes }}</span>
+                          }
+                          @if (hasItemModifiersLine(item) && modifierEditItemId !== item.id) {
+                            <span class="eo-item-note">{{ formatItemModifiersLine(item) }}</span>
+                          }
+                        </div>
+                        <span class="eo-item-price">{{ formatPrice(item.price_cents * item.quantity) }}</span>
+                      </div>
+                      <div class="eo-item-tools">
+                        <select class="eo-status-select" [class]="'status-' + item.status" [ngModel]="item.status"
+                          (ngModelChange)="updateEditItemStatus(order.id, item.id!, $event)"
+                          [name]="'edit-status-' + item.id">
+                          @for (st of ['pending','preparing','delivered','cancelled']; track st) {
+                            <option [value]="st">{{ getItemStatusLabel(st) }}</option>
+                          }
+                        </select>
+                        <button type="button" class="eo-link" (click)="toggleModifierEdit(item)">
+                          {{ modifierEditItemId === item.id ? ('COMMON.CLOSE' | translate) : ('ORDERS.EDIT_CUSTOMIZE' | translate) }}
+                        </button>
+                        <button type="button" class="eo-trash" (click)="removeEditItem(order.id, item.id!, item.status ?? 'pending')"
+                          [title]="'ORDERS.REMOVE_ITEM' | translate" [attr.aria-label]="'ORDERS.REMOVE_ITEM' | translate">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/>
+                          </svg>
+                        </button>
+                      </div>
+                      @if (modifierEditItemId === item.id) {
+                        <div class="eo-custom">
+                          <label>{{ 'ORDERS.EDIT_NOTE' | translate }}</label>
+                          <textarea class="form-input modifier-textarea" rows="2" [(ngModel)]="item.notes" [name]="'item-notes-' + item.id"
+                            [placeholder]="'ORDERS.ITEM_NOTES_PLACEHOLDER' | translate" maxlength="500"
+                            (blur)="saveEditItemNotes(order.id, item)"></textarea>
+                          <label>{{ 'ORDERS.LINE_MODIFIERS_REMOVE' | translate }}</label>
+                          <input type="text" class="form-input" [(ngModel)]="modifierEditRemove" [name]="'mod-rem-' + item.id" [placeholder]="'ORDERS.LINE_MODIFIERS_REMOVE_PLACEHOLDER' | translate" />
+                          <label>{{ 'ORDERS.LINE_MODIFIERS_ADD' | translate }}</label>
+                          <input type="text" class="form-input" [(ngModel)]="modifierEditAdd" [name]="'mod-add-' + item.id" [placeholder]="'ORDERS.LINE_MODIFIERS_ADD_PLACEHOLDER' | translate" />
+                          <label>{{ 'ORDERS.LINE_MODIFIERS_SUBSTITUTE' | translate }}</label>
+                          <textarea class="form-input modifier-textarea" rows="2" [(ngModel)]="modifierEditSubstitute" [name]="'mod-sub-' + item.id" [placeholder]="'ORDERS.LINE_MODIFIERS_SUBSTITUTE_PLACEHOLDER' | translate"></textarea>
+                          <button type="button" class="btn btn-primary btn-sm" (click)="saveItemModifiers(order.id, item)" [disabled]="savingItemModifiers()">
+                            {{ savingItemModifiers() ? ('COMMON.LOADING' | translate) : ('COMMON.SAVE' | translate) }}
                           </button>
                         </div>
-                        @if (modifierEditItemId === item.id) {
-                          <div class="modifier-edit-fields">
-                            <label class="modifier-label">{{ 'ORDERS.LINE_MODIFIERS_REMOVE' | translate }}</label>
-                            <input type="text" class="form-input" [(ngModel)]="modifierEditRemove" [name]="'mod-rem-' + item.id" [placeholder]="'ORDERS.LINE_MODIFIERS_REMOVE_PLACEHOLDER' | translate" />
-                            <label class="modifier-label">{{ 'ORDERS.LINE_MODIFIERS_ADD' | translate }}</label>
-                            <input type="text" class="form-input" [(ngModel)]="modifierEditAdd" [name]="'mod-add-' + item.id" [placeholder]="'ORDERS.LINE_MODIFIERS_ADD_PLACEHOLDER' | translate" />
-                            <label class="modifier-label">{{ 'ORDERS.LINE_MODIFIERS_SUBSTITUTE' | translate }}</label>
-                            <textarea class="form-input modifier-textarea" rows="2" [(ngModel)]="modifierEditSubstitute" [name]="'mod-sub-' + item.id" [placeholder]="'ORDERS.LINE_MODIFIERS_SUBSTITUTE_PLACEHOLDER' | translate"></textarea>
-                            <button type="button" class="btn btn-primary btn-sm" (click)="saveItemModifiers(order.id, item)" [disabled]="savingItemModifiers()">
-                              {{ savingItemModifiers() ? ('COMMON.LOADING' | translate) : ('ORDERS.SAVE_MODIFIERS' | translate) }}
-                            </button>
-                          </div>
-                        }
-                        <label class="modifier-label">{{ 'ORDERS.ITEM_NOTES' | translate }}</label>
-                        <textarea class="form-input modifier-textarea" rows="2" [(ngModel)]="item.notes" [name]="'item-notes-' + item.id"
-                          [placeholder]="'ORDERS.ITEM_NOTES_PLACEHOLDER' | translate" maxlength="500"
-                          (blur)="saveEditItemNotes(order.id, item)"></textarea>
-                      </div>
-                    }
+                      }
+                    </div>
                   }
-                </div>
-
-                @if (canAddItemsToOrder(order)) {
-                  <div class="form-group add-items-section">
-                    <div class="edit-order-label">{{ 'ORDERS.ADD_ITEM' | translate }}</div>
-                    <div class="add-items-row">
-                      <select class="form-select" [(ngModel)]="addItemProductId" name="addProduct">
-                        <option [ngValue]="null">{{ 'COMMON.SELECT' | translate }}</option>
-                        @for (p of editOrderTenantProducts(); track p.id) {
-                          <option [ngValue]="p.id">{{ p.name }} — {{ formatPrice(p.price_cents) }}</option>
-                        }
-                      </select>
-                      <input type="number" class="quantity-input" [(ngModel)]="addItemQuantity" min="1" name="addQty" />
-                      <button type="button" class="btn btn-primary" (click)="addItemToEditOrder()" [disabled]="!addItemProductId || addItemQuantity < 1 || addingItem()">
-                        {{ addingItem() ? ('COMMON.LOADING' | translate) : ('COMMON.ADD' | translate) }}
-                      </button>
-                    </div>
-                    <div class="add-modifiers-fields">
-                      <label class="modifier-label">{{ 'ORDERS.ITEM_NOTES' | translate }}</label>
-                      <textarea class="form-input modifier-textarea" rows="2" [(ngModel)]="addItemNotes" name="addItemNotes"
-                        [placeholder]="'ORDERS.ITEM_NOTES_PLACEHOLDER' | translate" maxlength="500"></textarea>
-                      <label class="modifier-label">{{ 'ORDERS.LINE_MODIFIERS_REMOVE' | translate }}</label>
-                      <input type="text" class="form-input" [(ngModel)]="addItemModifiersRemove" name="addModRem" [placeholder]="'ORDERS.LINE_MODIFIERS_REMOVE_PLACEHOLDER' | translate" />
-                      <label class="modifier-label">{{ 'ORDERS.LINE_MODIFIERS_ADD' | translate }}</label>
-                      <input type="text" class="form-input" [(ngModel)]="addItemModifiersAdd" name="addModAdd" [placeholder]="'ORDERS.LINE_MODIFIERS_ADD_PLACEHOLDER' | translate" />
-                      <label class="modifier-label">{{ 'ORDERS.LINE_MODIFIERS_SUBSTITUTE' | translate }}</label>
-                      <textarea class="form-input modifier-textarea" rows="2" [(ngModel)]="addItemModifiersSubstitute" name="addModSub" [placeholder]="'ORDERS.LINE_MODIFIERS_SUBSTITUTE_PLACEHOLDER' | translate"></textarea>
-                    </div>
-                  </div>
                 }
 
-                <div class="form-group">
-                  <label for="edit-billing-customer">{{ 'CUSTOMERS.SELECT_FOR_FACTURA' | translate }}</label>
-                  <select id="edit-billing-customer" class="form-select" [(ngModel)]="editOrderBillingId" name="editBillingCustomer">
+                @if (canAddItemsToOrder(order)) {
+                  @if (editAddOpen()) {
+                    <div class="eo-add">
+                      <div class="eo-add-row">
+                        <select class="form-select" [(ngModel)]="addItemProductId" name="addProduct">
+                          <option [ngValue]="null">{{ 'COMMON.SELECT' | translate }}</option>
+                          @for (p of editOrderTenantProducts(); track p.id) {
+                            <option [ngValue]="p.id">{{ p.name }} — {{ formatPrice(p.price_cents) }}</option>
+                          }
+                        </select>
+                        <div class="eo-stepper">
+                          <button type="button" [disabled]="addItemQuantity <= 1" (click)="addItemQuantity = addItemQuantity - 1" aria-label="-">−</button>
+                          <span>{{ addItemQuantity }}</span>
+                          <button type="button" (click)="addItemQuantity = addItemQuantity + 1" aria-label="+">+</button>
+                        </div>
+                      </div>
+                      <input type="text" class="form-input" [(ngModel)]="addItemNotes" name="addItemNotes" maxlength="500"
+                        [placeholder]="'ORDERS.ITEM_NOTES_PLACEHOLDER' | translate" />
+                      <div class="eo-add-actions">
+                        <button type="button" class="btn btn-secondary" (click)="editAddOpen.set(false)">{{ 'COMMON.CANCEL' | translate }}</button>
+                        <button type="button" class="btn btn-primary" (click)="addItemToEditOrder()" [disabled]="!addItemProductId || addItemQuantity < 1 || addingItem()">
+                          {{ addingItem() ? ('COMMON.LOADING' | translate) : ('COMMON.ADD' | translate) }}
+                        </button>
+                      </div>
+                    </div>
+                  } @else {
+                    <button type="button" class="eo-pill" (click)="editAddOpen.set(true)">
+                      <span class="eo-plus">+</span> {{ 'ORDERS.EDIT_ADD_PRODUCT' | translate }}
+                    </button>
+                  }
+                }
+
+                <div class="eo-bill">
+                  <label for="edit-billing-customer">{{ 'ORDERS.EDIT_BILL_TO' | translate }}</label>
+                  <select id="edit-billing-customer" class="form-select" [(ngModel)]="editOrderBillingId" name="editBillingCustomer"
+                    (ngModelChange)="saveEditOrderBilling()">
                     <option [ngValue]="null">{{ 'COMMON.NONE' | translate }}</option>
                     @for (c of editOrderBillingCustomers(); track c.id) {
                       <option [ngValue]="c.id">{{ c.company_name || c.name }}{{ c.tax_id ? ' (' + c.tax_id + ')' : '' }}</option>
@@ -924,17 +954,29 @@ ModuleRegistry.registerModules([
                   </select>
                 </div>
               </div>
-              <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" (click)="closeOrderEdit()">{{ 'COMMON.CLOSE' | translate }}</button>
-                <button type="button" class="btn btn-secondary" (click)="saveEditOrderBilling()">{{ 'COMMON.SAVE' | translate }}</button>
-                <button type="button" class="btn btn-secondary" (click)="printEditOrderInvoice()">{{ 'ORDERS.PRINT_INVOICE' | translate }}</button>
-                <button type="button" class="btn btn-secondary" (click)="printEditOrderKitchen()">{{ 'ORDERS.PRINT_KITCHEN' | translate }}</button>
-                @if (order.status !== 'paid' && order.status !== 'cancelled' && canMarkPaid()) {
-                  <button type="button" class="btn btn-primary" (click)="markEditOrderAsPaid(order)">{{ 'ORDERS.MARK_AS_PAID' | translate }}</button>
-                }
-                @if (order.status !== 'paid' && order.status !== 'cancelled' && canFinishOrder()) {
-                  <button type="button" class="btn btn-success" (click)="markEditOrderFinish(order)">{{ 'ORDERS.FINISH_ORDER' | translate }}</button>
-                }
+
+              <div class="eo-foot">
+                <div class="eo-foot-left">
+                  <button type="button" class="eo-ghost" (click)="printEditOrderInvoice()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+                    {{ 'ORDERS.EDIT_PRINT_INVOICE' | translate }}
+                  </button>
+                  <button type="button" class="eo-ghost" (click)="printEditOrderKitchen()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+                    {{ 'ORDERS.EDIT_PRINT_KITCHEN' | translate }}
+                  </button>
+                </div>
+                <div class="eo-foot-right">
+                  @if (order.status !== 'paid' && order.status !== 'cancelled' && canFinishOrder()) {
+                    <button type="button" class="btn btn-success" (click)="markEditOrderFinish(order)"
+                      [title]="'ORDERS.FINISH_ORDER_HELP' | translate">{{ 'ORDERS.EDIT_SERVE_AND_CHARGE' | translate }}</button>
+                  }
+                  @if (order.status !== 'paid' && order.status !== 'cancelled' && canMarkPaid()) {
+                    <button type="button" class="btn btn-primary" (click)="markEditOrderAsPaid(order)">{{ 'ORDERS.EDIT_CHARGE' | translate }}</button>
+                  }
+                </div>
               </div>
             </div>
           </div>
@@ -2157,6 +2199,67 @@ ModuleRegistry.registerModules([
     .payment-tip-preview { margin-top: var(--space-2); margin-bottom: 0; }
 
     .modal-order-edit { max-width: 520px; }
+    /* Edit-order modal ("eo"): header with total, item cards, collapsed add panel, grouped footer */
+    .modal-order-edit.eo { max-width: 560px; padding: 0; display: flex; flex-direction: column; max-height: 90vh; overflow: hidden; }
+    .eo-head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-4) var(--space-3);
+      border-bottom: 1px solid var(--color-border); }
+    .eo-head-main { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+    .eo-head-main h3 { margin: 0; font-size: 1.125rem; }
+    .eo-status { font-size: 0.75rem; font-weight: 600; padding: 2px 10px; border-radius: 999px;
+      background: var(--color-primary-light); color: var(--color-primary); }
+    .eo-customer { font-size: 0.8125rem; color: var(--color-text-muted); }
+    .eo-total { text-align: right; line-height: 1.1; }
+    .eo-total small { display: block; font-size: 0.6875rem; text-transform: uppercase; color: var(--color-text-muted); }
+    .eo-total strong { font-size: 1.375rem; color: var(--color-primary); }
+    .eo-body { flex: 1; overflow-y: auto; padding: var(--space-3) var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+    .eo-section-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-muted); }
+    .eo-item { border: 1px solid var(--color-border); border-radius: 14px; padding: 10px 12px; background: var(--color-surface); }
+    .eo-item-cancelled { opacity: 0.55; }
+    .eo-item-cancelled .eo-item-name { text-decoration: line-through; }
+    .eo-item-main { display: flex; align-items: center; gap: 12px; }
+    .eo-item-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .eo-item-name { font-weight: 600; overflow-wrap: anywhere; }
+    .eo-item-note { font-size: 0.8125rem; color: var(--color-text-muted); overflow-wrap: anywhere; }
+    .eo-item-price { font-weight: 700; white-space: nowrap; }
+    .eo-item-tools { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .eo-stepper { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 999px;
+      background: var(--color-primary-light); flex-shrink: 0; }
+    .eo-stepper button { width: 32px; height: 32px; border: none; border-radius: 50%; cursor: pointer;
+      background: var(--color-primary); color: #fff; font-size: 1.125rem; line-height: 1; touch-action: manipulation; }
+    .eo-stepper button:disabled { opacity: 0.35; cursor: default; }
+    .eo-stepper span { min-width: 24px; text-align: center; font-weight: 700; }
+    .eo-status-select { height: 34px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--color-border);
+      background: var(--color-surface); color: var(--color-text); font-size: 0.8125rem; font-weight: 600; }
+    .eo-link { border: none; background: none; color: var(--color-primary); font-weight: 600; font-size: 0.8125rem;
+      cursor: pointer; padding: 6px 4px; }
+    .eo-trash { margin-left: auto; width: 36px; height: 36px; border: none; border-radius: 50%; cursor: pointer;
+      background: color-mix(in srgb, var(--color-error) 12%, transparent); color: var(--color-error);
+      display: inline-flex; align-items: center; justify-content: center; touch-action: manipulation; }
+    .eo-trash:hover { background: var(--color-error); color: #fff; }
+    .eo-custom { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding-top: 10px;
+      border-top: 1px dashed var(--color-border); }
+    .eo-custom label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; color: var(--color-text-muted); }
+    .eo-custom .btn { align-self: flex-start; }
+    .eo-pill { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px 6px 6px;
+      border-radius: 999px; cursor: pointer; border: 1.5px dashed var(--color-primary);
+      background: var(--color-primary-light); color: var(--color-primary); font-weight: 600; touch-action: manipulation; }
+    .eo-plus { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+      border-radius: 50%; background: var(--color-primary); color: #fff; font-size: 1.125rem; line-height: 1; }
+    .eo-add { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 14px;
+      background: linear-gradient(160deg, var(--color-primary-light), transparent 75%);
+      border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent); }
+    .eo-add-row { display: flex; align-items: center; gap: 8px; }
+    .eo-add-row .form-select { flex: 1; min-width: 0; }
+    .eo-add-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .eo-bill { display: flex; flex-direction: column; gap: 4px; }
+    .eo-bill label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-muted); }
+    .eo-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+      padding: var(--space-3) var(--space-4); border-top: 1px solid var(--color-border); background: var(--color-surface); }
+    .eo-foot-left, .eo-foot-right { display: flex; flex-wrap: wrap; gap: 8px; }
+    .eo-ghost { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; border-radius: 999px;
+      border: 1px solid var(--color-border); background: transparent; color: var(--color-text); font-size: 0.8125rem;
+      font-weight: 600; cursor: pointer; touch-action: manipulation; }
+    .eo-ghost:hover { background: var(--color-primary-light); }
     .edit-order-items { margin-bottom: var(--space-4); }
     .edit-order-label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; margin-bottom: var(--space-2); }
     .edit-order-row {
@@ -2477,6 +2580,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   /** Full order edit widget: add/remove/change items, billing, print. Same modal from cards and history. */
   editOrder = signal<Order | null>(null);
+  /** "Agregar producto" panel of the edit-order modal; collapsed until needed. */
+  editAddOpen = signal(false);
   editOrderTenantProducts = signal<TenantProduct[]>([]);
   editOrderBillingCustomers = signal<BillingCustomer[]>([]);
   editOrderBillingId: number | null = null;
@@ -3137,6 +3242,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
       next: () => {
         this.addingItem.set(false);
         this.addItemProductId = null;
+        this.editAddOpen.set(false);
         this.addItemQuantity = 1;
         this.addItemNotes = '';
         this.addItemModifiersRemove = '';
@@ -3508,6 +3614,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   openOrderEdit(order: Order) {
     this.editOrder.set(order);
     this.editOrderBillingId = order.billing_customer_id ?? null;
+    this.editAddOpen.set(false);
     this.addItemProductId = null;
     this.addItemQuantity = 1;
     this.addItemNotes = '';
