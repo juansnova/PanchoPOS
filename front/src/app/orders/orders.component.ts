@@ -1164,6 +1164,11 @@ ModuleRegistry.registerModules([
                   <button type="button" class="extra-ok" (click)="applyExtraCharge()"
                     [attr.aria-label]="'ORDERS.EXTRA_CHARGE_APPLY' | translate">✓</button>
                 </div>
+                <div class="extra-chips">
+                  @for (v of extraQuickAmounts; track v) {
+                  <button type="button" class="extra-chip" (click)="addExtraAmount(v)">+{{ formatPrice(v * 100) }}</button>
+                  }
+                </div>
                 @if (tipEntryModeOverpayment()) {
                   <p class="modal-hint">{{ 'ORDERS.OVERPAYMENT_PAYMENT_HINT' | translate }}</p>
                   <div class="form-group">
@@ -2118,6 +2123,14 @@ ModuleRegistry.registerModules([
     }
     .extra-inline input:focus { outline: none; border-color: var(--color-primary); }
     .extra-inline .extra-amount { flex: 1 1 0; font-weight: 600; }
+    .extra-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--space-2); }
+    .extra-chip {
+      padding: 0 12px; height: 32px; border-radius: 999px; cursor: pointer;
+      border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+      background: var(--color-primary-light); color: var(--color-primary);
+      font-size: 0.8125rem; font-weight: 600; touch-action: manipulation;
+    }
+    .extra-chip:active { transform: scale(0.95); }
     .extra-ok {
       flex: 0 0 40px; height: 40px; border: none; border-radius: 50%; cursor: pointer;
       background: var(--color-primary); color: #fff; font-weight: 700; touch-action: manipulation;
@@ -4313,6 +4326,15 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   /** Additional-charge amount typed in the payment modal; null = show the order's saved value. */
   paymentExtraInput: string | null = null;
+
+  readonly extraQuickAmounts = [1000, 2000, 5000, 10000];
+
+  addExtraAmount(pesos: number): void {
+    const order = this.orderToMarkPaid();
+    if (!order) return;
+    const current = this.parseMoneyMajorToCents(this.extraChargeInputValue(order)) / 100;
+    this.paymentExtraInput = String(current + pesos);
+  }
 
   extraChargeInputValue(order: Order): string {
     if (this.paymentExtraInput !== null) return this.paymentExtraInput;

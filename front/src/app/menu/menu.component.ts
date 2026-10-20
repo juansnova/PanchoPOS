@@ -1293,6 +1293,13 @@ export class MenuComponent implements OnInit, OnDestroy {
   extraEditOrderId = signal<number | null>(null);
   extraAmountInput = '';
 
+  readonly extraQuickAmounts = [1000, 2000, 5000, 10000];
+
+  addExtraAmount(pesos: number) {
+    const n = parseFloat((this.extraAmountInput || '').replace(',', '.'));
+    this.extraAmountInput = String((Number.isNaN(n) ? 0 : n) + pesos);
+  }
+
   openExtraCharge(order: PlacedOrder) {
     this.extraAmountInput = order.extraCents ? String(order.extraCents / 100) : '';
     this.extraEditOrderId.set(order.id);

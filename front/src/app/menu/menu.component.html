@@ -259,6 +259,11 @@
               <button type="button" class="extra-x" (click)="extraEditOrderId.set(null)"
                 [attr.aria-label]="'COMMON.CANCEL' | translate">✕</button>
             </div>
+            <div class="extra-chips">
+              @for (v of extraQuickAmounts; track v) {
+              <button type="button" class="extra-chip" (click)="addExtraAmount(v)">+{{ formatPrice(v * 100) }}</button>
+              }
+            </div>
             } @else {
             <button type="button" class="extra-add-btn" (click)="openExtraCharge(order)">
               + {{ 'ORDERS.EXTRA_CHARGE' | translate }}

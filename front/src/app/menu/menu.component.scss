@@ -951,6 +951,29 @@ $cart-expanded-max: 60vh;
   .extra-x { background: transparent; color: var(--color-text); opacity: 0.6; }
 }
 
+.extra-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.extra-chip {
+  padding: 0 12px;
+  height: 32px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+  border-radius: 999px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active { transform: scale(0.95); }
+}
+
 .order-actions {
   display: flex;
   gap: var(--space-3);
