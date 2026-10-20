@@ -101,8 +101,31 @@ _REGROUP = {
 }
 _CATEGORY_LABELS = {"Main Course": "Platos Fuertes"}
 
-# "Comidas Rápidas" stays a category; its products are split into subcategories by name.
+# "Comidas Rápidas" and "Bebidas" stay categories; their products are split into
+# subcategories by name. Each entry: category names it may be stored under -> {name: subcategory}.
+# (Bebidas is stored as the standard "Beverages", so both spellings are accepted.)
 _FAST_FOOD_CATEGORY = "Comidas Rápidas"
+_DRINK_SUBCATEGORY = {
+    "Jugo Natural en Leche": "Jugos y Granizadas",
+    "Jugo Natural en Agua": "Jugos y Granizadas",
+    "Granizada de Cereza": "Jugos y Granizadas",
+    "Jugo Hit": "Jugos y Granizadas",
+    "Gaseosa Personal": "Gaseosas",
+    "Gaseosa Econolitro": "Gaseosas",
+    "Gaseosa 1,5 Lt": "Gaseosas",
+    "Gaseosa 3 Lt": "Gaseosas",
+    "Agua Natural": "Aguas e Hidratantes",
+    "Agua Saborizada": "Aguas e Hidratantes",
+    "Electrolit": "Aguas e Hidratantes",
+    "Soda Hatsu": "Aguas e Hidratantes",
+    "Águila Original": "Cervezas",
+    "Águila Light": "Cervezas",
+    "Poker": "Cervezas",
+    "Club Colombia": "Cervezas",
+    "Budweiser": "Cervezas",
+    "Coronita": "Cervezas",
+    "Cola & Pola": "Cervezas",
+}
 _FAST_FOOD_SUBCATEGORY = {
     "Hamburguesa Clásica": "Hamburguesas",
     "Hamburguesa Pancho": "Hamburguesas",
@@ -116,6 +139,11 @@ _FAST_FOOD_SUBCATEGORY = {
     "Menú Infantil": "Infantil",
 }
 
+_SUBCATEGORY_BY_NAME_GROUPS = [
+    (("Comidas Rápidas",), _FAST_FOOD_SUBCATEGORY),
+    (("Bebidas", "Beverages"), _DRINK_SUBCATEGORY),
+]
+
 # price_cents convention in this app: pesos * 100
 # (name, price_cents, category, subcategory, description)
 DEMO_PRODUCTS = [
@@ -125,6 +153,8 @@ DEMO_PRODUCTS = [
         *(
             (c, _FAST_FOOD_SUBCATEGORY.get(n))
             if c == _FAST_FOOD_CATEGORY
+            else (c, _DRINK_SUBCATEGORY.get(n))
+            if c == "Bebidas"
             else _REGROUP.get(c, (c, None))
         ),
         d,
@@ -217,16 +247,17 @@ def _regroup_categories(session, tenant_id: int) -> int:
             {"cat": category, "sub": subcategory, "old": old, "tid": tenant_id},
         )
         moved += result.rowcount or 0
-    for name, subcategory in _FAST_FOOD_SUBCATEGORY.items():
-        result = session.execute(
-            text(
-                "UPDATE product SET subcategory = :sub "
-                "WHERE tenant_id = :tid AND category = :cat AND name = :name "
-                "AND (subcategory IS NULL OR subcategory = '')"
-            ),
-            {"sub": subcategory, "cat": _FAST_FOOD_CATEGORY, "name": name, "tid": tenant_id},
-        )
-        moved += result.rowcount or 0
+    for categories, by_name in _SUBCATEGORY_BY_NAME_GROUPS:
+        for name, subcategory in by_name.items():
+            result = session.execute(
+                text(
+                    "UPDATE product SET subcategory = :sub "
+                    "WHERE tenant_id = :tid AND category = ANY(:cats) AND name = :name "
+                    "AND (subcategory IS NULL OR subcategory = '')"
+                ),
+                {"sub": subcategory, "cats": list(categories), "name": name, "tid": tenant_id},
+            )
+            moved += result.rowcount or 0
     return moved
 
 
