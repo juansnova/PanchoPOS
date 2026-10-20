@@ -750,6 +750,7 @@
     "DELETE_ORDER_FAILED": "Error al eliminar el pedido",
     "ITEMS_REMOVED": "{{count}} artículo(s) eliminado(s)",
     "REMOVED_BY_CUSTOMER": "Eliminado por el cliente",
+    "REMOVED_BY_STAFF": "Eliminado por el personal",
     "ALL_ORDERS_PAID": "Todos los pedidos están pagados",
     "NO_UNPAID_ORDERS": "No hay pedidos sin pagar en este momento",
     "MARK_ORDER_AS_PAID": "Marcar Pedido como Pagado",

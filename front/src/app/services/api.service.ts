@@ -995,6 +995,8 @@ export interface OrderItem {
   line_modifiers_summary?: string | null;
   status?: string;  // pending, preparing, ready, delivered, cancelled
   removed_by_customer?: boolean;
+  /** Cancelled by staff (waiter/owner). Hidden unless "show removed items" is on. */
+  removed_by_staff?: boolean;
   removed_at?: string;
   removed_reason?: string;
   tax_id?: number | null;

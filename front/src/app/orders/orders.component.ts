@@ -180,10 +180,10 @@ ModuleRegistry.registerModules([
 
                     <div class="order-items">
                       @for (item of getSortedItems(order.items); track item.id) {
-                        <div class="order-item" [class.removed]="item.removed_by_customer">
+                        <div class="order-item" [class.removed]="isItemRemoved(item)">
                           <div class="item-name-row">
                             <span class="item-qty">
-                              @if (!item.removed_by_customer && item.status !== 'cancelled' && item.status !== 'delivered') {
+                              @if (!isItemRemoved(item) && item.status !== 'cancelled' && item.status !== 'delivered') {
                                 <span class="qty-stepper">
                                   <button type="button" class="qty-btn qty-minus" (click)="stepItemQuantity(order, item, -1)" [disabled]="item.quantity <= 1" aria-label="-1">−</button>
                                   <span class="qty-value">{{ item.quantity }}</span>
@@ -209,14 +209,14 @@ ModuleRegistry.registerModules([
                                 }
                               </span>
                             <div class="item-actions">
-                              @if (!item.removed_by_customer && item.status !== 'cancelled') {
+                              @if (!isItemRemoved(item) && item.status !== 'cancelled') {
                                 <button class="btn-remove-item" (click)="removeItemStaff(order.id, item.id!, item.status ?? 'pending')" [title]="'ORDERS.REMOVE_ITEM' | translate">
                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M18 6L6 18M6 6l12 12"/>
                                   </svg>
                                 </button>
                               }
-                              @if (item.status && !item.removed_by_customer) {
+                              @if (item.status && !isItemRemoved(item)) {
                                 <div class="item-status-control">
                                   <button 
                                     class="item-status-badge clickable" 
@@ -266,9 +266,9 @@ ModuleRegistry.registerModules([
                               }
                             </div>
                           </div>
-                          @if (item.removed_by_customer) {
-                            <div class="removed-indicator">
-                              <span class="removed-label">{{ 'ORDERS.REMOVED_BY_CUSTOMER' | translate }}</span>
+                          @if (isItemRemoved(item)) {
+                            <div class=\"removed-indicator\">
+                              <span class=\"removed-label\">{{ (item.removed_by_staff ? 'ORDERS.REMOVED_BY_STAFF' : 'ORDERS.REMOVED_BY_CUSTOMER') | translate }}</span>
                               @if (item.removed_at) {
                                 <span class="removed-time">{{ formatTime(item.removed_at) }}</span>
                               }
@@ -466,10 +466,10 @@ ModuleRegistry.registerModules([
 
                       <div class="order-items">
                         @for (item of getSortedItems(order.items); track item.id) {
-                          <div class="order-item" [class.removed]="item.removed_by_customer">
+                          <div class="order-item" [class.removed]="isItemRemoved(item)">
                             <div class="item-name-row">
                               <span class="item-qty">
-                                @if (!item.removed_by_customer && item.status !== 'cancelled' && item.status !== 'delivered') {
+                                @if (!isItemRemoved(item) && item.status !== 'cancelled' && item.status !== 'delivered') {
                                   <span class="qty-stepper">
                                     <button type="button" class="qty-btn qty-minus" (click)="stepItemQuantity(order, item, -1)" [disabled]="item.quantity <= 1" aria-label="-1">−</button>
                                     <span class="qty-value">{{ item.quantity }}</span>
@@ -495,14 +495,14 @@ ModuleRegistry.registerModules([
                                 }
                               </span>
                               <div class="item-actions">
-                                @if (!item.removed_by_customer && item.status !== 'cancelled') {
+                                @if (!isItemRemoved(item) && item.status !== 'cancelled') {
                                   <button class="btn-remove-item" (click)="removeItemStaff(order.id, item.id!, item.status ?? 'pending')" [title]="'ORDERS.REMOVE_ITEM' | translate">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                       <path d="M18 6L6 18M6 6l12 12"/>
                                     </svg>
                                   </button>
                                 }
-                                @if (item.status && !item.removed_by_customer) {
+                                @if (item.status && !isItemRemoved(item)) {
                                   <div class="item-status-control">
                                     <button
                                       class="item-status-badge clickable"
@@ -552,9 +552,9 @@ ModuleRegistry.registerModules([
                                 }
                               </div>
                             </div>
-                            @if (item.removed_by_customer) {
-                              <div class="removed-indicator">
-                                <span class="removed-label">{{ 'ORDERS.REMOVED_BY_CUSTOMER' | translate }}</span>
+                            @if (isItemRemoved(item)) {
+                              <div class=\"removed-indicator\">
+                                <span class=\"removed-label\">{{ (item.removed_by_staff ? 'ORDERS.REMOVED_BY_STAFF' : 'ORDERS.REMOVED_BY_CUSTOMER') | translate }}</span>
                                 @if (item.removed_at) {
                                   <span class="removed-time">{{ formatTime(item.removed_at) }}</span>
                                 }
@@ -744,7 +744,7 @@ ModuleRegistry.registerModules([
                       </div>
                       <div class="order-items">
                         @for (item of getSortedItems(order.items); track item.id) {
-                          <div class="order-item" [class.removed]="item.removed_by_customer">
+                          <div class="order-item" [class.removed]="isItemRemoved(item)">
                             <div class="item-name-row">
                               <span class="item-qty">{{ item.quantity }}x</span>
                               <span class="item-name">{{ item.product_name }}</span>
@@ -3514,11 +3514,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
       quantity: l.quantity,
       source: 'product',
     }));
-    // Table orders go through the table's menu; Take Away and delivery have no table token.
-    const request = order.table_id != null && order.table_token
-      ? this.api.submitOrder(order.table_token, { items })
-      : this.api.addOrderItemsStaff(order.id, lines.map(l => ({ product_id: l.product_id, quantity: l.quantity })));
-    request.subscribe({
+    this.api.addOrderItemsStaff(order.id, lines.map(l => ({ product_id: l.product_id, quantity: l.quantity }))).subscribe({
       next: () => {
         this.addingItem.set(false);
         this.editAddOpen.set(false);
@@ -4344,6 +4340,11 @@ export class OrdersComponent implements OnInit, OnDestroy {
   private qtyTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
   /** +/- on a line: shows the new quantity at once and saves it shortly after the last tap. */
+  /** Removed from the order by the customer or by staff. */
+  isItemRemoved(item: OrderItem): boolean {
+    return !!(item.removed_by_customer || item.removed_by_staff);
+  }
+
   stepItemQuantity(order: Order, item: OrderItem, delta: number): void {
     const quantity = Math.max(1, item.quantity + delta);
     if (quantity === item.quantity || item.id == null) return;

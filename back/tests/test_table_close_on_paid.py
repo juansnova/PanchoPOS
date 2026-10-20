@@ -183,6 +183,30 @@ class TestTableCloseOnPaid(PgClientTestCase):
         self.assertIsNone(order.paid_at)
         self.assertNotEqual(order.status, models.OrderStatus.paid)
 
+    def test_staff_removed_items_only_listed_when_requested(self) -> None:
+        table, order = self._table_with_open_order("T11")
+        headers = _bearer_headers(self.waiter)
+        add = self.client.post(
+            f"/orders/{order.id}/items",
+            json={"items": [{"product_id": self.product.id, "quantity": 1}]},
+            headers=headers,
+        )
+        self.assertEqual(add.status_code, 200, add.text)
+        first = self.session.exec(
+            select(models.OrderItem).where(models.OrderItem.order_id == order.id).order_by(models.OrderItem.id)
+        ).first()
+        gone = self.client.delete(f"/menu/{table.token}/order/{order.id}/items/{first.id}", headers=headers)
+        self.assertEqual(gone.status_code, 200, gone.text)
+
+        def items(include: bool) -> list[dict]:
+            rows = self.client.get("/orders", params={"include_removed": str(include).lower()}, headers=headers).json()
+            return next(o for o in rows if o["id"] == order.id)["items"]
+
+        self.assertEqual(len(items(False)), 1)
+        both = items(True)
+        self.assertEqual(len(both), 2)
+        self.assertTrue(any(i.get("removed_by_staff") for i in both))
+
     def test_staff_extra_charge_added_to_bill(self) -> None:
         table, order = self._table_with_open_order("T9")
         url = f"/orders/{order.id}/extra-charge"

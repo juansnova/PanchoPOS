@@ -12347,7 +12347,8 @@ def list_orders(
                 select(models.OrderItem)
                 .where(
                     models.OrderItem.order_id == order.id,
-                    models.OrderItem.removed_by_customer == False
+                    models.OrderItem.removed_by_customer == False,
+                    models.OrderItem.removed_by_user_id.is_(None),
                 )
             ).all()
         
@@ -12428,6 +12429,7 @@ def list_orders(
                     "line_modifiers_summary": getattr(oi, "line_modifiers_summary", None) or None,
                     "status": oi.status.value if hasattr(oi.status, "value") else str(oi.status),
                     "removed_by_customer": oi.removed_by_customer,
+                    "removed_by_staff": oi.removed_by_user_id is not None,
                     "removed_at": oi.removed_at.isoformat() if oi.removed_at else None,
                     "removed_reason": oi.removed_reason,
                     "tax_id": getattr(oi, "tax_id", None),
