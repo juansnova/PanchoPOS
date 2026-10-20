@@ -3482,7 +3482,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   }
 
   canAddItemsToOrder(order: Order): boolean {
-    return order.status !== 'paid' && order.status !== 'cancelled';
+    return order.status !== 'cancelled';
   }
 
   updateEditItemQuantity(orderId: number, itemId: number, quantity: number) {

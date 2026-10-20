@@ -12191,8 +12191,11 @@ def staff_add_order_items(
     ).first()
     if not order or order.deleted_at is not None:
         raise HTTPException(status_code=404, detail="Order not found")
-    if order.paid_at is not None or order.status in (models.OrderStatus.paid, models.OrderStatus.cancelled):
-        raise HTTPException(status_code=400, detail="Cannot add items to a paid or cancelled order")
+    if order.status == models.OrderStatus.cancelled:
+        raise HTTPException(status_code=400, detail="Cannot add items to a cancelled order")
+    reopen = order.paid_at is not None or order.status in (models.OrderStatus.paid, models.OrderStatus.completed)
+    if reopen and order_pay_svc.amount_paid_cents(session, order.id) <= 0:
+        raise HTTPException(status_code=400, detail="Cannot add items to a paid order without recorded payments")
 
     from app.delivery_order_service import add_lines_to_order
 
@@ -12205,6 +12208,10 @@ def staff_add_order_items(
         detail = str(outcome.get("detail", "add_failed"))
         raise HTTPException(status_code=400, detail=detail)
 
+    if reopen:
+        # Payments already made stay on the order; the new lines are the balance still to collect.
+        order.paid_at = None
+        order.status = models.OrderStatus.pending
     all_items = session.exec(select(models.OrderItem).where(models.OrderItem.order_id == order_id)).all()
     recompute_order_status_preserving_payment(order, list(all_items))
     session.add(order)

@@ -168,10 +168,20 @@ class TestTableCloseOnPaid(PgClientTestCase):
         lines = self.session.exec(select(models.OrderItem).where(models.OrderItem.order_id == order.id)).all()
         self.assertEqual(sum(i.quantity for i in lines), 3)
         order.paid_at = datetime.now(timezone.utc)
+        order.status = models.OrderStatus.paid
         self.session.add(order)
         self.session.commit()
+        # Paid but with no recorded payment: refuse (would charge the whole order again).
         blocked = self.client.post(url, json=body, headers=_bearer_headers(self.waiter))
         self.assertEqual(blocked.status_code, 400)
+        self.session.add(models.OrderPayment(tenant_id=order.tenant_id, order_id=order.id, amount_cents=1000, payment_method="cash"))
+        self.session.commit()
+        reopened = self.client.post(url, json=body, headers=_bearer_headers(self.waiter))
+        self.assertEqual(reopened.status_code, 200, reopened.text)
+        self.session.expire_all()
+        order = self.session.get(models.Order, order.id)
+        self.assertIsNone(order.paid_at)
+        self.assertNotEqual(order.status, models.OrderStatus.paid)
 
     def test_staff_extra_charge_added_to_bill(self) -> None:
         table, order = self._table_with_open_order("T9")
