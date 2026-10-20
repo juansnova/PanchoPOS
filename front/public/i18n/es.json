@@ -656,6 +656,7 @@
     "SUBCATEGORY_ALREADY_EXISTS": "Esta subcategoría ya existe",
     "FAILED_TO_UPDATE_SUBCATEGORY": "No se pudo actualizar la subcategoría",
     "RECIPE_TITLE": "Receta (descuento de inventario)",
+    "RECIPE_ADD_TITLE": "Agregar ingrediente",
     "RECIPE_HINT": "Define cuánto de cada artículo del inventario se descuenta al vender este producto (ej. 1 unidad de Pollo por cada Pollo entero asado). Se guarda al instante.",
     "RECIPE_LOADING": "Cargando receta…",
     "RECIPE_NONE": "Este producto aún no descuenta inventario.",

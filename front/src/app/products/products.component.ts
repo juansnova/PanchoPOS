@@ -259,63 +259,83 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                   </section>
 
                    @if (canEditProducts() && showAddForm() && !editingProduct()?.id) {
-                     <p class="field-hint">{{ 'PRODUCTS.RECIPE_AFTER_SAVE' | translate }}</p>
+                     <p class="pf-recipe-note">{{ 'PRODUCTS.RECIPE_AFTER_SAVE' | translate }}</p>
                    }
 
                    @if (canEditProducts() && editingProduct()?.id) {
-                     <div class="form-group product-recipe-section">
-                       <label>{{ 'PRODUCTS.RECIPE_TITLE' | translate }}</label>
-                       <p class="field-hint">{{ 'PRODUCTS.RECIPE_HINT' | translate }}</p>
+                     <section class="pf-recipe product-recipe-section">
+                       <header class="pf-recipe-head">
+                         <span class="pf-recipe-icon" aria-hidden="true">
+                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18.2A2 2 0 006.3 21h11.4a2 2 0 001.7-2.8L14 9.5V3"/><path d="M7.5 15h9"/></svg>
+                         </span>
+                         <div class="pf-recipe-titles">
+                           <h4>{{ 'PRODUCTS.RECIPE_TITLE' | translate }}</h4>
+                           <p>{{ 'PRODUCTS.RECIPE_HINT' | translate }}</p>
+                         </div>
+                         @if (recipeItems().length > 0) {
+                           <span class="pf-recipe-count">{{ recipeItems().length }}</span>
+                         }
+                       </header>
+
                        @if (recipeLoading()) {
                          <p class="questions-loading">{{ 'PRODUCTS.RECIPE_LOADING' | translate }}</p>
                        } @else {
                          @if (recipeItems().length > 0) {
-                           <ul class="question-list" role="list">
+                           <ul class="pf-ingredients" role="list">
                              @for (ri of recipeItems(); track ri.id; let idx = $index) {
-                               <li class="question-row">
-                                 <div class="question-row-main">
-                                   <span class="question-label-text">{{ ri.inventory_item_name }}</span>
-                                   <span class="question-type-badge">{{ ri.quantity_required }} {{ unitKey(ri.unit) | translate }}</span>
-                                 </div>
-                                 <div class="question-row-actions">
-                                   <button type="button" class="btn btn-ghost btn-sm btn-danger-ghost" (click)="removeRecipeRow(idx)" [disabled]="recipeSaving()">{{ 'PRODUCTS.QUESTION_DELETE' | translate }}</button>
-                                 </div>
+                               <li class="pf-ing">
+                                 <span class="pf-ing-avatar" aria-hidden="true">{{ (ri.inventory_item_name || '?').charAt(0).toUpperCase() }}</span>
+                                 <span class="pf-ing-name">{{ ri.inventory_item_name }}</span>
+                                 <span class="pf-ing-qty">{{ ri.quantity_required }} {{ unitKey(ri.unit) | translate }}</span>
+                                 <button type="button" class="pf-ing-del" (click)="removeRecipeRow(idx)" [disabled]="recipeSaving()"
+                                   [attr.title]="'PRODUCTS.QUESTION_DELETE' | translate" [attr.aria-label]="'PRODUCTS.QUESTION_DELETE' | translate">
+                                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                 </button>
                                </li>
                              }
                            </ul>
                          } @else {
-                           <p class="questions-empty">{{ 'PRODUCTS.RECIPE_NONE' | translate }}</p>
+                           <div class="pf-recipe-empty">
+                             <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3.3 7.5L12 12.5l8.7-5M12 22V12.5"/></svg>
+                             <span>{{ 'PRODUCTS.RECIPE_NONE' | translate }}</span>
+                           </div>
                          }
+
                          @if (inventoryItems().length === 0) {
                            <p class="field-hint">{{ 'PRODUCTS.RECIPE_NO_INVENTORY_ITEMS' | translate }}</p>
                          } @else {
-                           <div class="form-row recipe-add-row">
-                             <div class="form-group flex-grow">
-                               <label for="recipe-item">{{ 'PRODUCTS.RECIPE_ITEM_LABEL' | translate }}</label>
-                               <select id="recipe-item" name="recipe-item" [(ngModel)]="recipeDraft.inventory_item_id" [disabled]="recipeSaving()">
-                                 <option [ngValue]="null">-- {{ 'COMMON.SELECT' | translate }} --</option>
-                                 @for (inv of inventoryItems(); track inv.id) {
-                                   <option [ngValue]="inv.id">{{ inv.name }} ({{ inv.sku }})</option>
-                                 }
-                               </select>
+                           <div class="pf-recipe-add">
+                             <h5>{{ 'PRODUCTS.RECIPE_ADD_TITLE' | translate }}</h5>
+                             <div class="pf-recipe-fields">
+                               <div class="form-group pf-rf-item">
+                                 <label for="recipe-item">{{ 'PRODUCTS.RECIPE_ITEM_LABEL' | translate }}</label>
+                                 <select id="recipe-item" name="recipe-item" [(ngModel)]="recipeDraft.inventory_item_id" [disabled]="recipeSaving()">
+                                   <option [ngValue]="null">-- {{ 'COMMON.SELECT' | translate }} --</option>
+                                   @for (inv of inventoryItems(); track inv.id) {
+                                     <option [ngValue]="inv.id">{{ inv.name }} ({{ inv.sku }})</option>
+                                   }
+                                 </select>
+                               </div>
+                               <div class="form-group pf-rf-qty">
+                                 <label for="recipe-qty">{{ 'PRODUCTS.RECIPE_QTY_LABEL' | translate }}</label>
+                                 <input id="recipe-qty" type="number" name="recipe-qty" min="0.01" step="0.01" [(ngModel)]="recipeDraft.quantity_required" [disabled]="recipeSaving()">
+                               </div>
+                               <div class="form-group pf-rf-unit">
+                                 <label for="recipe-unit">{{ 'PRODUCTS.RECIPE_UNIT_LABEL' | translate }}</label>
+                                 <select id="recipe-unit" name="recipe-unit" [(ngModel)]="recipeDraft.unit" [disabled]="recipeSaving()">
+                                   @for (unit of recipeUnits; track unit) {
+                                     <option [value]="unit">{{ unitKey(unit) | translate }}</option>
+                                   }
+                                 </select>
+                               </div>
                              </div>
-                             <div class="form-group form-group-sm">
-                               <label for="recipe-qty">{{ 'PRODUCTS.RECIPE_QTY_LABEL' | translate }}</label>
-                               <input id="recipe-qty" type="number" name="recipe-qty" min="0.01" step="0.01" [(ngModel)]="recipeDraft.quantity_required" [disabled]="recipeSaving()">
-                             </div>
-                             <div class="form-group form-group-sm">
-                               <label for="recipe-unit">{{ 'PRODUCTS.RECIPE_UNIT_LABEL' | translate }}</label>
-                               <select id="recipe-unit" name="recipe-unit" [(ngModel)]="recipeDraft.unit" [disabled]="recipeSaving()">
-                                 @for (unit of recipeUnits; track unit) {
-                                   <option [value]="unit">{{ unitKey(unit) | translate }}</option>
-                                 }
-                               </select>
-                             </div>
-                             <button type="button" class="btn btn-secondary btn-sm" (click)="addRecipeRow()" [disabled]="recipeSaving() || recipeDraft.inventory_item_id == null">{{ 'PRODUCTS.RECIPE_ADD' | translate }}</button>
+                             <button type="button" class="pf-recipe-btn" (click)="addRecipeRow()" [disabled]="recipeSaving() || recipeDraft.inventory_item_id == null">
+                               <span aria-hidden="true">+</span> {{ 'PRODUCTS.RECIPE_ADD' | translate }}
+                             </button>
                            </div>
                          }
                        }
-                     </div>
+                     </section>
                    }
 
                    <div class="form-actions">
