@@ -139,8 +139,12 @@ ModuleRegistry.registerModules([
                   <div class="order-card" [id]="'order-card-' + order.id" [class]="'status-' + order.status + (orderCardHasOpenStatusDropdown(order.id) ? ' status-dropdown-open' : '')">
                     <div class="order-header">
                       <div class="order-header-main">
-                        <span class="order-id">#{{ order.id }}</span>
-                        <span class="order-table">{{ order.table_name }}</span>
+                        <div class="order-top">
+                          <span class="order-id">#{{ order.id }}</span>
+                          <span class="order-table">{{ order.table_name }}</span>
+                          <span class="order-status-pill" [class]="order.status">{{ getStatusLabel(order.status) }}</span>
+                        </div>
+                        <div class="order-meta">
                         @if (orderChannelBadgeKey(order); as channelKey) {
                           <span class="order-channel-badge" [class.marketplace]="isMarketplaceDelivery(order)">{{ channelKey | translate }}</span>
                         }
@@ -154,6 +158,7 @@ ModuleRegistry.registerModules([
                           <span class="order-urgent-badge">{{ 'ORDERS.URGENT_BADGE' | translate }}</span>
                         }
                         <span class="order-time" [title]="formatExactTime(order.created_at)">{{ 'ORDERS.ORDER_TIME' | translate }}: {{ formatOrderTime(order.created_at) }}</span>
+                        </div>
                       </div>
                     </div>
 
@@ -421,8 +426,12 @@ ModuleRegistry.registerModules([
                     <div class="order-card" [id]="'order-card-' + order.id" [class]="'status-' + order.status + (orderCardHasOpenStatusDropdown(order.id) ? ' status-dropdown-open' : '')">
                       <div class="order-header">
                         <div class="order-header-main">
-                          <span class="order-id">#{{ order.id }}</span>
-                          <span class="order-table">{{ order.table_name }}</span>
+                          <div class="order-top">
+                            <span class="order-id">#{{ order.id }}</span>
+                            <span class="order-table">{{ order.table_name }}</span>
+                            <span class="order-status-pill" [class]="order.status">{{ getStatusLabel(order.status) }}</span>
+                          </div>
+                          <div class="order-meta">
                           @if (orderChannelBadgeKey(order); as channelKey) {
                             <span class="order-channel-badge" [class.marketplace]="isMarketplaceDelivery(order)">{{ channelKey | translate }}</span>
                           }
@@ -436,6 +445,7 @@ ModuleRegistry.registerModules([
                             <span class="order-urgent-badge">{{ 'ORDERS.URGENT_BADGE' | translate }}</span>
                           }
                           <span class="order-time" [title]="formatExactTime(order.created_at)">{{ 'ORDERS.ORDER_TIME' | translate }}: {{ formatOrderTime(order.created_at) }}</span>
+                          </div>
                         </div>
                       </div>
 
@@ -699,8 +709,12 @@ ModuleRegistry.registerModules([
                     <div class="order-card" [id]="'order-card-' + order.id" [class]="'status-' + order.status + (orderCardHasOpenStatusDropdown(order.id) ? ' status-dropdown-open' : '')">
                       <div class="order-header">
                         <div class="order-header-main">
-                          <span class="order-id">#{{ order.id }}</span>
-                          <span class="order-table">{{ order.table_name }}</span>
+                          <div class="order-top">
+                            <span class="order-id">#{{ order.id }}</span>
+                            <span class="order-table">{{ order.table_name }}</span>
+                            <span class="order-status-pill" [class]="order.status">{{ getStatusLabel(order.status) }}</span>
+                          </div>
+                          <div class="order-meta">
                           @if (orderChannelBadgeKey(order); as channelKey) {
                             <span class="order-channel-badge" [class.marketplace]="isMarketplaceDelivery(order)">{{ channelKey | translate }}</span>
                           }
@@ -711,6 +725,7 @@ ModuleRegistry.registerModules([
                             <span class="order-urgent-badge">{{ 'ORDERS.URGENT_BADGE' | translate }}</span>
                           }
                           <span class="order-time" [title]="formatExactTime(order.created_at)">{{ 'ORDERS.ORDER_TIME' | translate }}: {{ formatOrderTime(order.created_at) }}</span>
+                          </div>
                         </div>
                       </div>
                       <div class="order-delivery-meta">
@@ -2443,6 +2458,98 @@ ModuleRegistry.registerModules([
       outline: none;
       border-color: var(--color-primary);
       box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    /* ===== Order card redesign ===== */
+    .order-card {
+      --st: var(--color-text-muted);
+      --st-soft: rgba(120, 113, 108, 0.12);
+      border: 1px solid var(--color-border);
+      border-left-width: 1px;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px -12px rgba(0,0,0,.18);
+      transition: box-shadow .2s ease, transform .2s ease;
+    }
+    .order-card::before {
+      content: ''; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--st);
+    }
+    .order-card:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 18px 34px -14px rgba(0,0,0,.28); }
+    .order-card.status-dropdown-open { overflow: visible; }
+    .order-card.status-pending { --st: #f59e0b; --st-soft: rgba(245, 158, 11, 0.14); }
+    .order-card.status-preparing { --st: #3b82f6; --st-soft: rgba(59, 130, 246, 0.14); }
+    .order-card.status-ready { --st: #16a34a; --st-soft: rgba(22, 163, 74, 0.14); }
+    .order-card.status-paid { --st: #16a34a; --st-soft: rgba(22, 163, 74, 0.14); }
+    .order-card.status-completed { --st: #78716c; --st-soft: rgba(120, 113, 108, 0.12); }
+    .order-card.status-cancelled { --st: #dc2626; --st-soft: rgba(220, 38, 38, 0.1); }
+
+    .order-card .order-header {
+      display: block; margin: 0; padding: 22px 18px 14px;
+      background: linear-gradient(180deg, var(--st-soft), transparent);
+      border-bottom: 0;
+    }
+    .order-card .order-header-main { gap: 8px; }
+    .order-card .order-top { display: flex; align-items: center; gap: 10px; }
+    .order-card .order-id {
+      flex: none; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 800;
+      background: var(--st); color: #fff; letter-spacing: .02em;
+    }
+    .order-card .order-table {
+      min-width: 0; font-size: 1.2rem; font-weight: 800; line-height: 1.15; color: var(--color-text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .order-card .order-status-pill {
+      margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 999px; font-size: .75rem; font-weight: 800; letter-spacing: .03em;
+      text-transform: uppercase; background: var(--st-soft); color: var(--st);
+    }
+    .order-card .order-status-pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--st); }
+    .order-card .order-status-pill.preparing::before { animation: oc-pulse 1.4s ease-in-out infinite; }
+    @keyframes oc-pulse { 50% { transform: scale(1.6); opacity: .45; } }
+    .order-card .order-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+    .order-card .order-meta > * { margin: 0; }
+    .order-card .order-customer {
+      padding: 2px 10px; border-radius: 999px; background: var(--color-primary-light); color: var(--color-primary);
+      font-size: .78rem; font-weight: 600;
+    }
+    .order-card .order-channel-badge { border-radius: 999px; padding: 2px 10px; }
+    .order-card .order-time { font-size: .78rem; margin-left: auto; }
+    .order-card .order-urgent-badge { border-radius: 999px; }
+
+    .order-card .order-items { padding: 0 14px; }
+    .order-card .order-item { padding: 12px 4px; }
+    .order-card .order-item:not(:last-child) { border-bottom: 1px dashed var(--color-border); }
+    .order-card .item-qty input.quantity-input {
+      width: 46px; height: 32px; border-radius: 10px; font-weight: 800; font-size: .9rem;
+      background: var(--color-primary-light); border-color: transparent; color: var(--color-primary);
+    }
+    .order-card .item-name { font-size: 1rem; font-weight: 700; }
+    .order-card .item-price { font-size: .82rem; }
+    .order-card .order-notes-banner { border-radius: 12px; margin: 4px 14px 0; border-left-width: 4px; }
+
+    .order-card .order-footer {
+      margin: 12px 0 0; padding: 14px 16px 16px; border-top: 0;
+      background: linear-gradient(180deg, transparent, var(--st-soft));
+      flex-direction: column; align-items: stretch; gap: 12px;
+    }
+    .order-card .order-footer-left { flex-direction: row; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; }
+    .order-card .order-total {
+      display: flex; align-items: baseline; gap: 8px; width: 100%; justify-content: space-between;
+      font-size: 1.45rem; font-weight: 800; color: var(--color-text); font-variant-numeric: tabular-nums;
+    }
+    .order-card .order-actions { justify-content: stretch; gap: 8px; }
+    .order-card .order-actions .btn { flex: 1 1 auto; justify-content: center; min-height: 44px; border-radius: 14px; font-weight: 700; }
+    .order-card .btn-edit-order { background: var(--color-surface); border: 1px solid var(--color-border); }
+    .order-card .btn-edit-order:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .order-card .btn-success {
+      flex: 2 1 140px; background: linear-gradient(135deg, #22c55e, #15803d); color: #fff;
+      box-shadow: 0 6px 14px -6px rgba(21, 128, 61, .7);
+    }
+    .order-card .btn-success:hover { filter: brightness(1.06); transform: translateY(-1px); }
+    .order-card .btn-delete-order, .order-card .btn-menu-link, .order-card .btn-print { flex: 0 0 auto; border-radius: 14px; }
+    @media (prefers-reduced-motion: reduce) {
+      .order-card, .order-card:hover { transition: none; transform: none; }
+      .order-card .order-status-pill.preparing::before { animation: none; }
     }
   `]
 })
