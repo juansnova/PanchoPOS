@@ -759,11 +759,12 @@ $cart-expanded-max: 60vh;
   }
 
   .quantity-input {
-    width: 48px;
+    width: 60px;
+    min-height: 44px; // touch target on phone/tablet
     padding: 4px 6px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
-    font-size: 0.875rem;
+    font-size: 1rem; // >=16px avoids iOS zoom on focus
     text-align: center;
     background: var(--color-surface);
     color: var(--color-text);
@@ -832,9 +833,20 @@ $cart-expanded-max: 60vh;
     border: none;
     color: var(--color-error);
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px; // touch target on phone/tablet
+    min-height: 44px;
     padding: 4px;
-    opacity: 0.6;
+    opacity: 0.8;
     transition: opacity 0.15s;
+    -webkit-tap-highlight-color: transparent;
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
 
     &:hover {
       opacity: 1;
