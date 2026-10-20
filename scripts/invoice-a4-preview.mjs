@@ -4,7 +4,21 @@
 import { readdirSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildInvoiceA4Html } from '../front/src/app/orders/invoice-a4.ts';
+import { register } from 'node:module';
+
+// The app imports './x' without extension (Angular bundler); let Node resolve those to .ts too.
+register(
+  'data:text/javascript,' +
+    encodeURIComponent(
+      `export async function resolve(s, c, n) {
+        try { return await n(s, c); } catch (e) {
+          if (e.code === 'ERR_MODULE_NOT_FOUND' && s.startsWith('.')) return n(s + '.ts', c);
+          throw e;
+        }
+      }`,
+    ),
+);
+const { buildInvoiceA4Html } = await import('../front/src/app/orders/invoice-a4.ts');
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'tmp', 'ticket-preview');
