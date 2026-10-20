@@ -1202,7 +1202,9 @@
     "GROUP_SIBLING_ACTIVITY_MESSAGE": "Grupo unido: {{names}} ya tiene una sesión activa o un pedido abierto. Use ese ticket salvo que necesite otro aparte.",
     "GROUP_SIBLING_ACTIVITY_CONFIRM": "Continuar de todos modos",
     "GROUP_SIBLING_FLOOR_DOT": "Otra mesa de este grupo tiene sesión activa o pedido abierto",
-    "ORDER_CODE": "Código"
+    "ORDER_CODE": "Código",
+    "SHOW_QR": "Ver QR",
+    "HIDE_QR": "Ocultar QR"
   },
   "TABLE_STATUS": {
     "available": "Disponible",

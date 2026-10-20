@@ -274,16 +274,13 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
                       <button type="button" class="icon-btn" (click)="cancelEdit()" [title]="'COMMON.CANCEL' | translate">✕</button>
                     } @else {
                       <button type="button" class="icon-btn icon-btn-edit" (click)="startEdit(table)" [title]="'COMMON.EDIT' | translate">✎</button>
-                      @if (isTakeAway(table)) {
-                      } @else if (table.is_active) {
+                      @if (table.is_active) {
                         <button type="button" class="btn btn-sm btn-warning" (click)="confirmCloseTable(table)" [disabled]="activatingTableId() === table.id" [title]="'TABLES.CLOSE_TABLE' | translate">⌫</button>
                       } @else {
                         <button type="button" class="btn btn-sm btn-success" (click)="activateTableSession(table)" [disabled]="activatingTableId() === table.id" [title]="'TABLES.ACTIVATE' | translate">▶</button>
                       }
-                      @if (!isTakeAway(table)) {
                       <button type="button" class="btn btn-secondary btn-sm" (click)="openStaffMenu(table)"
                         [title]="'TABLES.OPEN_MENU' | translate">↗</button>
-                      }
                       <button type="button" class="icon-btn" (click)="copyLink(table)" [title]="'COMMON.COPY' | translate">⎘</button>
                       <button type="button" class="icon-btn icon-btn-danger" (click)="deleteTable(table)" [title]="'COMMON.DELETE' | translate">🗑</button>
                     }
@@ -543,27 +540,39 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
               </div>
 
               <div class="qr-section">
-                <div class="qr-card">
-                  @if (tenantSettings() && !compact) {
-                    <div class="qr-header">
-                      <div class="company-name">{{ tenantSettings()!.name }}</div>
-                      @if (tenantSettings()!.phone) {
-                        <div class="company-phone">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
-                          </svg>
-                          {{ tenantSettings()!.phone }}
-                        </div>
-                      }
+                <button type="button" class="qr-toggle" (click)="toggleQr(table)" (dblclick)="$event.stopPropagation()"
+                  [attr.aria-expanded]="isQrOpen(table)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    <path d="M14 14h3v3M21 14v.01M14 21h.01M17 21h4v-4"/>
+                  </svg>
+                  <span>{{ (isQrOpen(table) ? 'TABLES.HIDE_QR' : 'TABLES.SHOW_QR') | translate }}</span>
+                  <span class="qr-toggle-chevron" aria-hidden="true">{{ isQrOpen(table) ? '▾' : '▸' }}</span>
+                </button>
+                @if (isQrOpen(table)) {
+                  <div class="qr-card">
+                    @if (tenantSettings() && !compact) {
+                      <div class="qr-header">
+                        <div class="company-name">{{ tenantSettings()!.name }}</div>
+                        @if (tenantSettings()!.phone) {
+                          <div class="company-phone">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                            </svg>
+                            {{ tenantSettings()!.phone }}
+                          </div>
+                        }
+                      </div>
+                    }
+                    <div class="qr-code-wrapper">
+                      <qrcode [qrdata]="getMenuUrl(table)" [width]="compact ? 96 : 180" [errorCorrectionLevel]="'M'" cssClass="qr-code"></qrcode>
                     </div>
-                  }
-                  <div class="qr-code-wrapper">
-                    <qrcode [qrdata]="getMenuUrl(table)" [width]="compact ? 96 : 180" [errorCorrectionLevel]="'M'" cssClass="qr-code"></qrcode>
+                    <div class="qr-footer">
+                      <div class="table-number">{{ table.name }}</div>
+                    </div>
                   </div>
-                  <div class="qr-footer">
-                    <div class="table-number">{{ table.name }}</div>
-                  </div>
-                </div>
+                }
               </div>
 
               <!-- Session Control Actions -->
@@ -571,8 +580,7 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
                 class="session-actions"
                 [class.session-actions--inactive]="!table.is_active"
                 [class.session-actions--single]="table.is_active">
-                @if (isTakeAway(table)) {
-                } @else if (table.is_active) {
+                @if (table.is_active) {
                   <button
                     type="button"
                     class="btn btn-sm btn-warning"
@@ -604,10 +612,8 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
               </div>
 
               <div class="table-actions">
-                @if (!isTakeAway(table)) {
                 <button type="button" class="btn btn-secondary btn-sm" (click)="openStaffMenu(table)"
                   >{{ 'TABLES.OPEN_MENU' | translate }}</button>
-                }
                 <button 
                   class="btn btn-sm" 
                   [class.btn-ghost]="copiedTableId() !== table.id"
@@ -924,7 +930,16 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
     
     .header-actions { display: flex; gap: var(--space-1); }
     
-    .qr-section { margin-bottom: var(--space-4); }
+    .qr-section { margin-bottom: var(--space-3); }
+    .qr-toggle {
+      display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; padding: 0 12px;
+      border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: transparent;
+      color: var(--color-text-muted); font: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer;
+      touch-action: manipulation; transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .qr-toggle:hover { background: var(--color-primary-light); color: var(--color-primary); border-color: var(--color-primary); }
+    .qr-toggle-chevron { margin-left: auto; font-size: 0.75rem; }
+    .qr-section .qr-card { margin-top: var(--space-2); }
     .qr-card {
       background: white; border: 2px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
@@ -1160,6 +1175,19 @@ export class TablesComponent implements OnInit {
   private viewResolvedFromQuery = false;
 
   tables = signal<Table[]>([]);
+  /** Tables whose QR card is expanded (collapsed by default). */
+  private qrOpenIds = signal<Set<number>>(new Set());
+  isQrOpen(table: Table): boolean {
+    return table.id != null && this.qrOpenIds().has(table.id);
+  }
+  toggleQr(table: Table): void {
+    if (table.id == null) return;
+    this.qrOpenIds.update(ids => {
+      const next = new Set(ids);
+      if (!next.delete(table.id!)) next.add(table.id!);
+      return next;
+    });
+  }
   floors = signal<Floor[]>([]);
   loading = signal(true);
   error = signal('');
@@ -1405,7 +1433,7 @@ export class TablesComponent implements OnInit {
           this.selectedFloorId = floors[0].id!;
         }
         this.api.getTables().subscribe({
-          next: tables => { this.tables.set(tables); this.loading.set(false); },
+          next: tables => { this.tables.set(this.withoutTakeAway(tables)); this.loading.set(false); },
           error: err => { this.error.set(this.apiErr.fromHttpError(err, 'COMMON.API_REQUEST_FAILED')); this.loading.set(false); }
         });
       },
@@ -1416,7 +1444,7 @@ export class TablesComponent implements OnInit {
   /** Silent reload of table state (no spinner, keeps selected floor). */
   private refreshTables() {
     this.api.getTables().subscribe({
-      next: tables => this.tables.set(tables),
+      next: tables => this.tables.set(this.withoutTakeAway(tables)),
       error: () => {},
     });
   }
@@ -1778,11 +1806,10 @@ export class TablesComponent implements OnInit {
     return `${window.location.origin}/menu/${table.token}`;
   }
 
-  /** Take Away is the shared counter; its orders are created only from Staff > Orders > Venta en barra. */
-  isTakeAway(table: Table): boolean {
-    return ['take away', 'takeaway', 'take-away', 'home ordering'].includes(
-      (table.name || '').trim().toLowerCase(),
-    );
+  /** Take Away is the shared counter (orders come from Staff > Orders > Venta en barra): not listed here. */
+  private withoutTakeAway(tables: Table[]): Table[] {
+    const counter = ['take away', 'takeaway', 'take-away', 'home ordering'];
+    return tables.filter(t => !counter.includes((t.name || '').trim().toLowerCase()));
   }
 
   openStaffMenu(table: Table) {
