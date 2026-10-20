@@ -580,30 +580,6 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
                   </div>
                 }
 
-                @if (canOpenStaffOrders() && selectedTable()?.id != null) {
-                  <div class="panel-order-link">
-                    @if (selectedTable()!.active_order_id) {
-                      <a
-                        class="btn btn-primary panel-order-btn"
-                        routerLink="/staff/orders"
-                        [queryParams]="{ focusOrder: selectedTable()!.active_order_id, table: selectedTable()!.id }"
-                        data-testid="canvas-open-order-btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6"/></svg>
-                        {{ 'TABLES.OPEN_STAFF_ORDER' | translate }}
-                      </a>
-                    } @else {
-                      <a
-                        class="btn btn-primary panel-order-btn"
-                        routerLink="/staff/orders"
-                        [queryParams]="{ focusTableId: selectedTable()!.id, table: selectedTable()!.id }"
-                        data-testid="canvas-table-orders-btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6"/></svg>
-                        {{ 'TABLES.VIEW_TABLE_ORDERS' | translate }}
-                      </a>
-                    }
-                  </div>
-                }
-
                 <div class="pp-card">
                   <div class="form-group">
                     <label>{{ 'TABLES.NAME' | translate }}</label>
@@ -647,6 +623,30 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
                     }
                   </div>
                 </div>
+
+                @if (canOpenStaffOrders() && selectedTable()?.id != null) {
+                  <div class="panel-order-link">
+                    @if (selectedTable()!.active_order_id) {
+                      <a
+                        class="btn btn-primary panel-order-btn"
+                        routerLink="/staff/orders"
+                        [queryParams]="{ focusOrder: selectedTable()!.active_order_id, table: selectedTable()!.id }"
+                        data-testid="canvas-open-order-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6"/></svg>
+                        {{ 'TABLES.OPEN_STAFF_ORDER' | translate }}
+                      </a>
+                    } @else {
+                      <a
+                        class="btn btn-primary panel-order-btn"
+                        routerLink="/staff/orders"
+                        [queryParams]="{ focusTableId: selectedTable()!.id, table: selectedTable()!.id }"
+                        data-testid="canvas-table-orders-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6"/></svg>
+                        {{ 'TABLES.VIEW_TABLE_ORDERS' | translate }}
+                      </a>
+                    }
+                  </div>
+                }
 
                 <button class="delete-btn" (click)="deleteSelectedTable()">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
