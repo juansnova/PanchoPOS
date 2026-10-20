@@ -116,7 +116,6 @@ export function buildInvoiceA4Html(d: InvoiceA4Data): string {
 html, body { margin: 0; background: #e9e3d6; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 body { font-family: 'Segoe UI', system-ui, -apple-system, Helvetica, Arial, sans-serif; color: ${INK}; }
 .page { position: relative; display: flex; flex-direction: column; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 16mm 18mm 12mm; background: ${CREAM}; overflow: hidden; }
-@media print { html, body { background: ${CREAM}; } .page { margin: 0; } }
 ${DECOR_CSS}
 .content { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; }
 .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10mm; }
@@ -151,6 +150,18 @@ tr { page-break-inside: avoid; }
 .t-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 2mm; padding-top: 3mm; border-top: 1.5px solid ${INK}; font-size: 15pt; font-weight: 800; }
 .t-total b { color: ${ACCENT}; font-size: 17pt; }
 .stamp { margin-top: 3mm; text-align: center; font-size: 9pt; letter-spacing: 3px; font-weight: 700; color: ${ACCENT}; }
+@media print {
+  html, body { background: #fff; }
+  .page { margin: 0; background: #fff; }
+  /* Black & white printers: no colour tints, darker lines, logo forced to solid black */
+  .brand img { filter: grayscale(1) brightness(.6) contrast(5); }
+  .deco { filter: grayscale(1) contrast(1.35); }
+  .brand h1::after { background: #111; }
+  .info .no b, .contact .thanks, .stamp, .t-total b, .bill h4 { color: #111; }
+  thead th, tbody tr:nth-child(even) td { background: #ececec; }
+  .totals { background: #f1f1f1; border: 1px solid #9a9a9a; }
+  .info p, .bill p, .contact p, .c-desc small, .t-row em, .t-row small { color: #444; }
+}
 </style></head><body>
 <div class="page">
 ${DECOR_HTML}

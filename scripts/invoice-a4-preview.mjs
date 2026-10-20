@@ -75,4 +75,6 @@ const html = buildInvoiceA4Html({
   formatMoney: money,
 });
 writeFileSync(join(out, 'factura-a4.html'), html, 'utf8');
+// Same page with the print-only rules applied, to check how a black & white printer will render it.
+writeFileSync(join(out, 'factura-a4-bn.html'), html.replace('@media print', '@media all'), 'utf8');
 console.log('wrote', join(out, 'factura-a4.html'));
