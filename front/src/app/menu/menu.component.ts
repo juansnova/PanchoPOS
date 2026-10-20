@@ -139,6 +139,8 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   // Table session
   requiresOrderCode = signal(false);
+  /** Logged-in waiter/owner: may edit items even after they reach the kitchen. */
+  isStaff = signal(false);
   orderCode = signal('');
   tableIsActive = signal(true);  // Default true for backward compatibility
 
@@ -309,6 +311,7 @@ export class MenuComponent implements OnInit, OnDestroy {
         // Table session status
         this.tableIsActive.set(data.table_is_active !== false);  // Default true for backward compatibility
         this.requiresOrderCode.set(data.requires_order_code === true);
+        this.isStaff.set(data.is_staff === true);
         if (!this.orderCode()) {
           try {
             this.orderCode.set(sessionStorage.getItem(`order_code_${this.tableToken}`) ?? '');
@@ -1282,10 +1285,19 @@ export class MenuComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Customers edit only pending items; staff can edit any item that is not delivered/cancelled. */
+  canEditItem(item: { status?: string; itemId?: number }): boolean {
+    if (this.isPaid() || !item.itemId) return false;
+    return this.isStaff() ? item.status !== 'cancelled' : item.status === 'pending';
+  }
+
   canCancelOrder(order: PlacedOrder): boolean {
     // Can cancel if order is pending and has no items in preparing/ready/delivered status
     if (order.status === 'paid' || order.status === 'completed' || order.status === 'cancelled') {
       return false;
+    }
+    if (this.isStaff()) {
+      return true;
     }
     // Check if any items are being prepared, ready, or delivered
     const hasNonPendingItems = order.items.some(item =>

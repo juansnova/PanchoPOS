@@ -206,7 +206,7 @@
             <div class="order-item-row">
               <div class="item-status-dot" [class]="'status-' + (item.status || 'pending')"></div>
               <span class="item-qty-badge">
-                @if (!isPaid() && item.status === 'pending' && item.itemId) {
+                @if (canEditItem(item)) {
                 <input type="number" [value]="item.quantity"
                   (change)="updateItemQuantity(order.id, item.itemId!, +$any($event.target).value)" min="1"
                   class="quantity-input" />
@@ -226,7 +226,7 @@
                 {{ getItemStatusLabel(item.status) }}
               </span>
               }
-              @if (!isPaid() && item.itemId && item.status === 'pending') {
+              @if (canEditItem(item)) {
               <button class="remove-item-btn" (click)="removeItemFromOrder(order.id, item.itemId!)" title="Remove item">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M18 6L6 18M6 6l12 12" />

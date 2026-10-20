@@ -6,6 +6,8 @@ from datetime import timedelta
 
 from pg_client_mixin import PgClientTestCase
 
+from sqlmodel import select
+
 from app import models, security
 
 
@@ -136,6 +138,24 @@ class TestTableCloseOnPaid(PgClientTestCase):
         self.assertFalse(self.client.get(f"/menu/{table.token}", headers=headers).json()["requires_order_code"])
         ok = self.client.post(f"/menu/{table.token}/order", json=body, headers=headers)
         self.assertEqual(ok.status_code, 200, ok.text)
+
+    def test_staff_edits_preparing_item_but_guest_cannot(self) -> None:
+        table, order = self._table_with_open_order("T8")
+        item = self.session.exec(
+            select(models.OrderItem).where(models.OrderItem.order_id == order.id)
+        ).first()
+        item.status = models.OrderItemStatus.preparing
+        self.session.add(item)
+        self.session.commit()
+        url = f"/menu/{table.token}/order/{order.id}/items/{item.id}"
+        params = {"session_id": "close-on-paid-session"}
+        self.assertEqual(self.client.put(url, params=params, json={"quantity": 3}).status_code, 400)
+        self.assertEqual(self.client.delete(url, params=params).status_code, 400)
+        self.assertTrue(self.client.get(f"/menu/{table.token}", headers=_bearer_headers(self.waiter)).json()["is_staff"])
+        ok = self.client.put(url, params={}, json={"quantity": 3}, headers=_bearer_headers(self.waiter))
+        self.assertEqual(ok.status_code, 200, ok.text)
+        gone = self.client.delete(url, headers=_bearer_headers(self.waiter))
+        self.assertEqual(gone.status_code, 200, gone.text)
 
     def _idle_table(self, name: str, *, minutes_active: int) -> models.Table:
         from datetime import datetime, timedelta, timezone

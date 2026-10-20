@@ -1202,6 +1202,7 @@ export interface MenuResponse {
   table_name: string;
   /** True for dine-in tables: placing an order needs the code staff see on the Tables grid. */
   requires_order_code?: boolean;
+  is_staff?: boolean;
   table_id: number;
   tenant_id: number;
   tenant_name: string;

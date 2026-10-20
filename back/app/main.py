@@ -10718,6 +10718,7 @@ def get_menu(
         "table_id": table.id,
         "requires_order_code": _table_requires_order_code(table)
         and not _is_staff_for_tenant(current_user, table.tenant_id),
+        "is_staff": _is_staff_for_tenant(current_user, table.tenant_id),
         "tenant_id": table.tenant_id,  # For WebSocket connection
         "tenant_name": tenant.name if tenant else "Unknown",
         "tenant_logo": tenant.logo_filename if tenant else None,
@@ -13586,7 +13587,8 @@ def remove_order_item(
     item_id: int,
     session_id: str | None = Query(None, description="Session identifier for order validation"),
     reason: str | None = Query(None, description="Optional reason for removal"),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: Annotated[models.User | None, Depends(security.get_current_user_optional)] = None,
 ) -> dict:
     """Remove item from order (soft delete - customer)."""
     table = session.exec(select(models.Table).where(models.Table.token == table_token)).first()
@@ -13605,7 +13607,8 @@ def remove_order_item(
     
     # Security: Validate that order belongs to this session
     # If order has a session_id, request must provide matching session_id
-    if order.session_id and order.session_id != session_id:
+    is_staff = _is_staff_for_tenant(current_user, table.tenant_id)
+    if not is_staff and order.session_id and order.session_id != session_id:
         raise HTTPException(status_code=403, detail="Order does not belong to this session")
     _reject_guest_change_if_paid(order)
     
@@ -13620,7 +13623,7 @@ def remove_order_item(
         raise HTTPException(status_code=404, detail="Order item not found")
     
     # Validation: Cannot remove items that are already being prepared or delivered
-    if item.status in [models.OrderItemStatus.delivered, models.OrderItemStatus.preparing, models.OrderItemStatus.ready]:
+    if not is_staff and item.status in [models.OrderItemStatus.delivered, models.OrderItemStatus.preparing, models.OrderItemStatus.ready]:
         status_label = {
             models.OrderItemStatus.delivered: "delivered",
             models.OrderItemStatus.preparing: "being prepared",
@@ -13635,6 +13638,8 @@ def remove_order_item(
     item.removed_by_customer = True
     item.removed_at = datetime.now(timezone.utc)
     item.removed_reason = reason
+    if is_staff:
+        item.removed_by_user_id = current_user.id
     item.status = models.OrderItemStatus.cancelled
     
     session.add(item)
@@ -13680,7 +13685,8 @@ def update_order_item_quantity(
     item_id: int,
     item_update: models.OrderItemUpdate,
     session_id: str | None = Query(None, description="Session identifier for order validation"),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: Annotated[models.User | None, Depends(security.get_current_user_optional)] = None,
 ) -> dict:
     """Update order item quantity (customer)."""
     table = session.exec(select(models.Table).where(models.Table.token == table_token)).first()
@@ -13699,7 +13705,8 @@ def update_order_item_quantity(
     
     # Security: Validate that order belongs to this session
     # If order has a session_id, request must provide matching session_id
-    if order.session_id and order.session_id != session_id:
+    is_staff = _is_staff_for_tenant(current_user, table.tenant_id)
+    if not is_staff and order.session_id and order.session_id != session_id:
         raise HTTPException(status_code=403, detail="Order does not belong to this session")
     _reject_guest_change_if_paid(order)
     
@@ -13714,7 +13721,7 @@ def update_order_item_quantity(
         raise HTTPException(status_code=404, detail="Order item not found")
     
     # Validation: Cannot modify items that are already being prepared or delivered
-    if item.status in [models.OrderItemStatus.delivered, models.OrderItemStatus.preparing, models.OrderItemStatus.ready]:
+    if not is_staff and item.status in [models.OrderItemStatus.delivered, models.OrderItemStatus.preparing, models.OrderItemStatus.ready]:
         status_label = {
             models.OrderItemStatus.delivered: "delivered",
             models.OrderItemStatus.preparing: "being prepared",
@@ -13775,7 +13782,8 @@ def cancel_order(
     table_token: str,
     order_id: int,
     session_id: str | None = Query(None, description="Session identifier for order validation"),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: Annotated[models.User | None, Depends(security.get_current_user_optional)] = None,
 ) -> dict:
     """Cancel entire order (soft delete - customer)."""
     table = session.exec(select(models.Table).where(models.Table.token == table_token)).first()
@@ -13794,7 +13802,8 @@ def cancel_order(
     
     # Security: Validate that order belongs to this session
     # If order has a session_id, request must provide matching session_id
-    if order.session_id and order.session_id != session_id:
+    is_staff = _is_staff_for_tenant(current_user, table.tenant_id)
+    if not is_staff and order.session_id and order.session_id != session_id:
         raise HTTPException(status_code=403, detail="Order does not belong to this session")
     _reject_guest_change_if_paid(order)
     
@@ -13805,7 +13814,7 @@ def cancel_order(
         item for item in active_items 
         if item.status in [models.OrderItemStatus.preparing, models.OrderItemStatus.ready, models.OrderItemStatus.delivered]
     ]
-    if in_progress_items:
+    if in_progress_items and not is_staff:
         statuses = [item.status.value for item in in_progress_items]
         if models.OrderItemStatus.delivered.value in statuses:
             raise HTTPException(status_code=400, detail="Cannot cancel order with delivered items")
@@ -13817,7 +13826,7 @@ def cancel_order(
     # Soft delete: Mark order and all items as cancelled
     order.status = models.OrderStatus.cancelled
     order.cancelled_at = datetime.now(timezone.utc)
-    order.cancelled_by = "customer"
+    order.cancelled_by = "staff" if is_staff else "customer"
     order.session_id = None  # Prevent order reuse - new orders get new numbers
     
     for item in items:
