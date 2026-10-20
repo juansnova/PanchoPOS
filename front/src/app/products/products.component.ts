@@ -88,8 +88,13 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
           } @else {
             @if (showAddForm() || editingProduct()) {
               <div class="form-card">
-                 <div class="form-header">
-                   <h3>{{ editingProduct() ? ('PRODUCTS.EDIT_PRODUCT' | translate) : ('PRODUCTS.NEW_PRODUCT' | translate) }}</h3>
+                 <div class="form-header pf-header">
+                   <div class="pf-head-text">
+                     <span class="pf-badge" aria-hidden="true">
+                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
+                     </span>
+                     <h3>{{ editingProduct() ? ('PRODUCTS.EDIT_PRODUCT' | translate) : ('PRODUCTS.NEW_PRODUCT' | translate) }}</h3>
+                   </div>
                    <button class="icon-btn" (click)="cancelForm()">
                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                        <path d="M18 6L6 18M6 6l12 12"/>
@@ -109,7 +114,9 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                  @if (!canEditProducts()) {
                    <p class="form-readonly-hint">{{ 'PRODUCTS.ONLY_OWNERS_CAN_EDIT' | translate }}</p>
                  }
-                <form (submit)="saveProduct($event)">
+                <form (submit)="saveProduct($event)" class="pf-form">
+                  <section class="pf-sec">
+                   <h4 class="pf-sec-title">{{ 'PRODUCTS.FORM_BASICS' | translate }}</h4>
                    <div class="form-row">
                      <div class="form-group">
                        <label for="name">{{ 'PRODUCTS.PRODUCT_NAME' | translate }} <span class="required" aria-hidden="true">*</span></label>
@@ -141,6 +148,9 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                      <label for="description">{{ 'PRODUCTS.DESCRIPTION_LABEL' | translate }}</label>
                      <textarea id="description" [(ngModel)]="formData.description" name="description" [placeholder]="'PRODUCTS.DESCRIPTION_PLACEHOLDER' | translate" rows="3" [readonly]="!canEditProducts()"></textarea>
                    </div>
+                  </section>
+                  <section class="pf-sec">
+                   <h4 class="pf-sec-title">{{ 'PRODUCTS.FORM_CATEGORY' | translate }}</h4>
                    <div class="form-row">
                      <div class="form-group">
                        <label for="category">{{ 'PRODUCTS.CATEGORY_LABEL' | translate }}</label>
@@ -161,18 +171,17 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                        </select>
                      </div>
                    </div>
-                   <div class="form-row">
-                     <div class="form-group">
-                       <label for="available_from">{{ 'PRODUCTS.AVAILABLE_FROM' | translate }}</label>
-                       <input id="available_from" type="date" [(ngModel)]="formData.available_from" name="available_from" [readonly]="!canEditProducts()">
-                       <small class="field-hint">{{ 'PRODUCTS.AVAILABLE_FROM_HINT' | translate }}</small>
-                     </div>
-                     <div class="form-group">
-                       <label for="available_until">{{ 'PRODUCTS.AVAILABLE_UNTIL' | translate }}</label>
-                       <input id="available_until" type="date" [(ngModel)]="formData.available_until" name="available_until" [readonly]="!canEditProducts()">
-                       <small class="field-hint">{{ 'PRODUCTS.AVAILABLE_UNTIL_HINT' | translate }}</small>
-                     </div>
-                   </div>
+                  </section>
+                  <section class="pf-sec">
+                   <h4 class="pf-sec-title">{{ 'PRODUCTS.FORM_AVAILABILITY' | translate }}</h4>
+                   <label class="pf-oos" [class.on]="formData.out_of_stock" data-testid="product-out-of-stock">
+                     <input type="checkbox" [(ngModel)]="formData.out_of_stock" name="out_of_stock" [disabled]="!canEditProducts()">
+                     <span class="pf-switch" aria-hidden="true"></span>
+                     <span class="pf-oos-text">
+                       <b>{{ 'PRODUCTS.OUT_OF_STOCK' | translate }}</b>
+                       <small>{{ 'PRODUCTS.OUT_OF_STOCK_HINT' | translate }}</small>
+                     </span>
+                   </label>
                    <div class="form-group stock-alert-section" data-testid="product-stock-alert">
                      <label class="checkbox-label">
                        <input
@@ -213,6 +222,9 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                        </div>
                      }
                    </div>
+                  </section>
+                  <section class="pf-sec">
+                   <h4 class="pf-sec-title">{{ 'PRODUCTS.FORM_IMAGE' | translate }}</h4>
                    <div class="form-group">
                      <label>{{ 'PRODUCTS.PRODUCT_IMAGE' | translate }}</label>
                      <div class="image-upload-row">
@@ -243,6 +255,8 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                      </div>
                      <small class="field-hint">{{ 'PRODUCTS.IMAGE_UPLOAD_HINT' | translate:{ maxMb: maxImageUploadMb } }}</small>
                    </div>
+
+                  </section>
 
                    @if (canEditProducts() && showAddForm() && !editingProduct()?.id) {
                      <p class="field-hint">{{ 'PRODUCTS.RECIPE_AFTER_SAVE' | translate }}</p>
@@ -431,63 +445,77 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                 }
               </div>
 
-              @if (productsView() === 'cards') {
-                <div class="pr-grid" data-testid="products-cards">
-                  @for (product of filteredProducts(); track product.id) {
-                    <article class="pr-card" [class.pr-card--low]="product.stock_alert_enabled && isProductLowStock(product)">
-                      <div class="pr-media">
-                        @if (product.image_filename) {
-                          <img [src]="getImageUrl(product)" alt="" loading="lazy" (error)="handleImageError($event)">
-                        } @else {
-                          <div class="pr-noimg" aria-hidden="true">
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
-                            </svg>
-                          </div>
-                        }
-                        <span class="pr-price">{{ formatPrice(product.price_cents) }}</span>
-                        @if (product.stock_alert_enabled) {
-                          <span class="pr-stock" [class.pr-stock--low]="isProductLowStock(product)"
-                            [attr.title]="'PRODUCTS.STOCK_BADGE_TITLE' | translate:{qty: product.stock_qty ?? 0, level: product.stock_alert_level ?? 0}">
-                            {{ (isProductLowStock(product) ? 'PRODUCTS.STOCK_LOW' : 'PRODUCTS.STOCK_OK') | translate }} · {{ product.stock_qty ?? 0 }}
-                          </span>
-                        }
-                      </div>
-                      <div class="pr-body">
-                        <h3 class="pr-name">{{ product.name }}</h3>
-                        <div class="pr-tags">
-                          @if (product.category) {
-                            <span class="pr-tag">{{ getCategoryLabel(product.category) }}</span>
-                          }
-                          @if (product.subcategory) {
-                            <span class="pr-tag pr-tag-soft">{{ getSubcategoryLabel(product.subcategory) }}</span>
-                          }
-                        </div>
-                        @if (product.ingredients) {
-                          <p class="pr-ingredients">{{ product.ingredients }}</p>
-                        }
-                        <div class="pr-foot">
-                          <span class="pr-cost">
-                            @if (product.cost_cents != null) { {{ 'PRODUCTS.COST_HEADER' | translate }}: {{ formatPrice(product.cost_cents) }} }
-                          </span>
-                          <div class="pr-actions">
-                            <button class="pr-act" (click)="startEdit(product)" [attr.title]="'PRODUCTS.EDIT_TOOLTIP' | translate" [attr.aria-label]="'PRODUCTS.EDIT_TOOLTIP' | translate">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            </button>
-                            @if (canEditProducts()) {
-                              <button class="pr-act pr-act-danger" (click)="confirmDelete(product)" [disabled]="deleting() === product.id" [attr.title]="'PRODUCTS.DELETE_TOOLTIP' | translate" [attr.aria-label]="'PRODUCTS.DELETE_TOOLTIP' | translate">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                              </button>
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    </article>
-                  } @empty {
-                    <p class="pr-empty">{{ 'PRODUCTS.NO_PRODUCTS' | translate }}</p>
-                  }
-                </div>
-              } @else {
+              @if (productsView() === 'cards') {
+                <div class="pr-grid" data-testid="products-cards">
+                  @for (product of filteredProducts(); track product.id) {
+                    <article class="pr-card" [class.pr-card--low]="product.stock_alert_enabled && isProductLowStock(product)" [class.pr-card--oos]="product.out_of_stock">
+                      <div class="pr-media">
+                        @if (product.image_filename) {
+                          <img [src]="getImageUrl(product)" alt="" loading="lazy" (error)="handleImageError($event)">
+                        } @else {
+                          <div class="pr-noimg" aria-hidden="true">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+                            </svg>
+                          </div>
+                        }
+                        <span class="pr-price">{{ formatPrice(product.price_cents) }}</span>
+                        @if (product.out_of_stock) {
+                          <span class="pr-oos-ribbon">{{ 'PRODUCTS.OUT_OF_STOCK_SHORT' | translate }}</span>
+                        }
+                        @if (product.stock_alert_enabled) {
+                          <span class="pr-stock" [class.pr-stock--low]="isProductLowStock(product)"
+                            [attr.title]="'PRODUCTS.STOCK_BADGE_TITLE' | translate:{qty: product.stock_qty ?? 0, level: product.stock_alert_level ?? 0}">
+                            {{ (isProductLowStock(product) ? 'PRODUCTS.STOCK_LOW' : 'PRODUCTS.STOCK_OK') | translate }} · {{ product.stock_qty ?? 0 }}
+                          </span>
+                        }
+                      </div>
+                      <div class="pr-body">
+                        <h3 class="pr-name">{{ product.name }}</h3>
+                        <div class="pr-tags">
+                          @if (product.category) {
+                            <span class="pr-tag">{{ getCategoryLabel(product.category) }}</span>
+                          }
+                          @if (product.subcategory) {
+                            <span class="pr-tag pr-tag-soft">{{ getSubcategoryLabel(product.subcategory) }}</span>
+                          }
+                        </div>
+                        @if (product.ingredients) {
+                          <p class="pr-ingredients">{{ product.ingredients }}</p>
+                        }
+                        <div class="pr-foot">
+                          <span class="pr-cost">
+                            @if (product.cost_cents != null) { {{ 'PRODUCTS.COST_HEADER' | translate }}: {{ formatPrice(product.cost_cents) }} }
+                          </span>
+                          <div class="pr-actions">
+                            @if (canEditProducts()) {
+                              <button class="pr-act" [class.pr-act-on]="product.out_of_stock" (click)="toggleOutOfStock(product)"
+                                [attr.title]="(product.out_of_stock ? 'PRODUCTS.PUT_BACK_ON_MENU' : 'PRODUCTS.REMOVE_FROM_MENU') | translate"
+                                [attr.aria-label]="(product.out_of_stock ? 'PRODUCTS.PUT_BACK_ON_MENU' : 'PRODUCTS.REMOVE_FROM_MENU') | translate">
+                                @if (product.out_of_stock) {
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                } @else {
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                }
+                              </button>
+                            }
+                            <button class="pr-act" (click)="startEdit(product)" [attr.title]="'PRODUCTS.EDIT_TOOLTIP' | translate" [attr.aria-label]="'PRODUCTS.EDIT_TOOLTIP' | translate">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            @if (canEditProducts()) {
+                              <button class="pr-act pr-act-danger" (click)="confirmDelete(product)" [disabled]="deleting() === product.id" [attr.title]="'PRODUCTS.DELETE_TOOLTIP' | translate" [attr.aria-label]="'PRODUCTS.DELETE_TOOLTIP' | translate">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                              </button>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  } @empty {
+                    <p class="pr-empty">{{ 'PRODUCTS.NO_PRODUCTS' | translate }}</p>
+                  }
+                </div>
+              } @else {
               <div class="table-card products-data-table">
                 <div class="products-table-scroll">
                  <table>
@@ -525,7 +553,7 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                           }
                         </td>
                         <td>
-                          <div class="pl-name">{{ product.name }}</div>
+                          <div class="pl-name">{{ product.name }}@if (product.out_of_stock) { <span class="pl-oos">{{ 'PRODUCTS.OUT_OF_STOCK_SHORT' | translate }}</span> }</div>
                           @if (product.ingredients) {
                             <small class="ingredients">{{ product.ingredients }}</small>
                           }
@@ -669,6 +697,18 @@ export class ProductsComponent implements OnInit {
       try { return localStorage.getItem('pos.products.view') === 'table' ? 'table' : 'cards'; } catch { return 'cards'; }
     })()
   );
+  /** Quick "Fuera de stock" switch from the list/cards (hides it from the customer menu). */
+  toggleOutOfStock(product: Product): void {
+    if (!this.canEditProducts() || !product.id) return;
+    this.api.updateProduct(product.id, { out_of_stock: !product.out_of_stock }).subscribe({
+      next: (updated) => {
+        this.products.update(list => list.map(p => (p.id === updated.id ? updated : p)));
+        this.applyFilters();
+      },
+      error: (err) => this.error.set(err.error?.detail || 'Failed to update'),
+    });
+  }
+
   setProductsView(view: 'cards' | 'table'): void {
     this.productsView.set(view);
     try { localStorage.setItem('pos.products.view', view); } catch { /* storage unavailable */ }
@@ -704,6 +744,7 @@ export class ProductsComponent implements OnInit {
     stock_alert_enabled: boolean;
     stock_qty: number;
     stock_alert_level: number;
+    out_of_stock: boolean;
   } = {
     name: '',
     price: 0,
@@ -716,6 +757,7 @@ export class ProductsComponent implements OnInit {
     stock_alert_enabled: false,
     stock_qty: 0,
     stock_alert_level: 5,
+    out_of_stock: false,
   };
   productTaxes = signal<Tax[]>([]);
   kitchenStations = signal<KitchenStation[]>([]);
@@ -1020,6 +1062,7 @@ export class ProductsComponent implements OnInit {
       stock_alert_enabled: !!product.stock_alert_enabled,
       stock_qty: product.stock_qty ?? 0,
       stock_alert_level: product.stock_alert_level ?? 0,
+      out_of_stock: !!product.out_of_stock,
     };
     this.onCategoryChange(); // Update available subcategories
     this.showAddForm.set(false);
@@ -1048,6 +1091,7 @@ export class ProductsComponent implements OnInit {
       stock_alert_enabled: false,
       stock_qty: 0,
       stock_alert_level: 5,
+      out_of_stock: false,
     };
     this.showAddForm.set(true);
     this.clearRecipeState();
@@ -1071,6 +1115,7 @@ export class ProductsComponent implements OnInit {
       stock_alert_enabled: false,
       stock_qty: 0,
       stock_alert_level: 5,
+      out_of_stock: false,
     };
     this.availableSubcategories.set([]);
     this.productFormErrors.set(null);
@@ -1219,8 +1264,10 @@ export class ProductsComponent implements OnInit {
       category: this.formData.category || undefined,
       subcategory: this.formData.subcategory || undefined,
       tax_id: this.formData.tax_id,
-      available_from: this.formData.available_from?.trim() || null,
-      available_until: this.formData.available_until?.trim() || null,
+      // The date window is not edited anymore: null clears leftovers from older products.
+      available_from: null,
+      available_until: null,
+      out_of_stock: !!this.formData.out_of_stock,
       kitchen_station_id: this.formData.kitchen_station_id ?? null,
       stock_alert_enabled: !!this.formData.stock_alert_enabled,
       stock_qty: Math.max(0, Math.floor(Number(this.formData.stock_qty) || 0)),

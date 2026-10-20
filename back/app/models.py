@@ -371,6 +371,10 @@ class Product(TenantMixin, table=True):
     stock_alert_enabled: bool = Field(default=False)
     stock_qty: int = Field(default=0)
     stock_alert_level: int = Field(default=0)
+    # "Fuera de stock": hidden from the customer menu until switched off again
+    out_of_stock: bool = Field(default=False)
+    # "Fuera de stock": hidden from the customer menu until switched off again
+    out_of_stock: bool = Field(default=False)
 
 
 # ============ PROVIDER & CATALOG SYSTEM ============
@@ -494,6 +498,7 @@ class TenantProduct(SQLModel, table=True):
     # Availability window: customer-facing menu shows product only when today is in [available_from, available_until]
     available_from: date | None = Field(default=None, sa_column=Column(Date, nullable=True))
     available_until: date | None = Field(default=None, sa_column=Column(Date, nullable=True))
+    out_of_stock: bool = Field(default=False)  # mirrors Product.out_of_stock for linked products
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -980,6 +985,8 @@ class ProductUpdate(SQLModel):
     stock_alert_enabled: bool | None = None
     stock_qty: int | None = None
     stock_alert_level: int | None = None
+    out_of_stock: bool | None = None
+    out_of_stock: bool | None = None
 
 
 class TableCreate(SQLModel):

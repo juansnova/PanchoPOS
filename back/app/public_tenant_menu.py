@@ -144,12 +144,12 @@ def _load_flat_products(
     tenant_products = [
         tp
         for tp in tenant_products
-        if _is_available_today(tp.available_from, tp.available_until, today)
+        if not tp.out_of_stock and _is_available_today(tp.available_from, tp.available_until, today)
     ]
     legacy_products = [
         p
         for p in legacy_products
-        if _is_available_today(p.available_from, p.available_until, today)
+        if not p.out_of_stock and _is_available_today(p.available_from, p.available_until, today)
     ]
 
     products: list[dict] = []

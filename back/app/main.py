@@ -4779,12 +4779,12 @@ def update_product(
             if not tax or tax.tenant_id != current_user.tenant_id:
                 raise HTTPException(status_code=400, detail="Invalid tax")
         product.tax_id = product_update.tax_id or None
-    if product_update.available_from is not None:
-        product.available_from = product_update.available_from
-    if product_update.available_until is not None:
-        product.available_until = product_update.available_until
-
     pu = product_update.model_dump(exclude_unset=True)
+    # The date window is no longer edited in the UI; an explicit null clears any leftover dates.
+    if "available_from" in pu:
+        product.available_from = pu["available_from"]
+    if "available_until" in pu:
+        product.available_until = pu["available_until"]
     if "kitchen_station_id" in pu:
         val = pu["kitchen_station_id"]
         if val is None:
@@ -4808,9 +4808,12 @@ def update_product(
             raise HTTPException(status_code=400, detail="stock_alert_level must be >= 0")
         product.stock_alert_level = level
 
+    if "out_of_stock" in pu and pu["out_of_stock"] is not None:
+        product.out_of_stock = bool(pu["out_of_stock"])
+
     session.add(product)
-    # Sync availability dates to linked TenantProduct(s) so customer menu stays consistent
-    if product_update.available_from is not None or product_update.available_until is not None:
+    # Sync availability to linked TenantProduct(s) so the customer menu stays consistent
+    if any(k in pu for k in ("available_from", "available_until", "out_of_stock")):
         linked = session.exec(
             select(models.TenantProduct).where(
                 models.TenantProduct.product_id == product.id,
@@ -4818,10 +4821,12 @@ def update_product(
             )
         ).all()
         for tp in linked:
-            if product_update.available_from is not None:
-                tp.available_from = product_update.available_from
-            if product_update.available_until is not None:
-                tp.available_until = product_update.available_until
+            if "available_from" in pu:
+                tp.available_from = pu["available_from"]
+            if "available_until" in pu:
+                tp.available_until = pu["available_until"]
+            if "out_of_stock" in pu and pu["out_of_stock"] is not None:
+                tp.out_of_stock = bool(pu["out_of_stock"])
             session.add(tp)
     session.commit()
     session.refresh(product)
@@ -10440,8 +10445,14 @@ def get_menu(
         if available_until is not None and available_until < today:
             return False
         return True
-    tenant_products = [tp for tp in tenant_products if _is_available(tp.available_from, tp.available_until)]
-    legacy_products = [p for p in legacy_products if _is_available(p.available_from, p.available_until)]
+    tenant_products = [
+        tp for tp in tenant_products
+        if not tp.out_of_stock and _is_available(tp.available_from, tp.available_until)
+    ]
+    legacy_products = [
+        p for p in legacy_products
+        if not p.out_of_stock and _is_available(p.available_from, p.available_until)
+    ]
 
     linked_legacy_product_ids = {
         tp.product_id for tp in tenant_products if tp.product_id is not None

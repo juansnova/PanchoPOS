@@ -92,6 +92,16 @@ class TestPublicTenantMenu(PgClientTestCase):
             self.assertNotIn("cost_cents", product)
             self.assertNotIn("ingredients", product)
 
+    def test_out_of_stock_product_is_hidden_from_public_menu(self):
+        self.session.add(models.Product(tenant_id=self.tenant.id, name="Visible", price_cents=100, category="Principales"))
+        self.session.add(
+            models.Product(tenant_id=self.tenant.id, name="Agotado", price_cents=100, category="Principales", out_of_stock=True)
+        )
+        self.session.commit()
+        data = self.client.get(f"/public/tenants/{self.tenant.id}/menu").json()
+        names = {p["name"] for c in data["categories"] for p in c["products"]}
+        self.assertEqual(names, {"Visible"})
+
     def test_lang_query_es_formats_price_with_comma(self):
         self.session.add(
             models.Product(
