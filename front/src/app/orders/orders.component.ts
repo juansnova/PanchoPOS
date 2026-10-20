@@ -2628,6 +2628,24 @@ ModuleRegistry.registerModules([
     .order-card .item-price { gap: 1px; }
     .order-card .price-main { font-size: 1.05rem; font-weight: 800; color: var(--color-text); font-variant-numeric: tabular-nums; }
     .order-card .price-total { font-size: .72rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+    /* Removed lines: compact muted chip, only the name is struck through */
+    .order-card .order-item.removed {
+      opacity: 1; text-decoration: none; margin: 6px 0; padding: 8px 12px; gap: 2px; border-radius: 12px;
+      background: rgba(220, 38, 38, .05); border: 1px dashed rgba(220, 38, 38, .28);
+    }
+    .order-card .order-item.removed:not(:last-child) { border-bottom: 1px dashed rgba(220, 38, 38, .28); }
+    .order-card .order-item.removed .item-name-row { gap: 6px; flex-wrap: nowrap; }
+    .order-card .order-item.removed .item-qty { order: 0; margin-left: 0; flex: none; font-size: .8rem; font-weight: 700; color: var(--color-text-muted); text-decoration: none; }
+    .order-card .order-item.removed .item-name { font-size: .88rem; font-weight: 600; color: var(--color-text-muted); text-decoration: line-through; text-decoration-color: rgba(220, 38, 38, .6); }
+    .order-card .order-item.removed .item-details-row { justify-content: flex-start; gap: 8px; flex-wrap: wrap; }
+    .order-card .order-item.removed .item-price { flex-direction: row; align-items: baseline; gap: 6px; }
+    .order-card .order-item.removed .price-main { font-size: .8rem; font-weight: 600; color: var(--color-text-muted); text-decoration: line-through; }
+    .order-card .order-item.removed .price-total { font-size: .7rem; text-decoration: none; }
+    .order-card .removed-indicator { margin: 0; gap: 8px; font-style: normal; align-items: center; }
+    .order-card .removed-label {
+      padding: 1px 8px; border-radius: 999px; font-size: .68rem; font-weight: 700; color: #b91c1c; background: rgba(220, 38, 38, .1);
+    }
+    .order-card .removed-time { font-size: .7rem; }
     @media (prefers-reduced-motion: reduce) {
       .order-card, .order-card:hover { transition: none; transform: none; }
       .order-card .order-status-pill.preparing::before { animation: none; }
