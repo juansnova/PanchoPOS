@@ -149,9 +149,18 @@ const HUES = [14, 32, 48, 98, 150, 186, 212, 262, 300, 340];
               <input type="text" class="qs-customer" [(ngModel)]="customerName"
                 [placeholder]="'QUICK_SALE.CUSTOMER_PH' | translate" [attr.aria-label]="'QUICK_SALE.CUSTOMER' | translate" />
               <div class="qs-pay" role="group" [attr.aria-label]="'QUICK_SALE.PAYMENT' | translate">
-                <button type="button" [class.active]="paymentIntent === 'cash'" (click)="paymentIntent = 'cash'">{{ 'QUICK_SALE.PAYMENT_CASH' | translate }}</button>
-                <button type="button" [class.active]="paymentIntent === 'card'" (click)="paymentIntent = 'card'">{{ 'QUICK_SALE.PAYMENT_CARD' | translate }}</button>
-                <button type="button" [class.active]="paymentIntent === 'transfer'" (click)="paymentIntent = 'transfer'">{{ 'QUICK_SALE.PAYMENT_TRANSFER' | translate }}</button>
+                <button type="button" [class.active]="paymentIntent === 'cash'" (click)="paymentIntent = 'cash'">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>
+                  <span>{{ 'QUICK_SALE.PAYMENT_CASH' | translate }}</span>
+                </button>
+                <button type="button" [class.active]="paymentIntent === 'card'" (click)="paymentIntent = 'card'">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+                  <span>{{ 'QUICK_SALE.PAYMENT_CARD' | translate }}</span>
+                </button>
+                <button type="button" [class.active]="paymentIntent === 'transfer'" (click)="paymentIntent = 'transfer'">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h13l-3-3M17 17H4l3 3"/></svg>
+                  <span>{{ 'QUICK_SALE.PAYMENT_TRANSFER' | translate }}</span>
+                </button>
               </div>
               @if (messageKey() === 'QUICK_SALE.SUBMIT_FAILED') {
                 <p class="qs-error" role="alert">{{ messageKey()! | translate }}</p>
@@ -272,12 +281,19 @@ const HUES = [14, 32, 48, 98, 150, 186, 212, 262, 300, 340];
       min-height: 42px; padding: 0 0.75rem; border: 1px solid var(--color-border, #d1d5db);
       border-radius: 10px; background: var(--color-bg, #f9fafb); font: inherit; color: inherit;
     }
-    .qs-pay { display: flex; gap: 0.25rem; padding: 0.25rem; border: 1px solid var(--color-border, #d1d5db); border-radius: 12px; background: var(--color-bg, #f9fafb); }
+    .qs-pay { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; }
     .qs-pay button {
-      flex: 1; min-width: 0; min-height: 42px; padding: 0 0.25rem; font-size: 0.9rem; border: none; border-radius: 9px; background: transparent;
-      color: var(--color-text-muted, #6b7280); font: inherit; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      min-width: 0; min-height: 58px; padding: 6px 4px; border: 1.5px solid var(--color-border, #d1d5db); border-radius: 14px;
+      background: var(--color-bg, #f9fafb); color: var(--color-text-muted, #6b7280); font: inherit; cursor: pointer;
+      touch-action: manipulation; transition: border-color .15s, background .15s, color .15s;
     }
-    .qs-pay button.active { background: var(--color-primary, #c2612c); color: #fff; font-weight: 600; }
+    .qs-pay button span { max-width: 100%; font-size: 0.78rem; font-weight: 600; line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
+    .qs-pay button:hover { border-color: var(--color-primary, #c2612c); }
+    .qs-pay button.active {
+      background: var(--color-primary, #c2612c); border-color: var(--color-primary, #c2612c); color: #fff;
+      box-shadow: 0 6px 14px -6px var(--color-primary, #c2612c);
+    }
     .qs-actions { display: flex; gap: 0.5rem; }
     .qs-charge { flex: 1; min-height: 52px; font-size: 1.0625rem; font-weight: 700; }
 
