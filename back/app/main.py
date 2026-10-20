@@ -12079,7 +12079,7 @@ def create_offline_cash_order_endpoint(
         if detail == "invalid_payment_intent":
             raise HTTPException(
                 status_code=400,
-                detail="payment_intent must be 'cash' or 'card'",
+                detail="payment_intent must be 'cash', 'card' or 'transfer'",
             )
         if detail == "table_not_found":
             raise HTTPException(status_code=404, detail="Table not found")

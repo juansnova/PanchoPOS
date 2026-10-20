@@ -1325,6 +1325,7 @@ class OfflineCashOrderCreate(SQLModel):
 
     ``payment_intent``:
     - ``cash`` (default): create paid cash order on sync (MVP #319).
+    - ``transfer``: create an order already paid by bank transfer (staff confirmed it).
     - ``card``: create unpaid order; staff collects card online after reconnect (#333).
       Never stores PAN/CVV — intent metadata only.
     """
@@ -1336,7 +1337,7 @@ class OfflineCashOrderCreate(SQLModel):
     customer_name: str | None = None
     # Client clock at queue time (advisory only; server timestamps win).
     client_created_at: datetime | None = None
-    payment_intent: str = "cash"  # cash | card
+    payment_intent: str = "cash"  # cash | card | transfer
     # When true (bar/counter quick sale), items stay pending for kitchen/bar prep
     # instead of being marked delivered immediately.
     send_to_kitchen: bool = False

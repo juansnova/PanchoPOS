@@ -7,7 +7,7 @@ import { ConnectivityService } from './connectivity.service';
 const QUEUE_KEY = 'pos_offline_cash_queue_v1';
 const CACHE_KEY = 'pos_offline_cache_v1';
 
-export type OfflinePaymentIntent = 'cash' | 'card';
+export type OfflinePaymentIntent = 'cash' | 'card' | 'transfer';
 
 export interface OfflineCashQueueItem {
   idempotency_key: string;
@@ -111,7 +111,8 @@ export class OfflineOrderQueueService {
     const product = cache?.products.find((p) => p.id === opts.productId);
     if (!product || opts.quantity < 1) return null;
 
-    const intent: OfflinePaymentIntent = opts.paymentIntent === 'card' ? 'card' : 'cash';
+    const intent: OfflinePaymentIntent =
+      opts.paymentIntent === 'card' || opts.paymentIntent === 'transfer' ? opts.paymentIntent : 'cash';
     const item: OfflineCashQueueItem = {
       idempotency_key: this.newKey(),
       table_id: table.id,
@@ -218,7 +219,7 @@ export class OfflineOrderQueueService {
           this.queueSignal.set(
             parsed.map((q) => ({
               ...q,
-              payment_intent: q.payment_intent === 'card' ? 'card' : 'cash',
+              payment_intent: q.payment_intent === 'card' || q.payment_intent === 'transfer' ? q.payment_intent : 'cash',
             }))
           );
         }

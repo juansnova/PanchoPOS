@@ -10,7 +10,9 @@ from app import models
 from app.delivery_order_service import _add_order_items, _resolve_product_lines
 
 TAKE_AWAY_TABLE_NAMES = ("take away", "home ordering", "takeaway", "take-away")
-VALID_PAYMENT_INTENTS = frozenset({"cash", "card"})
+VALID_PAYMENT_INTENTS = frozenset({"cash", "card", "transfer"})
+# Intents that are paid on the spot (card is collected later, online).
+PAID_NOW_INTENTS = frozenset({"cash", "transfer"})
 
 
 def _is_take_away_table(table: models.Table | None) -> bool:
@@ -36,7 +38,7 @@ def create_offline_cash_order(
     Sync a staff sale queued while offline.
 
     payment_intent:
-      - cash: paid cash order (idempotent).
+      - cash / transfer: order paid on the spot with that method (idempotent).
       - card: unpaid order; collect card online after reconnect (no PAN/CVV stored).
 
     send_to_kitchen: cash sale whose items still need to be prepared (e.g. a bar/counter
@@ -93,7 +95,8 @@ def create_offline_cash_order(
         note_parts.append((notes or "").strip())
     combined_notes = " ".join(note_parts) or None
 
-    if intent == "cash":
+    paid_now = intent in PAID_NOW_INTENTS
+    if paid_now:
         order = models.Order(
             table_id=table.id,
             tenant_id=tenant_id,
@@ -103,7 +106,7 @@ def create_offline_cash_order(
             notes=combined_notes,
             paid_at=now,
             paid_by_user_id=user_id,
-            payment_method="cash",
+            payment_method=intent,
             created_at=now,
         )
     else:
@@ -136,7 +139,7 @@ def create_offline_cash_order(
     items = session.exec(
         select(models.OrderItem).where(models.OrderItem.order_id == order.id)
     ).all()
-    if intent == "cash" and not send_to_kitchen:
+    if paid_now and not send_to_kitchen:
         for item in items:
             if item.status != models.OrderItemStatus.cancelled:
                 item.status = models.OrderItemStatus.delivered
@@ -149,7 +152,7 @@ def create_offline_cash_order(
         if table.active_order_id is None or table.active_order_id == order.id:
             table.active_order_id = None
             session.add(table)
-    elif intent == "cash" and send_to_kitchen:
+    elif paid_now and send_to_kitchen:
         # Paid up front, but still needs kitchen/bar prep: items stay pending so
         # they show up on /kitchen and /bar like any other order.
         order.status = models.OrderStatus.paid
@@ -170,7 +173,7 @@ def create_offline_cash_order(
     session.add(ledger)
     session.add(order)
 
-    if intent == "cash":
+    if paid_now:
         # Audit leg so offline cash matches online mark-paid / split-bill ledger (#318).
         try:
             from app.order_payment_service import ensure_full_payment_leg
@@ -178,7 +181,7 @@ def create_offline_cash_order(
             ensure_full_payment_leg(
                 session,
                 order=order,
-                payment_method="cash",
+                payment_method=intent,
                 paid_by_user_id=user_id,
                 tip_amount_cents=None,
             )
@@ -191,14 +194,14 @@ def create_offline_cash_order(
     try:
         from app.main import publish_order_update
 
-        event_type = "order_paid" if intent == "cash" else "order_created"
+        event_type = "order_paid" if paid_now else "order_created"
         publish_order_update(
             tenant_id,
             {
                 "type": event_type,
                 "order_id": order.id,
                 "table_name": table.name if table else "Unknown",
-                "payment_method": "cash" if intent == "cash" else None,
+                "payment_method": intent if paid_now else None,
                 "payment_intent": intent,
                 "offline_sync": True,
                 "needs_payment": intent == "card",
@@ -208,7 +211,7 @@ def create_offline_cash_order(
     except Exception:
         pass
 
-    if intent == "cash":
+    if paid_now:
         try:
             tenant = session.get(models.Tenant, tenant_id)
             if tenant:

@@ -151,6 +151,7 @@ const HUES = [14, 32, 48, 98, 150, 186, 212, 262, 300, 340];
               <div class="qs-pay" role="group" [attr.aria-label]="'QUICK_SALE.PAYMENT' | translate">
                 <button type="button" [class.active]="paymentIntent === 'cash'" (click)="paymentIntent = 'cash'">{{ 'QUICK_SALE.PAYMENT_CASH' | translate }}</button>
                 <button type="button" [class.active]="paymentIntent === 'card'" (click)="paymentIntent = 'card'">{{ 'QUICK_SALE.PAYMENT_CARD' | translate }}</button>
+                <button type="button" [class.active]="paymentIntent === 'transfer'" (click)="paymentIntent = 'transfer'">{{ 'QUICK_SALE.PAYMENT_TRANSFER' | translate }}</button>
               </div>
               @if (messageKey() === 'QUICK_SALE.SUBMIT_FAILED') {
                 <p class="qs-error" role="alert">{{ messageKey()! | translate }}</p>
@@ -273,7 +274,7 @@ const HUES = [14, 32, 48, 98, 150, 186, 212, 262, 300, 340];
     }
     .qs-pay { display: flex; gap: 0.25rem; padding: 0.25rem; border: 1px solid var(--color-border, #d1d5db); border-radius: 12px; background: var(--color-bg, #f9fafb); }
     .qs-pay button {
-      flex: 1; min-height: 42px; border: none; border-radius: 9px; background: transparent;
+      flex: 1; min-width: 0; min-height: 42px; padding: 0 0.25rem; font-size: 0.9rem; border: none; border-radius: 9px; background: transparent;
       color: var(--color-text-muted, #6b7280); font: inherit; cursor: pointer;
     }
     .qs-pay button.active { background: var(--color-primary, #c2612c); color: #fff; font-weight: 600; }
@@ -297,7 +298,7 @@ export class QuickSaleComponent implements OnInit {
 
   readonly ALL = ALL;
   customerName = '';
-  paymentIntent: 'cash' | 'card' = 'cash';
+  paymentIntent: 'cash' | 'card' | 'transfer' = 'cash';
 
   readonly isOpen = signal(false);
   readonly search = signal('');

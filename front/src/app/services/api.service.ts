@@ -2305,7 +2305,7 @@ export class ApiService {
     customer_name?: string;
     notes?: string;
     client_created_at?: string;
-    payment_intent?: 'cash' | 'card';
+    payment_intent?: 'cash' | 'card' | 'transfer';
     send_to_kitchen?: boolean;
   }): Observable<{
     status: string;

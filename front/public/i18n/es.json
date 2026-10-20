@@ -2450,6 +2450,7 @@
     "PAYMENT": "Pago",
     "PAYMENT_CASH": "Efectivo",
     "PAYMENT_CARD": "Tarjeta",
+    "PAYMENT_TRANSFER": "Transferencia",
     "TOTAL": "Total",
     "CHARGE": "Cobrar",
     "RECORDED": "Venta registrada",

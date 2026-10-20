@@ -129,6 +129,21 @@ class TestOfflineCashOrderApi(PgClientTestCase):
         r = self.client.post("/orders/offline-cash", json=self._payload(), headers=headers)
         self.assertEqual(r.status_code, 404, r.text)
 
+    def test_transfer_creates_order_paid_by_transfer(self) -> None:
+        headers = _bearer_headers(self.owner)
+        payload = {**self._payload(key="offline-transfer-key-1"), "payment_intent": "transfer"}
+        r = self.client.post("/orders/offline-cash", json=payload, headers=headers)
+        self.assertEqual(r.status_code, 200, r.text)
+        body = r.json()
+        self.assertEqual(body["payment_method"], "transfer")
+        self.assertFalse(body["needs_payment"])
+        self.assertIsNotNone(body["paid_at"])
+        leg = self.session.exec(
+            select(models.OrderPayment).where(models.OrderPayment.order_id == body["order_id"])
+        ).first()
+        self.assertIsNotNone(leg)
+        self.assertEqual(leg.payment_method, "transfer")
+
     def test_deferred_card_creates_unpaid_order_idempotent(self) -> None:
         """payment_intent=card → unpaid order; no PAN; replay same order_id (#333)."""
         headers = _bearer_headers(self.owner)
