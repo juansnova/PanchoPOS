@@ -1294,22 +1294,6 @@ export class MenuComponent implements OnInit, OnDestroy {
   extraAmountInput = '';
   extraNoteInput = '';
 
-  readonly extraQuickAmounts = [1000, 2000, 5000, 10000];
-  readonly extraReasonKeys = [
-    'ORDERS.EXTRA_REASON_ADDITIONAL',
-    'ORDERS.EXTRA_REASON_PRICE',
-    'ORDERS.EXTRA_REASON_SERVICE'
-  ];
-
-  addExtraAmount(pesos: number) {
-    const n = parseFloat((this.extraAmountInput || '').replace(',', '.'));
-    this.extraAmountInput = String((Number.isNaN(n) ? 0 : n) + pesos);
-  }
-
-  pickExtraReason(key: string) {
-    this.extraNoteInput = this.translate.instant(key);
-  }
-
   openExtraCharge(order: PlacedOrder) {
     this.extraAmountInput = order.extraCents ? String(order.extraCents / 100) : '';
     this.extraNoteInput = order.extraNote || '';
