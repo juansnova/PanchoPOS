@@ -23,6 +23,7 @@ import { SidebarComponent } from '../shared/sidebar.component';
 import { StaffPosToolbarComponent } from '../shared/staff-pos-toolbar.component';
 import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
 import { QuickSaleComponent } from './quick-sale.component';
+import { buildInvoiceA4Html } from './invoice-a4';
 import { ProductPickerComponent, PickedLine, PickerProduct } from './product-picker.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { formatMoneyCents } from '../shared/currency-symbol';
@@ -944,6 +945,11 @@ ModuleRegistry.registerModules([
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                       stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
                     {{ 'ORDERS.EDIT_PRINT_INVOICE' | translate }}
+                  </button>
+                  <button type="button" class="eo-ghost" (click)="printEditOrderInvoiceA4()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M8 13h8M8 17h8"/></svg>
+                    {{ 'ORDERS.EDIT_INVOICE_A4' | translate }}
                   </button>
                   <button type="button" class="eo-ghost" (click)="printEditOrderKitchen()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -3241,6 +3247,87 @@ export class OrdersComponent implements OnInit, OnDestroy {
         next: () => this.refreshEditOrder(order.id),
         error: () => {}
       });
+    }
+  }
+
+  /** Illustrated A4 invoice (opens the browser print dialog; "Save as PDF" works from there). */
+  printEditOrderInvoiceA4() {
+    const order = this.editOrder();
+    if (!order) return;
+    const customer = this.editOrderBillingId != null
+      ? this.editOrderBillingCustomers().find(c => c.id === this.editOrderBillingId)
+      : undefined;
+    this.printInvoiceA4(order, customer ?? null);
+  }
+
+  printInvoiceA4(order: Order, billingCustomer?: BillingCustomer | null) {
+    const settings = this.tenantSettings();
+    const tenantId = this.api.getCurrentUser()?.tenant_id;
+    const logoUrl = settings?.logo_filename && tenantId
+      ? this.api.getTenantLogoUrl(settings.logo_filename, tenantId)
+      : null;
+    const items = (order.items || []).filter(i => !i.removed_by_customer && i.status !== 'cancelled');
+    const taxByRate: Record<number, number> = {};
+    items.forEach(i => {
+      const rate = i.tax_rate_percent ?? 0;
+      const cents = i.tax_amount_cents ?? 0;
+      if (rate > 0 && cents > 0) taxByRate[rate] = (taxByRate[rate] ?? 0) + cents;
+    });
+    const tipCents = order.tip_amount_cents || 0;
+    const tipPct = order.tip_percent_applied;
+    const created = order.created_at
+      ? new Date(order.created_at.endsWith('Z') || order.created_at.includes('+') || order.created_at.includes('-', 10) ? order.created_at : order.created_at + 'Z')
+      : null;
+    const paid = order.status === 'paid' || order.status === 'completed' || !!order.paid_at;
+    const methods: Record<string, string> = {
+      cash: 'Efectivo', terminal: 'Datáfono', stripe: 'Tarjeta (online)', revolut: 'Revolut', transfer: 'Transferencia',
+    };
+    const html = buildInvoiceA4Html({
+      logoUrl,
+      business: {
+        name: settings?.name || 'Restaurante',
+        address: settings?.address,
+        city: settings?.city,
+        phone: settings?.phone,
+        whatsapp: settings?.whatsapp,
+        website: settings?.website,
+        taxId: settings?.tax_id,
+      },
+      invoiceNumber: String(order.id).padStart(6, '0'),
+      dateLabel: created ? created.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : '',
+      tableName: order.table_name,
+      customerName: order.customer_name,
+      billing: billingCustomer
+        ? {
+            name: billingCustomer.company_name || billingCustomer.name,
+            taxId: billingCustomer.tax_id,
+            address: billingCustomer.address,
+            email: billingCustomer.email,
+          }
+        : null,
+      lines: items.map(i => ({
+        name: i.product_name || '',
+        detail: [this.formatItemModifiersLine(i), i.notes?.trim()].filter(Boolean).join(' · ') || null,
+        quantity: i.quantity || 1,
+        unitCents: i.price_cents || 0,
+        totalCents: (i.price_cents || 0) * (i.quantity || 1),
+      })),
+      subtotalCents: items.reduce((s, i) => s + (i.price_cents || 0) * (i.quantity || 1), 0),
+      extraChargeCents: order.extra_charge_cents || 0,
+      extraChargeNote: order.extra_charge_note,
+      tipCents,
+      tipLabel: tipPct ? `PROPINA ${tipPct}%` : 'PROPINA',
+      taxes: Object.entries(taxByRate).sort(([a], [b]) => Number(a) - Number(b)).map(([rate, cents]) => ({ rate: Number(rate), cents })),
+      totalCents: order.total_cents || 0,
+      paid,
+      paymentMethodLabel: order.payment_method ? (methods[order.payment_method] ?? order.payment_method) : null,
+      formatMoney: c => this.formatPrice(c),
+    });
+    const w = window.open('', '_blank');
+    if (w) {
+      w.document.write(html);
+      w.document.write('<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};}<\/script>');
+      w.document.close();
     }
   }
 
