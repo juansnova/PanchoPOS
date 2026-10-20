@@ -2560,6 +2560,27 @@ ModuleRegistry.registerModules([
     .order-card .qty-btn:active:not(:disabled) { transform: scale(.88); }
     .order-card .qty-btn:disabled { opacity: .4; cursor: default; }
     .order-card .qty-value { min-width: 26px; text-align: center; font-size: 1.05rem; font-weight: 800; color: var(--color-text); }
+    /* Item line: name on the left, quantity stepper on the right; price, remove and status below */
+    .order-card .order-item { gap: 8px; padding: 12px 2px; }
+    .order-card .item-name-row { flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+    .order-card .item-name { order: 1; flex: 1 1 0; min-width: 0; line-height: 1.25; overflow-wrap: anywhere; }
+    .order-card .item-qty { order: 2; flex: none; margin-left: auto; font-weight: 800; }
+    .order-card .item-customization, .order-card .item-notes { order: 3; flex: 1 0 100%; }
+    .order-card .qty-stepper { padding: 2px; gap: 2px; }
+    .order-card .qty-btn { width: 28px; height: 28px; font-size: 1.1rem; }
+    .order-card .qty-value { min-width: 22px; font-size: .95rem; }
+    .order-card .item-details-row { gap: 6px; }
+    .order-card .item-price { display: flex; flex-direction: column; line-height: 1.2; font-weight: 600; color: var(--color-text-muted); }
+    .order-card .price-total { margin: 0; font-size: .7rem; font-weight: 500; }
+    .order-card .item-actions { gap: 4px; margin-left: auto; }
+    .order-card .btn-remove-item {
+      min-width: 32px; min-height: 32px; width: 32px; height: 32px; padding: 0; border-radius: 50%; opacity: .75;
+    }
+    .order-card .btn-remove-item:hover { opacity: 1; background: rgba(220, 38, 38, .1); }
+    .order-card .item-status-badge {
+      min-height: 32px; padding: 0 10px; gap: 4px; border-radius: 999px; font-size: .78rem; font-weight: 700; white-space: nowrap;
+    }
+    .order-card .item-status-badge svg { width: 12px; height: 12px; }
     @media (prefers-reduced-motion: reduce) {
       .order-card, .order-card:hover { transition: none; transform: none; }
       .order-card .order-status-pill.preparing::before { animation: none; }
