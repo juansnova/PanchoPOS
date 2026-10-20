@@ -943,13 +943,8 @@ ModuleRegistry.registerModules([
                 <div class="eo-foot-left">
                   <button type="button" class="eo-ghost" (click)="printEditOrderInvoice()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                      stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
-                    {{ 'ORDERS.EDIT_PRINT_INVOICE' | translate }}
-                  </button>
-                  <button type="button" class="eo-ghost" (click)="printEditOrderInvoiceA4()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                       stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M8 13h8M8 17h8"/></svg>
-                    {{ 'ORDERS.EDIT_INVOICE_A4' | translate }}
+                    {{ 'ORDERS.EDIT_PRINT_INVOICE' | translate }}
                   </button>
                   <button type="button" class="eo-ghost" (click)="printEditOrderKitchen()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -3235,29 +3230,20 @@ export class OrdersComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Illustrated A4 invoice (opens the browser print dialog; "Save as PDF" works from there). */
   printEditOrderInvoice() {
     const order = this.editOrder();
     if (!order) return;
     const customer = this.editOrderBillingId != null
       ? this.editOrderBillingCustomers().find(c => c.id === this.editOrderBillingId)
       : undefined;
-    void this.printInvoice(order, customer ?? undefined);
+    this.printInvoiceA4(order, customer ?? null);
     if (this.editOrderBillingId != null) {
       this.api.setOrderBillingCustomer(order.id, this.editOrderBillingId).subscribe({
         next: () => this.refreshEditOrder(order.id),
         error: () => {}
       });
     }
-  }
-
-  /** Illustrated A4 invoice (opens the browser print dialog; "Save as PDF" works from there). */
-  printEditOrderInvoiceA4() {
-    const order = this.editOrder();
-    if (!order) return;
-    const customer = this.editOrderBillingId != null
-      ? this.editOrderBillingCustomers().find(c => c.id === this.editOrderBillingId)
-      : undefined;
-    this.printInvoiceA4(order, customer ?? null);
   }
 
   printInvoiceA4(order: Order, billingCustomer?: BillingCustomer | null) {
@@ -3739,7 +3725,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     const customer = this.facturaCustomerId != null
       ? this.facturaCustomers().find(c => c.id === this.facturaCustomerId)
       : null;
-    void this.printInvoice(order, customer ?? undefined);
+    this.printInvoiceA4(order, customer ?? null);
     this.afterFacturaPrintPersistCustomer(order, customer);
     this.closeFacturaModal();
   }
@@ -3765,29 +3751,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
         error: () => {}
       });
     }
-  }
-
-  async printInvoice(
-    order: Order,
-    billingCustomer?: BillingCustomer | null,
-  ) {
-    if (order.id != null) {
-      // The chosen billing customer is saved after printing, so send it with the job.
-      const result = await this.printBridge.tryEnqueue(
-        'receipt',
-        order.id,
-        'receipt',
-        billingCustomer?.id != null ? { billing_customer_id: billingCustomer.id } : undefined,
-      );
-      if (result.ok) {
-        this.showToast(this.translate.instant('ORDERS.PRINT_BRIDGE_SENT'), 'success');
-        return;
-      }
-      this.showToast(this.translate.instant('ORDERS.PRINT_BRIDGE_OFFLINE'), 'error');
-    }
-
-    // No print agent: print the illustrated A4 invoice from the browser (print dialog / PDF).
-    this.printInvoiceA4(order, billingCustomer ?? null);
   }
 
   private escapeHtml(s: string): string {
