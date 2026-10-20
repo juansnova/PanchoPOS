@@ -166,7 +166,7 @@ class TestOfflineCashOrderApi(PgClientTestCase):
         self.assertEqual(order.status, models.OrderStatus.pending)
         self.assertIsNone(order.paid_at)
         self.assertIsNone(order.payment_method)
-        self.assertIn("offline-card-intent", order.notes or "")
+        self.assertIsNone(order.notes)
 
         items = list(
             self.session.exec(select(models.OrderItem).where(models.OrderItem.order_id == oid)).all()

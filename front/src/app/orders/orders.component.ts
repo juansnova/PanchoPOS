@@ -3707,6 +3707,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   displayOrderNotes(notes?: string | null): string | null {
     if (!notes?.trim()) return null;
     const cleaned = notes
+      .replace(/\[offline-card-intent\][^\n]*?online after sync\.?\s*/gi, '') // legacy internal marker
       .split('\n')
       .filter(line => !/^\[PAID:/i.test(line.trim()))
       .join('\n')

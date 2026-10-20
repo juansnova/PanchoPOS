@@ -88,12 +88,8 @@ def create_offline_cash_order(
     assert resolved_lines is not None
 
     now = datetime.now(timezone.utc)
-    note_parts: list[str] = []
-    if intent == "card":
-        note_parts.append("[offline-card-intent] Collect card payment online after sync.")
-    if (notes or "").strip():
-        note_parts.append((notes or "").strip())
-    combined_notes = " ".join(note_parts) or None
+    # Card sales stay unpaid (see needs_payment); the order note is only what staff typed.
+    combined_notes = (notes or "").strip() or None
 
     paid_now = intent in PAID_NOW_INTENTS
     if paid_now:
