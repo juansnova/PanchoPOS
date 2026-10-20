@@ -1161,10 +1161,6 @@ ModuleRegistry.registerModules([
                     [placeholder]="('ORDERS.EXTRA_CHARGE' | translate) + ' $'"
                     [value]="extraChargeInputValue(orderToMarkPaid()!)"
                     (input)="paymentExtraInput = $any($event.target).value" />
-                  <input class="extra-note" type="text" maxlength="200"
-                    [placeholder]="'ORDERS.EXTRA_CHARGE_REASON' | translate"
-                    [value]="extraChargeNoteValue(orderToMarkPaid()!)"
-                    (input)="paymentExtraNote = $any($event.target).value" />
                   <button type="button" class="extra-ok" (click)="applyExtraCharge()"
                     [attr.aria-label]="'ORDERS.EXTRA_CHARGE_APPLY' | translate">✓</button>
                 </div>
@@ -2121,8 +2117,7 @@ ModuleRegistry.registerModules([
       background: var(--color-surface); color: var(--color-text);
     }
     .extra-inline input:focus { outline: none; border-color: var(--color-primary); }
-    .extra-inline .extra-amount { flex: 0 0 120px; font-weight: 600; }
-    .extra-inline .extra-note { flex: 1 1 0; }
+    .extra-inline .extra-amount { flex: 1 1 0; font-weight: 600; }
     .extra-ok {
       flex: 0 0 40px; height: 40px; border: none; border-radius: 50%; cursor: pointer;
       background: var(--color-primary); color: #fff; font-weight: 700; touch-action: manipulation;
@@ -4161,7 +4156,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
   closePaymentModal() {
     this.orderToMarkPaid.set(null);
     this.paymentExtraInput = null;
-    this.paymentExtraNote = null;
     this.paymentModalFinishMode.set(false);
     this.processingPayment.set(false);
     this.paymentTipPercent = 0;
@@ -4317,9 +4311,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
     return items.reduce((s, i) => s + (i.price_cents || 0) * (i.quantity || 0), 0) + extra;
   }
 
-  /** Additional-charge fields in the payment modal; null = show the order's saved value. */
+  /** Additional-charge amount typed in the payment modal; null = show the order's saved value. */
   paymentExtraInput: string | null = null;
-  paymentExtraNote: string | null = null;
 
   extraChargeInputValue(order: Order): string {
     if (this.paymentExtraInput !== null) return this.paymentExtraInput;
@@ -4327,16 +4320,12 @@ export class OrdersComponent implements OnInit, OnDestroy {
     return c > 0 ? (c / 100).toString() : '';
   }
 
-  extraChargeNoteValue(order: Order): string {
-    return this.paymentExtraNote ?? order.extra_charge_note ?? '';
-  }
 
   applyExtraCharge(): void {
     const order = this.orderToMarkPaid();
     if (!order) return;
     const cents = this.parseMoneyMajorToCents(this.extraChargeInputValue(order));
-    const note = this.extraChargeNoteValue(order).trim();
-    this.api.setOrderExtraCharge(order.id, cents, note).subscribe({
+    this.api.setOrderExtraCharge(order.id, cents).subscribe({
       next: res => {
         this.orderToMarkPaid.set({
           ...order,
@@ -4344,7 +4333,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
           extra_charge_note: res.extra_charge_note,
         });
         this.paymentExtraInput = null;
-        this.paymentExtraNote = null;
         this.paymentAmountPaidInput = '';
         this.paymentTipAmountInput = '';
         this.loadOrders();

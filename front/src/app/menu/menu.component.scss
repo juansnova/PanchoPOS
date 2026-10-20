@@ -935,8 +935,7 @@ $cart-expanded-max: 60vh;
     &:focus { outline: none; border-color: var(--color-primary); }
   }
 
-  .extra-amount { flex: 0 0 90px; font-weight: 600; }
-  .extra-note { flex: 1 1 0; }
+  .extra-amount { flex: 1 1 0; font-weight: 600; }
 
   .extra-ok,
   .extra-x {

@@ -1291,19 +1291,17 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   /** Staff-only additional charge editor (amount in major units, like the rest of the app). */
   extraEditOrderId = signal<number | null>(null);
-  extraAmountInput = '';
-  extraNoteInput = '';
+  extraAmountInput = '';
 
   openExtraCharge(order: PlacedOrder) {
-    this.extraAmountInput = order.extraCents ? String(order.extraCents / 100) : '';
-    this.extraNoteInput = order.extraNote || '';
+    this.extraAmountInput = order.extraCents ? String(order.extraCents / 100) : '';
     this.extraEditOrderId.set(order.id);
   }
 
   saveExtraCharge(orderId: number) {
     const n = parseFloat((this.extraAmountInput || '').replace(',', '.'));
     const cents = Number.isNaN(n) || n < 0 ? 0 : Math.round(n * 100);
-    this.api.setOrderExtraCharge(orderId, cents, this.extraNoteInput.trim()).subscribe({
+    this.api.setOrderExtraCharge(orderId, cents).subscribe({
       next: () => {
         this.extraEditOrderId.set(null);
         this.loadStoredOrders();

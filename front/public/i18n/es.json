@@ -777,7 +777,6 @@
     "OVERPAYMENT_VALIDATE": "El importe cobrado debe cubrir el subtotal más la propina.",
     "INVOICE_SUBTOTAL": "Subtotal (artículos)",
     "EXTRA_CHARGE": "Importe adicional",
-    "EXTRA_CHARGE_REASON": "Motivo (opcional)",
     "EXTRA_CHARGE_APPLY": "Aplicar",
     "EXTRA_CHARGE_SAVED": "Importe adicional guardado",
     "EXTRA_CHARGE_FAILED": "No se pudo guardar el importe adicional",

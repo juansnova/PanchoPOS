@@ -244,7 +244,7 @@
           @if (order.extraCents && extraEditOrderId() !== order.id) {
           <div class="extra-line">
             <span class="extra-line-label">
-              {{ 'ORDERS.EXTRA_CHARGE' | translate }}{{ order.extraNote ? ' · ' + order.extraNote : '' }}
+              {{ 'ORDERS.EXTRA_CHARGE' | translate }}
             </span>
             <strong>+ {{ formatPrice(order.extraCents) }}</strong>
           </div>
@@ -254,9 +254,6 @@
             <div class="extra-inline">
               <input class="extra-amount" type="text" inputmode="decimal" placeholder="$ 0"
                 [(ngModel)]="extraAmountInput" name="extraAmount" />
-              <input class="extra-note" type="text" maxlength="200"
-                [placeholder]="'ORDERS.EXTRA_CHARGE_REASON' | translate"
-                [(ngModel)]="extraNoteInput" name="extraNote" />
               <button type="button" class="extra-ok" (click)="saveExtraCharge(order.id)"
                 [attr.aria-label]="'ORDERS.EXTRA_CHARGE_APPLY' | translate">✓</button>
               <button type="button" class="extra-x" (click)="extraEditOrderId.set(null)"
