@@ -34,6 +34,7 @@ import {
   TextFilterModule,
   NumberFilterModule,
   DateFilterModule,
+  PaginationModule,
   themeQuartz,
   ICellRendererParams,
 } from 'ag-grid-community';
@@ -43,6 +44,7 @@ ModuleRegistry.registerModules([
   TextFilterModule,
   NumberFilterModule,
   DateFilterModule,
+  PaginationModule,
 ]);
 
 @Component({
@@ -94,6 +96,7 @@ ModuleRegistry.registerModules([
                 class="filter-tab" 
                 [class.active]="viewMode() === 'active'"
                 (click)="viewMode.set('active')">
+                <svg class="ft-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 {{ 'ORDERS.ACTIVE_ORDERS' | translate }}
                 @if (activeOrders().length > 0) {
                   <span class="tab-badge">{{ activeOrders().length }}</span>
@@ -103,6 +106,7 @@ ModuleRegistry.registerModules([
                 class="filter-tab" 
                 [class.active]="viewMode() === 'not_paid'"
                 (click)="viewMode.set('not_paid')">
+                <svg class="ft-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
                 {{ 'ORDERS.NOT_PAID_YET' | translate }}
                 @if (notPaidOrders().length > 0) {
                   <span class="tab-badge">{{ notPaidOrders().length }}</span>
@@ -112,6 +116,7 @@ ModuleRegistry.registerModules([
                 class="filter-tab" 
                 [class.active]="viewMode() === 'history'"
                 (click)="viewMode.set('history')">
+                <svg class="ft-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
                 {{ 'ORDERS.ORDER_HISTORY' | translate }}
                 @if (completedOrders().length > 0) {
                   <span class="tab-badge">{{ completedOrders().length }}</span>
@@ -121,6 +126,7 @@ ModuleRegistry.registerModules([
                 class="filter-tab"
                 [class.active]="viewMode() === 'delivery'"
                 (click)="viewMode.set('delivery')">
+                <svg class="ft-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17.5" r="3"/><circle cx="18.5" cy="17.5" r="3"/><path d="M8.5 17.5H14l2-8h-3.5M12 6h3l2 3.5"/></svg>
                 {{ 'ORDERS.DELIVERY_TAB' | translate }}
                 @if (deliveryOrders().length > 0) {
                   <span class="tab-badge">{{ deliveryOrders().length }}</span>
@@ -129,7 +135,8 @@ ModuleRegistry.registerModules([
               @if (viewMode() === 'active') {
                 <label class="toggle-removed">
                   <input type="checkbox" [(ngModel)]="showRemovedItems" (change)="loadOrders()">
-                  <span>{{ 'ORDERS.SHOW_REMOVED_ITEMS' | translate }}</span>
+                  <span class="tr-switch" aria-hidden="true"></span>
+                  <span class="tr-text">{{ 'ORDERS.SHOW_REMOVED_ITEMS' | translate }}</span>
                 </label>
               }
             </div>
@@ -805,19 +812,63 @@ ModuleRegistry.registerModules([
             <!-- Order History Section (AG Grid) - only when History tab is selected -->
             @if (viewMode() === 'history') {
               @if (completedOrders().length > 0) {
-                <div class="section-header history-header">
-                  <h2>{{ 'ORDERS.ORDER_HISTORY' | translate }}</h2>
-                  <span class="badge secondary">{{ completedOrders().length }}</span>
+                <div class="hs-stats">
+                  <div class="hs-stat">
+                    <span>{{ 'ORDERS.HISTORY_ORDERS' | translate }}</span>
+                    <strong>{{ historyStats().count }}</strong>
+                  </div>
+                  <div class="hs-stat hs-stat-main">
+                    <span>{{ 'ORDERS.HISTORY_SALES' | translate }}</span>
+                    <strong>{{ formatPrice(historyStats().totalCents) }}</strong>
+                  </div>
+                  <div class="hs-stat">
+                    <span>{{ 'ORDERS.HISTORY_AVG' | translate }}</span>
+                    <strong>{{ formatPrice(historyStats().avgCents) }}</strong>
+                  </div>
                 </div>
-                <div class="grid-container" (click)="onGridClick($event)">
-                  <ag-grid-angular
-                    style="width: 100%; height: 400px;"
-                    [theme]="gridTheme"
-                    [rowData]="completedOrders()"
-                    [columnDefs]="columnDefs"
-                    [defaultColDef]="defaultColDef"
-                  />
+
+                <div class="hs-filters">
+                  <div class="hs-search">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                    <input type="search" [ngModel]="historySearch()" (ngModelChange)="historySearch.set($event)"
+                      [placeholder]="'ORDERS.HISTORY_SEARCH_PH' | translate" [attr.aria-label]="'ORDERS.HISTORY_SEARCH_PH' | translate" />
+                    @if (historySearch()) {
+                      <button type="button" class="hs-clear" (click)="historySearch.set('')" aria-label="×">×</button>
+                    }
+                  </div>
+                  <div class="hs-chips" role="group" [attr.aria-label]="'ORDERS.HISTORY_RANGE' | translate">
+                    @for (r of historyRanges; track r.id) {
+                      <button type="button" class="hs-chip" [class.on]="historyRange() === r.id" (click)="historyRange.set(r.id)">{{ r.label | translate }}</button>
+                    }
+                  </div>
+                  <div class="hs-chips" role="group" [attr.aria-label]="'ORDERS.GRID.STATUS' | translate">
+                    @for (st of historyStatuses; track st.id) {
+                      <button type="button" class="hs-chip" [class.on]="historyStatus() === st.id" (click)="historyStatus.set(st.id)">{{ st.label | translate }}</button>
+                    }
+                  </div>
                 </div>
+
+                @if (filteredHistory().length > 0) {
+                  <div class="grid-container hs-grid" (click)="onGridClick($event)">
+                    <ag-grid-angular
+                      style="width: 100%; height: 100%;"
+                      [theme]="gridTheme"
+                      [rowData]="filteredHistory()"
+                      [columnDefs]="columnDefs"
+                      [defaultColDef]="defaultColDef"
+                      [pagination]="true"
+                      [paginationPageSize]="25"
+                      [paginationPageSizeSelector]="[25, 50, 100]"
+                      [rowHeight]="56"
+                      [headerHeight]="46"
+                    />
+                  </div>
+                } @else {
+                  <div class="empty-state hs-empty">
+                    <h3>{{ 'ORDERS.HISTORY_NO_MATCH' | translate }}</h3>
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="resetHistoryFilters()">{{ 'ORDERS.HISTORY_CLEAR_FILTERS' | translate }}</button>
+                  </div>
+                }
               } @else {
                 <div class="empty-state">
                   <div class="empty-icon">
@@ -1489,43 +1540,25 @@ ModuleRegistry.registerModules([
     .delivery-draft-items {
       margin-bottom: 0.75rem;
     }
-        .filter-tabs {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      margin-bottom: var(--space-4);
-      border-bottom: 2px solid var(--color-border);
+    .filter-tabs {
+      display: flex; align-items: center; gap: 6px; margin-bottom: var(--space-4); padding: 6px; border-radius: 999px;
+      background: var(--color-surface); border: 1px solid var(--color-border); overflow-x: auto; scrollbar-width: none;
+      box-shadow: 0 6px 20px -16px rgba(0,0,0,.4);
     }
+    .filter-tabs::-webkit-scrollbar { display: none; }
     .filter-tab {
-      padding: var(--space-3) var(--space-4);
-      background: none;
-      border: none;
-      border-bottom: 2px solid transparent;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--color-text-muted);
-      cursor: pointer;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      margin-bottom: -2px;
+      flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px;
+      background: transparent; color: var(--color-text-muted); font: inherit; font-size: 0.875rem; font-weight: 700; cursor: pointer;
+      white-space: nowrap; touch-action: manipulation; transition: background .15s, color .15s, box-shadow .15s;
     }
-    .filter-tab:hover {
-      color: var(--color-text);
-    }
-    .filter-tab.active {
-      color: var(--color-primary);
-      border-bottom-color: var(--color-primary);
-    }
+    .filter-tab:hover { background: var(--color-bg); color: var(--color-text); }
+    .filter-tab.active { background: var(--color-primary); color: #fff; box-shadow: 0 8px 16px -8px var(--color-primary); }
+    .filter-tab .ft-ico { flex: none; }
     .tab-badge {
-      background: var(--color-primary);
-      color: white;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: 600;
+      display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px;
+      background: var(--color-primary-light); color: var(--color-primary); font-size: 0.75rem; font-weight: 800;
     }
+    .filter-tab.active .tab-badge { background: rgba(255,255,255,.25); color: #fff; }
     .section-header { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
     .section-header h2 { font-size: 1.125rem; font-weight: 600; color: var(--color-text); margin: 0; }
     .history-header { margin-top: var(--space-6); }
@@ -2777,6 +2810,57 @@ ModuleRegistry.registerModules([
       display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
       background: var(--color-primary); color: #fff; font-size: 1.2rem; line-height: 1;
     }
+
+    /* ===== Filtros y toggle ===== */
+    .toggle-removed { flex: none; display: inline-flex; align-items: center; gap: 10px; margin-left: auto; padding: 0 14px; min-height: 44px; cursor: pointer; font-weight: 600; }
+    .toggle-removed input { position: absolute; opacity: 0; pointer-events: none; }
+    .tr-switch { position: relative; flex: none; width: 40px; height: 24px; border-radius: 999px; background: var(--color-border); transition: background .15s; }
+    .tr-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .15s; }
+    .toggle-removed input:checked + .tr-switch { background: var(--color-primary); }
+    .toggle-removed input:checked + .tr-switch::after { transform: translateX(16px); }
+    .toggle-removed input:focus-visible + .tr-switch { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    .tr-text { font-size: .85rem; color: var(--color-text); white-space: nowrap; }
+
+    /* ===== Historial de pedidos ===== */
+    .hs-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: var(--space-4); }
+    .hs-stat { display: flex; flex-direction: column; gap: 4px; padding: 14px 18px; border-radius: 18px; background: var(--color-surface); border: 1px solid var(--color-border); }
+    .hs-stat span { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); }
+    .hs-stat strong { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .hs-stat-main { background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover)); border-color: transparent; box-shadow: 0 14px 26px -16px var(--color-primary); }
+    .hs-stat-main span, .hs-stat-main strong { color: #fff; }
+    .hs-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: var(--space-4); }
+    .hs-search { position: relative; flex: 1 1 260px; min-width: 200px; display: flex; align-items: center; }
+    .hs-search svg { position: absolute; left: 14px; color: var(--color-text-muted); pointer-events: none; }
+    .hs-search input {
+      width: 100%; min-height: 44px; padding: 0 40px 0 42px; border-radius: 999px; border: 1px solid var(--color-border);
+      background: var(--color-surface); color: var(--color-text); font: inherit; box-sizing: border-box;
+    }
+    .hs-search input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+    .hs-clear { position: absolute; right: 8px; width: 30px; height: 30px; border: 0; border-radius: 50%; background: var(--color-bg); color: var(--color-text-muted); font-size: 1.1rem; cursor: pointer; }
+    .hs-chips { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); }
+    .hs-chip {
+      min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: var(--color-text-muted);
+      font: inherit; font-size: .82rem; font-weight: 700; cursor: pointer; white-space: nowrap; touch-action: manipulation;
+      transition: background .15s, color .15s;
+    }
+    .hs-chip:hover { background: var(--color-bg); color: var(--color-text); }
+    .hs-chip.on { background: var(--color-primary-light); color: var(--color-primary); box-shadow: inset 0 0 0 1px var(--color-primary); }
+    .hs-grid { height: clamp(420px, calc(100vh - 430px), 760px); border-radius: 20px; box-shadow: 0 16px 36px -26px rgba(0,0,0,.45); }
+    .hs-empty { padding: 36px 16px; }
+    .hs-empty h3 { margin-bottom: 12px; }
+    .grid-container .btn-factura-row, .grid-container .btn-edit-order-row, .grid-container .btn-delete-order-row {
+      display: inline-flex !important; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0 !important; cursor: pointer;
+      background: var(--color-bg) !important; color: var(--color-text-muted) !important; border: 0 !important; border-radius: 12px !important;
+      transition: background .15s ease, color .15s ease, transform .12s;
+    }
+    .grid-container .btn-edit-order-row:hover, .grid-container .btn-factura-row:hover { background: var(--color-primary-light) !important; color: var(--color-primary) !important; }
+    .grid-container .btn-delete-order-row:hover { background: rgba(220, 38, 38, .1) !important; color: #dc2626 !important; }
+    .grid-container button:active { transform: scale(.92); }
+    @media (max-width: 720px) {
+      .hs-stats { grid-template-columns: 1fr 1fr; }
+      .hs-stat-main { grid-column: 1 / -1; order: -1; }
+      .tr-text { white-space: normal; }
+    }
   `]
 })
 export class OrdersComponent implements OnInit, OnDestroy {
@@ -2952,6 +3036,60 @@ export class OrdersComponent implements OnInit, OnDestroy {
     if (tid != null) list = list.filter(o => o.table_id === tid);
     return list;
   });
+  // ----- History filters (search + range + status) -----
+  historySearch = signal('');
+  historyRange = signal<'all' | 'today' | '7d' | '30d'>('all');
+  historyStatus = signal<'all' | 'completed' | 'paid' | 'cancelled'>('all');
+  readonly historyRanges: { id: 'all' | 'today' | '7d' | '30d'; label: string }[] = [
+    { id: 'all', label: 'ORDERS.HISTORY_RANGE_ALL' },
+    { id: 'today', label: 'ORDERS.HISTORY_RANGE_TODAY' },
+    { id: '7d', label: 'ORDERS.HISTORY_RANGE_7D' },
+    { id: '30d', label: 'ORDERS.HISTORY_RANGE_30D' },
+  ];
+  readonly historyStatuses: { id: 'all' | 'completed' | 'paid' | 'cancelled'; label: string }[] = [
+    { id: 'all', label: 'ORDERS.HISTORY_STATUS_ALL' },
+    { id: 'completed', label: 'ORDER_STATUS.completed' },
+    { id: 'paid', label: 'ORDER_STATUS.paid' },
+    { id: 'cancelled', label: 'ORDER_STATUS.cancelled' },
+  ];
+
+  filteredHistory = computed(() => {
+    const q = this.historySearch().trim().toLowerCase();
+    const status = this.historyStatus();
+    const range = this.historyRange();
+    const start = new Date();
+    if (range === 'today') start.setHours(0, 0, 0, 0);
+    else if (range === '7d') start.setDate(start.getDate() - 7);
+    else if (range === '30d') start.setDate(start.getDate() - 30);
+    return this.completedOrders().filter((o) => {
+      if (status !== 'all' && o.status !== status) return false;
+      if (range !== 'all') {
+        const raw = o.created_at || '';
+        const iso = raw.endsWith('Z') || raw.includes('+') || raw.includes('-', 10) ? raw : raw + 'Z';
+        const d = new Date(iso);
+        if (isNaN(d.getTime()) || d < start) return false;
+      }
+      if (!q) return true;
+      const hay = [
+        '#' + o.id, String(o.id), o.table_name, o.customer_name,
+        ...(o.items || []).map((i) => i.product_name),
+      ].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  });
+
+  historyStats = computed(() => {
+    const paid = this.filteredHistory().filter((o) => o.status !== 'cancelled');
+    const totalCents = paid.reduce((sum, o) => sum + (o.total_cents || 0), 0);
+    return { count: this.filteredHistory().length, totalCents, avgCents: paid.length ? Math.round(totalCents / paid.length) : 0 };
+  });
+
+  resetHistoryFilters(): void {
+    this.historySearch.set('');
+    this.historyRange.set('all');
+    this.historyStatus.set('all');
+  }
+
   notPaidOrders = computed(() => {
     const tid = this.tableScopeId();
     let list = this.orders().filter(o => o.status === 'completed' && !o.paid_at);
@@ -2967,16 +3105,20 @@ export class OrdersComponent implements OnInit, OnDestroy {
   gridTheme = themeQuartz.withParams({
     backgroundColor: '#FFFFFF',
     foregroundColor: '#1C1917',
-    accentColor: '#D35233',
-    borderColor: '#E7E5E4',
-    chromeBackgroundColor: '#FAF9F7',
-    headerTextColor: '#1C1917',
-    oddRowBackgroundColor: 'rgba(0, 0, 0, 0.02)',
-    rowHoverColor: 'rgba(211, 82, 51, 0.05)',
-    selectedRowBackgroundColor: 'rgba(211, 82, 51, 0.1)',
+    accentColor: '#C2672C',
+    borderColor: '#EFE7DE',
+    chromeBackgroundColor: '#FBF7F2',
+    headerTextColor: '#78716C',
+    headerFontSize: 12,
+    headerFontWeight: 700,
+    oddRowBackgroundColor: 'rgba(194, 103, 44, 0.025)',
+    rowHoverColor: 'rgba(194, 103, 44, 0.07)',
+    selectedRowBackgroundColor: 'rgba(194, 103, 44, 0.12)',
     fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-    borderRadius: 10,
-    wrapperBorderRadius: 10,
+    fontSize: 14,
+    spacing: 8,
+    borderRadius: 14,
+    wrapperBorderRadius: 18,
   });
 
   get columnDefs(): ColDef[] {
@@ -2986,12 +3128,15 @@ export class OrdersComponent implements OnInit, OnDestroy {
         field: 'id',
         headerName: this.translate.instant('ORDERS.GRID.ORDER_NUMBER'),
         width: 100,
+        sort: 'desc',
         valueFormatter: (params) => `#${params.value}`,
+        cellStyle: { fontWeight: '800', color: '#C2672C' },
       },
       {
         field: 'table_name',
         headerName: this.translate.instant('ORDERS.GRID.TABLE'),
-        width: 120,
+        width: 130,
+        cellStyle: { fontWeight: '700' },
       },
       {
         field: 'customer_name',
@@ -3011,7 +3156,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
       {
         field: 'total_cents',
         headerName: this.translate.instant('ORDERS.GRID.TOTAL'),
-        width: 110,
+        width: 130,
+        cellStyle: { fontWeight: '800' },
         valueFormatter: (params) => {
           if (params.value == null) return '';
           return formatCurrency(params.value);
@@ -3025,26 +3171,18 @@ export class OrdersComponent implements OnInit, OnDestroy {
           const status = params.value;
           const statusLabel = this.translate.instant(`ORDER_STATUS.${status}`) || status;
           const colorMap: Record<string, string> = {
-            completed: '#78716C',  // matches --color-text-muted
-            paid: '#16A34A',       // matches --color-success
+            completed: '#78716C',
+            paid: '#16A34A',
+            cancelled: '#DC2626',
           };
           const color = colorMap[status] || '#78716C';
-          return `<span style="
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            background: ${color}20;
-            color: ${color};
-            line-height: 1.4;
-          ">${statusLabel}</span>`;
+          return `<span style="display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:999px;font-size:0.72rem;font-weight:700;background:${color}1f;color:${color};line-height:1.4;"><i style="width:7px;height:7px;border-radius:50%;background:${color};display:inline-block"></i>${statusLabel}</span>`;
         },
       },
       {
         field: 'created_at',
         headerName: this.translate.instant('ORDERS.GRID.DATE'),
-        width: 220,
+        width: 170,
         valueFormatter: (params) => {
           if (!params.value) return '';
           // Parse date - backend sends ISO without timezone, treat as UTC
@@ -3056,12 +3194,11 @@ export class OrdersComponent implements OnInit, OnDestroy {
           // Use browser's local timezone for display
           const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
           return date.toLocaleString(undefined, {
-            month: 'numeric',
-            day: 'numeric',
+            day: '2-digit',
+            month: '2-digit',
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
-            second: '2-digit',
             timeZone: timeZone,
             hour12: false
           });
@@ -3078,7 +3215,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
           const editTitle = this.translate.instant('ORDERS.EDIT_ORDER');
           const safeEditTitle = (editTitle || 'Edit').replace(/"/g, '&quot;');
           const editIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-          return `<button type="button" class="btn-edit-order-row" data-order-id="${id}" title="${safeEditTitle}" style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;cursor:pointer;background:#fff;color:#333;border:1px solid #ddd;border-radius:8px;">${editIcon}</button>`;
+          return `<button type="button" class="btn-edit-order-row" data-order-id="${id}" title="${safeEditTitle}">${editIcon}</button>`;
         },
       },
       {
@@ -3092,7 +3229,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
           const title = this.translate.instant('CUSTOMERS.PRINT_FACTURA');
           const icon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/></svg>';
           const safeTitle = (title || '').replace(/"/g, '&quot;');
-          return `<button type="button" class="btn-factura-row" data-order-id="${id}" title="${safeTitle}" style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;cursor:pointer;background:#fff;color:#333;border:1px solid #ddd;border-radius:8px;">${icon}</button>`;
+          return `<button type="button" class="btn-factura-row" data-order-id="${id}" title="${safeTitle}">${icon}</button>`;
         },
       },
       ...(this.canDeleteOrder() ? [{
@@ -3106,15 +3243,16 @@ export class OrdersComponent implements OnInit, OnDestroy {
           const deleteTitle = this.translate.instant('ORDERS.DELETE_ORDER');
           const safeDeleteTitle = (deleteTitle || 'Delete').replace(/"/g, '&quot;');
           const deleteIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
-          return `<button type="button" class="btn-delete-order-row" data-order-id="${id}" title="${safeDeleteTitle}" style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;cursor:pointer;background:#fff;color:#666;border:1px solid #ddd;border-radius:8px;">${deleteIcon}</button>`;
+          return `<button type="button" class="btn-delete-order-row" data-order-id="${id}" title="${safeDeleteTitle}">${deleteIcon}</button>`;
         },
       }] : []),
     ];
   }
 
+  // Filtering lives in the bar above the grid (search / range / status), not in each column header.
   defaultColDef: ColDef = {
     sortable: true,
-    filter: true,
+    filter: false,
     resizable: true,
   };
 
