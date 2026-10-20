@@ -758,37 +758,53 @@ $cart-expanded-max: 60vh;
     min-width: 40px;
   }
 
-  // −/+ stepper: works the same with mouse, touch and keyboard (no native number spinners)
+  // −/+ stepper: pill with round brand-colored buttons; same on mouse, touch and keyboard
   .qty-stepper {
     display: inline-flex;
     align-items: center;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-surface);
+    gap: 4px;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--color-primary-light);
   }
 
   .qty-btn {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border: none;
-    background: none;
-    color: var(--color-text);
-    font-size: 1.25rem;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 1.375rem;
+    font-weight: 600;
     line-height: 1;
     cursor: pointer;
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--color-primary) 35%, transparent);
+    transition: transform 0.12s, background 0.15s, opacity 0.15s;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
 
+    &:hover:not(:disabled) {
+      background: var(--color-primary-hover);
+    }
+
+    &:active:not(:disabled) {
+      transform: scale(0.88);
+    }
+
     &:disabled {
       opacity: 0.35;
+      box-shadow: none;
       cursor: default;
     }
   }
 
   .qty-value {
-    min-width: 24px;
+    min-width: 26px;
     text-align: center;
-    font-weight: 600;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--color-text);
   }
 
   .item-name-block {
@@ -845,27 +861,32 @@ $cart-expanded-max: 60vh;
   }
 
   .remove-item-btn {
-    background: none;
-    border: none;
-    color: var(--color-error);
-    cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 44px; // touch target on phone/tablet
-    min-height: 44px;
-    padding: 4px;
-    opacity: 0.8;
-    transition: opacity 0.15s;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-error) 12%, transparent);
+    color: var(--color-error);
+    cursor: pointer;
+    transition: transform 0.12s, background 0.15s, color 0.15s;
+    touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
 
     svg {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
     }
 
     &:hover {
-      opacity: 1;
+      background: var(--color-error);
+      color: #fff;
+    }
+
+    &:active {
+      transform: scale(0.88);
     }
   }
 }
