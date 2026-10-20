@@ -1748,7 +1748,8 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
     @media (prefers-reduced-motion: reduce) { .table-group { transition: none; } }
 
     /* ===== Panel de mesa ===== */
-    .pp { --pp-accent: #9ca3af; overflow: hidden; }
+    .pp { --pp-accent: #9ca3af; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: thin; max-height: calc(100% - 2rem); }
+    @media (max-width: 767px) { .pp { max-height: 70vh; } }
     .pp.pp-op-available { --pp-accent: #6b7280; }
     .pp.pp-op-reserved { --pp-accent: #d97706; }
     .pp.pp-op-occupied { --pp-accent: #059669; }
