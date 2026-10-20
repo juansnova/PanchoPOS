@@ -150,6 +150,7 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
                 >
               } @else {
                 {{ floor.name }}
+                <span class="ft-count">{{ tablesOnFloorCount(floor.id!) }}</span>
               }
             </button>
           }
@@ -290,6 +291,23 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
                     <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.15"/>
                   </filter>
                   
+                  <!-- Table tops: soft vertical gradient per operational status -->
+                  <linearGradient id="tbl-available" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#4b5563"/><stop offset="100%" stop-color="#2f3744"/>
+                  </linearGradient>
+                  <linearGradient id="tbl-reserved" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#b45309"/><stop offset="100%" stop-color="#78350f"/>
+                  </linearGradient>
+                  <linearGradient id="tbl-occupied" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#059669"/><stop offset="100%" stop-color="#064e3b"/>
+                  </linearGradient>
+                  <linearGradient id="tbl-open_order" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#1e3a8a"/>
+                  </linearGradient>
+                  <linearGradient id="tbl-ready_to_serve" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#4c1d95"/>
+                  </linearGradient>
+
                   <!-- Selected glow -->
                   <filter id="selectedGlow" x="-30%" y="-30%" width="160%" height="160%">
                     <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#22c55e" flood-opacity="0.6"/>
@@ -310,6 +328,21 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
                     (dblclick)="onTableDoubleClick($event, table)"
                     (touchstart)="onTableTouchStart($event, table)"
                   >
+                    <!-- Chairs / stools around the table (decorative; tinted by status) -->
+                    <g class="chairs" pointer-events="none">
+                      @for (c of chairsFor(table); track $index) {
+                        <rect
+                          class="chair"
+                          [attr.x]="c.x - c.w / 2"
+                          [attr.y]="c.y - c.h / 2"
+                          [attr.width]="c.w"
+                          [attr.height]="c.h"
+                          [attr.rx]="c.rx"
+                          [attr.transform]="'rotate(' + c.rot + ' ' + c.x + ' ' + c.y + ')'"
+                          [attr.fill]="tableSurfaceStroke(table)"
+                        />
+                      }
+                    </g>
                     <!-- Table shape with shadow -->
                     <g [attr.filter]="isTableVisualSelected(table) ? 'url(#selectedGlow)' : 'url(#tableShadow)'">
                       @if (table.shape === 'circle') {
@@ -397,11 +430,11 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
                       class="table-caption"
                       text-anchor="middle"
                       [attr.fill]="tableCaptionFill(table)"
-                      font-weight="600"
-                      font-size="11"
+                      font-weight="700"
+                      font-size="12"
                     >
                       <tspan x="0" dy="-0.2em">{{ tableCaptionName(table) }}</tspan>
-                      <tspan x="0" dy="1.15em" font-size="10" font-weight="500" opacity="0.92">— {{ tableSeatLabel(table) }}</tspan>
+                      <tspan x="0" dy="1.2em" font-size="10" font-weight="600" opacity="0.85">{{ tableSeatLabel(table) }} ◦ {{ 'TABLES.SEATS' | translate | lowercase }}</tspan>
                     </text>
                     @if (showPaymentChip(table)) {
                       <g
@@ -1615,6 +1648,83 @@ const STAFF_ORDERS_ROLES = new Set(['owner', 'kitchen', 'waiter']);
       .preview-bar { width: 36px; height: 14px; }
       .preview-bar::before { top: 2px; left: 3px; right: 3px; }
     }
+
+    /* ===== Plano del local: rediseño ===== */
+    .canvas-container.tables-canvas--tablet {
+      --tables-canvas-bg: #0d1117;
+      --tables-canvas-grid: rgba(255, 255, 255, 0.05);
+    }
+    .header-left h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.01em; }
+    .header-left .btn.active {
+      background: var(--color-primary-light); color: var(--color-primary); font-weight: 700; border-radius: 999px;
+    }
+    .view-toggle { padding: 3px; border-radius: 999px; background: var(--color-bg); border: 1px solid var(--color-border); }
+    .view-toggle .btn { border-radius: 999px; font-weight: 600; }
+    .header-actions .btn { border-radius: 999px; font-weight: 700; min-height: 42px; padding: 0 18px; }
+    .header-actions .btn-primary { box-shadow: 0 8px 18px -8px var(--color-primary); }
+    .join-hint { margin: 0 0 8px 4px; }
+
+    .floor-tabs {
+      gap: 6px; padding: 6px; border-radius: 999px; background: var(--color-surface);
+      box-shadow: 0 6px 20px -14px rgba(0,0,0,.35);
+    }
+    .floor-tab { border-radius: 999px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+    .floor-tab.active { box-shadow: 0 8px 16px -8px var(--color-primary); }
+    .ft-count {
+      display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
+      font-size: .72rem; font-weight: 800; background: var(--color-bg); color: var(--color-text-muted);
+    }
+    .floor-tab.active .ft-count { background: rgba(255,255,255,.25); color: #fff; }
+    .floor-tab.add-floor, .floor-tab.floor-action { justify-content: center; }
+
+    .canvas-wrapper { border-radius: 24px; overflow: hidden; border: 1px solid #1f2733; box-shadow: 0 20px 50px -24px rgba(0,0,0,.55); }
+    .canvas-container.tables-canvas--tablet .canvas-area {
+      background:
+        radial-gradient(circle at 50% 38%, rgba(255,255,255,.07), transparent 62%),
+        radial-gradient(circle, var(--tables-canvas-grid) 1.4px, transparent 1.6px) 0 0 / 28px 28px,
+        var(--tables-canvas-bg);
+    }
+
+    .chair { stroke: rgba(0,0,0,.35); stroke-width: 1; opacity: .8; }
+    .table-group :is(ellipse, rect:not(.chair)) { stroke-width: 2.2; }
+    .table-group { transition: filter .15s; }
+    .table-group:hover { filter: brightness(1.12); }
+    .table-group.selected .chair { opacity: 1; }
+    .table-caption { paint-order: stroke; stroke: rgba(0,0,0,.35); stroke-width: 2.5px; stroke-linejoin: round; letter-spacing: .01em; }
+
+    .floor-legend {
+      top: 14px; left: 14px; padding: 12px 14px; border-radius: 18px; border: 1px solid rgba(255,255,255,.1);
+      background: rgba(13, 17, 23, .72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    .floor-legend-swatch { width: 12px; height: 12px; border-radius: 50%; border: 0; box-shadow: 0 0 0 2px rgba(255,255,255,.12); }
+    .floor-legend-swatch--chip { border-radius: 4px; height: 9px; width: 16px; }
+    .floor-legend-title { color: #8b95a5; }
+
+    .zoom-controls {
+      gap: 2px; padding: 4px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12);
+      background: rgba(13, 17, 23, .72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    .zoom-btn { width: 40px; height: 40px; border-radius: 50%; color: #cbd5e1; }
+    .zoom-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
+    .zoom-level { min-width: 48px; font-weight: 800; color: #e5e7eb; }
+
+    .shape-palette, .properties-panel {
+      border-radius: 22px !important; border: 1px solid var(--color-border);
+      box-shadow: 0 24px 50px -22px rgba(0,0,0,.6) !important; background: var(--color-surface);
+    }
+    .palette-header h3 { font-size: .95rem; font-weight: 800; }
+    .palette-shape { border-radius: 16px; border-width: 1.5px; }
+    .palette-shape:hover { transform: translateY(-1px); box-shadow: 0 8px 16px -10px rgba(0,0,0,.4); }
+    .shape-preview { border-radius: 12px; background: var(--color-bg); width: 44px; height: 44px; flex: none; }
+    .preview-rect, .preview-circle, .preview-oval, .preview-booth { background: linear-gradient(#f1e7d4, #dccdb0); }
+    .panel-header h3 { font-size: 1.2rem; font-weight: 800; }
+    .status-badge { border-radius: 999px; padding: 4px 12px; font-weight: 700; }
+    .properties-panel .form-group input, .panel-select { border-radius: 12px; min-height: 42px; }
+    .panel-order-btn { border-radius: 14px; min-height: 46px; font-weight: 800; box-shadow: 0 8px 16px -8px var(--color-primary); }
+    .delete-btn { border-radius: 14px; min-height: 42px; font-weight: 700; }
+    .close-btn { border-radius: 50%; width: 36px; height: 36px; display: grid; place-items: center; }
+
+    @media (prefers-reduced-motion: reduce) { .table-group { transition: none; } }
   `]
 })
 export class TablesCanvasComponent implements OnInit, OnDestroy {
@@ -2210,7 +2320,50 @@ export class TablesCanvasComponent implements OnInit, OnDestroy {
   }
 
   tableSurfaceFill(table: CanvasTable): string {
-    return this.opColors(this.operationalKey(table)).fill;
+    return `url(#tbl-${this.operationalKey(table)})`;
+  }
+
+  tablesOnFloorCount(floorId: number): number {
+    return this.tables().filter(t => t.floor_id === floorId).length;
+  }
+
+  /** Decorative chairs: rectangles/squares seat on both long sides, round/oval around, bar stools on one side. */
+  chairsFor(table: CanvasTable): { x: number; y: number; w: number; h: number; rx: number; rot: number }[] {
+    const n = Math.max(0, Math.min(20, Math.round(table.seat_count || 0)));
+    const shape = table.shape || 'rectangle';
+    if (n === 0 || shape === 'booth') return [];
+    const out: { x: number; y: number; w: number; h: number; rx: number; rot: number }[] = [];
+    if (shape === 'circle' || shape === 'oval') {
+      const a = (table.width || (shape === 'circle' ? 80 : 120)) / 2;
+      const b = (table.height || (shape === 'circle' ? 80 : 70)) / 2;
+      for (let i = 0; i < n; i++) {
+        const th = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+        out.push({
+          x: (a + 7) * Math.cos(th), y: (b + 7) * Math.sin(th),
+          w: 18, h: 9, rx: 4.5, rot: (th * 180) / Math.PI + 90,
+        });
+      }
+      return out;
+    }
+    const w = table.width || (shape === 'bar' ? 160 : 100);
+    const h = table.height || (shape === 'bar' ? 40 : 70);
+    if (shape === 'bar') {
+      for (let i = 0; i < n; i++) {
+        out.push({ x: -w / 2 + (w * (i + 1)) / (n + 1), y: h / 2 + 11, w: 14, h: 14, rx: 7, rot: 0 });
+      }
+      return out;
+    }
+    const top = Math.ceil(n / 2);
+    const bottom = n - top;
+    const place = (count: number, y: number) => {
+      const cw = Math.min(22, (w / (count + 1)) * 0.75);
+      for (let i = 0; i < count; i++) {
+        out.push({ x: -w / 2 + (w * (i + 1)) / (count + 1), y, w: cw, h: 9, rx: 4.5, rot: 0 });
+      }
+    };
+    place(top, -(h / 2 + 7));
+    place(bottom, h / 2 + 7);
+    return out;
   }
 
   tableSurfaceStroke(table: CanvasTable): string {
