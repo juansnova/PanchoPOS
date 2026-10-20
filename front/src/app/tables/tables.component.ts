@@ -172,11 +172,11 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
                 <tbody>
                   @for (row of listViewRows(); track trackListRow($index, row)) {
                     @if (row.kind === 'single') {
-                      <tr class="tr-table-row" (dblclick)="onTableCardDoubleClick(row.table)">
+                      <tr class="tr-table-row" (dblclick)="onTableCardDoubleClick(row.table, $event)">
                         <ng-container *ngTemplateOutlet="listTableDataRow; context: {$implicit: row.table}" />
                       </tr>
                     } @else {
-                      <tr class="tr-group-summary" (dblclick)="onListGroupDoubleClick(row)">
+                      <tr class="tr-group-summary" (dblclick)="onListGroupDoubleClick(row, $event)">
                         <td>
                           <button type="button" class="btn-ghost btn-expand-group" (click)="toggleListGroupExpand(row.groupId); $event.stopPropagation()"
                             [attr.aria-expanded]="isListGroupExpanded(row.groupId)"
@@ -206,7 +206,7 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
                       </tr>
                       @if (isListGroupExpanded(row.groupId)) {
                         @for (table of row.members; track table.id) {
-                          <tr class="tr-group-member" (dblclick)="onTableCardDoubleClick(table)">
+                          <tr class="tr-group-member" (dblclick)="onTableCardDoubleClick(table, $event)">
                             <ng-container *ngTemplateOutlet="listTableDataRow; context: {$implicit: table}" />
                           </tr>
                         }
@@ -365,7 +365,7 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
                   <div class="table-grid">
                     @for (block of tileBlocksForFloor(floor.id!); track trackTileBlock($index, block)) {
                       @if (block.kind === 'single') {
-                        <div class="table-card" [class.is-active]="block.table.is_active" (dblclick)="onTableCardDoubleClick(block.table)">
+                        <div class="table-card" [class.is-active]="block.table.is_active" (dblclick)="onTableCardDoubleClick(block.table, $event)">
                           <ng-container *ngTemplateOutlet="tableTileInner; context: {$implicit: block.table}" />
                         </div>
                       } @else {
@@ -408,7 +408,7 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
                                   }
                                 </button>
                                 @if (isTileGroupMemberExpanded(block.groupId, table.id!)) {
-                                  <div class="group-tile-member-detail" (dblclick)="onTableCardDoubleClick(table)">
+                                  <div class="group-tile-member-detail" (dblclick)="onTableCardDoubleClick(table, $event)">
                                     <ng-container *ngTemplateOutlet="tableTileInner; context: { $implicit: table, compact: true, hideTitle: true }" />
                                   </div>
                                 }
@@ -1518,7 +1518,10 @@ export class TablesComponent implements OnInit {
   }
 
   /** Double-click a tile: open staff orders filtered to this table. */
-  onTableCardDoubleClick(table: Table) {
+  onTableCardDoubleClick(table: Table, event?: Event) {
+    // Double-clicking a control (waiter select, buttons, QR, inputs) must not leave the page.
+    const target = event?.target as HTMLElement | null;
+    if (target?.closest('select, option, button, input, textarea, a, label, qrcode, .qr-card, .waiter-assign-section')) return;
     if (!this.permissions.canAccessRoute(this.api.getCurrentUser(), '/staff/orders') || !table.id) return;
     void this.router.navigate(['/staff/orders'], {
       queryParams: { focusTableId: table.id, table: table.id },
@@ -1723,10 +1726,10 @@ export class TablesComponent implements OnInit {
     });
   }
 
-  onListGroupDoubleClick(row: Extract<TablesListRow, { kind: 'group' }>): void {
+  onListGroupDoubleClick(row: Extract<TablesListRow, { kind: 'group' }>, event?: Event): void {
     const withOrder = row.members.find(m => m.active_order_id != null && m.active_order_id > 0);
     const t = withOrder ?? row.members[0];
-    if (t) this.onTableCardDoubleClick(t);
+    if (t) this.onTableCardDoubleClick(t, event);
   }
 
   onGroupSafetyConfirm(): void {
