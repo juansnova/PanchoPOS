@@ -956,9 +956,6 @@ ModuleRegistry.registerModules([
                     <button type="button" class="btn btn-success" (click)="markEditOrderFinish(order)"
                       [title]="'ORDERS.FINISH_ORDER_HELP' | translate">{{ 'ORDERS.EDIT_SERVE_AND_CHARGE' | translate }}</button>
                   }
-                  @if (order.status !== 'paid' && order.status !== 'cancelled' && canMarkPaid()) {
-                    <button type="button" class="btn btn-primary" (click)="markEditOrderAsPaid(order)">{{ 'ORDERS.EDIT_CHARGE' | translate }}</button>
-                  }
                 </div>
               </div>
             </div>
@@ -3280,16 +3277,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
       w.document.write(html);
       w.document.close();
     }
-  }
-
-  markEditOrderAsPaid(order: Order) {
-    this.closeOrderEdit();
-    this.paymentModalFinishMode.set(false);
-    this.orderToMarkPaid.set(order);
-    this.paymentMethod = 'cash';
-    this.paymentTipPercent = 0;
-    this.paymentAmountPaidInput = '';
-    this.paymentTipAmountInput = '';
   }
 
   markEditOrderFinish(order: Order) {
