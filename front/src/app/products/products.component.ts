@@ -353,7 +353,16 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                }
                </div>
             } @else {
-              <!-- Search -->
+              <!-- Summary -->
+              <div class="pr-stats">
+                <span class="pr-stat"><b>{{ products().length }}</b> {{ 'PRODUCTS.STATS_PRODUCTS' | translate }}</span>
+                <span class="pr-stat"><b>{{ filteredProducts().length }}</b> {{ 'PRODUCTS.STATS_SHOWING' | translate }}</span>
+                @if (lowStockCount() > 0) {
+                  <span class="pr-stat pr-stat-warn"><i></i><b>{{ lowStockCount() }}</b> {{ 'PRODUCTS.STATS_LOW' | translate }}</span>
+                }
+              </div>
+
+              <!-- Search + view -->
               <div class="search-row">
                 <label for="products-search" class="visually-hidden">{{ 'PRODUCTS.SEARCH_PLACEHOLDER' | translate }}</label>
                 <input
@@ -365,6 +374,16 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                   [placeholder]="'PRODUCTS.SEARCH_PLACEHOLDER' | translate"
                   autocomplete="off"
                 />
+                <div class="pr-view" role="group" [attr.aria-label]="'PRODUCTS.VIEW' | translate">
+                  <button type="button" class="pr-view-btn" [class.on]="productsView() === 'cards'" (click)="setProductsView('cards')" [title]="'PRODUCTS.VIEW_CARDS' | translate">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                    <span>{{ 'PRODUCTS.VIEW_CARDS' | translate }}</span>
+                  </button>
+                  <button type="button" class="pr-view-btn" [class.on]="productsView() === 'table'" (click)="setProductsView('table')" [title]="'PRODUCTS.VIEW_TABLE' | translate">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    <span>{{ 'PRODUCTS.VIEW_TABLE' | translate }}</span>
+                  </button>
+                </div>
               </div>
               <!-- Category Filters (Ribbon Style) -->
               <div class="filters-section">
@@ -412,6 +431,63 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                 }
               </div>
 
+              @if (productsView() === 'cards') {
+                <div class="pr-grid" data-testid="products-cards">
+                  @for (product of filteredProducts(); track product.id) {
+                    <article class="pr-card" [class.pr-card--low]="product.stock_alert_enabled && isProductLowStock(product)">
+                      <div class="pr-media">
+                        @if (product.image_filename) {
+                          <img [src]="getImageUrl(product)" alt="" loading="lazy" (error)="handleImageError($event)">
+                        } @else {
+                          <div class="pr-noimg" aria-hidden="true">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+                            </svg>
+                          </div>
+                        }
+                        <span class="pr-price">{{ formatPrice(product.price_cents) }}</span>
+                        @if (product.stock_alert_enabled) {
+                          <span class="pr-stock" [class.pr-stock--low]="isProductLowStock(product)"
+                            [attr.title]="'PRODUCTS.STOCK_BADGE_TITLE' | translate:{qty: product.stock_qty ?? 0, level: product.stock_alert_level ?? 0}">
+                            {{ (isProductLowStock(product) ? 'PRODUCTS.STOCK_LOW' : 'PRODUCTS.STOCK_OK') | translate }} · {{ product.stock_qty ?? 0 }}
+                          </span>
+                        }
+                      </div>
+                      <div class="pr-body">
+                        <h3 class="pr-name">{{ product.name }}</h3>
+                        <div class="pr-tags">
+                          @if (product.category) {
+                            <span class="pr-tag">{{ getCategoryLabel(product.category) }}</span>
+                          }
+                          @if (product.subcategory) {
+                            <span class="pr-tag pr-tag-soft">{{ getSubcategoryLabel(product.subcategory) }}</span>
+                          }
+                        </div>
+                        @if (product.ingredients) {
+                          <p class="pr-ingredients">{{ product.ingredients }}</p>
+                        }
+                        <div class="pr-foot">
+                          <span class="pr-cost">
+                            @if (product.cost_cents != null) { {{ 'PRODUCTS.COST_HEADER' | translate }}: {{ formatPrice(product.cost_cents) }} }
+                          </span>
+                          <div class="pr-actions">
+                            <button class="pr-act" (click)="startEdit(product)" [attr.title]="'PRODUCTS.EDIT_TOOLTIP' | translate" [attr.aria-label]="'PRODUCTS.EDIT_TOOLTIP' | translate">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            @if (canEditProducts()) {
+                              <button class="pr-act pr-act-danger" (click)="confirmDelete(product)" [disabled]="deleting() === product.id" [attr.title]="'PRODUCTS.DELETE_TOOLTIP' | translate" [attr.aria-label]="'PRODUCTS.DELETE_TOOLTIP' | translate">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                              </button>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  } @empty {
+                    <p class="pr-empty">{{ 'PRODUCTS.NO_PRODUCTS' | translate }}</p>
+                  }
+                </div>
+              } @else {
               <div class="table-card products-data-table">
                 <div class="products-table-scroll">
                  <table>
@@ -536,6 +612,7 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                 </table>
                 </div>
               </div>
+              }
             }
             }
           }
@@ -586,6 +663,17 @@ export class ProductsComponent implements OnInit {
   canEditProducts = computed(() => this.permissions.hasPermission(this.permissions.getCurrentUser(), 'product:write'));
 
   activeTab = signal<'products' | 'categories'>('products');
+  /** Card grid (default) or the classic table; remembered per browser. */
+  productsView = signal<'cards' | 'table'>(
+    (() => {
+      try { return localStorage.getItem('pos.products.view') === 'table' ? 'table' : 'cards'; } catch { return 'cards'; }
+    })()
+  );
+  setProductsView(view: 'cards' | 'table'): void {
+    this.productsView.set(view);
+    try { localStorage.setItem('pos.products.view', view); } catch { /* storage unavailable */ }
+  }
+  lowStockCount = computed(() => this.products().filter(p => p.stock_alert_enabled && this.isProductLowStock(p)).length);
   products = signal<Product[]>([]);
   filteredProducts = signal<Product[]>([]);
   loading = signal(true);

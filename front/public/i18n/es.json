@@ -499,6 +499,12 @@
   },
   "PRODUCTS": {
     "TITLE": "Productos",
+    "STATS_PRODUCTS": "productos",
+    "STATS_SHOWING": "mostrados",
+    "STATS_LOW": "con stock bajo",
+    "VIEW": "Vista",
+    "VIEW_CARDS": "Tarjetas",
+    "VIEW_TABLE": "Lista",
     "ADD_PRODUCT": "Añadir producto",
     "EDIT_PRODUCT": "Editar producto",
     "ONLY_OWNERS_CAN_EDIT": "Solo los propietarios pueden editar productos.",
