@@ -1093,17 +1093,22 @@ ModuleRegistry.registerModules([
         <!-- Print Factura Modal -->
         @if (facturaOrder()) {
           <div class="modal-overlay">
-            <div class="modal modal-edit-order" (click)="$event.stopPropagation()" appFocusFirstInput>
-              <div class="modal-header">
-                <h3>{{ facturaModalEditMode() ? ('ORDERS.EDIT_ORDER' | translate) : ('CUSTOMERS.PRINT_FACTURA' | translate) }}</h3>
-                <button class="icon-btn" (click)="closeFacturaModal()">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                  </svg>
-                </button>
+            <div class="modal modal-edit-order mx" (click)="$event.stopPropagation()" appFocusFirstInput>
+              <div class="mx-head">
+                <span class="mx-icon" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                </span>
+                <div class="mx-head-text">
+                  <h3>{{ facturaModalEditMode() ? ('ORDERS.EDIT_ORDER' | translate) : ('CUSTOMERS.PRINT_FACTURA' | translate) }}</h3>
+                  <p>{{ 'ORDERS.ORDER_ID' | translate }}{{ facturaOrder()!.id }} · {{ facturaOrder()!.table_name }}</p>
+                </div>
+                <button class="mx-close" (click)="closeFacturaModal()" [attr.aria-label]="'COMMON.CANCEL' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
               </div>
               <div class="modal-body">
-                <p class="order-summary">{{ 'ORDERS.ORDER_ID' | translate }}{{ facturaOrder()!.id }} — {{ facturaOrder()!.table_name }} — {{ formatPrice(facturaOrder()!.total_cents) }}</p>
+                <div class="mx-total">
+                  <span>{{ 'ORDERS.TOTAL' | translate }}</span>
+                  <strong>{{ formatPrice(facturaOrder()!.total_cents) }}</strong>
+                </div>
                 <div class="form-group">
                   <label for="factura-customer">{{ 'CUSTOMERS.SELECT_FOR_FACTURA' | translate }}</label>
                   <select id="factura-customer" class="form-select" [(ngModel)]="facturaCustomerId" name="facturaCustomer">
@@ -1151,7 +1156,7 @@ ModuleRegistry.registerModules([
                 }
               </div>
               <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" (click)="closeFacturaModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button type="button" class="btn btn-secondary mx-ghost" (click)="closeFacturaModal()">{{ 'COMMON.CANCEL' | translate }}</button>
                 @if (facturaModalEditMode()) {
                   <button type="button" class="btn btn-secondary" (click)="printFacturaAndClose()">
                     {{ 'ORDERS.PRINT_INVOICE' | translate }}
@@ -1160,7 +1165,8 @@ ModuleRegistry.registerModules([
                     {{ 'COMMON.SAVE' | translate }}
                   </button>
                 } @else {
-                  <button type="button" class="btn btn-primary" (click)="printFacturaAndClose()">
+                  <button type="button" class="btn btn-primary mx-main" (click)="printFacturaAndClose()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                     {{ 'ORDERS.PRINT_INVOICE' | translate }}
                   </button>
                 }
@@ -1172,20 +1178,23 @@ ModuleRegistry.registerModules([
         <!-- Mark as Paid / Finish order Modal -->
         @if (orderToMarkPaid()) {
           <div class="modal-overlay">
-            <div class="modal" (click)="$event.stopPropagation()" appFocusFirstInput>
-              <div class="modal-header">
-                <h3>{{ paymentModalFinishMode() ? ('ORDERS.FINISH_ORDER_TITLE' | translate) : ('ORDERS.MARK_ORDER_AS_PAID' | translate) }}</h3>
-                <button class="icon-btn" (click)="closePaymentModal()">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                  </svg>
-                </button>
+            <div class="modal mx mx-pay" (click)="$event.stopPropagation()" appFocusFirstInput>
+              <div class="mx-head">
+                <span class="mx-icon mx-icon-ok" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
+                <div class="mx-head-text">
+                  <h3>{{ paymentModalFinishMode() ? ('ORDERS.FINISH_ORDER_TITLE' | translate) : ('ORDERS.MARK_ORDER_AS_PAID' | translate) }}</h3>
+                  <p>{{ 'ORDERS.ORDER_ID' | translate }}{{ orderToMarkPaid()!.id }} · {{ orderToMarkPaid()!.table_name }}</p>
+                </div>
+                <button class="mx-close" (click)="closePaymentModal()" [attr.aria-label]="'COMMON.CANCEL' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
               </div>
               <div class="modal-body">
-                <p>{{ 'ORDERS.ORDER_ID' | translate }}{{ orderToMarkPaid()!.id }}</p>
-                <p class="payment-amount-line">
-                  {{ 'ORDERS.SUBTOTAL' | translate }}: {{ formatPrice(orderPaymentSubtotal(orderToMarkPaid()!)) }}
-                </p>
+                <div class="mx-total mx-total-hero">
+                  <span>{{ 'ORDERS.AMOUNT_DUE' | translate }}</span>
+                  <strong>{{ formatPrice(paymentAmountDueCents(orderToMarkPaid()!)) }}</strong>
+                  <small>{{ 'ORDERS.SUBTOTAL' | translate }}: {{ formatPrice(orderPaymentSubtotal(orderToMarkPaid()!)) }}</small>
+                </div>
                 <div class="extra-block">
                   @if (extraEditorOpen()) {
                     <div class="extra-panel">
@@ -1224,13 +1233,12 @@ ModuleRegistry.registerModules([
                 }
                 @if (orderToMarkPaid(); as payOrder) {
                   <div class="split-pay-summary" data-testid="split-pay-summary">
-                    <p class="modal-hint">
-                      {{ 'ORDERS.AMOUNT_DUE' | translate }}: {{ formatPrice(paymentAmountDueCents(payOrder)) }}
-                      @if ((payOrder.amount_paid_cents || 0) > 0) {
-                        — {{ 'ORDERS.AMOUNT_PAID' | translate }}: {{ formatPrice(payOrder.amount_paid_cents || 0) }}
+                    @if ((payOrder.amount_paid_cents || 0) > 0) {
+                      <p class="modal-hint">
+                        {{ 'ORDERS.AMOUNT_PAID' | translate }}: {{ formatPrice(payOrder.amount_paid_cents || 0) }}
                         — {{ 'ORDERS.AMOUNT_REMAINING' | translate }}: {{ formatPrice(paymentAmountRemainingCents(payOrder)) }}
-                      }
-                    </p>
+                      </p>
+                    }
                     @if (payOrder.payments && payOrder.payments.length > 0) {
                       <ul class="split-pay-list" data-testid="split-pay-list">
                         @for (p of payOrder.payments; track p.id) {
@@ -1308,18 +1316,30 @@ ModuleRegistry.registerModules([
                   </div>
                 }
                 <div class="form-group">
-                  <label for="payment-method">{{ 'ORDERS.PAYMENT_METHOD' | translate }}</label>
-                  <select id="payment-method" [(ngModel)]="paymentMethod" class="form-select">
-                    <option value="cash">{{ 'ORDERS.CASH' | translate }}</option>
-                    <option value="terminal">{{ 'ORDERS.CARD_TERMINAL' | translate }}</option>
-                    <option value="transfer">{{ 'ORDERS.TRANSFER' | translate }}</option>
-                    <option value="other">{{ 'ORDERS.OTHER' | translate }}</option>
-                  </select>
+                  <label>{{ 'ORDERS.PAYMENT_METHOD' | translate }}</label>
+                  <div class="mx-methods">
+                    <button type="button" class="mx-method" [class.on]="paymentMethod === 'cash'" (click)="paymentMethod = 'cash'">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg>
+                      <span>{{ 'ORDERS.CASH' | translate }}</span>
+                    </button>
+                    <button type="button" class="mx-method" [class.on]="paymentMethod === 'terminal'" (click)="paymentMethod = 'terminal'">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+                      <span>{{ 'ORDERS.CARD_TERMINAL' | translate }}</span>
+                    </button>
+                    <button type="button" class="mx-method" [class.on]="paymentMethod === 'transfer'" (click)="paymentMethod = 'transfer'">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h13l-3-3M17 17H4l3 3"/></svg>
+                      <span>{{ 'ORDERS.TRANSFER' | translate }}</span>
+                    </button>
+                    <button type="button" class="mx-method" [class.on]="paymentMethod === 'other'" (click)="paymentMethod = 'other'">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+                      <span>{{ 'ORDERS.OTHER' | translate }}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="modal-actions">
-                <button class="btn btn-secondary" (click)="closePaymentModal()">{{ 'ORDERS.CANCEL' | translate }}</button>
-                <button class="btn btn-primary" (click)="confirmMarkAsPaid()" [disabled]="processingPayment()">
+                <button class="btn btn-secondary mx-ghost" (click)="closePaymentModal()">{{ 'ORDERS.CANCEL' | translate }}</button>
+                <button class="btn btn-primary mx-main mx-main-ok" (click)="confirmMarkAsPaid()" [disabled]="processingPayment()">
                   @if (processingPayment()) {
                     {{ 'ORDERS.PROCESSING' | translate }}
                   } @else if (paymentModalFinishMode()) {
@@ -1336,20 +1356,20 @@ ModuleRegistry.registerModules([
         <!-- Confirmation Modal (replaces native confirm/prompt) -->
         @if (confirmAction()) {
           <div class="modal-overlay" (click)="closeConfirmModal()">
-            <div class="modal" (click)="$event.stopPropagation()" appFocusFirstInput>
-              <div class="modal-header">
+            <div class="modal mx mx-confirm" [class.mx-danger-modal]="confirmAction()!.danger" (click)="$event.stopPropagation()" appFocusFirstInput>
+              <div class="mx-confirm-body">
+                <span class="mx-confirm-icon" aria-hidden="true">
+                  @if (confirmAction()!.danger) {
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  } @else {
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                  }
+                </span>
                 <h3>{{ 'COMMON.CONFIRM' | translate }}</h3>
-                <button class="icon-btn" (click)="closeConfirmModal()">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
-              <div class="modal-body">
                 <p>{{ confirmAction()!.message }}</p>
                 @if (confirmAction()!.requireReason) {
                   <div class="form-group">
-                    <textarea 
+                    <textarea
                       class="form-textarea"
                       [(ngModel)]="confirmReason"
                       rows="3"
@@ -1358,9 +1378,9 @@ ModuleRegistry.registerModules([
                   </div>
                 }
               </div>
-              <div class="modal-actions">
-                <button class="btn btn-secondary" (click)="closeConfirmModal()">{{ 'COMMON.CANCEL' | translate }}</button>
-                <button class="btn btn-primary" (click)="handleConfirm()">
+              <div class="modal-actions mx-confirm-actions">
+                <button class="btn btn-secondary mx-ghost" (click)="closeConfirmModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button class="btn mx-main" [class.mx-main-danger]="confirmAction()!.danger" [class.btn-primary]="!confirmAction()!.danger" (click)="handleConfirm()">
                   {{ confirmAction()!.confirmText || ('COMMON.CONFIRM' | translate) }}
                 </button>
               </div>
@@ -2588,6 +2608,84 @@ ModuleRegistry.registerModules([
       .order-card, .order-card:hover { transition: none; transform: none; }
       .order-card .order-status-pill.preparing::before { animation: none; }
     }
+
+    /* ===== Modal redesign: factura / cobrar / confirmar ===== */
+    .modal-overlay { backdrop-filter: blur(3px); background: rgba(24, 16, 10, 0.5); }
+    .modal.mx {
+      max-width: 460px; border-radius: 22px; border: 1px solid var(--color-border);
+      box-shadow: 0 30px 70px -18px rgba(0,0,0,.45);
+      animation: mx-in .18s ease-out;
+    }
+    @keyframes mx-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+    .mx-head {
+      display: flex; align-items: center; gap: 14px; padding: 18px 18px 16px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--color-primary-light), transparent 80%);
+    }
+    .mx-icon {
+      flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 15px;
+      background: var(--color-primary); color: #fff; box-shadow: 0 8px 18px -8px var(--color-primary);
+    }
+    .mx-icon-ok { background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 8px 18px -8px #15803d; }
+    .mx-head-text { min-width: 0; flex: 1; }
+    .mx-head-text h3 { margin: 0; font-size: 1.15rem; font-weight: 800; line-height: 1.2; color: var(--color-text); }
+    .mx-head-text p { margin: 2px 0 0; font-size: .85rem; font-weight: 500; color: var(--color-text-muted); }
+    .mx-close {
+      flex: none; width: 38px; height: 38px; border-radius: 50%; border: 0; background: transparent; cursor: pointer;
+      color: var(--color-text-muted); display: grid; place-items: center; transition: background .15s, color .15s;
+    }
+    .mx-close:hover { background: var(--color-bg); color: var(--color-text); }
+    .mx .modal-body { padding: 4px 18px 8px; }
+    .mx .modal-actions { border-top: 0; padding: 12px 18px 18px; gap: 10px; }
+    .mx .form-group label { font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--color-text-muted); }
+    .mx .form-select, .mx .form-control, .mx .form-textarea { border-radius: 12px; min-height: 46px; }
+    .mx-total {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 16px;
+      padding: 14px 16px; border-radius: 16px; background: var(--color-bg); border: 1px solid var(--color-border);
+    }
+    .mx-total span { font-size: .8rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--color-text-muted); }
+    .mx-total strong { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--color-text); }
+    .mx-total-hero {
+      display: grid; grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 2px; padding: 18px 16px;
+      background: linear-gradient(160deg, color-mix(in srgb, #22c55e 14%, var(--color-surface)), var(--color-surface));
+      border-color: color-mix(in srgb, #16a34a 35%, var(--color-border));
+    }
+    .mx-total-hero strong { font-size: 2.3rem; line-height: 1.1; color: #15803d; }
+    .mx-total-hero small { font-size: .8rem; color: var(--color-text-muted); }
+    .mx-methods { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 6px; }
+    .mx-method {
+      display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px; border-radius: 14px;
+      border: 1.5px solid var(--color-border); background: var(--color-surface); color: var(--color-text);
+      font: inherit; font-size: .9rem; font-weight: 700; cursor: pointer; text-align: left; touch-action: manipulation;
+      transition: border-color .15s, background .15s, transform .12s;
+    }
+    .mx-method:hover { border-color: var(--color-primary); }
+    .mx-method:active { transform: scale(.97); }
+    .mx-method.on {
+      border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary);
+      box-shadow: inset 0 0 0 1px var(--color-primary);
+    }
+    .mx .btn.mx-ghost { background: transparent; border: 1px solid var(--color-border); color: var(--color-text); min-height: 46px; border-radius: 14px; font-weight: 700; }
+    .mx .btn.mx-main {
+      min-height: 46px; padding: 0 22px; border-radius: 14px; font-weight: 800; border: 0; color: #fff;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background: var(--color-primary); box-shadow: 0 8px 18px -8px var(--color-primary);
+    }
+    .mx .btn.mx-main-ok { background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 8px 18px -8px #15803d; flex: 1 1 auto; }
+    .mx .btn.mx-main:hover:not(:disabled) { filter: brightness(1.06); }
+    .mx .btn.mx-main:disabled { opacity: .6; }
+    .mx-confirm { max-width: 400px; text-align: center; }
+    .mx-confirm-body { padding: 28px 24px 8px; }
+    .mx-confirm-icon {
+      display: grid; place-items: center; width: 68px; height: 68px; margin: 0 auto 14px; border-radius: 50%;
+      background: var(--color-primary-light); color: var(--color-primary);
+    }
+    .mx-danger-modal .mx-confirm-icon { background: rgba(220, 38, 38, .12); color: #dc2626; box-shadow: 0 0 0 8px rgba(220, 38, 38, .06); }
+    .mx-confirm-body h3 { margin: 0 0 6px; font-size: 1.2rem; font-weight: 800; }
+    .mx-confirm-body p { margin: 0 0 12px; color: var(--color-text-muted); font-weight: 500; line-height: 1.45; }
+    .mx-confirm-actions { justify-content: center; }
+    .mx-confirm-actions .btn { flex: 1 1 0; }
+    .mx .btn.mx-main-danger { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 8px 18px -8px #b91c1c; }
+    @media (prefers-reduced-motion: reduce) { .modal.mx { animation: none; } }
   `]
 })
 export class OrdersComponent implements OnInit, OnDestroy {
@@ -2707,6 +2805,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     onConfirm: () => void;
     confirmText?: string;
     requireReason?: boolean;
+    danger?: boolean;
   } | null>(null);
   confirmReason = '';
 
@@ -3644,13 +3743,14 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.toast.set({ message, type });
   }
 
-  openConfirmModal(message: string, onConfirm: () => void, options?: { confirmText?: string; requireReason?: boolean }) {
+  openConfirmModal(message: string, onConfirm: () => void, options?: { confirmText?: string; requireReason?: boolean; danger?: boolean }) {
     this.confirmReason = '';
     this.confirmAction.set({
       message,
       onConfirm,
       confirmText: options?.confirmText,
-      requireReason: options?.requireReason
+      requireReason: options?.requireReason,
+      danger: options?.danger
     });
   }
 
@@ -4103,7 +4203,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
           error: () => this.showToast(this.translate.instant('ORDERS.DELETE_ORDER_FAILED'), 'error')
         });
       },
-      { confirmText: this.translate.instant('ORDERS.DELETE_ORDER') }
+      { confirmText: this.translate.instant('ORDERS.DELETE_ORDER'), danger: true }
     );
   }
 
