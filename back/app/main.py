@@ -10333,6 +10333,7 @@ def get_menu(
     table_token: str,
     lang: str = Depends(_get_requested_language),
     session: Session = Depends(get_session),
+    current_user: Annotated[models.User | None, Depends(security.get_current_user_optional)] = None,
 ) -> dict:
     """Public endpoint - get menu for a table by its token."""
     # Use raw SQL to avoid SQLAlchemy model issues
@@ -10715,7 +10716,8 @@ def get_menu(
     tenant_data = {
         "table_name": table.name,
         "table_id": table.id,
-        "requires_order_code": _table_requires_order_code(table),
+        "requires_order_code": _table_requires_order_code(table)
+        and not _is_staff_for_tenant(current_user, table.tenant_id),
         "tenant_id": table.tenant_id,  # For WebSocket connection
         "tenant_name": tenant.name if tenant else "Unknown",
         "tenant_logo": tenant.logo_filename if tenant else None,
@@ -11211,6 +11213,7 @@ def create_order(
     order_data: models.OrderCreate,
     request: Request,
     session: Session = Depends(get_session),
+    current_user: Annotated[models.User | None, Depends(security.get_current_user_optional)] = None,
 ) -> dict:
     """Public endpoint - add items to the table's shared order.
 
@@ -11232,7 +11235,7 @@ def create_order(
         except Exception:
             redis_conn = None  # Redis hiccup: fall back to normal (non-deduplicated) submit
     try:
-        response = _create_menu_order(table_token, order_data, request, session)
+        response = _create_menu_order(table_token, order_data, request, session, current_user)
     except Exception:
         if redis_conn:
             redis_conn.delete(dedupe_key)  # allow a genuine retry after a failure
@@ -11250,6 +11253,15 @@ MENU_ORDER_REQUEST_TTL_SECONDS = 120
 
 _ORDER_CODE_MAX_FAILURES = 8
 _ORDER_CODE_LOCK_SECONDS = 900
+
+
+def _is_staff_for_tenant(user, tenant_id: int) -> bool:
+    """True for a logged-in owner/waiter of the given restaurant."""
+    return (
+        user is not None
+        and user.tenant_id == tenant_id
+        and user.role in (models.UserRole.owner, models.UserRole.waiter)
+    )
 
 
 def _check_table_order_code(session: Session, table, supplied: str | None) -> None:
@@ -11288,6 +11300,7 @@ def _create_menu_order(
     order_data: models.OrderCreate,
     request: Request,
     session: Session,
+    current_user: models.User | None = None,
 ) -> JSONResponse:
     table = session.exec(
         select(models.Table).where(models.Table.token == table_token)
@@ -11312,7 +11325,8 @@ def _create_menu_order(
 
     # ============ ORDER CODE ============
     # Browsing the menu is open; placing an order needs the 4-digit code staff see on the Tables grid.
-    if _table_requires_order_code(table):
+    # Logged-in staff (owner/waiter of this restaurant) skip the code; customers cannot.
+    if _table_requires_order_code(table) and not _is_staff_for_tenant(current_user, table.tenant_id):
         _check_table_order_code(session, table, order_data.table_code)
 
     # ============ GET OR CREATE SHARED ORDER ============

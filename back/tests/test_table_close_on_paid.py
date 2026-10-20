@@ -129,6 +129,14 @@ class TestTableCloseOnPaid(PgClientTestCase):
         ok = self.client.post(f"/menu/{table.token}/order", json={**body, "table_code": "1234"})
         self.assertEqual(ok.status_code, 200, ok.text)
 
+    def test_logged_in_waiter_skips_table_code(self) -> None:
+        table, _ = self._table_with_open_order("T7")
+        body = {"items": [{"product_id": self.product.id, "quantity": 1}], "session_id": "staff-1"}
+        headers = _bearer_headers(self.waiter)
+        self.assertFalse(self.client.get(f"/menu/{table.token}", headers=headers).json()["requires_order_code"])
+        ok = self.client.post(f"/menu/{table.token}/order", json=body, headers=headers)
+        self.assertEqual(ok.status_code, 200, ok.text)
+
     def _idle_table(self, name: str, *, minutes_active: int) -> models.Table:
         from datetime import datetime, timedelta, timezone
 
