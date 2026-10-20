@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ApiService, KitchenStation, Order, OrderItem, OrderLineModifiers } from '../services/api.service';
+import { ApiService, KitchenDisplaySettings, KitchenStation, Order, OrderItem, OrderLineModifiers } from '../services/api.service';
 import { AudioService } from '../services/audio.service';
 import { PermissionService } from '../services/permission.service';
 import { Subscription } from 'rxjs';
@@ -273,6 +273,13 @@ const VIEW_CATEGORY: Record<string, string> = {
               <span>{{ 'KITCHEN_DISPLAY.TIMER_RED_MINUTES' | translate }}</span>
               <input type="number" min="0" step="1" [ngModel]="timerSettingsForm().red_minutes" (ngModelChange)="updateTimerFormRed($event)" />
             </label>
+          </div>
+          <div class="timer-settings-form auto-prep">
+            <label>
+              <span>{{ 'KITCHEN_DISPLAY.AUTO_PREPARING_SECONDS' | translate }}</span>
+              <input type="number" min="0" max="3600" step="5" [ngModel]="timerSettingsForm().auto_preparing_seconds" (ngModelChange)="updateTimerFormAutoPrep($event)" />
+            </label>
+            <small class="auto-prep-hint">{{ 'KITCHEN_DISPLAY.AUTO_PREPARING_HINT' | translate }}</small>
           </div>
           <div class="modal-actions">
             <button type="button" class="btn-secondary" (click)="closeTimerSettingsModal()">{{ 'COMMON.CANCEL' | translate }}</button>
@@ -652,6 +659,8 @@ const VIEW_CATEGORY: Record<string, string> = {
       align-items: center;
       gap: var(--space-3);
     }
+    .auto-prep { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(128,128,128,.25); }
+    .auto-prep-hint { display: block; margin-top: 0.35rem; opacity: .7; font-size: 0.8rem; }
     .timer-settings-form label span { min-width: 140px; font-weight: 500; }
     .timer-settings-form input {
       width: 80px;
@@ -715,16 +724,18 @@ export class KitchenDisplayComponent implements OnInit, AfterViewInit, OnDestroy
   /** Current time for live timer (updates every second). */
   now = signal(Date.now());
   /** Timer thresholds (minutes) for card color. Defaults 5, 10, 15. */
-  timerSettings = signal<{ yellow_minutes: number; orange_minutes: number; red_minutes: number }>({
+  timerSettings = signal<KitchenDisplaySettings>({
     yellow_minutes: 5,
     orange_minutes: 10,
     red_minutes: 15,
+    auto_preparing_seconds: 30,
   });
   timerSettingsModalOpen = signal(false);
-  timerSettingsForm = signal<{ yellow_minutes: number; orange_minutes: number; red_minutes: number }>({
+  timerSettingsForm = signal<KitchenDisplaySettings>({
     yellow_minutes: 5,
     orange_minutes: 10,
     red_minutes: 15,
+    auto_preparing_seconds: 30,
   });
   private tickIntervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -982,6 +993,10 @@ export class KitchenDisplayComponent implements OnInit, AfterViewInit, OnDestroy
   }
   updateTimerFormRed(v: number): void {
     this.timerSettingsForm.update((f) => ({ ...f, red_minutes: Math.max(0, Number(v) || 0) }));
+  }
+
+  updateTimerFormAutoPrep(v: number): void {
+    this.timerSettingsForm.update((f) => ({ ...f, auto_preparing_seconds: Math.min(3600, Math.max(0, Math.round(Number(v) || 0))) }));
   }
 
   saveTimerSettings(): void {

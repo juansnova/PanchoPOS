@@ -10,6 +10,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import and_, or_
 from sqlmodel import Session, select
 
 from . import models
@@ -27,7 +28,18 @@ def advance_due_items(session: Session, *, now: datetime | None = None) -> int:
     from .main import publish_order_update, recompute_order_status_preserving_payment
 
     now = now or datetime.now(timezone.utc)
-    cutoff = now - timedelta(seconds=AUTO_PREPARING_AFTER_SECONDS)
+    delays = session.exec(select(models.Tenant.id, models.Tenant.auto_preparing_seconds)).all()
+    by_delay: dict[int, list[int]] = {}
+    for tenant_id, secs in delays:
+        by_delay.setdefault(AUTO_PREPARING_AFTER_SECONDS if secs is None else secs, []).append(tenant_id)
+    if not by_delay:
+        return 0
+    old_enough = or_(
+        *(
+            and_(models.Order.tenant_id.in_(ids), models.OrderItem.created_at <= now - timedelta(seconds=secs))
+            for secs, ids in by_delay.items()
+        )
+    )
     due = session.exec(
         select(models.OrderItem)
         .join(models.Order, models.Order.id == models.OrderItem.order_id)
@@ -35,7 +47,7 @@ def advance_due_items(session: Session, *, now: datetime | None = None) -> int:
             models.OrderItem.status == models.OrderItemStatus.pending,
             models.OrderItem.status_updated_at.is_(None),
             models.OrderItem.created_at.is_not(None),
-            models.OrderItem.created_at <= cutoff,
+            old_enough,
             models.OrderItem.removed_by_customer == False,  # noqa: E712
             models.OrderItem.removed_by_user_id.is_(None),
             models.Order.deleted_at.is_(None),

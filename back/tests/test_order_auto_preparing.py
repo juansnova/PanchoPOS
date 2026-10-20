@@ -58,6 +58,19 @@ class TestOrderAutoPreparing(PgClientTestCase):
         self.assertEqual(self._reload(item).status, models.OrderItemStatus.preparing)
         self.assertEqual(self._reload(order).status, models.OrderStatus.preparing)
 
+    def test_tenant_delay_is_configurable(self) -> None:
+        _, item = self._order_with_item(age_seconds=90)
+        self.tenant.auto_preparing_seconds = 120
+        self.session.add(self.tenant)
+        self.session.commit()
+        advance_due_items(self.session, now=self.now)
+        self.assertEqual(self._reload(item).status, models.OrderItemStatus.pending)
+        self.tenant.auto_preparing_seconds = 60
+        self.session.add(self.tenant)
+        self.session.commit()
+        advance_due_items(self.session, now=self.now)
+        self.assertEqual(self._reload(item).status, models.OrderItemStatus.preparing)
+
     def test_recent_line_waits(self) -> None:
         _, item = self._order_with_item(age_seconds=20)
         advance_due_items(self.session, now=self.now)

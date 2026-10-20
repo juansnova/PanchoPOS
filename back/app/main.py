@@ -3831,6 +3831,7 @@ def get_kitchen_display_settings(
         "yellow_minutes": tenant.kitchen_display_timer_yellow_minutes if tenant.kitchen_display_timer_yellow_minutes is not None else 5,
         "orange_minutes": tenant.kitchen_display_timer_orange_minutes if tenant.kitchen_display_timer_orange_minutes is not None else 10,
         "red_minutes": tenant.kitchen_display_timer_red_minutes if tenant.kitchen_display_timer_red_minutes is not None else 15,
+        "auto_preparing_seconds": tenant.auto_preparing_seconds,
     }
 
 
@@ -3855,6 +3856,9 @@ def update_kitchen_display_settings(
         tenant.kitchen_display_timer_orange_minutes = max(0, int(orange))
     if red is not None:
         tenant.kitchen_display_timer_red_minutes = max(0, int(red))
+    auto_secs = body.get("auto_preparing_seconds")
+    if auto_secs is not None:
+        tenant.auto_preparing_seconds = min(3600, max(0, int(auto_secs)))
     session.add(tenant)
     session.commit()
     session.refresh(tenant)
@@ -3862,6 +3866,7 @@ def update_kitchen_display_settings(
         "yellow_minutes": tenant.kitchen_display_timer_yellow_minutes or 5,
         "orange_minutes": tenant.kitchen_display_timer_orange_minutes or 10,
         "red_minutes": tenant.kitchen_display_timer_red_minutes or 15,
+        "auto_preparing_seconds": tenant.auto_preparing_seconds,
     }
 
 

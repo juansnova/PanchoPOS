@@ -214,6 +214,8 @@ class Tenant(SQLModel, table=True):
     kitchen_display_timer_yellow_minutes: int | None = Field(default=5)
     kitchen_display_timer_orange_minutes: int | None = Field(default=10)
     kitchen_display_timer_red_minutes: int | None = Field(default=15)
+    # Seconds before a new order line moves from pending to preparing on its own
+    auto_preparing_seconds: int = Field(default=30)
 
     # POS checkout: up to 4 tip percentages (e.g. 5,10,15,20); empty list disables tips; null = legacy default in API
     tip_preset_percents: list | None = Field(default=None, sa_column=Column(PgJSON, nullable=True))

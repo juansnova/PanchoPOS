@@ -1505,6 +1505,14 @@ export interface TenantProduct {
   } | null;
 }
 
+export interface KitchenDisplaySettings {
+  yellow_minutes: number;
+  orange_minutes: number;
+  red_minutes: number;
+  /** Seconds before a new line goes from pending to preparing by itself. */
+  auto_preparing_seconds: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -2773,18 +2781,14 @@ export class ApiService {
     );
   }
 
-  getKitchenDisplaySettings(): Observable<{ yellow_minutes: number; orange_minutes: number; red_minutes: number }> {
-    return this.http.get<{ yellow_minutes: number; orange_minutes: number; red_minutes: number }>(
+  getKitchenDisplaySettings(): Observable<KitchenDisplaySettings> {
+    return this.http.get<KitchenDisplaySettings>(
       `${this.apiUrl}/tenant/kitchen-display-settings`
     );
   }
 
-  updateKitchenDisplaySettings(settings: {
-    yellow_minutes: number;
-    orange_minutes: number;
-    red_minutes: number;
-  }): Observable<{ yellow_minutes: number; orange_minutes: number; red_minutes: number }> {
-    return this.http.put<{ yellow_minutes: number; orange_minutes: number; red_minutes: number }>(
+  updateKitchenDisplaySettings(settings: KitchenDisplaySettings): Observable<KitchenDisplaySettings> {
+    return this.http.put<KitchenDisplaySettings>(
       `${this.apiUrl}/tenant/kitchen-display-settings`,
       settings
     );

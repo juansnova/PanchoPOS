@@ -926,6 +926,8 @@
     "TIMER_YELLOW_MINUTES": "Amarillo tras (min)",
     "TIMER_ORANGE_MINUTES": "Naranja tras (min)",
     "TIMER_RED_MINUTES": "Rojo tras (min)",
+    "AUTO_PREPARING_SECONDS": "Pasar a Preparando tras (seg)",
+    "AUTO_PREPARING_HINT": "Los pedidos nuevos pasan solos de Pendiente a Preparando (y se imprimen) tras este tiempo, en cocina y bar. 0 = de inmediato.",
     "URGENT": "Urgente",
     "TIMER_BAR_HINT": "Progreso del tiempo de espera hasta el umbral rojo",
     "STATION": "Estación",
