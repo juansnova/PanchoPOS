@@ -1156,21 +1156,34 @@ ModuleRegistry.registerModules([
                 <p class="payment-amount-line">
                   {{ 'ORDERS.SUBTOTAL' | translate }}: {{ formatPrice(orderPaymentSubtotal(orderToMarkPaid()!)) }}
                 </p>
-                <div class="form-group extra-charge-group">
-                  <label for="payment-extra-amount">{{ 'ORDERS.EXTRA_CHARGE' | translate }}</label>
-                  <div class="extra-charge-row">
-                    <input id="payment-extra-amount" type="text" inputmode="decimal" class="form-control"
+                <div class="extra-card">
+                  <div class="extra-card-title"><span>✨</span> {{ 'ORDERS.EXTRA_CHARGE' | translate }}</div>
+                  <div class="extra-amount-wrap">
+                    <span class="extra-currency">$</span>
+                    <input id="payment-extra-amount" class="extra-amount" type="text" inputmode="decimal"
                       placeholder="0"
                       [value]="extraChargeInputValue(orderToMarkPaid()!)"
                       (input)="paymentExtraInput = $any($event.target).value" />
-                    <input type="text" class="form-control" maxlength="200"
-                      [placeholder]="'ORDERS.EXTRA_CHARGE_REASON' | translate"
-                      [value]="extraChargeNoteValue(orderToMarkPaid()!)"
-                      (input)="paymentExtraNote = $any($event.target).value" />
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="applyExtraCharge()">
-                      {{ 'ORDERS.EXTRA_CHARGE_APPLY' | translate }}
-                    </button>
                   </div>
+                  <div class="extra-chips">
+                    @for (v of extraQuickAmounts; track v) {
+                    <button type="button" class="extra-chip" (click)="addExtraAmount(v)">+ {{ formatPrice(v * 100) }}</button>
+                    }
+                  </div>
+                  <input class="extra-note" type="text" maxlength="200"
+                    [placeholder]="'ORDERS.EXTRA_CHARGE_REASON' | translate"
+                    [value]="extraChargeNoteValue(orderToMarkPaid()!)"
+                    (input)="paymentExtraNote = $any($event.target).value" />
+                  <div class="extra-chips">
+                    @for (r of extraReasonKeys; track r) {
+                    <button type="button" class="extra-chip extra-chip-reason" (click)="pickExtraReason(r)">
+                      {{ r | translate }}
+                    </button>
+                    }
+                  </div>
+                  <button type="button" class="extra-save" (click)="applyExtraCharge()">
+                    {{ 'ORDERS.EXTRA_CHARGE_APPLY' | translate }}
+                  </button>
                 </div>
                 @if (tipEntryModeOverpayment()) {
                   <p class="modal-hint">{{ 'ORDERS.OVERPAYMENT_PAYMENT_HINT' | translate }}</p>
@@ -2118,8 +2131,44 @@ ModuleRegistry.registerModules([
     }
 
     .payment-amount-line { margin-bottom: var(--space-3); }
-    .extra-charge-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-    .extra-charge-row .form-control { flex: 1 1 120px; min-width: 0; }
+    .extra-card {
+      display: flex; flex-direction: column; gap: var(--space-3);
+      margin: var(--space-3) 0; padding: var(--space-4); border-radius: 16px;
+      background: linear-gradient(160deg, var(--color-primary-light), transparent 70%), var(--color-surface);
+      border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+      box-shadow: 0 6px 20px color-mix(in srgb, var(--color-primary) 14%, transparent);
+    }
+    .extra-card-title { font-weight: 700; color: var(--color-primary); }
+    .extra-amount-wrap {
+      display: flex; align-items: center; gap: 8px; padding: 4px 14px;
+      border-radius: var(--radius-md); background: var(--color-surface);
+      border: 2px solid var(--color-primary);
+    }
+    .extra-currency { font-size: 1.5rem; font-weight: 700; color: var(--color-primary); }
+    .extra-amount {
+      flex: 1; min-width: 0; border: none; outline: none; background: none;
+      font-size: 1.75rem; font-weight: 700; color: var(--color-text);
+    }
+    .extra-note {
+      min-height: 44px; padding: 6px 14px; border: 1px solid var(--color-border);
+      border-radius: var(--radius-md); font-size: 1rem;
+      background: var(--color-surface); color: var(--color-text);
+    }
+    .extra-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .extra-chip {
+      padding: 8px 14px; min-height: 40px; border-radius: 999px; cursor: pointer;
+      border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+      background: var(--color-surface); color: var(--color-primary); font-weight: 600;
+      touch-action: manipulation; transition: transform 0.12s, background 0.15s;
+    }
+    .extra-chip:active { transform: scale(0.94); background: var(--color-primary-light); }
+    .extra-chip-reason { color: var(--color-text); border-style: dashed; }
+    .extra-save {
+      min-height: 46px; border: none; border-radius: 999px; cursor: pointer;
+      background: var(--color-primary); color: #fff; font-weight: 700;
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 40%, transparent);
+      touch-action: manipulation;
+    }
     .payment-tip-group .form-label-text {
       display: block;
       font-size: 0.875rem;
@@ -4318,6 +4367,24 @@ export class OrdersComponent implements OnInit, OnDestroy {
     if (this.paymentExtraInput !== null) return this.paymentExtraInput;
     const c = order.extra_charge_cents || 0;
     return c > 0 ? (c / 100).toString() : '';
+  }
+
+  readonly extraQuickAmounts = [1000, 2000, 5000, 10000];
+  readonly extraReasonKeys = [
+    'ORDERS.EXTRA_REASON_ADDITIONAL',
+    'ORDERS.EXTRA_REASON_PRICE',
+    'ORDERS.EXTRA_REASON_SERVICE',
+  ];
+
+  addExtraAmount(pesos: number): void {
+    const order = this.orderToMarkPaid();
+    if (!order) return;
+    const current = this.parseMoneyMajorToCents(this.extraChargeInputValue(order)) / 100;
+    this.paymentExtraInput = String(current + pesos);
+  }
+
+  pickExtraReason(key: string): void {
+    this.paymentExtraNote = this.translate.instant(key);
   }
 
   extraChargeNoteValue(order: Order): string {
