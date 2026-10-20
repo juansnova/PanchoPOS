@@ -3258,18 +3258,59 @@ export class OrdersComponent implements OnInit, OnDestroy {
       return;
     }
     this.showToast(this.translate.instant('ORDERS.PRINT_BRIDGE_OFFLINE'), 'error');
-    const items = (order.items || []).filter((i) => !i.removed_by_customer);
-    const rows = items
-      .map(
-        (i) =>
-          `<tr><td>${i.quantity || 1}×</td><td>${this.escapeHtml(i.product_name || '')}</td></tr>`,
-      )
+    // Browser fallback with the same layout as the ticket the print agent prints (COMANDA banner,
+    // big table name, bold quantities, highlighted notes).
+    const items = (order.items || []).filter(
+      (i) => !i.removed_by_customer && i.status !== 'cancelled',
+    );
+    const esc = (t: string | null | undefined) => this.escapeHtml(t ?? '');
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const timeLabel = `${pad(now.getDate())}/${pad(now.getMonth() + 1)} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const service = (order.table_name || 'PARA LLEVAR').toUpperCase();
+    const lines = items
+      .map((i) => {
+        const mods = this.formatItemModifiersLine(i);
+        return `<div class="line">
+  <div class="dish"><span class="qty">${i.quantity || 1} x</span> ${esc(i.product_name)}</div>
+  ${mods ? `<div class="mods">&gt; ${esc(mods)}</div>` : ''}
+  ${i.notes?.trim() ? `<div class="note">NOTA: ${esc(i.notes.trim())}</div>` : ''}
+</div>`;
+      })
       .join('');
-    const html = `<!DOCTYPE html><html><head><title>Kitchen #${order.id}</title>
-<style>body{font-family:monospace;padding:16px} h1{font-size:18px}</style></head><body>
-<h1>KITCHEN #${order.id}</h1>
-<p>Table: ${this.escapeHtml(order.table_name || '—')}</p>
-<table>${rows}</table>
+    const count = items.reduce((n, i) => n + (i.quantity || 1), 0);
+    const orderNotes = this.displayOrderNotes(order.notes);
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Comanda #${order.id}</title>
+<style>
+@page{size:80mm auto;margin:3mm}
+body{font-family:Arial,Helvetica,sans-serif;width:74mm;margin:0 auto;color:#000}
+.banner{background:#000;color:#fff;text-align:center;font-weight:800;font-size:26px;letter-spacing:3px;padding:6px 0}
+.table{text-align:center;font-weight:800;font-size:34px;line-height:1.1;margin:8px 0 2px;word-break:break-word}
+.meta{text-align:center;font-weight:700;font-size:14px}
+.info{font-size:14px;font-weight:700;margin-top:4px}
+hr{border:0;border-top:2px solid #000;margin:8px 0}
+.line{padding:6px 0;border-bottom:1px dashed #000}
+.line:last-child{border-bottom:0}
+.dish{font-weight:800;font-size:20px;line-height:1.2}
+.qty{display:inline-block;min-width:44px}
+.mods{font-weight:700;font-size:15px;margin:2px 0 0 44px}
+.note{background:#000;color:#fff;font-weight:800;font-size:15px;padding:2px 6px;margin-top:4px}
+.total{text-align:center;font-weight:800;font-size:20px}
+.order-note{margin-top:8px}
+.order-note b{display:block;background:#000;color:#fff;text-align:center;padding:2px 0}
+.order-note p{font-weight:800;font-size:18px;margin:4px 0 0}
+</style></head><body>
+<div class="banner">COMANDA</div>
+<div class="table">${esc(service)}</div>
+<div class="meta">Pedido #${order.id} &nbsp; ${timeLabel}</div>
+${order.customer_name ? `<div class="info">Cliente: ${esc(order.customer_name)}</div>` : ''}
+${order.delivery_address ? `<div class="info">Dir: ${esc(order.delivery_address)}</div>` : ''}
+${order.customer_phone ? `<div class="info">Tel: ${esc(order.customer_phone)}</div>` : ''}
+<hr>
+${lines}
+<hr>
+<div class="total">${count} plato${count !== 1 ? 's' : ''}</div>
+${orderNotes ? `<div class="order-note"><b>NOTA DEL PEDIDO</b><p>${esc(orderNotes)}</p></div>` : ''}
 <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};}<\/script>
 </body></html>`;
     const w = window.open('', '_blank');
