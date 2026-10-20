@@ -241,6 +241,29 @@
             </div>
             }
           </div>
+          @if (order.extraCents && extraEditOrderId() !== order.id) {
+          <div class="order-extra-row">
+            <span>{{ 'ORDERS.EXTRA_CHARGE' | translate }}{{ order.extraNote ? ' — ' + order.extraNote : '' }}</span>
+            <strong>{{ formatPrice(order.extraCents) }}</strong>
+          </div>
+          }
+          @if (isStaff() && !isPaid()) {
+            @if (extraEditOrderId() === order.id) {
+            <div class="extra-charge-form">
+              <input type="text" inputmode="decimal" placeholder="0" [(ngModel)]="extraAmountInput" name="extraAmount" />
+              <input type="text" maxlength="200" [placeholder]="'ORDERS.EXTRA_CHARGE_REASON' | translate"
+                [(ngModel)]="extraNoteInput" name="extraNote" />
+              <button type="button" class="extra-charge-save" (click)="saveExtraCharge(order.id)">
+                {{ 'ORDERS.EXTRA_CHARGE_APPLY' | translate }}
+              </button>
+              <button type="button" class="extra-charge-cancel" (click)="extraEditOrderId.set(null)">✕</button>
+            </div>
+            } @else {
+            <button type="button" class="extra-charge-btn" (click)="openExtraCharge(order)">
+              + {{ 'ORDERS.EXTRA_CHARGE' | translate }}
+            </button>
+            }
+          }
           @if (order.notes?.trim()) {
           <div class="order-notes-row">{{ 'MENU.ORDER_NOTES' | translate }}: {{ order.notes }}</div>
           }

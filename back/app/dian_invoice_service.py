@@ -45,7 +45,8 @@ def order_dian_amount_cents(session: Session, order: models.Order) -> int:
     subtotal = sum(i.price_cents * i.quantity for i in active)
     tip = int(order.tip_amount_cents or 0)
     fee = int(getattr(order, "delivery_fee_cents", 0) or 0)
-    return max(0, subtotal + tip + fee)
+    extra = int(getattr(order, "extra_charge_cents", 0) or 0)
+    return max(0, subtotal + tip + fee + extra)
 
 
 def _order_dian_items(session: Session, order: models.Order) -> list[dict[str, Any]]:

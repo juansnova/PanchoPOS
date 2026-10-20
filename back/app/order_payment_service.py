@@ -73,6 +73,7 @@ def order_due_cents(session: Session, order: models.Order, *, include_tip: bool 
         from .delivery_order_service import order_delivery_fee_cents
 
         subtotal = subtotal + order_delivery_fee_cents(order)
+    subtotal += int(getattr(order, "extra_charge_cents", 0) or 0)
     tip = int(order.tip_amount_cents or 0) if include_tip else 0
     return max(0, subtotal) + tip
 

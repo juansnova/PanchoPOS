@@ -1077,6 +1077,9 @@ export interface Order {
   total_cents: number;
   /** Sum of active line items (excludes tip); same as total_cents when no tip */
   subtotal_cents?: number;
+  /** Additional charge entered by waiter/owner (included in total_cents) */
+  extra_charge_cents?: number;
+  extra_charge_note?: string | null;
   tip_percent_applied?: number | null;
   tip_amount_cents?: number | null;
   tip_attributed_user_id?: number | null;
@@ -2138,6 +2141,18 @@ export class ApiService {
       status,
       user_id: userId
     });
+  }
+
+  /** Waiter/owner: set (or clear with 0) the additional charge on an unpaid order. */
+  setOrderExtraCharge(orderId: number, amountCents: number, note?: string | null): Observable<{
+    order_id: number;
+    extra_charge_cents: number;
+    extra_charge_note: string | null;
+  }> {
+    return this.http.put<{ order_id: number; extra_charge_cents: number; extra_charge_note: string | null }>(
+      `${this.apiUrl}/orders/${orderId}/extra-charge`,
+      { amount_cents: amountCents, note: note ?? null }
+    );
   }
 
   removeOrderItem(tableToken: string, orderId: number, itemId: number, sessionId?: string, reason?: string): Observable<any> {

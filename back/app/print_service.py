@@ -251,6 +251,8 @@ def _receipt_fields(
         "billing": billing,
         "subtotal_cents": subtotal,
         "tip_cents": tip,
+        "extra_charge_cents": int(getattr(order, "extra_charge_cents", 0) or 0),
+        "extra_charge_note": getattr(order, "extra_charge_note", None),
         "tip_percent": order.tip_percent_applied,
         "tax_summary": [{"rate": r, "cents": c} for r, c in sorted(tax_by_rate.items())],
         "paid": paid,
@@ -260,8 +262,9 @@ def _receipt_fields(
 
 def _order_total_cents(items: list[models.OrderItem], order: models.Order) -> int:
     tip = int(order.tip_amount_cents or 0)
+    extra = int(getattr(order, "extra_charge_cents", 0) or 0)
     sub = sum(int(i.price_cents or 0) * int(i.quantity or 1) for i in items)
-    return max(0, sub + tip)
+    return max(0, sub + tip + extra)
 
 
 def _build_order_payload(

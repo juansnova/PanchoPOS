@@ -1156,6 +1156,22 @@ ModuleRegistry.registerModules([
                 <p class="payment-amount-line">
                   {{ 'ORDERS.SUBTOTAL' | translate }}: {{ formatPrice(orderPaymentSubtotal(orderToMarkPaid()!)) }}
                 </p>
+                <div class="form-group extra-charge-group">
+                  <label for="payment-extra-amount">{{ 'ORDERS.EXTRA_CHARGE' | translate }}</label>
+                  <div class="extra-charge-row">
+                    <input id="payment-extra-amount" type="text" inputmode="decimal" class="form-control"
+                      placeholder="0"
+                      [value]="extraChargeInputValue(orderToMarkPaid()!)"
+                      (input)="paymentExtraInput = $any($event.target).value" />
+                    <input type="text" class="form-control" maxlength="200"
+                      [placeholder]="'ORDERS.EXTRA_CHARGE_REASON' | translate"
+                      [value]="extraChargeNoteValue(orderToMarkPaid()!)"
+                      (input)="paymentExtraNote = $any($event.target).value" />
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="applyExtraCharge()">
+                      {{ 'ORDERS.EXTRA_CHARGE_APPLY' | translate }}
+                    </button>
+                  </div>
+                </div>
                 @if (tipEntryModeOverpayment()) {
                   <p class="modal-hint">{{ 'ORDERS.OVERPAYMENT_PAYMENT_HINT' | translate }}</p>
                   <div class="form-group">
@@ -2102,6 +2118,8 @@ ModuleRegistry.registerModules([
     }
 
     .payment-amount-line { margin-bottom: var(--space-3); }
+    .extra-charge-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .extra-charge-row .form-control { flex: 1 1 120px; min-width: 0; }
     .payment-tip-group .form-label-text {
       display: block;
       font-size: 0.875rem;
@@ -3663,6 +3681,14 @@ export class OrdersComponent implements OnInit, OnDestroy {
       tipPct != null && tipPct > 0
         ? this.translate.instant('ORDERS.INVOICE_TIP_LINE', { percent: tipPct })
         : this.translate.instant('ORDERS.TIP');
+    const extraCents = order.extra_charge_cents || 0;
+    const extraRowHtml =
+      extraCents > 0
+        ? `<tr>
+        <td colspan="4">${this.escapeHtml(this.translate.instant('ORDERS.EXTRA_CHARGE'))}${order.extra_charge_note ? ' — ' + this.escapeHtml(order.extra_charge_note) : ''}</td>
+        <td style="text-align:right">${this.formatPrice(extraCents)}</td>
+      </tr>`
+        : '';
     const tipRowsHtml =
       tipAmt > 0
         ? `<tr>
@@ -3751,6 +3777,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     </thead>
     <tbody>
       ${rows}
+      ${extraRowHtml}
       ${tipRowsHtml}
     </tbody>
     ${taxSummaryRows}
@@ -4126,6 +4153,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   closePaymentModal() {
     this.orderToMarkPaid.set(null);
+    this.paymentExtraInput = null;
+    this.paymentExtraNote = null;
     this.paymentModalFinishMode.set(false);
     this.processingPayment.set(false);
     this.paymentTipPercent = 0;
@@ -4271,13 +4300,51 @@ export class OrdersComponent implements OnInit, OnDestroy {
   }
 
   orderPaymentSubtotal(order: Order): number {
+    const extra = order.extra_charge_cents || 0;
     if (order.subtotal_cents != null && order.subtotal_cents >= 0) {
-      return order.subtotal_cents;
+      return order.subtotal_cents + extra;
     }
     const items = (order.items || []).filter(
       i => !i.removed_by_customer && i.status !== 'cancelled'
     );
-    return items.reduce((s, i) => s + (i.price_cents || 0) * (i.quantity || 0), 0);
+    return items.reduce((s, i) => s + (i.price_cents || 0) * (i.quantity || 0), 0) + extra;
+  }
+
+  /** Additional-charge fields in the payment modal; null = show the order's saved value. */
+  paymentExtraInput: string | null = null;
+  paymentExtraNote: string | null = null;
+
+  extraChargeInputValue(order: Order): string {
+    if (this.paymentExtraInput !== null) return this.paymentExtraInput;
+    const c = order.extra_charge_cents || 0;
+    return c > 0 ? (c / 100).toString() : '';
+  }
+
+  extraChargeNoteValue(order: Order): string {
+    return this.paymentExtraNote ?? order.extra_charge_note ?? '';
+  }
+
+  applyExtraCharge(): void {
+    const order = this.orderToMarkPaid();
+    if (!order) return;
+    const cents = this.parseMoneyMajorToCents(this.extraChargeInputValue(order));
+    const note = this.extraChargeNoteValue(order).trim();
+    this.api.setOrderExtraCharge(order.id, cents, note).subscribe({
+      next: res => {
+        this.orderToMarkPaid.set({
+          ...order,
+          extra_charge_cents: res.extra_charge_cents,
+          extra_charge_note: res.extra_charge_note,
+        });
+        this.paymentExtraInput = null;
+        this.paymentExtraNote = null;
+        this.paymentAmountPaidInput = '';
+        this.paymentTipAmountInput = '';
+        this.loadOrders();
+        this.showToast(this.translate.instant('ORDERS.EXTRA_CHARGE_SAVED'), 'success');
+      },
+      error: () => this.showToast(this.translate.instant('ORDERS.EXTRA_CHARGE_FAILED'), 'error'),
+    });
   }
 
   tipEntryModeOverpayment(): boolean {

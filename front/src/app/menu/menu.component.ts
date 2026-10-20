@@ -32,6 +32,8 @@ interface PlacedOrder {
   notes: string;
   total: number;
   status: string;
+  extraCents?: number;
+  extraNote?: string;
 }
 
 @Component({
@@ -1254,7 +1256,9 @@ export class MenuComponent implements OnInit, OnDestroy {
             } as CartItem))),
             notes: response.order.notes || '',
             total: response.order.total_cents,
-            status: response.order.status
+            status: response.order.status,
+            extraCents: response.order.extra_charge_cents || 0,
+            extraNote: response.order.extra_charge_note || ''
           };
           this.placedOrders.set([order]);
           this.saveOrders();
@@ -1283,6 +1287,29 @@ export class MenuComponent implements OnInit, OnDestroy {
         }
       } catch { }
     }
+  }
+
+  /** Staff-only additional charge editor (amount in major units, like the rest of the app). */
+  extraEditOrderId = signal<number | null>(null);
+  extraAmountInput = '';
+  extraNoteInput = '';
+
+  openExtraCharge(order: PlacedOrder) {
+    this.extraAmountInput = order.extraCents ? String(order.extraCents / 100) : '';
+    this.extraNoteInput = order.extraNote || '';
+    this.extraEditOrderId.set(order.id);
+  }
+
+  saveExtraCharge(orderId: number) {
+    const n = parseFloat((this.extraAmountInput || '').replace(',', '.'));
+    const cents = Number.isNaN(n) || n < 0 ? 0 : Math.round(n * 100);
+    this.api.setOrderExtraCharge(orderId, cents, this.extraNoteInput.trim()).subscribe({
+      next: () => {
+        this.extraEditOrderId.set(null);
+        this.loadStoredOrders();
+      },
+      error: (err) => alert(err.error?.detail || 'Failed to save extra charge')
+    });
   }
 
   /** Customers edit only pending items; staff can edit any item that is not delivered/cancelled. */

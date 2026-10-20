@@ -809,9 +809,18 @@ class Order(TenantMixin, table=True):
     courier_user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
     delivery_fee_cents: int = Field(default=0)  # Snapshot of tenant delivery fee at create
 
+    # Additional charge entered by waiter/owner (extra item, same-day price change...); added to the bill
+    extra_charge_cents: int = Field(default=0, ge=0)
+    extra_charge_note: str | None = Field(default=None, max_length=200)
+
 
     items: list["OrderItem"] = Relationship(back_populates="order")
     billing_customer: BillingCustomer | None = Relationship(back_populates="orders")
+
+
+class OrderExtraChargeUpdate(SQLModel):
+    amount_cents: int = Field(ge=0, le=100_000_000)  # 0 removes the charge
+    note: str | None = Field(default=None, max_length=200)
 
 
 class OrderPayment(TenantMixin, table=True):

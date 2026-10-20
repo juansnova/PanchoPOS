@@ -157,6 +157,26 @@ class TestTableCloseOnPaid(PgClientTestCase):
         gone = self.client.delete(url, headers=_bearer_headers(self.waiter))
         self.assertEqual(gone.status_code, 200, gone.text)
 
+    def test_staff_extra_charge_added_to_bill(self) -> None:
+        table, order = self._table_with_open_order("T9")
+        url = f"/orders/{order.id}/extra-charge"
+        self.assertIn(self.client.put(url, json={"amount_cents": 500}).status_code, (401, 403))
+        ok = self.client.put(
+            url, json={"amount_cents": 500, "note": "Adicional"}, headers=_bearer_headers(self.waiter)
+        )
+        self.assertEqual(ok.status_code, 200, ok.text)
+        shown = self.client.get(f"/menu/{table.token}/order", params={"session_id": "close-on-paid-session"})
+        self.assertEqual(shown.json()["order"]["total_cents"], 1500)
+        paid = self.client.put(
+            f"/orders/{order.id}/mark-paid",
+            json={"payment_method": "cash"},
+            headers=_bearer_headers(self.waiter),
+        )
+        self.assertEqual(paid.status_code, 200, paid.text)
+        self.assertEqual(paid.json()["amount_due_cents"], 1500)
+        again = self.client.put(url, json={"amount_cents": 0}, headers=_bearer_headers(self.waiter))
+        self.assertEqual(again.status_code, 400)
+
     def _idle_table(self, name: str, *, minutes_active: int) -> models.Table:
         from datetime import datetime, timedelta, timezone
 

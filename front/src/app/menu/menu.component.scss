@@ -891,6 +891,68 @@ $cart-expanded-max: 60vh;
   }
 }
 
+.order-extra-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  color: var(--color-primary);
+  font-size: 0.9375rem;
+}
+
+.extra-charge-btn {
+  align-self: flex-start;
+  margin: var(--space-2) 0;
+  padding: 10px 16px;
+  border: 1.5px dashed var(--color-primary);
+  border-radius: 999px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.extra-charge-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+
+  input {
+    flex: 1 1 120px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 1rem; // >=16px avoids iOS zoom on focus
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  .extra-charge-save {
+    min-height: 44px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 999px;
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .extra-charge-cancel {
+    min-width: 44px;
+    min-height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-primary-light);
+    color: var(--color-text);
+    cursor: pointer;
+  }
+}
+
 .order-actions {
   display: flex;
   gap: var(--space-3);

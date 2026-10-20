@@ -11061,7 +11061,10 @@ def get_current_order(
                 }
                 for item in items
             ],
-            "total_cents": sum(item.price_cents * item.quantity for item in items),
+            "extra_charge_cents": int(active_order.extra_charge_cents or 0),
+            "extra_charge_note": active_order.extra_charge_note,
+            "total_cents": sum(item.price_cents * item.quantity for item in items)
+            + int(active_order.extra_charge_cents or 0),
         }
     }
     return JSONResponse(content=payload)
@@ -11869,7 +11872,9 @@ def _active_order_subtotal_cents(session: Session, order_id: int) -> int:
         and i.removed_by_user_id is None
         and i.status != models.OrderItemStatus.cancelled
     ]
-    return sum(i.price_cents * i.quantity for i in active)
+    order = session.get(models.Order, order_id)
+    extra = int(getattr(order, "extra_charge_cents", 0) or 0)
+    return sum(i.price_cents * i.quantity for i in active) + extra
 
 
 def _tenant_tip_entry_mode(tenant: models.Tenant) -> str:
@@ -12312,7 +12317,8 @@ def list_orders(
             continue
         subtotal_cents = sum(item.price_cents * item.quantity for item in active_items)
         tip_amt = int(order.tip_amount_cents or 0)
-        total_cents = subtotal_cents + tip_amt
+        extra_charge = int(order.extra_charge_cents or 0)
+        total_cents = subtotal_cents + extra_charge + tip_amt
 
         # Product categories for kitchen/bar display filtering (one query per order)
         product_ids = list({i.product_id for i in items})
@@ -12407,6 +12413,8 @@ def list_orders(
             "subtotal_cents": subtotal_cents,
             "tip_percent_applied": getattr(order, "tip_percent_applied", None),
             "tip_amount_cents": getattr(order, "tip_amount_cents", None),
+            "extra_charge_cents": extra_charge,
+            "extra_charge_note": order.extra_charge_note,
             "tip_attributed_user_id": getattr(order, "tip_attributed_user_id", None),
             "total_cents": total_cents,
             "removed_items_count": len([item for item in all_items if item.removed_by_customer]),
@@ -12579,6 +12587,44 @@ def mark_order_paid(
         "amount_paid_cents": recon.get("amount_paid_cents"),
         "amount_remaining_cents": recon.get("amount_remaining_cents"),
         "payments": recon.get("payments"),
+    }
+
+
+@app.put("/orders/{order_id}/extra-charge")
+def set_order_extra_charge(
+    order_id: int,
+    body: models.OrderExtraChargeUpdate,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.ORDER_MARK_PAID))],
+    session: Session = Depends(get_session),
+) -> dict:
+    """Waiter/owner sets (or clears with 0) an additional charge on an unpaid order."""
+    order = session.exec(
+        select(models.Order).where(
+            models.Order.id == order_id,
+            models.Order.tenant_id == current_user.tenant_id,
+        )
+    ).first()
+    if not order or order.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.paid_at or order.status in (models.OrderStatus.paid, models.OrderStatus.cancelled):
+        raise HTTPException(status_code=400, detail="Order is already paid or cancelled")
+    order.extra_charge_cents = body.amount_cents
+    note = (body.note or "").strip()
+    order.extra_charge_note = note or None if body.amount_cents > 0 else None
+    session.add(order)
+    session.commit()
+    session.refresh(order)
+    table = session.get(models.Table, order.table_id) if order.table_id else None
+    publish_order_update(current_user.tenant_id, {
+        "type": "extra_charge_updated",
+        "order_id": order.id,
+        "table_name": table.name if table else "Unknown",
+        "extra_charge_cents": order.extra_charge_cents,
+    }, table_id=order.table_id)
+    return {
+        "order_id": order.id,
+        "extra_charge_cents": order.extra_charge_cents,
+        "extra_charge_note": order.extra_charge_note,
     }
 
 
