@@ -842,6 +842,8 @@
     "COURIER_UNASSIGNED": "Sin asignar",
     "EDIT_DELIVERY": "Editar entrega",
     "CREATE_DELIVERY": "Crear pedido a domicilio",
+    "DELIVERY_PICK_ITEMS": "Elegir artículos del menú",
+    "DELIVERY_ADD_TO_ORDER": "Agregar al pedido",
     "NO_DELIVERY_ORDERS": "No hay pedidos a domicilio",
     "NO_DELIVERY_ORDERS_DESC": "Aquí aparecerán los pedidos PanchoPanza_delivery y de marketplace.",
     "CHANNEL_SATISFECHO_DELIVERY": "PanchoPanza_delivery",

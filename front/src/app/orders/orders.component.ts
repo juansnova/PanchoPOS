@@ -57,8 +57,10 @@ ModuleRegistry.registerModules([
             <h1>{{ 'ORDERS.TITLE' | translate }}</h1>
             <div class="page-header-actions">
               @if (canUpdateStatus()) {
-                <button type="button" class="btn btn-primary" (click)="openCreateDeliveryModal()">
-                  {{ 'ORDERS.NEW_DELIVERY_ORDER' | translate }}
+                <button type="button" class="btn btn-delivery-new" (click)="openCreateDeliveryModal()">
+                  <span class="dn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17.5" r="3"/><circle cx="18.5" cy="17.5" r="3"/><path d="M8.5 17.5H14l2-8h-3.5M12 6h3l2 3.5M7 9h3"/></svg></span>
+                  <span class="dn-text">{{ 'ORDERS.NEW_DELIVERY_ORDER' | translate }}</span>
+                  <span class="dn-plus" aria-hidden="true">+</span>
                 </button>
               }
               <button class="btn btn-secondary" (click)="loadOrders()">
@@ -973,32 +975,31 @@ ModuleRegistry.registerModules([
         <!-- Create Satisfecho Delivery Order Modal -->
         @if (createDeliveryOpen()) {
           <div class="modal-overlay">
-            <div class="modal modal-order-edit" (click)="$event.stopPropagation()" appFocusFirstInput>
-              <div class="modal-header">
-                <h3>{{ 'ORDERS.NEW_DELIVERY_ORDER' | translate }}</h3>
-                <button class="icon-btn" (click)="closeCreateDeliveryModal()">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                  </svg>
+            <div class="modal modal-order-edit mx mx-delivery" (click)="$event.stopPropagation()" appFocusFirstInput>
+              <div class="mx-head">
+                <span class="mx-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17.5" r="3"/><circle cx="18.5" cy="17.5" r="3"/><path d="M8.5 17.5H14l2-8h-3.5M12 6h3l2 3.5M7 9h3"/></svg></span>
+                <div class="mx-head-text">
+                  <h3>{{ 'ORDERS.NEW_DELIVERY_ORDER' | translate }}</h3>
+                  <p>{{ 'ORDERS.NEW_DELIVERY_HINT' | translate }}</p>
+                </div>
+                <button class="mx-close" (click)="closeCreateDeliveryModal()" [attr.aria-label]="'COMMON.CANCEL' | translate">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
               <div class="modal-body">
-                <p class="modal-hint">{{ 'ORDERS.NEW_DELIVERY_HINT' | translate }}</p>
                 <div class="form-group">
                   <label for="delivery-address">{{ 'ORDERS.DELIVERY_ADDRESS' | translate }} *</label>
                   <input id="delivery-address" type="text" class="form-input" [(ngModel)]="deliveryFormAddress" name="deliveryAddress" required />
                 </div>
-                <div class="form-group">
-                  <label for="delivery-phone">{{ 'ORDERS.DELIVERY_PHONE' | translate }}</label>
-                  <input id="delivery-phone" type="tel" class="form-input" [(ngModel)]="deliveryFormPhone" name="deliveryPhone" />
-                </div>
-                <div class="form-group">
-                  <label for="delivery-customer">{{ 'ORDERS.CUSTOMER' | translate }}</label>
-                  <input id="delivery-customer" type="text" class="form-input" [(ngModel)]="deliveryFormCustomerName" name="deliveryCustomer" />
-                </div>
-                <div class="form-group">
-                  <label for="delivery-notes">{{ 'ORDERS.ORDER_NOTES' | translate }}</label>
-                  <textarea id="delivery-notes" class="form-input modifier-textarea" rows="2" [(ngModel)]="deliveryFormNotes" name="deliveryNotes"></textarea>
+                <div class="dv-two">
+                  <div class="form-group">
+                    <label for="delivery-phone">{{ 'ORDERS.DELIVERY_PHONE' | translate }}</label>
+                    <input id="delivery-phone" type="tel" class="form-input" [(ngModel)]="deliveryFormPhone" name="deliveryPhone" />
+                  </div>
+                  <div class="form-group">
+                    <label for="delivery-customer">{{ 'ORDERS.CUSTOMER' | translate }}</label>
+                    <input id="delivery-customer" type="text" class="form-input" [(ngModel)]="deliveryFormCustomerName" name="deliveryCustomer" />
+                  </div>
                 </div>
                 <div class="form-group">
                   <label for="delivery-courier">{{ 'ORDERS.COURIER' | translate }}</label>
@@ -1009,31 +1010,46 @@ ModuleRegistry.registerModules([
                     }
                   </select>
                 </div>
-                <div class="edit-order-label">{{ 'ORDERS.ITEMS' | translate }} *</div>
-                <div class="delivery-draft-items">
-                  @for (line of deliveryDraftItems; track $index; let i = $index) {
-                    <div class="edit-order-row">
-                      <span class="edit-item-name">{{ line.name }} × {{ line.quantity }}</span>
-                      <button type="button" class="btn btn-sm btn-secondary" (click)="removeDeliveryDraftItem(i)">{{ 'ORDERS.REMOVE_ITEM' | translate }}</button>
+                <div class="form-group">
+                  <label for="delivery-notes">{{ 'ORDERS.ORDER_NOTES' | translate }}</label>
+                  <textarea id="delivery-notes" class="form-input modifier-textarea" rows="2" [(ngModel)]="deliveryFormNotes" name="deliveryNotes"></textarea>
+                </div>
+
+                <div class="dv-items">
+                  <div class="dv-items-head">
+                    <span>{{ 'ORDERS.ITEMS' | translate }} *</span>
+                    @if (deliveryDraftItems.length > 0) {
+                      <strong>{{ formatPrice(deliveryDraftTotalCents()) }}</strong>
+                    }
+                  </div>
+                  @for (line of deliveryDraftItems; track line.product_id; let i = $index) {
+                    <div class="dv-line">
+                      <span class="dv-line-name">{{ line.name }}</span>
+                      <span class="qty-stepper dv-stepper">
+                        <button type="button" class="qty-btn qty-minus" (click)="stepDeliveryLine(i, -1)" [disabled]="line.quantity <= 1" aria-label="-1">−</button>
+                        <span class="qty-value">{{ line.quantity }}</span>
+                        <button type="button" class="qty-btn qty-plus" (click)="stepDeliveryLine(i, 1)" aria-label="+1">+</button>
+                      </span>
+                      <button type="button" class="dv-remove" (click)="removeDeliveryDraftItem(i)" [attr.aria-label]="'ORDERS.REMOVE_ITEM' | translate">×</button>
                     </div>
                   }
-                </div>
-                <div class="add-items-row">
-                  <select class="form-select" [(ngModel)]="deliveryAddProductId" name="deliveryAddProduct">
-                    <option [ngValue]="null">{{ 'COMMON.SELECT' | translate }}</option>
-                    @for (p of deliveryProducts(); track p.id) {
-                      <option [ngValue]="p.id">{{ p.name }} — {{ formatPrice(p.price_cents) }}</option>
-                    }
-                  </select>
-                  <input type="number" class="quantity-input" [(ngModel)]="deliveryAddQuantity" min="1" name="deliveryAddQty" />
-                  <button type="button" class="btn btn-secondary" (click)="addDeliveryDraftItem()" [disabled]="!deliveryAddProductId || deliveryAddQuantity < 1">
-                    {{ 'COMMON.ADD' | translate }}
+                  <button type="button" class="dv-add" (click)="deliveryPickerOpen.set(true)">
+                    <span class="dv-add-plus">+</span>
+                    {{ (deliveryDraftItems.length ? 'ORDERS.EDIT_ADD_PRODUCT' : 'ORDERS.DELIVERY_PICK_ITEMS') | translate }}
                   </button>
                 </div>
+                @if (deliveryPickerOpen()) {
+                  <app-product-picker
+                    [products]="deliveryPickerProducts()"
+                    [title]="'ORDERS.NEW_DELIVERY_ORDER' | translate"
+                    [confirmLabel]="'ORDERS.DELIVERY_ADD_TO_ORDER' | translate"
+                    (confirmed)="addDeliveryPicked($event)"
+                    (closed)="deliveryPickerOpen.set(false)" />
+                }
               </div>
               <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" (click)="closeCreateDeliveryModal()">{{ 'COMMON.CANCEL' | translate }}</button>
-                <button type="button" class="btn btn-primary" (click)="submitCreateDelivery()" [disabled]="creatingDelivery() || !deliveryFormAddress.trim() || deliveryDraftItems.length === 0">
+                <button type="button" class="btn btn-secondary mx-ghost" (click)="closeCreateDeliveryModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button type="button" class="btn btn-primary mx-main" (click)="submitCreateDelivery()" [disabled]="creatingDelivery() || !deliveryFormAddress.trim() || deliveryDraftItems.length === 0">
                   {{ creatingDelivery() ? ('COMMON.LOADING' | translate) : ('ORDERS.CREATE_DELIVERY' | translate) }}
                 </button>
               </div>
@@ -2686,6 +2702,55 @@ ModuleRegistry.registerModules([
     .mx-confirm-actions .btn { flex: 1 1 0; }
     .mx .btn.mx-main-danger { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 8px 18px -8px #b91c1c; }
     @media (prefers-reduced-motion: reduce) { .modal.mx { animation: none; } }
+
+    /* ===== Nuevo pedido a domicilio ===== */
+    .btn-delivery-new {
+      display: inline-flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 8px 0 8px; border: 0; cursor: pointer;
+      border-radius: 999px; color: #fff; font-weight: 800; font-size: .9rem; touch-action: manipulation;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+      box-shadow: 0 10px 20px -10px var(--color-primary);
+      transition: transform .12s, box-shadow .15s, filter .15s;
+    }
+    .btn-delivery-new:hover { filter: brightness(1.07); box-shadow: 0 14px 24px -10px var(--color-primary); }
+    .btn-delivery-new:active { transform: scale(.97); }
+    .btn-delivery-new .dn-ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.2); }
+    .btn-delivery-new .dn-plus {
+      display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #fff;
+      color: var(--color-primary); font-size: 1.1rem; font-weight: 800; line-height: 1;
+    }
+    .mx-delivery { max-width: 520px; }
+    .mx-delivery .modal-body { padding-top: 10px; }
+    .dv-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 480px) { .dv-two { grid-template-columns: 1fr; } }
+    .dv-items { margin-top: 6px; padding: 14px; border-radius: 16px; background: var(--color-bg); border: 1px solid var(--color-border); }
+    .dv-items-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+    .dv-items-head span { font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--color-text-muted); }
+    .dv-items-head strong { font-size: 1.2rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .dv-line { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--color-border); }
+    .dv-line-name { flex: 1; min-width: 0; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+    .dv-stepper { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 999px; background: var(--color-primary-light); }
+    .dv-stepper .qty-btn {
+      width: 28px; height: 28px; border: 0; border-radius: 50%; color: #fff; font-size: 1.1rem; font-weight: 700; line-height: 1; cursor: pointer;
+      touch-action: manipulation;
+    }
+    .dv-stepper .qty-minus { background: color-mix(in srgb, var(--color-primary) 38%, #fff); }
+    .dv-stepper .qty-plus { background: var(--color-primary); }
+    .dv-stepper .qty-btn:disabled { opacity: .4; cursor: default; }
+    .dv-stepper .qty-value { min-width: 22px; text-align: center; font-weight: 800; }
+    .dv-remove { width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: #dc2626; font-size: 1.3rem; cursor: pointer; }
+    .dv-remove:hover { background: rgba(220, 38, 38, .1); }
+    .dv-add {
+      display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 50px; margin-top: 10px;
+      border-radius: 14px; border: 1.5px dashed var(--color-primary); background: var(--color-primary-light);
+      color: var(--color-primary); font: inherit; font-weight: 800; cursor: pointer; touch-action: manipulation;
+      transition: background .15s, transform .12s;
+    }
+    .dv-add:hover { background: color-mix(in srgb, var(--color-primary) 16%, var(--color-surface)); }
+    .dv-add:active { transform: scale(.98); }
+    .dv-add-plus {
+      display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+      background: var(--color-primary); color: #fff; font-size: 1.2rem; line-height: 1;
+    }
   `]
 })
 export class OrdersComponent implements OnInit, OnDestroy {
@@ -2749,9 +2814,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
   deliveryFormCustomerName = '';
   deliveryFormNotes = '';
   deliveryFormCourierId: number | null = null;
-  deliveryDraftItems: { product_id: number; name: string; quantity: number }[] = [];
-  deliveryAddProductId: number | null = null;
-  deliveryAddQuantity = 1;
+  deliveryDraftItems: { product_id: number; name: string; quantity: number; price_cents: number }[] = [];
+  deliveryPickerOpen = signal(false);
   orderToMarkPaid = signal<Order | null>(null);
   /** When true, payment modal confirms finish (deliver all + pay) instead of pay-only. */
   paymentModalFinishMode = signal(false);
@@ -3254,8 +3318,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.deliveryFormNotes = '';
     this.deliveryFormCourierId = null;
     this.deliveryDraftItems = [];
-    this.deliveryAddProductId = null;
-    this.deliveryAddQuantity = 1;
+    this.deliveryPickerOpen.set(false);
   }
 
   private ensureDeliveryLookups(): void {
@@ -3301,21 +3364,36 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.resetDeliveryForm();
   }
 
-  addDeliveryDraftItem(): void {
-    if (!this.deliveryAddProductId || this.deliveryAddQuantity < 1) return;
-    const product = this.deliveryProducts().find(p => p.id === this.deliveryAddProductId);
-    if (!product?.id) return;
-    const existing = this.deliveryDraftItems.find(l => l.product_id === product.id);
-    if (existing) {
-      existing.quantity += this.deliveryAddQuantity;
-    } else {
-      this.deliveryDraftItems = [
-        ...this.deliveryDraftItems,
-        { product_id: product.id, name: product.name, quantity: this.deliveryAddQuantity },
-      ];
+  /** Same product catalogue as Nueva venta / Editar pedido. */
+  deliveryPickerProducts = computed<PickerProduct[]>(() =>
+    this.deliveryProducts().map(p => ({
+      id: p.id as number,
+      name: p.name,
+      price_cents: p.price_cents,
+      category: p.category ?? null,
+      image_url: this.api.getProductImageUrl(p),
+    }))
+  );
+
+  deliveryDraftTotalCents(): number {
+    return this.deliveryDraftItems.reduce((sum, l) => sum + l.price_cents * l.quantity, 0);
+  }
+
+  addDeliveryPicked(lines: PickedLine[]): void {
+    const items = this.deliveryDraftItems.map(l => ({ ...l }));
+    for (const l of lines) {
+      const existing = items.find(i => i.product_id === l.product_id);
+      if (existing) existing.quantity += l.quantity;
+      else items.push({ product_id: l.product_id, name: l.name, quantity: l.quantity, price_cents: l.price_cents });
     }
-    this.deliveryAddProductId = null;
-    this.deliveryAddQuantity = 1;
+    this.deliveryDraftItems = items;
+    this.deliveryPickerOpen.set(false);
+  }
+
+  stepDeliveryLine(index: number, delta: number): void {
+    this.deliveryDraftItems = this.deliveryDraftItems.map((l, i) =>
+      i === index ? { ...l, quantity: Math.max(1, l.quantity + delta) } : l
+    );
   }
 
   removeDeliveryDraftItem(index: number): void {
