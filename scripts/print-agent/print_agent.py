@@ -234,6 +234,11 @@ def render_receipt_ticket(payload: dict, *, cols: int = 48) -> bytes:
     put("-" * cols)
 
     put(_two_cols("Subtotal", money(payload.get("subtotal_cents") or 0), cols))
+    if payload.get("extra_charge_cents"):
+        label = "Importe adicional"
+        if payload.get("extra_charge_note"):
+            label += f" ({payload['extra_charge_note']})"
+        put(_two_cols(label[: cols - 12], money(payload["extra_charge_cents"]), cols))
     if payload.get("tip_cents"):
         pct = payload.get("tip_percent")
         put(_two_cols(f"Propina {pct}%" if pct else "Propina", money(payload["tip_cents"]), cols))

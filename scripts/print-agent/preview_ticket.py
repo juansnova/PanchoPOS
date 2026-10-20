@@ -43,6 +43,44 @@ DELIVERY = {
     "customer_phone": "300 123 4567",
     "lines": KITCHEN["lines"][:1],
 }
+RECEIPT = {
+    "order_id": 128,
+    "date_label": "20/10/2026 14:05",
+    "table_name": "Mesa 5",
+    "customer_name": "Carlos",
+    "business": {
+        "name": "Pancho Panza",
+        "address": "Carrera 7 # 45-10",
+        "city": "Bogotá",
+        "phone": "601 555 0123",
+        "tax_id": "900.123.456-7",
+    },
+    "billing": {"name": "Inversiones Andina S.A.S.", "tax_id": "901.222.333-4", "address": "Calle 80 # 12-34", "email": "compras@andina.co"},
+    "lines": [
+        {"quantity": 2, "name": "Bandeja paisa", "price_cents": 3800000, "line_total_cents": 7600000, "notes": "Quitar: chorizo", "item_note": "Sin cebolla"},
+        {"quantity": 1, "name": "Sopa de mondongo", "price_cents": 2200000, "line_total_cents": 2200000},
+        {"quantity": 3, "name": "Limonada de coco", "price_cents": 900000, "line_total_cents": 2700000},
+    ],
+    "subtotal_cents": 12500000,
+    "extra_charge_cents": 500000,
+    "extra_charge_note": None,
+    "tip_cents": 0,
+    "tax_summary": [{"rate": 8, "cents": 925926}],
+    "total_cents": 13000000,
+    "paid": True,
+    "payment_method": "cash",
+}
+RECEIPT_SIMPLE = {
+    **RECEIPT,
+    "billing": None,
+    "customer_name": None,
+    "lines": RECEIPT["lines"][1:2],
+    "subtotal_cents": 2200000,
+    "extra_charge_cents": 0,
+    "tax_summary": [],
+    "total_cents": 2200000,
+    "paid": False,
+}
 BAR_TEXT = "BAR - MESA 5\nPedido #128   20/10 13:42\nCliente: Carlos\n" + "-" * 32 + "\n3x Limonada de coco\n  >> Poco hielo\n1x Cerveza Club Colombia\n"
 
 
@@ -133,6 +171,8 @@ def main() -> None:
         ("Cocina · adición (solo platos nuevos)", interpret(agent.render_kitchen_ticket(ADDITION, cols=COLS))),
         ("Cocina · domicilio", interpret(agent.render_kitchen_ticket(DELIVERY, cols=COLS))),
         ("Barra", interpret(agent.render_escpos(BAR_TEXT, big=False))),
+        ("Factura · pagada, con cliente de facturación e importe adicional", interpret(agent.render_receipt_ticket(RECEIPT, cols=COLS))),
+        ("Factura · sencilla, sin pagar", interpret(agent.render_receipt_ticket(RECEIPT_SIMPLE, cols=COLS))),
     ]
     out.write_text(page(tickets), encoding="utf-8")
     print(f"wrote {out}")
