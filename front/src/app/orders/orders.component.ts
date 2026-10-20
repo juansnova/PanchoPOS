@@ -1156,25 +1156,37 @@ ModuleRegistry.registerModules([
                 <p class="payment-amount-line">
                   {{ 'ORDERS.SUBTOTAL' | translate }}: {{ formatPrice(orderPaymentSubtotal(orderToMarkPaid()!)) }}
                 </p>
-                @if (extraEditorOpen()) {
-                  <div class="extra-inline">
-                    <input id="payment-extra-amount" class="extra-amount" type="text" inputmode="decimal"
-                      [placeholder]="('ORDERS.EXTRA_CHARGE' | translate) + ' $'"
-                      [value]="extraChargeInputValue(orderToMarkPaid()!)"
-                      (input)="paymentExtraInput = $any($event.target).value" />
-                    <button type="button" class="extra-ok" (click)="applyExtraCharge()"
-                      [attr.aria-label]="'ORDERS.EXTRA_CHARGE_APPLY' | translate">✓</button>
-                  </div>
-                  <div class="extra-chips">
-                    @for (v of extraQuickAmounts; track v) {
-                    <button type="button" class="extra-chip" (click)="addExtraAmount(v)">+{{ formatPrice(v * 100) }}</button>
-                    }
-                  </div>
-                } @else {
-                  <button type="button" class="extra-add-btn" (click)="extraEditorOpen.set(true)">
-                    + {{ 'ORDERS.EXTRA_CHARGE' | translate }}@if ((orderToMarkPaid()!.extra_charge_cents || 0) > 0) {: {{ formatPrice(orderToMarkPaid()!.extra_charge_cents || 0) }} }
-                  </button>
-                }
+                <div class="extra-block">
+                  @if (extraEditorOpen()) {
+                    <div class="extra-panel">
+                      <div class="extra-inline">
+                        <span class="extra-currency">$</span>
+                        <input id="payment-extra-amount" class="extra-amount" type="text" inputmode="decimal"
+                          placeholder="0"
+                          [value]="extraChargeInputValue(orderToMarkPaid()!)"
+                          (input)="paymentExtraInput = $any($event.target).value" />
+                        <button type="button" class="extra-ok" (click)="applyExtraCharge()"
+                          [attr.aria-label]="'ORDERS.EXTRA_CHARGE_APPLY' | translate">✓</button>
+                        <button type="button" class="extra-x" (click)="extraEditorOpen.set(false)"
+                          [attr.aria-label]="'COMMON.CANCEL' | translate">✕</button>
+                      </div>
+                      <div class="extra-chips">
+                        @for (v of extraQuickAmounts; track v) {
+                        <button type="button" class="extra-chip" (click)="addExtraAmount(v)">+{{ formatPrice(v * 100) }}</button>
+                        }
+                      </div>
+                    </div>
+                  } @else if ((orderToMarkPaid()!.extra_charge_cents || 0) > 0) {
+                    <button type="button" class="extra-pill extra-pill-on" (click)="extraEditorOpen.set(true)">
+                      <span>✨ {{ 'ORDERS.EXTRA_CHARGE' | translate }}</span>
+                      <strong>+ {{ formatPrice(orderToMarkPaid()!.extra_charge_cents || 0) }}</strong>
+                    </button>
+                  } @else {
+                    <button type="button" class="extra-pill" (click)="extraEditorOpen.set(true)">
+                      <span class="extra-plus">+</span> {{ 'ORDERS.EXTRA_CHARGE' | translate }}
+                    </button>
+                  }
+                </div>
                 @if (paymentModalFinishMode()) {
                   <p class="modal-hint">{{ 'ORDERS.FINISH_ORDER_HELP' | translate }}</p>
                 } @else {
@@ -2071,31 +2083,61 @@ ModuleRegistry.registerModules([
     }
 
     .payment-amount-line { margin-bottom: var(--space-3); }
-    .extra-inline { display: flex; align-items: center; gap: 6px; margin: var(--space-2) 0; }
+    /* Additional charge: collapsed pill; the hint below has a negative top margin, so keep room */
+    .extra-block { margin-bottom: var(--space-5, 20px); }
+    .extra-pill {
+      display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
+      padding: 6px 16px 6px 6px; border-radius: 999px; cursor: pointer;
+      border: 1.5px dashed var(--color-primary);
+      background: var(--color-primary-light); color: var(--color-primary);
+      font-size: 0.9375rem; font-weight: 600; touch-action: manipulation;
+      transition: transform 0.12s, box-shadow 0.15s;
+    }
+    .extra-pill:hover { box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 25%, transparent); }
+    .extra-pill:active { transform: scale(0.97); }
+    .extra-plus {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 50%; font-size: 1.125rem; line-height: 1;
+      background: var(--color-primary); color: #fff;
+    }
+    .extra-pill-on {
+      padding: 8px 16px; gap: 12px; border-style: solid; color: #fff;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--color-primary) 35%, transparent);
+    }
+    .extra-panel {
+      padding: 10px; border-radius: 16px;
+      background: linear-gradient(160deg, var(--color-primary-light), transparent 75%);
+      border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+    }
+    .extra-inline { display: flex; align-items: center; gap: 8px; }
+    .extra-currency { font-size: 1.5rem; font-weight: 700; color: var(--color-primary); padding-left: 4px; }
     .extra-inline input {
-      min-width: 0; height: 40px; padding: 0 10px; border: 1px solid var(--color-border);
-      border-radius: var(--radius-sm); font-size: 1rem;
+      flex: 1 1 0; min-width: 0; height: 46px; padding: 0 12px;
+      border: 2px solid var(--color-primary); border-radius: 12px;
+      font-size: 1.25rem; font-weight: 700;
       background: var(--color-surface); color: var(--color-text);
     }
-    .extra-inline input:focus { outline: none; border-color: var(--color-primary); }
-    .extra-inline .extra-amount { flex: 1 1 0; font-weight: 600; }
-    .extra-add-btn {
-      align-self: flex-start; padding: 6px 2px; border: none; background: none;
-      color: var(--color-primary); font-size: 0.875rem; font-weight: 600; cursor: pointer;
-      touch-action: manipulation;
+    .extra-inline input:focus { outline: none; box-shadow: 0 0 0 3px var(--color-primary-light); }
+    .extra-ok, .extra-x {
+      flex: 0 0 42px; height: 42px; border: none; border-radius: 50%; cursor: pointer;
+      touch-action: manipulation; transition: transform 0.12s;
     }
-    .extra-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--space-2); }
+    .extra-ok:active, .extra-x:active { transform: scale(0.9); }
+    .extra-ok {
+      background: var(--color-primary); color: #fff; font-weight: 700; font-size: 1.125rem;
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 40%, transparent);
+    }
+    .extra-x { background: transparent; color: var(--color-text); opacity: 0.6; }
+    .extra-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
     .extra-chip {
       padding: 0 12px; height: 32px; border-radius: 999px; cursor: pointer;
       border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
-      background: var(--color-primary-light); color: var(--color-primary);
+      background: var(--color-surface); color: var(--color-primary);
       font-size: 0.8125rem; font-weight: 600; touch-action: manipulation;
     }
-    .extra-chip:active { transform: scale(0.95); }
-    .extra-ok {
-      flex: 0 0 40px; height: 40px; border: none; border-radius: 50%; cursor: pointer;
-      background: var(--color-primary); color: #fff; font-weight: 700; touch-action: manipulation;
-    }
+    .extra-chip:active { transform: scale(0.95); background: var(--color-primary-light); }
     .payment-tip-group .form-label-text {
       display: block;
       font-size: 0.875rem;
