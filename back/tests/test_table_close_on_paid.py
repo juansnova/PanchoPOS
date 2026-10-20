@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from pg_client_mixin import PgClientTestCase
 
@@ -156,6 +156,22 @@ class TestTableCloseOnPaid(PgClientTestCase):
         self.assertEqual(ok.status_code, 200, ok.text)
         gone = self.client.delete(url, headers=_bearer_headers(self.waiter))
         self.assertEqual(gone.status_code, 200, gone.text)
+
+    def test_staff_adds_items_to_any_open_order(self) -> None:
+        _, order = self._table_with_open_order("T10")
+        url = f"/orders/{order.id}/items"
+        body = {"items": [{"product_id": self.product.id, "quantity": 2}]}
+        self.assertIn(self.client.post(url, json=body).status_code, (401, 403))
+        ok = self.client.post(url, json=body, headers=_bearer_headers(self.waiter))
+        self.assertEqual(ok.status_code, 200, ok.text)
+        self.session.expire_all()
+        lines = self.session.exec(select(models.OrderItem).where(models.OrderItem.order_id == order.id)).all()
+        self.assertEqual(sum(i.quantity for i in lines), 3)
+        order.paid_at = datetime.now(timezone.utc)
+        self.session.add(order)
+        self.session.commit()
+        blocked = self.client.post(url, json=body, headers=_bearer_headers(self.waiter))
+        self.assertEqual(blocked.status_code, 400)
 
     def test_staff_extra_charge_added_to_bill(self) -> None:
         table, order = self._table_with_open_order("T9")

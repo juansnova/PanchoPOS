@@ -494,6 +494,28 @@ def create_satisfecho_delivery_order(
     return order, {"status": "created", "order_id": order.id}
 
 
+def add_lines_to_order(
+    session: Session,
+    *,
+    order: models.Order,
+    lines: list[dict],
+) -> dict:
+    """Staff: append product lines to an existing order (any channel). Caller recomputes status/publishes."""
+    resolved_lines, err = _resolve_product_lines(session, tenant_id=order.tenant_id, lines=lines)
+    if err:
+        return err
+    assert resolved_lines is not None
+    _add_order_items(
+        session,
+        order=order,
+        tenant_id=order.tenant_id,
+        resolved_lines=resolved_lines,
+        order_date=datetime.now(timezone.utc).date(),
+    )
+    session.flush()
+    return {"status": "ok"}
+
+
 def publish_satisfecho_delivery_order(session: Session, order: models.Order) -> None:
     """Notify kitchen/staff and deduct inventory for a Satisfecho Delivery order (e.g. after pay)."""
     if not order or order.tenant_id is None:

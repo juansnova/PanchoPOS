@@ -1215,6 +1215,12 @@ class OrderCreate(SQLModel):
     request_id: str | None = Field(default=None, max_length=64)  # One per submit; repeats are ignored
 
 
+class OrderItemsAdd(SQLModel):
+    """Staff: products to append to an existing order."""
+
+    items: list[OrderItemCreate] = Field(max_length=100)
+
+
 class SatisfechoDeliveryOrderCreate(SQLModel):
     """Staff create first-party Satisfecho Delivery order (no table, no marketplace integration)."""
 

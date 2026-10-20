@@ -3482,7 +3482,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   }
 
   canAddItemsToOrder(order: Order): boolean {
-    return !!(order.table_id != null && order.table_token && order.status !== 'paid' && order.status !== 'cancelled');
+    return order.status !== 'paid' && order.status !== 'cancelled';
   }
 
   updateEditItemQuantity(orderId: number, itemId: number, quantity: number) {
@@ -3507,14 +3507,18 @@ export class OrdersComponent implements OnInit, OnDestroy {
   /** Lines chosen in the product picker are added to the open order in one request. */
   addPickedProducts(lines: PickedLine[]) {
     const order = this.editOrder();
-    if (!order?.table_token || lines.length === 0) return;
+    if (!order || lines.length === 0) return;
     this.addingItem.set(true);
     const items: OrderItemCreate[] = lines.map(l => ({
       product_id: l.product_id,
       quantity: l.quantity,
       source: 'product',
     }));
-    this.api.submitOrder(order.table_token, { items }).subscribe({
+    // Table orders go through the table's menu; Take Away and delivery have no table token.
+    const request = order.table_id != null && order.table_token
+      ? this.api.submitOrder(order.table_token, { items })
+      : this.api.addOrderItemsStaff(order.id, lines.map(l => ({ product_id: l.product_id, quantity: l.quantity })));
+    request.subscribe({
       next: () => {
         this.addingItem.set(false);
         this.editAddOpen.set(false);

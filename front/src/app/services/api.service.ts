@@ -2151,6 +2151,11 @@ export class ApiService {
     });
   }
 
+  /** Staff: add products to an open order of any channel (table, Take Away, delivery). */
+  addOrderItemsStaff(orderId: number, items: { product_id: number; quantity: number }[]): Observable<{ status: string; order_id: number }> {
+    return this.http.post<{ status: string; order_id: number }>(`${this.apiUrl}/orders/${orderId}/items`, { items });
+  }
+
   /** Waiter/owner: set (or clear with 0) the additional charge on an unpaid order. */
   setOrderExtraCharge(orderId: number, amountCents: number, note?: string | null): Observable<{
     order_id: number;

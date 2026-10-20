@@ -12173,6 +12173,59 @@ def create_satisfecho_delivery_order_endpoint(
     }
 
 
+@app.post("/orders/{order_id}/items")
+def staff_add_order_items(
+    order_id: int,
+    body: models.OrderItemsAdd,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.ORDER_UPDATE_STATUS))],
+    session: Session = Depends(get_session),
+) -> dict:
+    """Staff: add products to an open order (table, Take Away or delivery)."""
+    if not body.items:
+        raise HTTPException(status_code=400, detail="Order must have at least one item")
+    order = session.exec(
+        select(models.Order).where(
+            models.Order.id == order_id,
+            models.Order.tenant_id == current_user.tenant_id,
+        )
+    ).first()
+    if not order or order.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.paid_at is not None or order.status in (models.OrderStatus.paid, models.OrderStatus.cancelled):
+        raise HTTPException(status_code=400, detail="Cannot add items to a paid or cancelled order")
+
+    from app.delivery_order_service import add_lines_to_order
+
+    outcome = add_lines_to_order(
+        session,
+        order=order,
+        lines=[{"product_id": it.product_id, "quantity": it.quantity, "notes": it.notes} for it in body.items],
+    )
+    if outcome.get("status") != "ok":
+        detail = str(outcome.get("detail", "add_failed"))
+        raise HTTPException(status_code=400, detail=detail)
+
+    all_items = session.exec(select(models.OrderItem).where(models.OrderItem.order_id == order_id)).all()
+    recompute_order_status_preserving_payment(order, list(all_items))
+    session.add(order)
+    session.commit()
+    session.refresh(order)
+    _sync_order_inventory(session, order)
+
+    table = session.get(models.Table, order.table_id) if order.table_id else None
+    publish_order_update(
+        order.tenant_id,
+        {
+            "type": "items_added",
+            "order_id": order.id,
+            "table_name": table.name if table else None,
+            "status": order.status.value,
+        },
+        table_id=order.table_id,
+    )
+    return {"status": "items_added", "order_id": order.id}
+
+
 @app.put("/orders/{order_id}/delivery")
 def update_order_delivery(
     order_id: int,
