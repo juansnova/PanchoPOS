@@ -257,34 +257,77 @@ const VIEW_CATEGORY: Record<string, string> = {
       </main>
       @if (timerSettingsModalOpen()) {
         <div class="modal-backdrop" (click)="closeTimerSettingsModal()"></div>
-        <div class="modal timer-settings-modal" role="dialog" aria-labelledby="timer-settings-title" appFocusFirstInput>
-          <h2 id="timer-settings-title" class="modal-title">{{ 'KITCHEN_DISPLAY.TIMER_SETTINGS_TITLE' | translate }}</h2>
-          <p class="modal-desc">{{ 'KITCHEN_DISPLAY.TIMER_SETTINGS_DESC' | translate }}</p>
-          <div class="timer-settings-form">
-            <label>
-              <span>{{ 'KITCHEN_DISPLAY.TIMER_YELLOW_MINUTES' | translate }}</span>
-              <input type="number" min="0" step="1" [ngModel]="timerSettingsForm().yellow_minutes" (ngModelChange)="updateTimerFormYellow($event)" />
-            </label>
-            <label>
-              <span>{{ 'KITCHEN_DISPLAY.TIMER_ORANGE_MINUTES' | translate }}</span>
-              <input type="number" min="0" step="1" [ngModel]="timerSettingsForm().orange_minutes" (ngModelChange)="updateTimerFormOrange($event)" />
-            </label>
-            <label>
-              <span>{{ 'KITCHEN_DISPLAY.TIMER_RED_MINUTES' | translate }}</span>
-              <input type="number" min="0" step="1" [ngModel]="timerSettingsForm().red_minutes" (ngModelChange)="updateTimerFormRed($event)" />
-            </label>
-          </div>
-          <div class="timer-settings-form auto-prep">
-            <label>
-              <span>{{ 'KITCHEN_DISPLAY.AUTO_PREPARING_SECONDS' | translate }}</span>
-              <input type="number" min="0" max="3600" step="5" [ngModel]="timerSettingsForm().auto_preparing_seconds" (ngModelChange)="updateTimerFormAutoPrep($event)" />
-            </label>
-            <small class="auto-prep-hint">{{ 'KITCHEN_DISPLAY.AUTO_PREPARING_HINT' | translate }}</small>
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" (click)="closeTimerSettingsModal()">{{ 'COMMON.CANCEL' | translate }}</button>
-            <button type="button" class="btn-primary" (click)="saveTimerSettings()">{{ 'COMMON.SAVE' | translate }}</button>
-          </div>
+        <div class="modal ts-modal" role="dialog" aria-labelledby="timer-settings-title" appFocusFirstInput>
+          <header class="ts-head">
+            <span class="ts-head-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+            </span>
+            <div>
+              <h2 id="timer-settings-title" class="ts-title">{{ 'KITCHEN_DISPLAY.TIMER_SETTINGS_TITLE' | translate }}</h2>
+              <p class="ts-sub">{{ 'KITCHEN_DISPLAY.TIMER_SETTINGS_SUB' | translate }}</p>
+            </div>
+            <button type="button" class="ts-close" (click)="closeTimerSettingsModal()" [attr.aria-label]="'COMMON.CANCEL' | translate">×</button>
+          </header>
+
+          <section class="ts-card ts-auto">
+            <div class="ts-card-title">
+              <span class="ts-pill">{{ 'KITCHEN_DISPLAY.AUTO_PREP_BADGE' | translate }}</span>
+              <h3>{{ 'KITCHEN_DISPLAY.AUTO_PREP_TITLE' | translate }}</h3>
+            </div>
+
+            <div class="ts-flow" aria-hidden="true">
+              <span class="ts-node ts-node-pending">{{ 'KITCHEN_DISPLAY.AUTO_PREP_FROM' | translate }}</span>
+              <span class="ts-rail"><i class="ts-rail-dot"></i></span>
+              <span class="ts-node ts-node-preparing">{{ 'KITCHEN_DISPLAY.AUTO_PREP_TO' | translate }}</span>
+            </div>
+
+            <div class="ts-stepper">
+              <button type="button" class="ts-step" (click)="stepAutoPrep(-5)" [disabled]="timerSettingsForm().auto_preparing_seconds <= 0" aria-label="-5">−</button>
+              <label class="ts-big">
+                <input type="number" min="0" max="3600" step="5" inputmode="numeric"
+                  [ngModel]="timerSettingsForm().auto_preparing_seconds" (ngModelChange)="updateTimerFormAutoPrep($event)" />
+                <span>{{ (timerSettingsForm().auto_preparing_seconds === 0 ? 'KITCHEN_DISPLAY.AUTO_PREP_INSTANT' : 'KITCHEN_DISPLAY.AUTO_PREP_UNIT') | translate }}</span>
+              </label>
+              <button type="button" class="ts-step" (click)="stepAutoPrep(5)" aria-label="+5">+</button>
+            </div>
+
+            <div class="ts-chips">
+              @for (n of autoPrepPresets; track n) {
+                <button type="button" class="ts-chip" [class.on]="timerSettingsForm().auto_preparing_seconds === n"
+                  (click)="updateTimerFormAutoPrep(n)">{{ n === 0 ? ('KITCHEN_DISPLAY.AUTO_PREP_NOW' | translate) : n + ' s' }}</button>
+              }
+            </div>
+            <p class="ts-hint">{{ 'KITCHEN_DISPLAY.AUTO_PREPARING_HINT' | translate }}</p>
+          </section>
+
+          <section class="ts-card">
+            <div class="ts-card-title">
+              <h3>{{ 'KITCHEN_DISPLAY.WAIT_COLORS_TITLE' | translate }}</h3>
+            </div>
+            <div class="ts-scale" aria-hidden="true"></div>
+            <div class="ts-colors">
+              <label class="ts-color ts-yellow">
+                <span class="ts-dot"></span><span class="ts-color-name">{{ 'KITCHEN_DISPLAY.COLOR_YELLOW' | translate }}</span>
+                <input type="number" min="0" step="1" [ngModel]="timerSettingsForm().yellow_minutes" (ngModelChange)="updateTimerFormYellow($event)" />
+                <small>{{ 'KITCHEN_DISPLAY.MIN_SHORT' | translate }}</small>
+              </label>
+              <label class="ts-color ts-orange">
+                <span class="ts-dot"></span><span class="ts-color-name">{{ 'KITCHEN_DISPLAY.COLOR_ORANGE' | translate }}</span>
+                <input type="number" min="0" step="1" [ngModel]="timerSettingsForm().orange_minutes" (ngModelChange)="updateTimerFormOrange($event)" />
+                <small>{{ 'KITCHEN_DISPLAY.MIN_SHORT' | translate }}</small>
+              </label>
+              <label class="ts-color ts-red">
+                <span class="ts-dot"></span><span class="ts-color-name">{{ 'KITCHEN_DISPLAY.COLOR_RED' | translate }}</span>
+                <input type="number" min="0" step="1" [ngModel]="timerSettingsForm().red_minutes" (ngModelChange)="updateTimerFormRed($event)" />
+                <small>{{ 'KITCHEN_DISPLAY.MIN_SHORT' | translate }}</small>
+              </label>
+            </div>
+          </section>
+
+          <footer class="ts-actions">
+            <button type="button" class="ts-btn ts-btn-ghost" (click)="closeTimerSettingsModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+            <button type="button" class="ts-btn ts-btn-primary" (click)="saveTimerSettings()">{{ 'COMMON.SAVE' | translate }}</button>
+          </footer>
         </div>
       }
     </div>
@@ -646,29 +689,99 @@ const VIEW_CATEGORY: Record<string, string> = {
       min-width: 320px;
       max-width: 90vw;
     }
-    .modal-title { margin: 0 0 var(--space-2); font-size: 1.25rem; }
-    .modal-desc { margin: 0 0 var(--space-4); color: var(--color-text-muted); font-size: 0.9375rem; }
-    .timer-settings-form {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-4);
-      margin-bottom: var(--space-5);
+    .ts-modal {
+      width: min(520px, 94vw); max-height: 92vh; overflow-y: auto; padding: 0;
+      border-radius: 20px; border: 1px solid var(--color-border);
+      box-shadow: 0 24px 60px rgba(0,0,0,.28);
     }
-    .timer-settings-form label {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
+    .ts-head {
+      display: flex; align-items: center; gap: 14px; padding: 20px 20px 16px;
+      background: linear-gradient(135deg, var(--color-primary-light, #fff3e0), transparent 75%);
     }
-    .auto-prep { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(128,128,128,.25); }
-    .auto-prep-hint { display: block; margin-top: 0.35rem; opacity: .7; font-size: 0.8rem; }
-    .timer-settings-form label span { min-width: 140px; font-weight: 500; }
-    .timer-settings-form input {
-      width: 80px;
-      padding: var(--space-2) var(--space-3);
-      font-size: 1rem;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
+    .ts-head-icon {
+      flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px;
+      background: var(--color-primary); color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.18);
     }
+    .ts-title { margin: 0; font-size: 1.2rem; line-height: 1.2; }
+    .ts-sub { margin: 2px 0 0; font-size: .85rem; color: var(--color-text-muted); }
+    .ts-close {
+      margin-left: auto; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0;
+      background: transparent; color: var(--color-text-muted); font-size: 1.6rem; line-height: 1; cursor: pointer;
+    }
+    .ts-close:hover { background: var(--color-bg); color: var(--color-text); }
+    .ts-card {
+      margin: 0 16px 14px; padding: 16px; border-radius: 16px;
+      background: var(--color-bg); border: 1px solid var(--color-border);
+    }
+    .ts-auto { border-color: var(--color-primary); box-shadow: inset 0 0 0 1px var(--color-primary); }
+    .ts-card-title { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .ts-card-title h3 { margin: 0; font-size: 1rem; }
+    .ts-pill {
+      padding: 3px 10px; border-radius: 999px; font-size: .7rem; font-weight: 800; letter-spacing: .06em;
+      text-transform: uppercase; background: var(--color-primary); color: #fff;
+    }
+    .ts-flow { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .ts-node { flex: none; padding: 6px 12px; border-radius: 999px; font-size: .8rem; font-weight: 700; }
+    .ts-node-pending { background: rgba(245,158,11,.18); color: var(--color-warning); }
+    .ts-node-preparing { background: rgba(37,99,235,.14); color: var(--color-primary); }
+    .ts-rail { position: relative; flex: 1; height: 4px; border-radius: 4px; background: var(--color-border); overflow: hidden; }
+    .ts-rail-dot {
+      position: absolute; top: 0; left: 0; width: 38%; height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, transparent, var(--color-primary));
+      animation: ts-run 1.8s ease-in-out infinite;
+    }
+    @keyframes ts-run { from { transform: translateX(-100%); } to { transform: translateX(270%); } }
+    .ts-stepper { display: flex; align-items: center; justify-content: center; gap: 14px; }
+    .ts-step {
+      flex: none; width: 52px; height: 52px; border-radius: 16px; border: 1px solid var(--color-border);
+      background: var(--color-surface); color: var(--color-text); font-size: 1.7rem; line-height: 1;
+      cursor: pointer; touch-action: manipulation; transition: transform .12s, background .15s, border-color .15s;
+    }
+    .ts-step:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+    .ts-step:active:not(:disabled) { transform: scale(.94); }
+    .ts-step:disabled { opacity: .35; cursor: default; }
+    .ts-big { display: flex; flex-direction: column; align-items: center; min-width: 120px; margin: 0; }
+    .ts-big input {
+      width: 120px; border: 0; background: transparent; text-align: center; font-size: 3rem; font-weight: 800;
+      line-height: 1; color: var(--color-primary); -moz-appearance: textfield; appearance: textfield; padding: 0;
+    }
+    .ts-big input::-webkit-outer-spin-button, .ts-big input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .ts-big input:focus { outline: none; }
+    .ts-big span { font-size: .8rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .08em; }
+    .ts-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 14px; }
+    .ts-chip {
+      min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--color-border);
+      background: var(--color-surface); color: var(--color-text); font: inherit; font-size: .85rem; font-weight: 600;
+      cursor: pointer; touch-action: manipulation; transition: background .15s, color .15s, border-color .15s;
+    }
+    .ts-chip:hover { border-color: var(--color-primary); }
+    .ts-chip.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+    .ts-hint { margin: 12px 0 0; text-align: center; font-size: .78rem; color: var(--color-text-muted); }
+    .ts-scale {
+      height: 10px; border-radius: 999px; margin-bottom: 14px;
+      background: linear-gradient(90deg, #22c55e 0%, #eab308 38%, #f97316 66%, #dc2626 100%);
+    }
+    .ts-colors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .ts-color {
+      display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; row-gap: 6px;
+      margin: 0; padding: 10px; border-radius: 12px; background: var(--color-surface); border: 1px solid var(--color-border);
+    }
+    .ts-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+    .ts-yellow { --c: #eab308; } .ts-orange { --c: #f97316; } .ts-red { --c: #dc2626; }
+    .ts-color-name { font-size: .8rem; font-weight: 700; }
+    .ts-color input {
+      grid-column: 1 / 2; width: 100%; min-width: 0; box-sizing: border-box; padding: 6px 8px; text-align: center;
+      font-size: 1.1rem; font-weight: 700; border: 1px solid var(--color-border); border-radius: 8px;
+      background: var(--color-bg); color: var(--color-text);
+    }
+    .ts-color input:focus { outline: 2px solid var(--c); outline-offset: 0; }
+    .ts-color small { color: var(--color-text-muted); font-size: .75rem; }
+    .ts-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 4px 16px 18px; }
+    .ts-btn { min-height: 44px; padding: 0 22px; border-radius: 12px; font: inherit; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+    .ts-btn-ghost { background: transparent; border: 1px solid var(--color-border); color: var(--color-text); }
+    .ts-btn-primary { background: var(--color-primary); border: 0; color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+    @media (prefers-reduced-motion: reduce) { .ts-rail-dot { animation: none; width: 100%; } }
+    @media (max-width: 420px) { .ts-colors { grid-template-columns: 1fr; } .ts-big input { font-size: 2.5rem; } }
     .modal-actions {
       display: flex;
       justify-content: flex-end;
@@ -993,6 +1106,12 @@ export class KitchenDisplayComponent implements OnInit, AfterViewInit, OnDestroy
   }
   updateTimerFormRed(v: number): void {
     this.timerSettingsForm.update((f) => ({ ...f, red_minutes: Math.max(0, Number(v) || 0) }));
+  }
+
+  readonly autoPrepPresets = [0, 15, 30, 45, 60, 90];
+
+  stepAutoPrep(delta: number): void {
+    this.updateTimerFormAutoPrep(this.timerSettingsForm().auto_preparing_seconds + delta);
   }
 
   updateTimerFormAutoPrep(v: number): void {
