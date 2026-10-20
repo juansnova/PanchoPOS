@@ -87,8 +87,25 @@ _MENU_PESOS = [
     ("Budweiser", 4500, "Bebidas", None),
     ("Coronita", 5000, "Bebidas", None),
 ]
+
+# Menu structure: the old flat categories are subcategories of three general ones.
+#   old name -> (category, subcategory)
+# "Main Course" is the standard category shown as "Platos Fuertes" (see _CATEGORY_LABELS).
+_REGROUP = {
+    "Almuerzos": ("Main Course", "Almuerzos"),
+    "Carnes": ("Main Course", "Carnes"),
+    "Pescados": ("Main Course", "Pescados"),
+    "Especiales": ("Main Course", "Especiales"),
+    "Pollo Asado": ("Pollos", "Pollo Asado"),
+    "Pollo Broaster": ("Pollos", "Pollo Broaster"),
+}
+_CATEGORY_LABELS = {"Main Course": "Platos Fuertes"}
+
 # price_cents convention in this app: pesos * 100
-DEMO_PRODUCTS = [(n, pesos * 100, c, d) for n, pesos, c, d in _MENU_PESOS]
+# (name, price_cents, category, subcategory, description)
+DEMO_PRODUCTS = [
+    (n, pesos * 100, *_REGROUP.get(c, (c, None)), d) for n, pesos, c, d in _MENU_PESOS
+]
 
 # Photos live in menu_images/<slug>.jpg (credits in menu_images/CREDITS.md); they are
 # copied into uploads/<tenant>/products/ so the app serves them. Products without a
@@ -140,7 +157,7 @@ def _seed_tenant_products(session, tenant_id: int) -> int:
                 ),
                 {"f": filename, "tid": tenant_id, "n": name},
             )
-    for name, price_cents, category, description in DEMO_PRODUCTS:
+    for name, price_cents, category, subcategory, description in DEMO_PRODUCTS:
         if name in existing_names:
             continue
         product = Product(
@@ -148,6 +165,7 @@ def _seed_tenant_products(session, tenant_id: int) -> int:
             name=name,
             price_cents=price_cents,
             category=category,
+            subcategory=subcategory,
             ingredients=None,
             image_filename=_ensure_image(tenant_id, name),
             description=description,
@@ -155,6 +173,42 @@ def _seed_tenant_products(session, tenant_id: int) -> int:
         session.add(product)
         created += 1
     return created
+
+
+def _regroup_categories(session, tenant_id: int) -> int:
+    """Move products still in an old flat category (e.g. "Carnes") under its general category.
+
+    Idempotent: only touches rows whose category is one of the old names and that have no
+    subcategory yet, so it also upgrades databases seeded before the regrouping.
+    """
+    moved = 0
+    for old, (category, subcategory) in _REGROUP.items():
+        result = session.execute(
+            text(
+                "UPDATE product SET category = :cat, subcategory = :sub "
+                "WHERE tenant_id = :tid AND category = :old "
+                "AND (subcategory IS NULL OR subcategory = '')"
+            ),
+            {"cat": category, "sub": subcategory, "old": old, "tid": tenant_id},
+        )
+        moved += result.rowcount or 0
+    return moved
+
+
+def _ensure_category_labels(session, tenant_id: int) -> None:
+    """Display names for standard categories (only when the owner has not chosen one)."""
+    tenant = session.get(Tenant, tenant_id)
+    if tenant is None:
+        return
+    labels = dict(tenant.custom_category_labels or {})
+    changed = False
+    for key, label in _CATEGORY_LABELS.items():
+        if not labels.get(key):
+            labels[key] = label
+            changed = True
+    if changed:
+        tenant.custom_category_labels = labels
+        session.add(tenant)
 
 
 def _tenant_missing_demo_names(session, tenant_id: int) -> list[str]:
@@ -185,9 +239,13 @@ def run() -> None:
         # demo products that lack one. Idempotent; never deletes existing products.
         for tenant_id in tenant_ids:
             created = _seed_tenant_products(session, tenant_id)
+            moved = _regroup_categories(session, tenant_id)
+            _ensure_category_labels(session, tenant_id)
             session.commit()
             if created:
                 print(f"Tenant {tenant_id}: created {created} demo products.")
+            if moved:
+                print(f"Tenant {tenant_id}: regrouped {moved} products under Platos Fuertes / Pollos.")
 
     print("Done.")
 
