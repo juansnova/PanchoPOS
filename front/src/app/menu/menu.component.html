@@ -242,25 +242,51 @@
             }
           </div>
           @if (order.extraCents && extraEditOrderId() !== order.id) {
-          <div class="order-extra-row">
-            <span>{{ 'ORDERS.EXTRA_CHARGE' | translate }}{{ order.extraNote ? ' — ' + order.extraNote : '' }}</span>
-            <strong>{{ formatPrice(order.extraCents) }}</strong>
+          <div class="extra-badge">
+            <span class="extra-badge-icon">✨</span>
+            <span class="extra-badge-text">
+              {{ 'ORDERS.EXTRA_CHARGE' | translate }}
+              @if (order.extraNote) { <small>{{ order.extraNote }}</small> }
+            </span>
+            <strong class="extra-badge-amount">+ {{ formatPrice(order.extraCents) }}</strong>
           </div>
           }
           @if (isStaff() && !isPaid()) {
             @if (extraEditOrderId() === order.id) {
-            <div class="extra-charge-form">
-              <input type="text" inputmode="decimal" placeholder="0" [(ngModel)]="extraAmountInput" name="extraAmount" />
-              <input type="text" maxlength="200" [placeholder]="'ORDERS.EXTRA_CHARGE_REASON' | translate"
+            <div class="extra-card">
+              <div class="extra-card-title"><span>✨</span> {{ 'ORDERS.EXTRA_CHARGE' | translate }}</div>
+              <div class="extra-amount-wrap">
+                <span class="extra-currency">$</span>
+                <input class="extra-amount" type="text" inputmode="decimal" placeholder="0"
+                  [(ngModel)]="extraAmountInput" name="extraAmount" />
+              </div>
+              <div class="extra-chips">
+                @for (v of extraQuickAmounts; track v) {
+                <button type="button" class="extra-chip" (click)="addExtraAmount(v)">+ {{ formatPrice(v * 100) }}</button>
+                }
+              </div>
+              <input class="extra-note" type="text" maxlength="200"
+                [placeholder]="'ORDERS.EXTRA_CHARGE_REASON' | translate"
                 [(ngModel)]="extraNoteInput" name="extraNote" />
-              <button type="button" class="extra-charge-save" (click)="saveExtraCharge(order.id)">
-                {{ 'ORDERS.EXTRA_CHARGE_APPLY' | translate }}
-              </button>
-              <button type="button" class="extra-charge-cancel" (click)="extraEditOrderId.set(null)">✕</button>
+              <div class="extra-chips">
+                @for (r of extraReasonKeys; track r) {
+                <button type="button" class="extra-chip extra-chip-reason" (click)="pickExtraReason(r)">
+                  {{ r | translate }}
+                </button>
+                }
+              </div>
+              <div class="extra-card-actions">
+                <button type="button" class="extra-cancel" (click)="extraEditOrderId.set(null)">
+                  {{ 'COMMON.CANCEL' | translate }}
+                </button>
+                <button type="button" class="extra-save" (click)="saveExtraCharge(order.id)">
+                  {{ 'ORDERS.EXTRA_CHARGE_APPLY' | translate }}
+                </button>
+              </div>
             </div>
             } @else {
-            <button type="button" class="extra-charge-btn" (click)="openExtraCharge(order)">
-              + {{ 'ORDERS.EXTRA_CHARGE' | translate }}
+            <button type="button" class="extra-add-btn" (click)="openExtraCharge(order)">
+              <span class="extra-add-plus">+</span> {{ 'ORDERS.EXTRA_CHARGE' | translate }}
             </button>
             }
           }
