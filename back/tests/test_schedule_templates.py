@@ -46,7 +46,7 @@ class TestScheduleTemplates(PgClientTestCase):
         r = self.client.get("/schedule/templates", headers=_bearer_headers(self.owner))
         self.assertEqual(r.status_code, 200, r.text)
         names = [t["name"] for t in r.json()]
-        self.assertEqual(names, ["Apertura", "Cierre", "Partido"])
+        self.assertEqual(names, ["Apertura", "Cierre", "Mañana y noche"])
         partido = r.json()[2]
         self.assertEqual((partido["start_time2"], partido["end_time2"]), ("16:00", "20:00"))
         again = self.client.get("/schedule/templates", headers=_bearer_headers(self.waiter)).json()

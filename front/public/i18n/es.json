@@ -1531,7 +1531,7 @@
     "TEMPLATES_MANAGE_TITLE": "Plantillas de turno",
     "TEMPLATES_MANAGE_HELP": "Horarios que se repiten (apertura, cierre, partido…). Se comparten con todo el equipo.",
     "TEMPLATE_NAME": "Nombre",
-    "TEMPLATE_SPLIT": "Turno partido",
+    "TEMPLATE_SPLIT": "Dos bloques el mismo día (turno partido)",
     "TEMPLATE_NEW": "Nueva plantilla",
     "TEMPLATE_APPLIED": "Turno «{{name}}» asignado",
     "TEMPLATE_INVALID": "Revisa la plantilla «{{name}}»: necesita nombre y horas válidas.",

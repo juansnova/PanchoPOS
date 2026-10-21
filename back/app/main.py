@@ -7056,7 +7056,7 @@ def schedule_compliance_summary(
 _DEFAULT_SHIFT_TEMPLATES = [
     ("Apertura", "08:00", "16:00", None, None),
     ("Cierre", "14:00", "22:00", None, None),
-    ("Partido", "08:00", "12:00", "16:00", "20:00"),
+    ("Mañana y noche", "08:00", "12:00", "16:00", "20:00"),
 ]
 
 
