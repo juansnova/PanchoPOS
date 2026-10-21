@@ -256,63 +256,55 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
       <!-- Create/Edit modal -->
       @if (showForm()) {
         <div class="modal-overlay">
-          <div class="modal-content" (click)="$event.stopPropagation()" appFocusFirstInput>
-            <div class="modal-header">
-              <h3>{{ editingReservation() ? ('RESERVATIONS.EDIT' | translate) : ('RESERVATIONS.NEW' | translate) }}</h3>
-              <button type="button" class="close-btn" (click)="closeForm()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
+          <div class="modal-content rf" (click)="$event.stopPropagation()" appFocusFirstInput>
+            <div class="rf-head">
+              <span class="rf-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+              <div class="rf-head-text">
+                <h3>{{ editingReservation() ? ('RESERVATIONS.EDIT' | translate) : ('RESERVATIONS.NEW' | translate) }}</h3>
+                <p>{{ formSummary() }}</p>
+              </div>
+              <button type="button" class="rf-close" (click)="closeForm()" [attr.aria-label]="'COMMON.CANCEL' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             </div>
-            <form (ngSubmit)="saveReservation()" class="reservation-modal-form">
-              <div class="modal-body">
-                <p class="reservation-modal-hint">{{ 'BOOK.WEEK_GRID_HINT' | translate }}</p>
-                <div class="res-booking-controls">
-                  <div class="form-group">
-                    <label for="res-modal-party">{{ 'RESERVATIONS.PARTY_SIZE' | translate }}</label>
-                    <input
-                      id="res-modal-party"
-                      type="number"
-                      name="partySize"
-                      min="1"
-                      [max]="maxPartySize()"
-                      required
-                      [(ngModel)]="formPartySize"
-                      (ngModelChange)="loadSlotCapacity()"
-                    />
+            <form (ngSubmit)="saveReservation()" class="reservation-modal-form rf-form">
+              <div class="rf-body">
+                <section class="rf-sec">
+                  <h4><i>1</i>{{ 'RESERVATIONS.FORM_PARTY_TITLE' | translate }}</h4>
+                  <div class="rf-party">
+                    <button type="button" class="rf-step" (click)="stepParty(-1)" [disabled]="formPartySize <= 1" aria-label="-1">−</button>
+                    <label class="rf-party-box" for="res-modal-party">
+                      <input id="res-modal-party" type="number" name="partySize" min="1" [max]="maxPartySize()" required
+                        [(ngModel)]="formPartySize" (ngModelChange)="loadSlotCapacity()" />
+                      <span>{{ 'RESERVATIONS.PARTY_SIZE' | translate }}</span>
+                    </label>
+                    <button type="button" class="rf-step rf-step-plus" (click)="stepParty(1)" [disabled]="formPartySize >= maxPartySize()" aria-label="+1">+</button>
                   </div>
+
                   @if (hasMealSplit()) {
-                    <div class="form-group">
-                      <label for="res-modal-service">{{ 'BOOK.SERVICE_TYPE' | translate }}</label>
-                      <select id="res-modal-service" [(ngModel)]="formService" name="formService" (ngModelChange)="loadSlotCapacity()">
-                        <option value="all">{{ serviceOptionLabel('all') }}</option>
-                        <option value="lunch">{{ serviceOptionLabel('lunch') }}</option>
-                        <option value="dinner">{{ serviceOptionLabel('dinner') }}</option>
-                      </select>
+                    <div class="rf-group">
+                      <span class="rf-label">{{ 'BOOK.SERVICE_TYPE' | translate }}</span>
+                      <div class="rf-seg" role="group">
+                        <button type="button" [class.on]="formService === 'all'" (click)="setFormService('all')">{{ serviceOptionLabel('all') }}</button>
+                        <button type="button" [class.on]="formService === 'lunch'" (click)="setFormService('lunch')">{{ serviceOptionLabel('lunch') }}</button>
+                        <button type="button" [class.on]="formService === 'dinner'" (click)="setFormService('dinner')">{{ serviceOptionLabel('dinner') }}</button>
+                      </div>
                     </div>
                   }
-                  <div class="form-group res-seating-group">
-                    <span class="label-block">{{ 'BOOK.SEATING_PREFERENCE' | translate }}</span>
-                    <div class="radio-row">
-                      <label class="radio-label">
-                        <input type="radio" name="resSeating" [(ngModel)]="formSeating" (ngModelChange)="onSeatingPreferenceChange(); loadSlotCapacity()" value="no_preference" />
-                        {{ 'BOOK.SEATING_ANY' | translate }}
-                      </label>
-                      <label class="radio-label">
-                        <input type="radio" name="resSeating" [(ngModel)]="formSeating" (ngModelChange)="onSeatingPreferenceChange(); loadSlotCapacity()" value="indoor" />
-                        {{ 'BOOK.SEATING_INDOOR' | translate }}
-                      </label>
-                      <label class="radio-label">
-                        <input type="radio" name="resSeating" [(ngModel)]="formSeating" (ngModelChange)="onSeatingPreferenceChange(); loadSlotCapacity()" value="terrace" />
-                        {{ 'BOOK.SEATING_TERRACE' | translate }}
-                      </label>
+
+                  <div class="rf-group">
+                    <span class="rf-label">{{ 'BOOK.SEATING_PREFERENCE' | translate }}</span>
+                    <div class="rf-cards" role="group">
+                      <button type="button" class="rf-card-opt" [class.on]="formSeating === 'no_preference'" (click)="setFormSeating('no_preference')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg><span>{{ 'BOOK.SEATING_ANY' | translate }}</span></button>
+                      <button type="button" class="rf-card-opt" [class.on]="formSeating === 'indoor'" (click)="setFormSeating('indoor')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>{{ 'BOOK.SEATING_INDOOR' | translate }}</span></button>
+                      <button type="button" class="rf-card-opt" [class.on]="formSeating === 'terrace'" (click)="setFormSeating('terrace')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span>{{ 'BOOK.SEATING_TERRACE' | translate }}</span></button>
                     </div>
                   </div>
+
                   @if (bookZones().length >= 1 && bookZonesForSeating().length === 0) {
                     <div class="form-error form-hint-block">{{ 'BOOK.NO_ZONE_FOR_SEATING' | translate }}</div>
                   }
                   @if (bookZonesForSeating().length >= 2) {
-                    <div class="form-group">
-                      <label for="res-modal-zone">{{ 'BOOK.LOCATION_ZONE' | translate }}</label>
+                    <div class="rf-group">
+                      <label class="rf-label" for="res-modal-zone">{{ 'BOOK.LOCATION_ZONE' | translate }}</label>
                       <select id="res-modal-zone" [(ngModel)]="formFloorId" name="resFloorId" required (ngModelChange)="loadSlotCapacity()">
                         <option [ngValue]="null" disabled>{{ 'BOOK.LOCATION_ZONE_PLACEHOLDER' | translate }}</option>
                         @for (z of bookZonesForSeating(); track z.id) {
@@ -321,111 +313,107 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
                       </select>
                     </div>
                   }
-                  <div class="form-group">
-                    <label for="res-modal-dietary">{{ 'RESERVATIONS.CUSTOMER_NOTES' | translate }}</label>
-                    <textarea
-                      id="res-modal-dietary"
-                      class="res-dietary-notes"
-                      [(ngModel)]="formDietaryNotes"
-                      name="resDietaryNotes"
-                      rows="2"
-                      [placeholder]="'BOOK.ALLERGIES_DETAIL_PLACEHOLDER' | translate"
-                    ></textarea>
-                  </div>
-                </div>
-                @if (tenantId != null) {
-                  <app-reservation-week-slot-grid
-                    [tenantId]="tenantId"
-                    [partySize]="formPartySize"
-                    [timezone]="tenantSummary()?.timezone ?? null"
-                    [weekAnchorSeed]="formDate"
-                    [excludeReservationId]="editingReservation()?.id ?? null"
-                    [serviceType]="hasMealSplit() ? formService : 'all'"
-                    [openingHoursJson]="tenantSummary()?.opening_hours ?? null"
-                    [bookFloorId]="formFloorId"
-                    [(selectedDate)]="formDate"
-                    [(selectedTime)]="formTime"
-                    (selectedDateChange)="loadSlotCapacity()"
-                    (selectedTimeChange)="loadSlotCapacity()"
-                  />
-                }
-                @if (slotCapacity(); as cap) {
-                  <p class="slot-capacity">{{ 'RESERVATIONS.SEATS_LEFT' | translate }}: {{ cap.seats_left }} · {{ 'RESERVATIONS.TABLES_LEFT' | translate }}: {{ cap.tables_left }}</p>
-                }
-                <div class="form-group">
-                  <label for="res-modal-name">{{ 'RESERVATIONS.CUSTOMER_NAME' | translate }}</label>
-                  <input id="res-modal-name" type="text" name="customerName" [(ngModel)]="formName" required autocomplete="name" />
-                </div>
-                <div class="form-group">
-                  <label for="res-modal-phone">{{ 'RESERVATIONS.CUSTOMER_PHONE' | translate }}</label>
-                  <div class="phone-with-prefill">
-                    <input id="res-modal-phone" type="tel" name="customerPhone" [(ngModel)]="formPhone" required autocomplete="tel" />
-                    @if (!editingReservation()) {
-                      <button type="button" class="btn btn-ghost btn-sm" (click)="prefillFromPhone()" [disabled]="prefillLoading() || !formPhone.trim()" [title]="'RESERVATIONS.PREFILL_FROM_PHONE' | translate">
-                        {{ prefillLoading() ? ('COMMON.LOADING' | translate) : ('RESERVATIONS.PREFILL_FROM_PHONE' | translate) }}
-                      </button>
-                    }
-                  </div>
-                  @if (prefillMessage()) {
-                    <small class="prefill-message" [class.prefill-success]="prefillSuccess()">{{ prefillMessage() }}</small>
+                </section>
+
+                <section class="rf-sec">
+                  <h4><i>2</i>{{ 'RESERVATIONS.FORM_WHEN_TITLE' | translate }}</h4>
+                  <p class="reservation-modal-hint">{{ 'BOOK.WEEK_GRID_HINT' | translate }}</p>
+                  @if (tenantId != null) {
+                    <app-reservation-week-slot-grid
+                      [tenantId]="tenantId"
+                      [partySize]="formPartySize"
+                      [timezone]="tenantSummary()?.timezone ?? null"
+                      [weekAnchorSeed]="formDate"
+                      [excludeReservationId]="editingReservation()?.id ?? null"
+                      [serviceType]="hasMealSplit() ? formService : 'all'"
+                      [openingHoursJson]="tenantSummary()?.opening_hours ?? null"
+                      [bookFloorId]="formFloorId"
+                      [(selectedDate)]="formDate"
+                      [(selectedTime)]="formTime"
+                      (selectedDateChange)="loadSlotCapacity()"
+                      (selectedTimeChange)="loadSlotCapacity()"
+                    />
                   }
-                </div>
-                <div class="form-group">
-                  <label for="res-modal-email">{{ 'RESERVATIONS.CUSTOMER_EMAIL' | translate }}</label>
-                  <input
-                    id="res-modal-email"
-                    type="email"
-                    name="customerEmail"
-                    [(ngModel)]="formEmail"
-                    placeholder="your@email.com"
-                    autocomplete="email"
-                  />
-                </div>
-                <div class="form-group">
-                  <span class="label-block">{{ 'RESERVATIONS.BIRTHDAY' | translate }}</span>
-                  <div class="birthday-selects">
-                    <select id="res-modal-bday-month" [(ngModel)]="formBirthdayMonth" name="resBdayMonth">
-                      <option [ngValue]="null">{{ 'BOOK.BIRTHDAY_MONTH' | translate }}</option>
-                      @for (m of birthdayMonths; track m.value) {
-                        <option [ngValue]="m.value">{{ m.labelKey | translate }}</option>
+                  @if (slotCapacity(); as cap) {
+                    <div class="rf-capacity">
+                      <span><b>{{ cap.seats_left }}</b> {{ 'RESERVATIONS.SEATS_LEFT' | translate }}</span>
+                      <span><b>{{ cap.tables_left }}</b> {{ 'RESERVATIONS.TABLES_LEFT' | translate }}</span>
+                    </div>
+                  }
+                </section>
+
+                <section class="rf-sec">
+                  <h4><i>3</i>{{ 'RESERVATIONS.FORM_GUEST_TITLE' | translate }}</h4>
+                  <div class="rf-two">
+                    <div class="rf-group">
+                      <label class="rf-label" for="res-modal-name">{{ 'RESERVATIONS.CUSTOMER_NAME' | translate }}</label>
+                      <input id="res-modal-name" type="text" name="customerName" [(ngModel)]="formName" required autocomplete="name" />
+                    </div>
+                    <div class="rf-group">
+                      <label class="rf-label" for="res-modal-phone">{{ 'RESERVATIONS.CUSTOMER_PHONE' | translate }}</label>
+                      <div class="phone-with-prefill">
+                        <input id="res-modal-phone" type="tel" name="customerPhone" [(ngModel)]="formPhone" required autocomplete="tel" />
+                        @if (!editingReservation()) {
+                          <button type="button" class="rf-prefill" (click)="prefillFromPhone()" [disabled]="prefillLoading() || !formPhone.trim()" [title]="'RESERVATIONS.PREFILL_FROM_PHONE' | translate">
+                            {{ prefillLoading() ? ('COMMON.LOADING' | translate) : ('RESERVATIONS.PREFILL_FROM_PHONE' | translate) }}
+                          </button>
+                        }
+                      </div>
+                      @if (prefillMessage()) {
+                        <small class="prefill-message" [class.prefill-success]="prefillSuccess()">{{ prefillMessage() }}</small>
                       }
-                    </select>
-                    <select id="res-modal-bday-day" [(ngModel)]="formBirthdayDay" name="resBdayDay">
-                      <option [ngValue]="null">{{ 'BOOK.BIRTHDAY_DAY' | translate }}</option>
-                      @for (d of birthdayDays; track d) {
-                        <option [ngValue]="d">{{ d }}</option>
-                      }
-                    </select>
+                    </div>
                   </div>
-                  <small class="field-hint">{{ 'BOOK.BIRTHDAY_HINT' | translate }}</small>
-                </div>
-                <div class="form-group">
-                  <label for="res-modal-notes">{{ 'RESERVATIONS.RESERVATION_NOTES' | translate }}</label>
-                  <textarea
-                    id="res-modal-notes"
-                    name="clientNotes"
-                    [(ngModel)]="formClientNotes"
-                    rows="2"
-                    [placeholder]="'RESERVATIONS.RESERVATION_NOTES_PLACEHOLDER' | translate"
-                  ></textarea>
-                </div>
-                <div class="form-group">
-                  <label for="res-modal-owner-notes">{{ 'RESERVATIONS.OWNER_NOTES' | translate }}</label>
-                  <textarea
-                    id="res-modal-owner-notes"
-                    name="ownerNotes"
-                    [(ngModel)]="formOwnerNotes"
-                    rows="2"
-                    [placeholder]="'RESERVATIONS.OWNER_NOTES_PLACEHOLDER' | translate"
-                  ></textarea>
-                </div>
+                  <div class="rf-group">
+                    <label class="rf-label" for="res-modal-email">{{ 'RESERVATIONS.CUSTOMER_EMAIL' | translate }}</label>
+                    <input id="res-modal-email" type="email" name="customerEmail" [(ngModel)]="formEmail" placeholder="your@email.com" autocomplete="email" />
+                  </div>
+                  <div class="rf-group">
+                    <span class="rf-label">{{ 'RESERVATIONS.BIRTHDAY' | translate }}</span>
+                    <div class="birthday-selects">
+                      <select id="res-modal-bday-month" [(ngModel)]="formBirthdayMonth" name="resBdayMonth">
+                        <option [ngValue]="null">{{ 'BOOK.BIRTHDAY_MONTH' | translate }}</option>
+                        @for (m of birthdayMonths; track m.value) {
+                          <option [ngValue]="m.value">{{ m.labelKey | translate }}</option>
+                        }
+                      </select>
+                      <select id="res-modal-bday-day" [(ngModel)]="formBirthdayDay" name="resBdayDay">
+                        <option [ngValue]="null">{{ 'BOOK.BIRTHDAY_DAY' | translate }}</option>
+                        @for (d of birthdayDays; track d) {
+                          <option [ngValue]="d">{{ d }}</option>
+                        }
+                      </select>
+                    </div>
+                    <small class="field-hint">{{ 'BOOK.BIRTHDAY_HINT' | translate }}</small>
+                  </div>
+                </section>
+
+                <section class="rf-sec">
+                  <h4><i>4</i>{{ 'RESERVATIONS.FORM_NOTES_TITLE' | translate }}</h4>
+                  <div class="rf-group">
+                    <label class="rf-label" for="res-modal-dietary">{{ 'RESERVATIONS.CUSTOMER_NOTES' | translate }}</label>
+                    <textarea id="res-modal-dietary" class="res-dietary-notes" [(ngModel)]="formDietaryNotes" name="resDietaryNotes" rows="2"
+                      [placeholder]="'BOOK.ALLERGIES_DETAIL_PLACEHOLDER' | translate"></textarea>
+                  </div>
+                  <div class="rf-group">
+                    <label class="rf-label" for="res-modal-notes">{{ 'RESERVATIONS.RESERVATION_NOTES' | translate }}</label>
+                    <textarea id="res-modal-notes" name="clientNotes" [(ngModel)]="formClientNotes" rows="2"
+                      [placeholder]="'RESERVATIONS.RESERVATION_NOTES_PLACEHOLDER' | translate"></textarea>
+                  </div>
+                  <div class="rf-group">
+                    <label class="rf-label" for="res-modal-owner-notes">{{ 'RESERVATIONS.OWNER_NOTES' | translate }}</label>
+                    <textarea id="res-modal-owner-notes" name="ownerNotes" [(ngModel)]="formOwnerNotes" rows="2"
+                      [placeholder]="'RESERVATIONS.OWNER_NOTES_PLACEHOLDER' | translate"></textarea>
+                  </div>
+                </section>
+
                 @if (formError()) {
-                  <div class="form-error">{{ formError() }}</div>
+                  <div class="form-error rf-error">{{ formError() }}</div>
                 }
               </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-ghost" (click)="closeForm()">{{ 'COMMON.CANCEL' | translate }}</button>
-                <button type="submit" class="btn btn-primary">{{ 'COMMON.SAVE' | translate }}</button>
+              <div class="rf-foot">
+                <button type="button" class="rf-btn rf-btn-ghost" (click)="closeForm()">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button type="submit" class="rf-btn rf-btn-main">{{ 'COMMON.SAVE' | translate }}</button>
               </div>
             </form>
           </div>
@@ -668,6 +656,61 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
 
     @media (prefers-reduced-motion: reduce) { .rv-card, .rv-card:hover { transition: none; transform: none; } }
     @media (max-width: 600px) { .rs-links { display: none; } .rv-head { flex-wrap: wrap; } .rv-badges { flex-direction: row; margin-left: auto; } }
+
+    /* ===== Nueva reservación (formulario) ===== */
+    .rf { max-width: min(760px, 96vw); padding: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: 26px; }
+    .rf-head { display: flex; align-items: center; gap: 14px; padding: 18px 22px 16px; background: linear-gradient(135deg, var(--color-primary-light), transparent 80%); }
+    .rf-icon { flex: none; display: grid; place-items: center; width: 50px; height: 50px; border-radius: 16px; background: var(--color-primary); color: #fff; box-shadow: 0 10px 18px -10px var(--color-primary); }
+    .rf-head-text { flex: 1; min-width: 0; }
+    .rf-head-text h3 { margin: 0; font-size: 1.3rem; font-weight: 800; }
+    .rf-head-text p { margin: 2px 0 0; min-height: 1.1em; font-size: .88rem; font-weight: 700; color: var(--color-primary); }
+    .rf-close { flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; color: var(--color-text-muted); cursor: pointer; display: grid; place-items: center; }
+    .rf-close:hover { background: var(--color-bg); color: var(--color-text); }
+    .rf-form { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+    .rf-body { padding: 4px 22px 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+    .rf-sec { padding: 16px; border-radius: 20px; background: var(--color-bg); border: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 14px; }
+    .rf-sec h4 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: .8rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--color-text-muted); }
+    .rf-sec h4 i { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--color-primary); color: #fff; font-style: normal; font-size: .75rem; letter-spacing: 0; }
+    .rf-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .rf-label { font-size: .78rem; font-weight: 700; color: var(--color-text-muted); margin: 0; }
+    .rf-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 560px) { .rf-two { grid-template-columns: 1fr; } }
+    .rf input:not([type='radio']):not([type='checkbox']), .rf select, .rf textarea { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); color: var(--color-text); font: inherit; font-weight: 600; box-sizing: border-box; }
+    .rf textarea { padding: 10px 12px; min-height: 72px; }
+    .rf input:focus, .rf select:focus, .rf textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+
+    .rf-party { display: flex; align-items: center; justify-content: center; gap: 16px; }
+    .rf-step { flex: none; width: 52px; height: 52px; border-radius: 16px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font-size: 1.6rem; line-height: 1; cursor: pointer; touch-action: manipulation; transition: transform .12s, border-color .15s; }
+    .rf-step:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+    .rf-step:active:not(:disabled) { transform: scale(.92); }
+    .rf-step:disabled { opacity: .4; cursor: default; }
+    .rf-step-plus { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+    .rf-step-plus:hover:not(:disabled) { color: #fff; filter: brightness(1.08); }
+    .rf-party-box { display: flex; flex-direction: column; align-items: center; min-width: 110px; margin: 0; }
+    .rf .rf-party-box input { width: 96px; min-height: 0; padding: 0; border: 0; background: transparent; box-shadow: none; text-align: center; font-size: 2.6rem; font-weight: 800; line-height: 1.1; color: var(--color-primary); -moz-appearance: textfield; appearance: textfield; }
+    .rf .rf-party-box input::-webkit-outer-spin-button, .rf .rf-party-box input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .rf-party-box span { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); }
+
+    .rf-seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); align-self: flex-start; }
+    .rf-seg button { min-height: 38px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; color: var(--color-text-muted); font: inherit; font-weight: 700; cursor: pointer; }
+    .rf-seg button.on { background: var(--color-primary); color: #fff; box-shadow: 0 6px 12px -8px var(--color-primary); }
+    .rf-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .rf-card-opt { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 68px; padding: 8px 6px; border-radius: 16px; border: 1.5px solid var(--color-border); background: var(--color-surface); color: var(--color-text-muted); font: inherit; font-size: .82rem; font-weight: 700; cursor: pointer; touch-action: manipulation; transition: border-color .15s, background .15s, color .15s; }
+    .rf-card-opt span { text-align: center; line-height: 1.15; }
+    .rf-card-opt:hover { border-color: var(--color-primary); }
+    .rf-card-opt.on { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary); box-shadow: inset 0 0 0 1px var(--color-primary); }
+
+    .rf-capacity { display: flex; flex-wrap: wrap; gap: 8px; }
+    .rf-capacity span { padding: 6px 14px; border-radius: 999px; background: rgba(34,197,94,.12); color: #15803d; font-size: .82rem; font-weight: 700; }
+    .rf-capacity b { font-weight: 800; font-size: .95rem; }
+    .rf-prefill { flex: none; min-height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--color-primary); background: var(--color-primary-light); color: var(--color-primary); font: inherit; font-size: .8rem; font-weight: 800; cursor: pointer; white-space: nowrap; }
+    .rf-prefill:disabled { opacity: .5; cursor: default; }
+    .rf-error { padding: 10px 12px; border-radius: 12px; background: rgba(220,38,38,.08); }
+    .rf-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px 18px; border-top: 1px solid var(--color-border); background: var(--color-surface); }
+    .rf-btn { min-height: 48px; padding: 0 28px; border-radius: 999px; font: inherit; font-weight: 800; cursor: pointer; touch-action: manipulation; }
+    .rf-btn-ghost { background: transparent; border: 1px solid var(--color-border); color: var(--color-text); }
+    .rf-btn-main { border: 0; background: var(--color-primary); color: #fff; box-shadow: 0 10px 20px -10px var(--color-primary); }
+    .rf-btn-main:hover { filter: brightness(1.07); }
   `],
 })
 export class ReservationsComponent implements OnInit, OnDestroy {
@@ -695,6 +738,33 @@ export class ReservationsComponent implements OnInit, OnDestroy {
       seated: list.filter((r) => r.status === 'seated').length,
     };
   });
+
+  stepParty(delta: number): void {
+    const next = Math.min(this.maxPartySize(), Math.max(1, (Number(this.formPartySize) || 1) + delta));
+    if (next === this.formPartySize) return;
+    this.formPartySize = next;
+    this.loadSlotCapacity();
+  }
+
+  setFormService(value: 'all' | 'lunch' | 'dinner'): void {
+    this.formService = value;
+    this.loadSlotCapacity();
+  }
+
+  setFormSeating(value: string): void {
+    this.formSeating = value as typeof this.formSeating;
+    this.onSeatingPreferenceChange();
+    this.loadSlotCapacity();
+  }
+
+  /** Header line of the form: "4 personas · mié 21 oct · 20:00" once something is chosen. */
+  formSummary(): string {
+    const parts: string[] = [];
+    if (this.formPartySize) parts.push(`${this.formPartySize} ${this.translate.instant('RESERVATIONS.PERSONS_SHORT')}`);
+    if (this.formDate) parts.push(this.dayLabel(this.formDate));
+    if (this.formTime) parts.push(this.timeLabel(this.formTime));
+    return parts.join(' · ');
+  }
 
   setStatusFilter(value: string): void {
     this.filterStatus = value;
