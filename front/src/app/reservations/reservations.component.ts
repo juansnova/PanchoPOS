@@ -42,104 +42,118 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
   ],
   template: `
     <app-sidebar>
-      <div class="page-header">
-        <h1>{{ 'RESERVATIONS.TITLE' | translate }}</h1>
+      <div class="page-header rs-header">
+        <div class="rs-title">
+          <h1>{{ 'RESERVATIONS.TITLE' | translate }}</h1>
+          <p>{{ filterDateLabel() }}</p>
+        </div>
         <div class="page-header-actions">
-          <a [routerLink]="['/settings']" [queryParams]="{ section: 'reservations' }" class="btn btn-ghost btn-sm btn-icon" [title]="'RESERVATIONS.EDIT_RESERVATION_OPTIONS' | translate" aria-label="{{ 'RESERVATIONS.EDIT_RESERVATION_OPTIONS' | translate }}">
-            <svg class="icon-settings" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-            <span class="btn-icon-label">{{ 'RESERVATIONS.EDIT_RESERVATION_OPTIONS' | translate }}</span>
-          </a>
           @if (tenantId != null) {
-            <a [routerLink]="['/book', tenantId]" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">{{ 'RESERVATIONS.VIEW_PUBLIC_PAGE' | translate }}</a>
-            <a [routerLink]="['/waitlist', tenantId]" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">{{ 'RESERVATIONS.VIEW_WAITLIST_PAGE' | translate }}</a>
-            <a [routerLink]="['/feedback', tenantId]" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">{{ 'RESERVATIONS.VIEW_FEEDBACK_PAGE' | translate }}</a>
+            <div class="rs-links" [attr.aria-label]="'RESERVATIONS.SHARE_LINKS' | translate">
+              <a [routerLink]="['/book', tenantId]" target="_blank" rel="noopener" class="rs-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>{{ 'RESERVATIONS.LINK_BOOKING' | translate }}</a>
+              <a [routerLink]="['/waitlist', tenantId]" target="_blank" rel="noopener" class="rs-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>{{ 'RESERVATIONS.LINK_WAITLIST' | translate }}</a>
+              <a [routerLink]="['/feedback', tenantId]" target="_blank" rel="noopener" class="rs-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>{{ 'RESERVATIONS.LINK_FEEDBACK' | translate }}</a>
+            </div>
           }
+          <a [routerLink]="['/settings']" [queryParams]="{ section: 'reservations' }" class="rs-icon-btn" [title]="'RESERVATIONS.EDIT_RESERVATION_OPTIONS' | translate" aria-label="{{ 'RESERVATIONS.EDIT_RESERVATION_OPTIONS' | translate }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
           @if (canWrite()) {
-          <button class="btn btn-primary" (click)="openCreate()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            {{ 'RESERVATIONS.NEW' | translate }}
-          </button>
+            <button class="rs-new" (click)="openCreate()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{{ 'RESERVATIONS.NEW' | translate }}</button>
           }
         </div>
       </div>
 
-      <div class="view-tabs">
-        <button type="button" class="view-tab" [class.active]="viewTab() === 'reservations'" (click)="setViewTab('reservations')">
+      <div class="rs-tabs" role="tablist">
+        <button type="button" role="tab" class="rs-tab" [class.active]="viewTab() === 'reservations'" (click)="setViewTab('reservations')">
           {{ 'RESERVATIONS.TAB_RESERVATIONS' | translate }}
+          <span class="rs-tab-count">{{ reservations().length }}</span>
         </button>
-        <button type="button" class="view-tab" [class.active]="viewTab() === 'waitlist'" (click)="setViewTab('waitlist')">
+        <button type="button" role="tab" class="rs-tab" [class.active]="viewTab() === 'waitlist'" (click)="setViewTab('waitlist')">
           {{ 'RESERVATIONS.TAB_WAITLIST' | translate }}
+          @if (waitingList().length > 0) { <span class="rs-tab-count">{{ waitingList().length }}</span> }
         </button>
       </div>
 
       @if (viewTab() === 'reservations') {
-      <div class="filters">
-        <input type="date" [(ngModel)]="filterDate" (ngModelChange)="load()" class="filter-input" />
-        <input type="text" [(ngModel)]="filterPhone" (ngModelChange)="load()" placeholder="{{ 'RESERVATIONS.SEARCH_PHONE' | translate }}" class="filter-input" />
-        <select [(ngModel)]="filterStatus" (ngModelChange)="load()" class="filter-select">
-          <option value="">{{ 'RESERVATIONS.ALL_STATUSES' | translate }}</option>
-          <option value="booked">{{ 'RESERVATIONS.STATUS_BOOKED' | translate }}</option>
-          <option value="seated">{{ 'RESERVATIONS.STATUS_SEATED' | translate }}</option>
-          <option value="finished">{{ 'RESERVATIONS.STATUS_FINISHED' | translate }}</option>
-          <option value="cancelled">{{ 'RESERVATIONS.STATUS_CANCELLED' | translate }}</option>
-          <option value="no_show">{{ 'RESERVATIONS.STATUS_NO_SHOW' | translate }}</option>
-        </select>
-        <button class="btn btn-ghost btn-sm" (click)="load()">{{ 'ORDERS.REFRESH' | translate }}</button>
+      <div class="rs-kpis" data-testid="reservations-kpis">
+        <div class="rs-kpi"><span>{{ 'RESERVATIONS.KPI_RESERVATIONS' | translate }}</span><strong>{{ resStats().total }}</strong></div>
+        <div class="rs-kpi"><span>{{ 'RESERVATIONS.KPI_GUESTS' | translate }}</span><strong>{{ resStats().guests }}</strong></div>
+        <div class="rs-kpi rs-kpi-info"><span>{{ 'RESERVATIONS.KPI_PENDING' | translate }}</span><strong>{{ resStats().booked }}</strong></div>
+        <div class="rs-kpi rs-kpi-ok"><span>{{ 'RESERVATIONS.KPI_SEATED' | translate }}</span><strong>{{ resStats().seated }}</strong></div>
+      </div>
+
+      <div class="rs-filters">
+        <label class="rs-field rs-field-date"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><input type="date" [(ngModel)]="filterDate" (ngModelChange)="load()" aria-label="date" /></label>
+        <label class="rs-field rs-field-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="text" [(ngModel)]="filterPhone" (ngModelChange)="load()" placeholder="{{ 'RESERVATIONS.SEARCH_PHONE' | translate }}" /></label>
+        <button class="rs-refresh" (click)="load()">{{ 'ORDERS.REFRESH' | translate }}</button>
+        <div class="rs-chips" role="group">
+          <button type="button" class="rs-chip" [class.on]="filterStatus === ''" (click)="setStatusFilter('')">{{ 'RESERVATIONS.ALL_STATUSES' | translate }}</button>
+          <button type="button" class="rs-chip" [class.on]="filterStatus === 'booked'" (click)="setStatusFilter('booked')">{{ 'RESERVATIONS.STATUS_BOOKED' | translate }}</button>
+          <button type="button" class="rs-chip" [class.on]="filterStatus === 'seated'" (click)="setStatusFilter('seated')">{{ 'RESERVATIONS.STATUS_SEATED' | translate }}</button>
+          <button type="button" class="rs-chip" [class.on]="filterStatus === 'finished'" (click)="setStatusFilter('finished')">{{ 'RESERVATIONS.STATUS_FINISHED' | translate }}</button>
+          <button type="button" class="rs-chip" [class.on]="filterStatus === 'cancelled'" (click)="setStatusFilter('cancelled')">{{ 'RESERVATIONS.STATUS_CANCELLED' | translate }}</button>
+          <button type="button" class="rs-chip" [class.on]="filterStatus === 'no_show'" (click)="setStatusFilter('no_show')">{{ 'RESERVATIONS.STATUS_NO_SHOW' | translate }}</button>
+        </div>
       </div>
 
       @if (loading()) {
         <div class="empty-state"><p>{{ 'RESERVATIONS.LOADING' | translate }}</p></div>
       } @else if (reservations().length === 0) {
-        <div class="empty-state">
+        <div class="rs-empty">
+          <div class="rs-empty-ico"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
           <p>{{ 'RESERVATIONS.NONE' | translate }}</p>
           @if (canWrite()) {
-            <button class="btn btn-primary" (click)="openCreate()">{{ 'RESERVATIONS.NEW' | translate }}</button>
+            <button class="rs-new" (click)="openCreate()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{{ 'RESERVATIONS.NEW' | translate }}</button>
           }
         </div>
       } @else {
         <div class="reservation-grid">
           @for (r of reservations(); track r.id) {
-            <div class="reservation-card" [class]="'status-' + r.status">
-              <div class="card-header">
-                <span class="res-id">#{{ r.id }}</span>
-                <span class="res-name">{{ r.customer_name }}</span>
-                <span class="status-badge" [class]="r.status">{{ getStatusLabel(r.status) | translate }}</span>
-                @if (isSlotOverbooked(r)) {
-                  <span class="overbooked-badge">{{ 'RESERVATIONS.OVERBOOKED' | translate }}</span>
-                }
-              </div>
-              <div class="card-body">
-                <div>{{ r.reservation_date }} {{ r.reservation_time }}</div>
-                <div>{{ 'RESERVATIONS.PARTY_SIZE' | translate }}: {{ r.party_size }}</div>
-                @if (r.service_type) {
-                  <div class="res-meta">{{ 'BOOK.SERVICE_TYPE' | translate }}: {{ serviceTypeLabel(r.service_type) }}</div>
-                }
-                @if (r.seating_preference) {
-                  <div class="res-meta">{{ 'BOOK.SEATING_PREFERENCE' | translate }}: {{ seatingLabel(r.seating_preference) }}</div>
-                }
-                <div>{{ r.customer_phone }}</div>
+            <article class="rv-card" [class]="'rv-card status-' + r.status">
+              <header class="rv-head">
+                <div class="rv-time">
+                  <strong>{{ timeLabel(r.reservation_time) }}</strong>
+                  <small>{{ dayLabel(r.reservation_date) }}</small>
+                </div>
+                <div class="rv-who">
+                  <h3>{{ r.customer_name }}</h3>
+                  <span class="rv-party"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>{{ r.party_size }}</span>
+                </div>
+                <div class="rv-badges">
+                  <span class="status-badge" [class]="r.status">{{ getStatusLabel(r.status) | translate }}</span>
+                  @if (isSlotOverbooked(r)) {
+                    <span class="overbooked-badge">{{ 'RESERVATIONS.OVERBOOKED' | translate }}</span>
+                  }
+                </div>
+              </header>
+              <div class="rv-body">
+                <div class="rv-line"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.9.34 1.78.65 2.62a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.46-1.27a2 2 0 012.11-.45c.84.31 1.72.53 2.62.65A2 2 0 0122 16.92z"/></svg><span>{{ r.customer_phone }}</span></div>
                 @if (r.customer_email) {
-                  <div>{{ r.customer_email }}</div>
+                  <div class="rv-line"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/></svg><span>{{ r.customer_email }}</span></div>
                 }
-                @if (r.guest_birthday_month && r.guest_birthday_day) {
-                  <div class="res-meta">{{ 'RESERVATIONS.BIRTHDAY' | translate }}: {{ formatGuestBirthday(r) }}</div>
-                }
+                <div class="rv-tags">
+                  <span class="rv-tag rv-tag-table"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h18M5 10v9M19 10v9M7 10V6h10v4"/></svg>{{ getTableDisplay(r) }}</span>
+                  @if (r.service_type) {
+                    <span class="rv-tag">{{ serviceTypeLabel(r.service_type) }}</span>
+                  }
+                  @if (r.seating_preference) {
+                    <span class="rv-tag">{{ seatingLabel(r.seating_preference) }}</span>
+                  }
+                  @if (r.guest_birthday_month && r.guest_birthday_day) {
+                    <span class="rv-tag rv-tag-bday"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-8a2 2 0 00-2-2H6a2 2 0 00-2 2v8M4 16s1.5-1 4-1 4 2 8 2 4-1 4-1M12 11V7M12 7a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>{{ formatGuestBirthday(r) }}</span>
+                  }
+                  @if (!dietaryNotesLine(r) && r.allergies_has) {
+                    <span class="rv-tag rv-tag-warn">{{ 'BOOK.ALLERGIES_HAS' | translate }}</span>
+                  }
+                </div>
                 @if (r.client_notes) {
-                  <div class="res-notes client-notes"><strong>{{ 'RESERVATIONS.RESERVATION_NOTES' | translate }}:</strong> {{ r.client_notes }}</div>
+                  <div class="rv-note"><b>{{ 'RESERVATIONS.RESERVATION_NOTES' | translate }}</b>{{ r.client_notes }}</div>
                 }
                 @if (dietaryNotesLine(r); as dn) {
-                  <div class="res-notes client-notes"><strong>{{ 'RESERVATIONS.CUSTOMER_NOTES' | translate }}:</strong> {{ dn }}</div>
-                } @else if (r.allergies_has) {
-                  <div class="res-meta">{{ 'BOOK.ALLERGIES_HAS' | translate }}</div>
+                  <div class="rv-note rv-note-warn"><b>{{ 'RESERVATIONS.CUSTOMER_NOTES' | translate }}</b>{{ dn }}</div>
                 }
                 @if (r.owner_notes) {
-                  <div class="res-notes owner-notes"><strong>{{ 'RESERVATIONS.OWNER_NOTES' | translate }}:</strong> {{ r.owner_notes }}</div>
+                  <div class="rv-note rv-note-owner"><b>{{ 'RESERVATIONS.OWNER_NOTES' | translate }}</b>{{ r.owner_notes }}</div>
                 }
-                <div class="table-assigned">{{ 'RESERVATIONS.TABLE' | translate }}: {{ getTableDisplay(r) }}</div>
                 @if (r.client_ip || r.client_user_agent || r.client_fingerprint != null || r.client_screen_width != null) {
                   <details class="client-tech">
                     <summary>{{ 'RESERVATIONS.CLIENT_TECH_SUMMARY' | translate }}</summary>
@@ -152,32 +166,33 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
                   </details>
                 }
               </div>
-              <div class="card-actions">
-                @if (r.status === 'booked' && canWrite()) {
-                  @if (r.customer_email || r.customer_phone) {
-                    <button class="btn btn-ghost btn-sm" (click)="sendReminder(r)" [disabled]="sendingReminderId() === r.id" [title]="'RESERVATIONS.SEND_REMINDER' | translate">
-                      {{ sendingReminderId() === r.id ? ('COMMON.LOADING' | translate) : ('RESERVATIONS.SEND_REMINDER' | translate) }}
-                    </button>
+              @if (canWrite() && (r.status === 'booked' || r.status === 'seated')) {
+                <footer class="rv-actions">
+                  @if (r.status === 'booked') {
+                    <button class="rv-btn rv-btn-main" (click)="openSeat(r)">{{ 'RESERVATIONS.SEAT' | translate }}</button>
+                    <button class="rv-btn" (click)="openEdit(r)">{{ 'RESERVATIONS.EDIT' | translate }}</button>
+                    @if (r.customer_email || r.customer_phone) {
+                      <button class="rv-btn" (click)="sendReminder(r)" [disabled]="sendingReminderId() === r.id" [title]="'RESERVATIONS.SEND_REMINDER' | translate">
+                        {{ sendingReminderId() === r.id ? ('COMMON.LOADING' | translate) : ('RESERVATIONS.SEND_REMINDER' | translate) }}
+                      </button>
+                    }
+                    <button class="rv-btn rv-btn-warn" (click)="confirmNoShow(r)">{{ 'RESERVATIONS.NO_SHOW' | translate }}</button>
+                    <button class="rv-btn rv-btn-danger" (click)="confirmCancel(r)">{{ 'RESERVATIONS.CANCEL' | translate }}</button>
+                  } @else {
+                    <button class="rv-btn rv-btn-main" (click)="finish(r)">{{ 'RESERVATIONS.FINISH' | translate }}</button>
                   }
-                  <button class="btn btn-ghost btn-sm" (click)="openEdit(r)">{{ 'RESERVATIONS.EDIT' | translate }}</button>
-                  <button class="btn btn-ghost btn-sm" (click)="openSeat(r)">{{ 'RESERVATIONS.SEAT' | translate }}</button>
-                  <button class="btn btn-ghost btn-sm no-show-btn" (click)="confirmNoShow(r)">{{ 'RESERVATIONS.NO_SHOW' | translate }}</button>
-                  <button class="btn btn-ghost btn-sm danger" (click)="confirmCancel(r)">{{ 'RESERVATIONS.CANCEL' | translate }}</button>
-                }
-                @if (r.status === 'seated' && canWrite()) {
-                  <button class="btn btn-ghost btn-sm" (click)="finish(r)">{{ 'RESERVATIONS.FINISH' | translate }}</button>
-                }
-              </div>
-            </div>
+                </footer>
+              }
+            </article>
           }
         </div>
       }
       }
 
       @if (viewTab() === 'waitlist') {
-        <div class="filters">
-          <input type="text" [(ngModel)]="waitlistFilterPhone" (ngModelChange)="loadWaitlist()" placeholder="{{ 'RESERVATIONS.SEARCH_PHONE' | translate }}" class="filter-input" />
-          <select [(ngModel)]="waitlistFilterStatus" (ngModelChange)="loadWaitlist()" class="filter-select">
+        <div class="rs-filters">
+          <label class="rs-field rs-field-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="text" [(ngModel)]="waitlistFilterPhone" (ngModelChange)="loadWaitlist()" placeholder="{{ 'RESERVATIONS.SEARCH_PHONE' | translate }}" /></label>
+          <select [(ngModel)]="waitlistFilterStatus" (ngModelChange)="loadWaitlist()" class="rs-select">
             <option value="">{{ 'RESERVATIONS.WL_ACTIVE_ONLY' | translate }}</option>
             <option value="waiting">{{ 'RESERVATIONS.WL_STATUS_WAITING' | translate }}</option>
             <option value="notified">{{ 'RESERVATIONS.WL_STATUS_NOTIFIED' | translate }}</option>
@@ -185,44 +200,54 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
             <option value="cancelled">{{ 'RESERVATIONS.WL_STATUS_CANCELLED' | translate }}</option>
             <option value="no_show">{{ 'RESERVATIONS.WL_STATUS_NO_SHOW' | translate }}</option>
           </select>
-          <button class="btn btn-ghost btn-sm" (click)="loadWaitlist()">{{ 'ORDERS.REFRESH' | translate }}</button>
+          <button class="rs-refresh" (click)="loadWaitlist()">{{ 'ORDERS.REFRESH' | translate }}</button>
         </div>
 
         @if (waitlistLoading()) {
           <div class="empty-state"><p>{{ 'RESERVATIONS.LOADING' | translate }}</p></div>
         } @else if (waitingList().length === 0) {
-          <div class="empty-state"><p>{{ 'RESERVATIONS.WL_NONE' | translate }}</p></div>
+          <div class="rs-empty">
+            <div class="rs-empty-ico"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div>
+            <p>{{ 'RESERVATIONS.WL_NONE' | translate }}</p>
+          </div>
         } @else {
           <div class="reservation-grid">
             @for (w of waitingList(); track w.id) {
-              <div class="reservation-card" [class]="'status-' + w.status">
-                <div class="card-header">
-                  <span class="res-id">#{{ w.id }}</span>
-                  <span class="res-name">{{ w.customer_name }}</span>
-                  <span class="status-badge" [class]="w.status">{{ getWaitlistStatusLabel(w.status) | translate }}</span>
-                </div>
-                <div class="card-body">
-                  <div>{{ 'RESERVATIONS.PARTY_SIZE' | translate }}: {{ w.party_size }}</div>
-                  <div>{{ w.customer_phone }}</div>
+              <article class="rv-card" [class]="'rv-card status-' + w.status">
+                <header class="rv-head">
+                  <div class="rv-time rv-time-wait">
+                    <strong>{{ w.party_size }}</strong>
+                    <small>{{ 'RESERVATIONS.PARTY_SIZE' | translate }}</small>
+                  </div>
+                  <div class="rv-who">
+                    <h3>{{ w.customer_name }}</h3>
+                    <span class="rv-party rv-id">#{{ w.id }}</span>
+                  </div>
+                  <div class="rv-badges">
+                    <span class="status-badge" [class]="w.status">{{ getWaitlistStatusLabel(w.status) | translate }}</span>
+                  </div>
+                </header>
+                <div class="rv-body">
+                  <div class="rv-line"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.9.34 1.78.65 2.62a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.46-1.27a2 2 0 012.11-.45c.84.31 1.72.53 2.62.65A2 2 0 0122 16.92z"/></svg><span>{{ w.customer_phone }}</span></div>
                   @if (w.created_at) {
-                    <div class="res-meta">{{ 'RESERVATIONS.WL_JOINED' | translate }}: {{ formatWaitlistTime(w.created_at) }}</div>
+                    <div class="rv-line rv-line-muted"><span>{{ 'RESERVATIONS.WL_JOINED' | translate }}: {{ formatWaitlistTime(w.created_at) }}</span></div>
                   }
                   @if (w.notified_at) {
-                    <div class="res-meta">{{ 'RESERVATIONS.WL_NOTIFIED' | translate }}: {{ formatWaitlistTime(w.notified_at) }}</div>
+                    <div class="rv-line rv-line-muted"><span>{{ 'RESERVATIONS.WL_NOTIFIED' | translate }}: {{ formatWaitlistTime(w.notified_at) }}</span></div>
                   }
                 </div>
                 @if (canWrite() && (w.status === 'waiting' || w.status === 'notified')) {
-                  <div class="card-actions">
+                  <footer class="rv-actions">
+                    <button class="rv-btn rv-btn-main" (click)="convertWaitlistToReservation(w)">{{ 'RESERVATIONS.WL_BOOK_TABLE' | translate }}</button>
                     @if (w.status === 'waiting') {
-                      <button class="btn btn-ghost btn-sm" (click)="updateWaitlistStatus(w, 'notified')">{{ 'RESERVATIONS.WL_MARK_NOTIFIED' | translate }}</button>
+                      <button class="rv-btn" (click)="updateWaitlistStatus(w, 'notified')">{{ 'RESERVATIONS.WL_MARK_NOTIFIED' | translate }}</button>
                     }
-                    <button class="btn btn-ghost btn-sm" (click)="convertWaitlistToReservation(w)">{{ 'RESERVATIONS.WL_BOOK_TABLE' | translate }}</button>
-                    <button class="btn btn-ghost btn-sm" (click)="updateWaitlistStatus(w, 'seated')">{{ 'RESERVATIONS.WL_MARK_SEATED' | translate }}</button>
-                    <button class="btn btn-ghost btn-sm no-show-btn" (click)="updateWaitlistStatus(w, 'no_show')">{{ 'RESERVATIONS.NO_SHOW' | translate }}</button>
-                    <button class="btn btn-ghost btn-sm danger" (click)="updateWaitlistStatus(w, 'cancelled')">{{ 'RESERVATIONS.CANCEL' | translate }}</button>
-                  </div>
+                    <button class="rv-btn" (click)="updateWaitlistStatus(w, 'seated')">{{ 'RESERVATIONS.WL_MARK_SEATED' | translate }}</button>
+                    <button class="rv-btn rv-btn-warn" (click)="updateWaitlistStatus(w, 'no_show')">{{ 'RESERVATIONS.NO_SHOW' | translate }}</button>
+                    <button class="rv-btn rv-btn-danger" (click)="updateWaitlistStatus(w, 'cancelled')">{{ 'RESERVATIONS.CANCEL' | translate }}</button>
+                  </footer>
                 }
-              </div>
+              </article>
             }
           </div>
         }
@@ -542,6 +567,107 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     .reservation-modal-form input[type="radio"],
     .reservation-modal-form input[type="checkbox"] { width: 1.125em; height: 1.125em; flex-shrink: 0; margin: 0; padding: 0; border: none; background: transparent; accent-color: var(--color-primary, #2563eb); vertical-align: middle; }
     .res-dietary-notes { display: block; width: 100%; margin-top: 0.35rem; padding: 0.35rem 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
+
+    /* ===== Reservaciones: rediseño ===== */
+    .rs-header { margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+    .rs-title h1 { margin: 0; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.01em; }
+    .rs-title p { margin: 2px 0 0; color: var(--color-text-muted); font-weight: 600; font-size: .9rem; }
+    .rs-links { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); }
+    .rs-link { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 999px; color: var(--color-text-muted); font-size: .8rem; font-weight: 700; text-decoration: none; transition: background .15s, color .15s; }
+    .rs-link:hover { background: var(--color-primary-light); color: var(--color-primary); }
+    .rs-icon-btn { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text-muted); }
+    .rs-icon-btn:hover { background: var(--color-primary-light); color: var(--color-primary); border-color: var(--color-primary); }
+    .rs-new { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--color-primary); color: #fff; font: inherit; font-weight: 800; cursor: pointer; box-shadow: 0 10px 20px -10px var(--color-primary); touch-action: manipulation; }
+    .rs-new:hover { filter: brightness(1.07); }
+
+    .rs-tabs { display: inline-flex; gap: 4px; padding: 5px; margin-bottom: 14px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); }
+    .rs-tab { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 20px; border: 0; border-radius: 999px; background: transparent; color: var(--color-text-muted); font: inherit; font-weight: 700; cursor: pointer; }
+    .rs-tab:hover { background: var(--color-bg); color: var(--color-text); }
+    .rs-tab.active { background: var(--color-primary); color: #fff; box-shadow: 0 8px 16px -8px var(--color-primary); }
+    .rs-tab-count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: var(--color-primary-light); color: var(--color-primary); font-size: .75rem; font-weight: 800; }
+    .rs-tab.active .rs-tab-count { background: rgba(255,255,255,.25); color: #fff; }
+
+    .rs-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .rs-kpi { display: flex; flex-direction: column; gap: 2px; padding: 14px 18px; border-radius: 18px; background: var(--color-surface); border: 1px solid var(--color-border); }
+    .rs-kpi span { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); }
+    .rs-kpi strong { font-size: 1.8rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .rs-kpi-info strong { color: #1d4ed8; }
+    .rs-kpi-ok strong { color: #15803d; }
+
+    .rs-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .rs-field { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text-muted); }
+    .rs-field:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+    .rs-field input { border: 0; outline: 0; background: transparent; color: var(--color-text); font: inherit; font-weight: 600; min-width: 0; padding: 0; }
+    .rs-field-search { flex: 1 1 220px; max-width: 340px; }
+    .rs-field-search input { width: 100%; }
+    .rs-select { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); font: inherit; font-weight: 600; }
+    .rs-refresh { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--color-border); background: transparent; color: var(--color-text); font: inherit; font-weight: 700; cursor: pointer; }
+    .rs-refresh:hover { background: var(--color-bg); }
+    .rs-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 100%; }
+    .rs-chip { min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-muted); font: inherit; font-size: .85rem; font-weight: 700; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+    .rs-chip:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .rs-chip.on { background: var(--color-primary-light); border-color: var(--color-primary); color: var(--color-primary); box-shadow: inset 0 0 0 1px var(--color-primary); }
+
+    .rs-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 56px 16px; border-radius: 24px; border: 1.5px dashed var(--color-border); background: var(--color-surface); color: var(--color-text-muted); font-weight: 600; text-align: center; }
+    .rs-empty-ico { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 26px; background: var(--color-primary-light); color: var(--color-primary); }
+    .rs-empty p { margin: 0; }
+
+    .reservation-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+    .rv-card { --rc: #3b82f6; position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 22px; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 28px -20px rgba(0,0,0,.35); border-left-width: 1px !important; transition: transform .18s, box-shadow .18s; }
+    .rv-card:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(0,0,0,.05), 0 20px 34px -20px rgba(0,0,0,.4); }
+    .rv-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--rc); }
+    .rv-card.status-booked, .rv-card.status-notified { --rc: #3b82f6; }
+    .rv-card.status-waiting { --rc: #d4a017; }
+    .rv-card.status-seated { --rc: #22a05a; }
+    .rv-card.status-finished { --rc: #9ca3af; }
+    .rv-card.status-cancelled { --rc: #dc2626; opacity: .8; }
+    .rv-card.status-no_show { --rc: #d9772b; opacity: .88; }
+    .rv-head { display: flex; align-items: center; gap: 14px; padding: 20px 18px 10px; }
+    .rv-time { flex: none; display: flex; flex-direction: column; align-items: center; min-width: 76px; padding: 8px 10px; border-radius: 16px; background: color-mix(in srgb, var(--rc) 12%, var(--color-surface)); }
+    .rv-time strong { font-size: 1.5rem; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--rc) 70%, #000); }
+    .rv-time small { font-size: .68rem; font-weight: 700; text-transform: capitalize; color: var(--color-text-muted); }
+    .rv-who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .rv-who h3 { margin: 0; font-size: 1.1rem; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+    .rv-party { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; padding: 2px 10px; border-radius: 999px; background: var(--color-bg); color: var(--color-text); font-size: .85rem; font-weight: 800; }
+    .rv-id { color: var(--color-text-muted); }
+    .rv-badges { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; align-self: flex-start; }
+    .status-badge { padding: 4px 12px; border-radius: 999px; font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .rv-body { padding: 4px 18px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .rv-line { display: flex; align-items: center; gap: 8px; font-size: .9rem; font-weight: 600; color: var(--color-text); }
+    .rv-line svg { flex: none; color: var(--color-text-muted); }
+    .rv-line-muted { color: var(--color-text-muted); font-weight: 500; font-size: .82rem; }
+    .rv-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rv-tag { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 8px; background: var(--color-bg); color: var(--color-text-muted); font-size: .78rem; font-weight: 700; }
+    .rv-tag-table { background: var(--color-primary-light); color: var(--color-primary); }
+    .rv-tag-bday { background: #fdf0f6; color: #be185d; }
+    .rv-tag-warn { background: #fef3c7; color: #a16207; }
+    .rv-note { padding: 8px 12px; border-radius: 12px; background: var(--color-bg); font-size: .85rem; line-height: 1.35; }
+    .rv-note b { display: block; font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 1px; }
+    .rv-note-warn { background: #fef3c7; color: #6f5106; border-left: 3px solid #d4a017; }
+    .rv-note-owner { background: #f5f0ff; color: #5b21b6; border-left: 3px solid #8b5cf6; }
+    .rv-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px 14px; border-top: 1px solid var(--color-border); background: color-mix(in srgb, var(--color-bg) 60%, var(--color-surface)); }
+    .rv-btn { min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: .82rem; font-weight: 700; cursor: pointer; touch-action: manipulation; transition: background .15s, border-color .15s, color .15s; }
+    .rv-btn:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+    .rv-btn:disabled { opacity: .5; cursor: default; }
+    .rv-btn-main { background: var(--color-primary); border-color: var(--color-primary); color: #fff; box-shadow: 0 8px 16px -10px var(--color-primary); }
+    .rv-btn-main:hover:not(:disabled) { color: #fff; filter: brightness(1.07); }
+    .rv-btn-warn { color: #a8531a; }
+    .rv-btn-warn:hover:not(:disabled) { border-color: #d9772b; color: #a8531a; background: #fbe9d9; }
+    .rv-btn-danger { color: #b91c1c; }
+    .rv-btn-danger:hover:not(:disabled) { border-color: #dc2626; color: #b91c1c; background: #fde8e6; }
+
+    .modal-content { border-radius: 24px; box-shadow: 0 30px 70px -18px rgba(0,0,0,.45); }
+    .modal-header { padding: 18px 20px; background: linear-gradient(135deg, var(--color-primary-light), transparent 80%); border-bottom: 0; }
+    .modal-header h3 { margin: 0; font-size: 1.25rem; font-weight: 800; }
+    .modal-body { padding: 4px 20px 12px; }
+    .modal-footer { padding: 14px 20px 18px; }
+    .modal-content input:not([type='radio']):not([type='checkbox']), .modal-content select, .modal-content textarea { border-radius: 12px; }
+    .modal-footer .btn { border-radius: 999px; font-weight: 800; min-height: 44px; padding: 0 22px; }
+    .table-option { border-radius: 14px; padding: 12px 16px; font-weight: 700; }
+    .table-option:hover { background: var(--color-primary-light); border-color: var(--color-primary); }
+
+    @media (prefers-reduced-motion: reduce) { .rv-card, .rv-card:hover { transition: none; transform: none; } }
+    @media (max-width: 600px) { .rs-links { display: none; } .rv-head { flex-wrap: wrap; } .rv-badges { flex-direction: row; margin-left: auto; } }
   `],
 })
 export class ReservationsComponent implements OnInit, OnDestroy {
@@ -557,6 +683,42 @@ export class ReservationsComponent implements OnInit, OnDestroy {
 
   loading = signal(false);
   reservations = signal<Reservation[]>([]);
+
+  /** Header numbers for the loaded list (cancelled / no-show do not count as guests). */
+  resStats = computed(() => {
+    const list = this.reservations();
+    const active = list.filter((r) => r.status !== 'cancelled' && r.status !== 'no_show');
+    return {
+      total: active.length,
+      guests: active.reduce((sum, r) => sum + (r.party_size || 0), 0),
+      booked: list.filter((r) => r.status === 'booked').length,
+      seated: list.filter((r) => r.status === 'seated').length,
+    };
+  });
+
+  setStatusFilter(value: string): void {
+    this.filterStatus = value;
+    this.load();
+  }
+
+  /** "Martes, 21 de octubre" for the selected date. */
+  filterDateLabel(): string {
+    if (!this.filterDate) return '';
+    const d = new Date(this.filterDate + 'T12:00:00');
+    if (Number.isNaN(d.getTime())) return '';
+    const label = d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  timeLabel(time: string): string {
+    return (time || '').slice(0, 5);
+  }
+
+  dayLabel(date: string): string {
+    const d = new Date((date || '') + 'T12:00:00');
+    if (Number.isNaN(d.getTime())) return date;
+    return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  }
   viewTab = signal<'reservations' | 'waitlist'>('reservations');
   waitlistLoading = signal(false);
   waitingList = signal<WaitingListEntry[]>([]);
