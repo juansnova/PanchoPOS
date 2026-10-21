@@ -171,7 +171,7 @@
                     </div>
                     <div class="product-info dish-body">
                       <p class="dish-eyebrow">
-                        <span>{{ getCategoryLabel(cat.name) }}</span>
+                        <span>{{ product.subcategory?.trim() || getCategoryLabel(cat.name) }}</span>
                         <i aria-hidden="true"></i>
                         <b>{{ pi + 1 < 10 ? '0' : '' }}{{ pi + 1 }}</b>
                       </p>

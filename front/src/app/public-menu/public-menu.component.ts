@@ -246,9 +246,27 @@ export class PublicMenuComponent implements OnInit {
     return 10;
   }
 
-  private sortedCategories = computed(() =>
-    [...(this.menu()?.categories ?? [])].sort((a, b) => this.categoryRank(a.name) - this.categoryRank(b.name)),
-  );
+  /**
+   * The API groups by subcategory; this page filters by the main category (like the table menu),
+   * keeping the subcategory on each product and sorting inside the group by it.
+   */
+  private sortedCategories = computed<PublicTenantMenuCategory[]>(() => {
+    const products = (this.menu()?.categories ?? []).flatMap((c) => c.products);
+    const groups = new Map<string, PublicTenantMenuProduct[]>();
+    for (const p of products) {
+      const key = (p.category || '').trim() || 'Other';
+      groups.set(key, [...(groups.get(key) ?? []), p]);
+    }
+    return [...groups.entries()]
+      .map(([name, items]) => ({
+        id: name.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'other',
+        name,
+        products: [...items].sort(
+          (a, b) => (a.subcategory || '').localeCompare(b.subcategory || '') || a.name.localeCompare(b.name),
+        ),
+      }))
+      .sort((a, b) => this.categoryRank(a.name) - this.categoryRank(b.name) || a.name.localeCompare(b.name));
+  });
 
   categories(): PublicTenantMenuCategory[] {
     return this.sortedCategories();
