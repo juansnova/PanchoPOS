@@ -2327,6 +2327,7 @@
     "REPORTS": {
       "TITLE": "Informes de Inventario",
       "TOP_VALUE": "Lo que más dinero tiene",
+      "PER_UNIT": "por unidad",
       "FILTER_ALL": "Todos",
       "FILTER_IN": "Entradas",
       "FILTER_OUT": "Salidas",

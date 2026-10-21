@@ -10,6 +10,7 @@ import { CommonModule } from '@angular/common';
 import { SidebarComponent } from '../../shared/sidebar.component';
 import { InventoryService } from '../inventory.service';
 import { InventoryValuation, InventoryTransaction, inventoryUnitKey } from '../inventory.types';
+import { UNIT_ICONS } from '../unit-select-options';
 import { TranslateModule } from '@ngx-translate/core';
 
 type MoveFilter = 'all' | 'in' | 'out' | 'waste';
@@ -76,15 +77,29 @@ const MOVE_ICON: Record<string, string> = {
 
             <div class="ir-values">
               @for (item of rankedItems(); track item.inventory_item_id; let i = $index) {
-                <article class="ir-value">
-                  <span class="ir-rank" [attr.data-r]="i < 3 ? i + 1 : 0">{{ i + 1 }}</span>
+                <article class="ir-value" [attr.data-r]="i < 3 ? i + 1 : 0">
+                  <div class="ir-tile">
+                    <span class="ir-tile-ico" [innerHTML]="unitIcon(item.unit)" aria-hidden="true"></span>
+                    <span class="ir-rank" [attr.data-r]="i < 3 ? i + 1 : 0">{{ i + 1 }}</span>
+                  </div>
                   <div class="ir-value-main">
                     <div class="ir-value-top">
-                      <b>{{ item.name }}</b>
+                      <div class="ir-name">
+                        <b>{{ item.name }}</b>
+                        <span class="ir-sku">{{ item.sku }}</span>
+                      </div>
                       <strong>{{ formatCurrency(item.fifo_value_cents) }}</strong>
                     </div>
-                    <div class="ir-bar"><div [style.width.%]="barWidth(item.fifo_value_cents)"></div></div>
-                    <small>{{ item.sku }} · {{ item.quantity.toFixed(2) }} {{ unitKey(item.unit) | translate }} · {{ share(item.fifo_value_cents) }}%</small>
+                    <div class="ir-bar">
+                      <div [style.width.%]="barWidth(item.fifo_value_cents)"></div>
+                      <span class="ir-pct" [style.left.%]="barWidth(item.fifo_value_cents)">{{ share(item.fifo_value_cents) }}%</span>
+                    </div>
+                    <div class="ir-facts">
+                      <span class="ir-pill">{{ item.quantity.toFixed(2) }} {{ unitKey(item.unit) | translate }}</span>
+                      @if (item.quantity > 0) {
+                        <span class="ir-each">≈ {{ formatCurrency(item.fifo_value_cents / item.quantity) }} {{ 'INVENTORY.REPORTS.PER_UNIT' | translate }}</span>
+                      }
+                    </div>
                   </div>
                 </article>
               }
@@ -200,6 +215,13 @@ export class InventoryReportsComponent implements OnInit {
 
   kindOf(type: string): 'in' | 'out' | 'waste' {
     return type === 'waste' ? 'waste' : IN_TYPES.includes(type) ? 'in' : 'out';
+  }
+
+  unitIcon(unit: string): SafeHtml {
+    const d = UNIT_ICONS[unit] ?? UNIT_ICONS['piece'];
+    return this.sanitizer.bypassSecurityTrustHtml(
+      `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`
+    );
   }
 
   iconHtml(type: string): SafeHtml {
