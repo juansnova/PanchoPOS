@@ -772,61 +772,96 @@
 }
 
 // ============================================
-// CATEGORY FILTER v2: segmented "ticket" chips, orange active state, edge fade
+// CATEGORY FILTER v4: ink capsule with champagne-gold active tab
 // ============================================
 .menu-page .category-nav {
   padding: 10px 0;
-  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  background: linear-gradient(var(--color-bg) 55%, transparent);
+  border-bottom: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .menu-page .category-scroll-container {
-  gap: 8px;
-  padding-inline: var(--space-4);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--space-4), #000 calc(100% - 28px), transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 var(--space-4), #000 calc(100% - 28px), transparent 100%);
+  width: max-content;
+  max-width: calc(100% - 2 * var(--space-4));
+  margin-inline: auto;
+  padding: 5px;
+  gap: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #2a1d17, #170f0c);
+  box-shadow:
+    inset 0 0 0 1px rgba(226, 190, 120, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 30px -16px rgba(23, 15, 12, 0.7);
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 .menu-page .category-chip {
   position: relative;
-  min-height: 46px;
-  padding: 0 6px 0 18px;
-  gap: 10px;
+  min-height: 42px;
+  padding: 0 16px;
+  gap: 8px;
+  align-items: center;
   border: 0;
+  border-radius: 999px;
   background: transparent;
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-primary) 22%, var(--gm-line));
-  transition: transform 160ms var(--gm-ease), background-color 220ms, box-shadow 220ms;
+  box-shadow: none;
+  animation: none;
+  transition: background-color 240ms, box-shadow 240ms, transform 160ms var(--gm-ease);
 
   .category-label {
-    font-size: 0.9rem;
+    align-self: auto;
+    font-family: inherit;
+    font-style: normal;
+    font-size: 0.7rem;
     font-weight: 700;
-    letter-spacing: 0.01em;
-    color: var(--gm-ink);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(246, 232, 205, 0.72);
     transition: color 200ms;
   }
 
   .category-count {
-    min-width: 32px;
-    height: 32px;
-    padding: 0 8px;
+    min-width: 0;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    background: none;
     font-family: Georgia, 'Times New Roman', serif;
     font-style: italic;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-primary) 10%, #fff);
-    transition: background-color 200ms, color 200ms;
+    font-size: 0.82rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: #d9b370;
   }
 
-  &:hover:not(.active) {
-    background: color-mix(in srgb, var(--color-primary) 6%, #fff);
-    box-shadow: inset 0 0 0 1.5px var(--color-primary);
+  // gold hairline diamond between tabs
+  & + &::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    background: rgba(217, 179, 112, 0.45);
+    transform: translate(-50%, -50%) rotate(45deg);
+    transition: opacity 200ms;
   }
+
+  &:hover:not(.active) .category-label { color: #fff7e6; }
 
   &.active {
-    background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000));
-    box-shadow: 0 14px 22px -12px var(--color-primary);
+    background: linear-gradient(135deg, #f7e7c4 0%, #e3bf7c 55%, #c99a4e 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 8px 18px -8px rgba(217, 160, 70, 0.7);
 
-    .category-label { color: #fff; }
-    .category-count { color: var(--color-primary); background: #fff; }
+    .category-label { color: #2a1a10; }
+    .category-count { color: #7a4d16; background: none; }
   }
+  &.active::before, &.active + &::before { opacity: 0; }
+  &:active { transform: scale(0.97); }
 }
