@@ -136,6 +136,62 @@
         } @else if (categories().length === 0) {
           <p class="public-menu-status public-menu-empty">{{ 'PUBLIC_MENU.EMPTY_MENU' | translate }}</p>
         } @else {
+          <section class="sel-section" aria-label="{{ 'MENU.CURRENT_ORDER' | translate }}" data-testid="public-menu-selection">
+            <h2 class="sel-heading">{{ 'MENU.CURRENT_ORDER' | translate }}</h2>
+            @if (cart().length === 0) {
+            <div class="sel-empty">
+              <span class="sel-empty-ico" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              </span>
+              <div>
+                <p class="sel-empty-title">{{ 'PUBLIC_MENU.SEL_EMPTY_TITLE' | translate }}</p>
+                <p class="sel-empty-hint">{{ 'PUBLIC_MENU.SEL_EMPTY_HINT' | translate }}</p>
+              </div>
+            </div>
+            } @else {
+            <div class="sel-card">
+              <div class="sel-top">
+                <div>
+                  <p class="sel-eyebrow"><i></i>{{ 'MENU.YOUR_ORDER_EYEBROW' | translate }}</p>
+                  <p class="sel-count">{{ cartCount() }} <span>{{ 'COMMON.ITEMS' | translate }}</span></p>
+                </div>
+                <span class="sel-chip"><i></i>{{ 'PUBLIC_MENU.SEL_DRAFT' | translate }}</span>
+              </div>
+              <ul class="sel-list">
+                @for (line of cart(); track line.product.id) {
+                <li class="sel-row">
+                  <span class="sel-thumb" aria-hidden="true">
+                    @if (line.product.image_url) { <img [src]="productImageUrl(line.product.image_url)" alt="" /> } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h0A2.5 2.5 0 0 0 9 9V3M6.5 3v18"/><path d="M20 21V3c-2.8 1.2-4.5 4-4.5 7.5 0 1.4 1 2.5 2.3 2.5H20"/></svg>
+                    }
+                  </span>
+                  <span class="sel-name">{{ line.product.name }}</span>
+                  <span class="sel-stepper">
+                    <button type="button" (click)="setQty(line.product.id, line.quantity - 1)" [attr.aria-label]="'-'">−</button>
+                    <b>{{ line.quantity }}</b>
+                    <button type="button" (click)="setQty(line.product.id, line.quantity + 1)" [attr.aria-label]="'+'">+</button>
+                  </span>
+                  <span class="sel-end">
+                    <span class="sel-price">{{ formatCents(line.product.price_cents * line.quantity) }}</span>
+                    <span class="sel-calc">{{ line.quantity }} × {{ formatCents(line.product.price_cents) }}</span>
+                  </span>
+                </li>
+                }
+              </ul>
+              <div class="sel-totals">
+                @if ((deliveryConfig()?.delivery_fee_cents ?? 0) > 0) {
+                <span class="sel-trow"><span>{{ 'DELIVERY_CHECKOUT.SUBTOTAL' | translate }}</span><b>{{ formatCents(cartSubtotalCents()) }}</b></span>
+                <span class="sel-trow"><span>{{ 'DELIVERY_CHECKOUT.DELIVERY_FEE' | translate }}</span><b>{{ formatCents(deliveryConfig()!.delivery_fee_cents) }}</b></span>
+                }
+                <span class="sel-trow sel-grand"><span>{{ 'DELIVERY_CHECKOUT.TOTAL' | translate }}</span><b>{{ formatCents(cartTotalCents()) }}</b></span>
+              </div>
+              <button type="button" class="sel-cta" (click)="onFloatingCta()">
+                {{ 'DELIVERY_CHECKOUT.VIEW_CART' | translate }}<i aria-hidden="true">→</i>
+              </button>
+            </div>
+            }
+          </section>
+
           @if (!selectedCategoryId() && featuredProducts().length > 0) {
           <section class="featured-section">
             <div class="section-header-row">
