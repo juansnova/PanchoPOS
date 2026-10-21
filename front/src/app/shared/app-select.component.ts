@@ -13,6 +13,7 @@ import {
   computed,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 export interface AppSelectOption {
   value: unknown;
@@ -23,6 +24,10 @@ export interface AppSelectOption {
   disabled?: boolean;
   /** Emoji / short glyph shown in a tinted square before the label. */
   icon?: string;
+  /** Inner markup of a 24x24 stroke SVG (our own static strings); drawn instead of `icon` when set. */
+  svg?: string;
+  /** Colour family for the icon square (a = amber, b = blue, c = green). */
+  tone?: 'a' | 'b' | 'c';
   /** Options with the same group are listed under a heading (list must already be ordered by group). */
   group?: string;
 }
@@ -50,8 +55,10 @@ export interface AppSelectOption {
       (click)="toggle()"
       (keydown)="onTriggerKey($event)"
     >
-      @if (selectedIcon(); as ic) {
-        <span class="as-trigger-icon" aria-hidden="true">{{ ic }}</span>
+      @if (selectedSvg(); as sv) {
+        <span class="as-trigger-icon" [attr.data-tone]="selectedTone()" aria-hidden="true" [innerHTML]="svgHtml(sv)"></span>
+      } @else if (selectedIcon(); as ic) {
+        <span class="as-trigger-icon" [attr.data-tone]="selectedTone()" [class.as-opt-icon-sym]="ic.length > 2" aria-hidden="true">{{ ic }}</span>
       }
       <span class="as-label">{{ selectedLabel() }}</span>
       <svg class="as-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -81,8 +88,10 @@ export interface AppSelectOption {
             <li class="as-opt" role="option" [attr.aria-selected]="isSelected(opt)" [attr.aria-disabled]="opt.disabled ? true : null"
               [class.as-selected]="isSelected(opt)" [class.as-disabled]="opt.disabled"
               [class.as-active]="activeIndex() === i && !opt.disabled" (mouseenter)="!opt.disabled && activeIndex.set(i)" (click)="!opt.disabled && choose(opt)">
-              @if (opt.icon) {
-                <span class="as-opt-icon" aria-hidden="true">{{ opt.icon }}</span>
+              @if (opt.svg) {
+                <span class="as-opt-icon" [attr.data-tone]="opt.tone" aria-hidden="true" [innerHTML]="svgHtml(opt.svg)"></span>
+              } @else if (opt.icon) {
+                <span class="as-opt-icon" [attr.data-tone]="opt.tone" [class.as-opt-icon-sym]="opt.icon.length > 2" aria-hidden="true">{{ opt.icon }}</span>
               }
               <span class="as-opt-text">
                 <span class="as-opt-label">{{ opt.label }}</span>
@@ -146,6 +155,12 @@ export interface AppSelectOption {
     .as-selected { color: var(--color-primary); }
     .as-selected .as-opt-label { font-weight: 800; }
     .as-check { flex: none; color: var(--color-primary); }
+    .as-opt-icon[data-tone], .as-trigger-icon[data-tone] { color: var(--ic); background: color-mix(in srgb, var(--ic) 14%, var(--color-surface)); border: 1px solid color-mix(in srgb, var(--ic) 30%, transparent); }
+    [data-tone='a'] { --ic: #b7791f; }
+    [data-tone='b'] { --ic: #2b6cb0; }
+    [data-tone='c'] { --ic: #2f855a; }
+    .as-opt-icon-sym { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 700; font-size: .78rem !important; letter-spacing: 0; }
+    .as-opt-icon svg, .as-trigger-icon svg { display: block; }
     .as-group { padding: 10px 12px 4px; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); }
     .as-opt-icon { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: var(--color-bg); font-size: 1.15rem; }
     .as-selected .as-opt-icon { background: var(--color-primary-light); }
@@ -167,6 +182,15 @@ export interface AppSelectOption {
 export class AppSelectComponent implements ControlValueAccessor {
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
   private cdr = inject(ChangeDetectorRef);
+  private sanitizer = inject(DomSanitizer);
+
+  /** Wraps trusted, hard-coded icon markup (never user input) into a 24x24 stroke svg. */
+  svgHtml(inner: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>'
+    );
+  }
 
   readonly options = input<AppSelectOption[]>([]);
   readonly placeholder = input('');
@@ -208,6 +232,14 @@ export class AppSelectComponent implements ControlValueAccessor {
   hasValue = computed(() => {
     const v = this.value();
     return v !== null && v !== undefined && v !== '' && this.options().some((o) => o.value === v);
+  });
+  selectedSvg = computed(() => {
+    const v = this.value();
+    return this.hasValue() ? (this.options().find((o) => o.value === v)?.svg ?? '') : '';
+  });
+  selectedTone = computed(() => {
+    const v = this.value();
+    return this.hasValue() ? (this.options().find((o) => o.value === v)?.tone ?? null) : null;
   });
   selectedIcon = computed(() => {
     const v = this.value();
