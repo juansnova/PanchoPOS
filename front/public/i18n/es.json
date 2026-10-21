@@ -532,6 +532,11 @@
     "ORDER_CODE_LOCKED": "Demasiados intentos fallidos. Pide ayuda al mesero."
   },
   "PRODUCTS": {
+    "HEADLINE_A": "Tu carta,",
+    "HEADLINE_B": "plato por plato.",
+    "KPI_OOS": "Agotados",
+    "KPI_MARGIN": "Margen prom.",
+    "MARGIN": "margen",
     "TITLE": "Productos",
     "FORM_BASICS": "Información básica",
     "FORM_CATEGORY": "Categoría",

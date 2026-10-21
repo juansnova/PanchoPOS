@@ -32,27 +32,41 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
   ],
   template: `
     <app-sidebar>
-        <div class="page-header">
-           <h1>{{ 'PRODUCTS.TITLE' | translate }}</h1>
-           @if (activeTab() === 'products' && !showAddForm() && !editingProduct() && canEditProducts()) {
-             <div class="page-header-actions">
-             <button type="button" class="btn btn-secondary" (click)="openBulkImport()">
-               {{ 'PRODUCTS.BULK_IMPORT' | translate }}
-             </button>
-             @if (products().length > 0) {
-               <button type="button" class="btn btn-secondary btn-delete-all" (click)="confirmDeleteAll()" [disabled]="deletingAll()">
-                 {{ 'PRODUCTS.DELETE_ALL' | translate }}
-               </button>
-             }
-             <button class="btn btn-primary" (click)="openAddForm()">
-               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-               </svg>
-               {{ 'PRODUCTS.ADD_PRODUCT' | translate }}
-             </button>
-             </div>
-           }
-         </div>
+        <section class="pr-hero">
+          <div class="pr-hero-top">
+            <p class="pr-eyebrow"><i></i>{{ 'PRODUCTS.TITLE' | translate }}</p>
+            @if (activeTab() === 'products' && !showAddForm() && !editingProduct() && canEditProducts()) {
+              <div class="pr-hero-actions">
+                @if (products().length > 0) {
+                  <button type="button" class="pr-link-danger btn-delete-all" (click)="confirmDeleteAll()" [disabled]="deletingAll()">
+                    {{ 'PRODUCTS.DELETE_ALL' | translate }}
+                  </button>
+                }
+                <button type="button" class="pr-ghost" (click)="openBulkImport()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                  {{ 'PRODUCTS.BULK_IMPORT' | translate }}
+                </button>
+                <button class="pr-add" (click)="openAddForm()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  {{ 'PRODUCTS.ADD_PRODUCT' | translate }}
+                </button>
+              </div>
+            }
+          </div>
+          <div class="pr-hero-main">
+            <h1 class="pr-title">{{ 'PRODUCTS.HEADLINE_A' | translate }} <em>{{ 'PRODUCTS.HEADLINE_B' | translate }}</em></h1>
+            @if (activeTab() === 'products' && products().length > 0) {
+              <dl class="pr-kpis">
+                <div><dt>{{ 'PRODUCTS.STATS_PRODUCTS' | translate }}</dt><dd>{{ products().length }}</dd></div>
+                <div><dt>{{ 'PRODUCTS.KPI_OOS' | translate }}</dt><dd [class.warn]="oosCount() > 0">{{ oosCount() }}</dd></div>
+                <div><dt>{{ 'PRODUCTS.STATS_LOW' | translate }}</dt><dd [class.warn]="lowStockCount() > 0">{{ lowStockCount() }}</dd></div>
+                @if (avgMargin() !== null) {
+                  <div><dt>{{ 'PRODUCTS.KPI_MARGIN' | translate }}</dt><dd class="green">{{ avgMargin() }}%</dd></div>
+                }
+              </dl>
+            }
+          </div>
+        </section>
 
         <!-- Main Tab Navigation (Button Style like Settings) -->
         <div class="main-tabs-container">
@@ -400,17 +414,8 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                }
                </div>
             } @else {
-              <!-- Summary -->
-              <div class="pr-stats">
-                <span class="pr-stat"><b>{{ products().length }}</b> {{ 'PRODUCTS.STATS_PRODUCTS' | translate }}</span>
-                <span class="pr-stat"><b>{{ filteredProducts().length }}</b> {{ 'PRODUCTS.STATS_SHOWING' | translate }}</span>
-                @if (lowStockCount() > 0) {
-                  <span class="pr-stat pr-stat-warn"><i></i><b>{{ lowStockCount() }}</b> {{ 'PRODUCTS.STATS_LOW' | translate }}</span>
-                }
-              </div>
-
               <!-- Search + view -->
-              <div class="search-row">
+              <div class="search-row pr-searchbar">
                 <label for="products-search" class="visually-hidden">{{ 'PRODUCTS.SEARCH_PLACEHOLDER' | translate }}</label>
                 <input
                   id="products-search"
@@ -441,14 +446,14 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                         class="ribbon-tab" 
                         [class.active]="selectedCategory() === null"
                         (click)="selectCategory(null)">
-                        {{ 'CATALOG.ALL_CATEGORIES' | translate }}
+                        {{ 'CATALOG.ALL_CATEGORIES' | translate }}<b>{{ products().length }}</b>
                       </button>
                       @for (category of availableCategories(); track category) {
                         <button 
                           class="ribbon-tab" 
                           [class.active]="selectedCategory() === category"
                           (click)="selectCategory(category)">
-                          {{ getCategoryLabel(category) }}
+                          {{ getCategoryLabel(category) }}<b>{{ categoryCount(category) }}</b>
                         </button>
                       }
                     </div>
@@ -519,6 +524,9 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                         <div class="pr-foot">
                           <span class="pr-cost">
                             @if (product.cost_cents != null) { {{ 'PRODUCTS.COST_HEADER' | translate }}: {{ formatPrice(product.cost_cents) }} }
+                            @if (marginPct(product); as mg) {
+                              <span class="pr-margin" [class.low]="mg < 30">{{ mg }}% {{ 'PRODUCTS.MARGIN' | translate }}</span>
+                            }
                           </span>
                           <div class="pr-actions">
                             @if (canEditProducts()) {
@@ -762,6 +770,27 @@ export class ProductsComponent implements OnInit {
     this.productsView.set(view);
     try { localStorage.setItem('pos.products.view', view); } catch { /* storage unavailable */ }
   }
+  /** Products taken off the menu (out of stock). */
+  oosCount = computed(() => this.products().filter((p) => p.out_of_stock).length);
+
+  /** Gross margin % of a product, or null when there is no cost. */
+  marginPct(p: Product): number | null {
+    const price = p.price_cents || 0;
+    const cost = p.cost_cents;
+    if (cost == null || cost <= 0 || price <= 0) return null;
+    return Math.round(((price - cost) / price) * 100);
+  }
+
+  /** Average margin over the products that have a cost. */
+  avgMargin = computed(() => {
+    const m = this.products().map((p) => this.marginPct(p)).filter((x): x is number => x !== null);
+    return m.length ? Math.round(m.reduce((a, b) => a + b, 0) / m.length) : null;
+  });
+
+  categoryCount(category: string): number {
+    return this.products().filter((p) => p.category === category).length;
+  }
+
   lowStockCount = computed(() => this.products().filter(p => p.stock_alert_enabled && this.isProductLowStock(p)).length);
   products = signal<Product[]>([]);
   filteredProducts = signal<Product[]>([]);
