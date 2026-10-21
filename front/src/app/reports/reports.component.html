@@ -520,44 +520,67 @@
 
     @if (canViewAttendance()) {
       <section class="report-section att-sec att-live" data-testid="reports-work-sessions-live">
-        <div class="att-head">
-          <span class="att-badge att-badge-live" aria-hidden="true"><i class="att-pulse"></i></span>
-          <div class="att-head-text">
+        <div class="lv-head">
+          <div class="lv-title">
+            <span class="lv-badge"><i class="lv-dot"></i>{{ 'REPORTS.LIVE_BADGE' | translate }}</span>
             <h2>{{ 'REPORTS.WORK_SESSIONS_LIVE_TITLE' | translate }}</h2>
-            <p class="muted">{{ 'REPORTS.WORK_SESSIONS_LIVE_HINT' | translate }}</p>
+            <p>{{ 'REPORTS.WORK_SESSIONS_LIVE_HINT' | translate }}</p>
           </div>
-          @if (workSessionsLive().length > 0) {
-            <span class="att-count">{{ workSessionsLive().length }}</span>
+          @if (liveBoard(); as lb) {
+            <div class="lv-nums">
+              <div><strong>{{ lb.working }}</strong><span>{{ 'REPORTS.LIVE_WORKING' | translate }}</span></div>
+              <div class="amber"><strong>{{ lb.onBreak }}</strong><span>{{ 'REPORTS.LIVE_ON_BREAK' | translate }}</span></div>
+            </div>
           }
         </div>
+
         @if (workSessionsLiveLoading()) {
-          <p class="muted">{{ 'REPORTS.WORK_SESSIONS_LOADING' | translate }}</p>
+          <p class="lv-muted">{{ 'REPORTS.WORK_SESSIONS_LOADING' | translate }}</p>
         } @else if (workSessionsLiveError()) {
           <div class="error-banner">{{ workSessionsLiveError() }}</div>
-        } @else if (workSessionsLive().length === 0) {
-          <div class="att-empty">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5" /></svg>
-            <p>{{ 'REPORTS.WORK_SESSIONS_LIVE_EMPTY' | translate }}</p>
-          </div>
-        } @else {
-          <div class="att-live-grid">
-            @for (row of workSessionsLive(); track row.id) {
-              <article class="att-person" [class.on-break]="row.on_break">
-                <span class="att-avatar" [style.--h]="hueOf(row.user_name)">{{ initialsOf(row.user_name) }}</span>
-                <div class="att-person-main">
-                  <b>{{ row.user_name }}</b>
-                  <span class="att-state" [class.brk]="row.on_break">{{ liveAttendanceStatus(row) }}</span>
-                  <small>{{ 'REPORTS.WORK_SESSIONS_COL_START' | translate }} {{ timeOnly(row.started_at) }}</small>
+        } @else if (liveBoard(); as lb) {
+          @if (lb.items.length === 0) {
+            <div class="lv-empty">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5" /></svg>
+              <p>{{ 'REPORTS.WORK_SESSIONS_LIVE_EMPTY' | translate }}</p>
+            </div>
+          } @else {
+            <div class="lv-board">
+              <div class="lv-row lv-axis">
+                <span></span>
+                <div class="lv-ticks">
+                  @for (t of lb.ticks; track t.left) {
+                    <span [style.left.%]="t.left">{{ t.label }}</span>
+                  }
+                  <em class="lv-now-tag" [style.left.%]="lb.nowLeft">{{ lb.nowLabel }}</em>
                 </div>
-                <div class="att-elapsed">
-                  <strong>{{ formatWorkSessionDuration(row) }}</strong>
+                <span></span>
+                <span></span>
+              </div>
+              @for (it of lb.items; track it.row.id) {
+                <div class="lv-row" [class.brk]="it.row.on_break">
+                  <div class="lv-who">
+                    <span class="att-avatar sm" [style.--h]="hueOf(it.row.user_name)">{{ initialsOf(it.row.user_name) }}</span>
+                    <div>
+                      <b>{{ it.row.user_name }}</b>
+                      <small>{{ liveAttendanceStatus(it.row) }} · {{ timeOnly(it.row.started_at) }}</small>
+                    </div>
+                  </div>
+                  <div class="lv-track">
+                    @for (t of lb.ticks; track t.left) {
+                      <i class="lv-grid" [style.left.%]="t.left"></i>
+                    }
+                    <span class="lv-bar" [class.carried]="it.carried" [style.left.%]="it.left" [style.width.%]="it.width"></span>
+                    <i class="lv-nowline" [style.left.%]="lb.nowLeft"></i>
+                  </div>
+                  <strong class="lv-elapsed">{{ formatWorkSessionDuration(it.row) }}</strong>
+                  <button type="button" class="lv-fix" (click)="openWorkSessionAdjust(it.row)">
+                    {{ 'REPORTS.WORK_SESSION_ADJUST' | translate }}
+                  </button>
                 </div>
-                <button type="button" class="att-fix" (click)="openWorkSessionAdjust(row)">
-                  {{ 'REPORTS.WORK_SESSION_ADJUST' | translate }}
-                </button>
-              </article>
-            }
-          </div>
+              }
+            </div>
+          }
         }
       </section>
     }

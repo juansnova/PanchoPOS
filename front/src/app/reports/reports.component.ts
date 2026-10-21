@@ -9,6 +9,7 @@ import {
   inject,
   signal,
   computed,
+  DestroyRef,
   OnInit,
   HostListener,
   ViewChild,
@@ -54,6 +55,7 @@ export class ReportsComponent implements OnInit {
   private languageService = inject(LanguageService);
   private permissions = inject(PermissionService);
   private apiErr = inject(ApiErrorMessageService);
+  private destroyRef = inject(DestroyRef);
 
   report = signal<SalesReport | null>(null);
   loading = signal(true);
@@ -146,6 +148,8 @@ export class ReportsComponent implements OnInit {
   }
 
   ngOnInit() {
+    const clock = setInterval(() => this.nowMs.set(Date.now()), 30000);
+    this.destroyRef.onDestroy(() => clearInterval(clock));
     this.api.getTenantCategoryLabels().subscribe({
       next: (labels) => this.categoryOverrides.set(labels),
       error: () => undefined,
@@ -529,6 +533,46 @@ export class ReportsComponent implements OnInit {
   }
 
   /** `datetime-local` value in the user’s local timezone from an API ISO timestamp. */
+  private nowMs = signal(Date.now());
+
+  /** Live shift board: one bar per open session, from clock-in to now, on a shared day axis. */
+  liveBoard = computed(() => {
+    const rows = this.workSessionsLive();
+    const now = new Date(this.nowMs());
+    const nowH = now.getHours() + now.getMinutes() / 60;
+    const sameDay = (d: Date) => d.toDateString() === now.toDateString();
+    const starts = rows.map((r) => {
+      const d = new Date(r.started_at);
+      return sameDay(d) ? d.getHours() + d.getMinutes() / 60 : 0;
+    });
+    const axisStart = Math.max(0, Math.min(6, Math.floor(Math.min(6, ...starts))));
+    const axisEnd = Math.min(24, Math.max(20, Math.ceil(nowH) + 1));
+    const span = axisEnd - axisStart;
+    const pct = (h: number) => Math.min(100, Math.max(0, ((h - axisStart) / span) * 100));
+    const step = span > 14 ? 3 : 2;
+    const ticks: { left: number; label: string }[] = [];
+    for (let h = axisStart; h <= axisEnd; h += step) {
+      ticks.push({
+        left: pct(h),
+        label: new Date(2000, 0, 1, h % 24).toLocaleTimeString([], { hour: 'numeric' }),
+      });
+    }
+    const items = rows.map((row, i) => ({
+      row,
+      left: pct(starts[i]),
+      width: Math.max(1.8, pct(nowH) - pct(starts[i])),
+      carried: starts[i] === 0 && !sameDay(new Date(row.started_at)),
+    }));
+    return {
+      items,
+      ticks,
+      nowLeft: pct(nowH),
+      nowLabel: now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+      working: rows.filter((r) => !r.on_break).length,
+      onBreak: rows.filter((r) => r.on_break).length,
+    };
+  });
+
   /** Month shown on the Excel preview card ("octubre" / "2026"). */
   attendanceMonthParts = computed(() => {
     void this.reportIntlRevision();
