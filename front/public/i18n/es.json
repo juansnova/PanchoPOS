@@ -2278,6 +2278,9 @@
     },
     "ITEMS": {
       "TITLE": "Inventario",
+      "SUBTITLE": "Ingredientes e insumos: cuánto tienes, cuánto cuesta y qué se está acabando",
+      "VIEW_CARDS": "Tarjetas",
+      "VIEW_TABLE": "Lista",
       "ADD_ITEM": "Añadir Artículo",
       "SEARCH_PLACEHOLDER": "Buscar artículos...",
       "ALL_CATEGORIES": "Todas las Categorías",

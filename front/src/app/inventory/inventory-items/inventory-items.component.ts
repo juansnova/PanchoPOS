@@ -11,8 +11,9 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { RouterModule } from '@angular/router';
 import { SidebarComponent } from '../../shared/sidebar.component';
 import { FocusFirstInputDirective } from '../../shared/focus-first-input.directive';
+import { AppSelectComponent, AppSelectOption } from '../../shared/app-select.component';
 import { InventoryService } from '../inventory.service';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
   InventoryItem,
   InventoryItemCreate,
@@ -36,57 +37,60 @@ import {
     SidebarComponent,
     FocusFirstInputDirective,
     TranslateModule,
+    AppSelectComponent,
   ],
   template: `
     <app-sidebar>
-      <div class="page-header">
-        <h1>{{ 'INVENTORY.ITEMS.TITLE' | translate }}</h1>
+      <div class="page-header ii-header">
+        <div class="ii-title">
+          <h1>{{ 'INVENTORY.ITEMS.TITLE' | translate }}</h1>
+          <p>{{ 'INVENTORY.ITEMS.SUBTITLE' | translate }}</p>
+        </div>
         @if (!showItemModal() && !showAdjustModal()) {
-          <button class="btn btn-primary" (click)="openCreateModal()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            {{ 'INVENTORY.ITEMS.ADD_ITEM' | translate }}
-          </button>
+          <button class="ii-new" (click)="openCreateModal()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{{ 'INVENTORY.ITEMS.ADD_ITEM' | translate }}</button>
         }
       </div>
 
       <div class="content">
-        <!-- Filters -->
-        <div class="filters-bar">
-          <div class="search-group">
-            <input
-              type="text"
-              [placeholder]="'INVENTORY.ITEMS.SEARCH_PLACEHOLDER' | translate"
-              [(ngModel)]="searchQuery"
-              (input)="filterItems()"
-            />
+        <!-- Stats -->
+        <div class="ii-kpis">
+          <div class="ii-kpi">
+            <span class="ii-kpi-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></span>
+            <div><strong>{{ totalItems() }}</strong><small>{{ 'INVENTORY.ITEMS.TOTAL_ITEMS' | translate }}</small></div>
           </div>
-          <select [(ngModel)]="categoryFilter" (change)="filterItems()">
-            <option value="">{{ 'INVENTORY.ITEMS.ALL_CATEGORIES' | translate }}</option>
-            @for (cat of categories; track cat) {
-              <option [value]="cat">{{ categoryKey(cat) | translate }}</option>
-            }
-          </select>
-          <label class="checkbox-filter">
-            <input type="checkbox" [(ngModel)]="showLowStock" (change)="filterItems()" />
-            <span>{{ 'INVENTORY.ITEMS.LOW_STOCK_ONLY' | translate }}</span>
-          </label>
+          <div class="ii-kpi" [class.ii-kpi-warn]="lowStockCount() > 0">
+            <span class="ii-kpi-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+            <div><strong>{{ lowStockCount() }}</strong><small>{{ 'INVENTORY.ITEMS.LOW_STOCK' | translate }}</small></div>
+          </div>
+          <div class="ii-kpi ii-kpi-main">
+            <span class="ii-kpi-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.5 9a2.5 2.5 0 00-5 0c0 3.5 5 1.5 5 5a2.5 2.5 0 01-5 0M12 6v2M12 16v2"/></svg></span>
+            <div><strong>{{ formatCurrency(totalValue()) }}</strong><small>{{ 'INVENTORY.ITEMS.TOTAL_VALUE' | translate }}</small></div>
+          </div>
         </div>
 
-        <!-- Stats Cards -->
-        <div class="stats-row">
-          <div class="stat-card">
-            <span class="stat-value">{{ totalItems() }}</span>
-            <span class="stat-label">{{ 'INVENTORY.ITEMS.TOTAL_ITEMS' | translate }}</span>
+        <!-- Filters -->
+        <div class="ii-filters">
+          <label class="ii-search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input type="text" [placeholder]="'INVENTORY.ITEMS.SEARCH_PLACEHOLDER' | translate" [(ngModel)]="searchQuery" (input)="filterItems()" />
+          </label>
+          <label class="ii-switch">
+            <input type="checkbox" [(ngModel)]="showLowStock" (change)="filterItems()" />
+            <span class="ii-switch-track" aria-hidden="true"></span>
+            <span>{{ 'INVENTORY.ITEMS.LOW_STOCK_ONLY' | translate }}</span>
+          </label>
+          <div class="ii-view" role="group">
+            <button type="button" [class.on]="itemsView() === 'cards'" (click)="setItemsView('cards')" [title]="'INVENTORY.ITEMS.VIEW_CARDS' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></button>
+            <button type="button" [class.on]="itemsView() === 'table'" (click)="setItemsView('table')" [title]="'INVENTORY.ITEMS.VIEW_TABLE' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
           </div>
-          <div class="stat-card stat-warning">
-            <span class="stat-value">{{ lowStockCount() }}</span>
-            <span class="stat-label">{{ 'INVENTORY.ITEMS.LOW_STOCK' | translate }}</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value">{{ formatCurrency(totalValue()) }}</span>
-            <span class="stat-label">{{ 'INVENTORY.ITEMS.TOTAL_VALUE' | translate }}</span>
+          <div class="ii-chips" role="group" [attr.aria-label]="'INVENTORY.ITEMS.CATEGORY' | translate">
+            <button type="button" class="ii-chip" [class.on]="categoryFilter === ''" (click)="setCategoryFilter('')">
+              {{ 'INVENTORY.ITEMS.ALL_CATEGORIES' | translate }} <span>{{ items().length }}</span>
+            </button>
+            @for (cat of categories; track cat) {
+              <button type="button" class="ii-chip" [class.on]="categoryFilter === cat" (click)="setCategoryFilter(cat)">
+                <i aria-hidden="true">{{ categoryIcon(cat) }}</i>{{ categoryKey(cat) | translate }} <span>{{ categoryCount(cat) }}</span>
+              </button>
+            }
           </div>
         </div>
 
@@ -116,8 +120,54 @@ import {
             <p>{{ 'INVENTORY.ITEMS.NO_ITEMS_DESC' | translate }}</p>
             <button class="btn btn-primary" (click)="openCreateModal()">{{ 'INVENTORY.ITEMS.ADD_ITEM' | translate }}</button>
           </div>
+        } @else if (itemsView() === 'cards') {
+          <div class="ii-grid">
+            @for (item of filteredItems(); track item.id) {
+              <article class="ii-card" [attr.data-tone]="stockTone(item)" [class.ii-card-off]="!item.is_active">
+                <header class="ii-card-head">
+                  <span class="ii-avatar" aria-hidden="true">{{ categoryIcon(item.category) }}</span>
+                  <div class="ii-card-title">
+                    <h3>{{ item.name || '-' }}</h3>
+                    <span class="ii-sku">{{ item.sku || '-' }}@if (item.category) { · {{ categoryKey(item.category) | translate }} }</span>
+                  </div>
+                  @if (item.is_low_stock) {
+                    <span class="ii-badge ii-badge-warn">{{ 'INVENTORY.ITEMS.STATUS_LOW_STOCK' | translate }}</span>
+                  } @else if (!item.is_active) {
+                    <span class="ii-badge">{{ 'INVENTORY.ITEMS.STATUS_INACTIVE' | translate }}</span>
+                  } @else {
+                    <span class="ii-badge ii-badge-ok">{{ 'INVENTORY.ITEMS.STATUS_OK' | translate }}</span>
+                  }
+                </header>
+                @if (item.description) {
+                  <p class="ii-desc">{{ item.description }}</p>
+                }
+                <div class="ii-stock">
+                  <div class="ii-stock-num" [class.negative]="(item.current_quantity || 0) < 0">
+                    <strong>{{ (item.current_quantity || 0).toFixed(2) }}</strong>
+                    <span>{{ item.unit ? (unitKey(item.unit) | translate) : '' }}</span>
+                  </div>
+                  <div class="ii-gauge" role="img" [attr.aria-label]="(item.current_quantity || 0).toFixed(2)">
+                    <div class="ii-gauge-fill" [style.width.%]="stockPercent(item)"></div>
+                    @if ((item.reorder_level || 0) > 0) {
+                      <i class="ii-gauge-mark" [style.left.%]="reorderMarkPercent(item)" [title]="'INVENTORY.ITEMS.REORDER' | translate"></i>
+                    }
+                  </div>
+                  <small class="ii-min">{{ 'INVENTORY.ITEMS.REORDER' | translate }}: {{ (item.reorder_level || 0).toFixed(2) }}</small>
+                </div>
+                <div class="ii-money">
+                  <span><small>{{ 'INVENTORY.ITEMS.AVG_COST' | translate }}</small><b>{{ formatCurrency(item.average_cost_cents || 0) }}</b></span>
+                  <span><small>{{ 'INVENTORY.ITEMS.VALUE' | translate }}</small><b>{{ formatCurrency((item.current_quantity || 0) * (item.average_cost_cents || 0)) }}</b></span>
+                </div>
+                <footer class="ii-actions">
+                  <button class="ii-act ii-act-main" (click)="openAdjustModal(item)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>{{ 'INVENTORY.ITEMS.ADJUST_STOCK' | translate }}</button>
+                  <button class="ii-act-ico" [title]="'INVENTORY.COMMON.EDIT' | translate" [attr.aria-label]="'INVENTORY.COMMON.EDIT' | translate" (click)="openEditModal(item)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="ii-act-ico ii-act-danger" [title]="'INVENTORY.COMMON.DELETE' | translate" [attr.aria-label]="'INVENTORY.COMMON.DELETE' | translate" (click)="confirmDelete(item)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                </footer>
+              </article>
+            }
+          </div>
         } @else {
-          <div class="table-card">
+          <div class="table-card ii-table">
             <table>
               <thead>
                 <tr>
@@ -214,19 +264,11 @@ import {
               <div class="form-row">
                 <div class="form-group">
                   <label for="unit">{{ 'INVENTORY.ITEMS.UNIT' | translate }}</label>
-                  <select id="unit" formControlName="unit">
-                    @for (unit of units; track unit) {
-                      <option [value]="unit">{{ unitKey(unit) | translate }}</option>
-                    }
-                  </select>
+                  <app-select id="unit" formControlName="unit" [options]="unitOptions()" [searchable]="false" />
                 </div>
                 <div class="form-group">
                   <label for="category">{{ 'INVENTORY.ITEMS.CATEGORY' | translate }}</label>
-                  <select id="category" formControlName="category">
-                    @for (cat of categories; track cat) {
-                      <option [value]="cat">{{ categoryKey(cat) | translate }}</option>
-                    }
-                  </select>
+                  <app-select id="category" formControlName="category" [options]="categoryOptions()" [searchable]="false" />
                 </div>
               </div>
               <div class="form-row">
@@ -315,22 +357,12 @@ import {
                 </div>
                 <div class="form-group">
                   <label for="adjust_unit">{{ 'INVENTORY.ITEMS.UNIT' | translate }}</label>
-                  <select id="adjust_unit" formControlName="unit">
-                    @for (unit of units; track unit) {
-                      <option [value]="unit">{{ unitKey(unit) | translate }}</option>
-                    }
-                  </select>
+                  <app-select id="adjust_unit" formControlName="unit" [options]="unitOptions()" [searchable]="false" />
                 </div>
               </div>
               <div class="form-group">
                 <label for="adjust_warehouse">{{ 'INVENTORY.WAREHOUSES.WAREHOUSE' | translate }}</label>
-                <select id="adjust_warehouse" formControlName="warehouse_id">
-                  @for (wh of warehouses(); track wh.id) {
-                    <option [ngValue]="wh.id">
-                      {{ wh.name }}@if (wh.is_default) { ({{ 'INVENTORY.WAREHOUSES.DEFAULT_BADGE' | translate }})}
-                    </option>
-                  }
-                </select>
+                <app-select id="adjust_warehouse" formControlName="warehouse_id" [options]="warehouseOptions()" [searchable]="false" />
               </div>
               <div class="form-group">
                 <label for="adjust_notes">{{ 'INVENTORY.ITEMS.NOTES' | translate }}</label>
@@ -368,6 +400,7 @@ import {
 })
 export class InventoryItemsComponent implements OnInit {
   private inventoryService = inject(InventoryService);
+  private translate = inject(TranslateService);
   private fb = inject(FormBuilder);
 
   // State signals
@@ -454,6 +487,68 @@ export class InventoryItemsComponent implements OnInit {
   }
 
   filterItems() { this.items.update(items => [...items]); }
+
+  // ----- view + helpers for the card layout -----
+  itemsView = signal<'cards' | 'table'>(
+    (() => {
+      try { return localStorage.getItem('pos.inventory.itemsView') === 'table' ? 'table' : 'cards'; } catch { return 'cards'; }
+    })()
+  );
+
+  setItemsView(view: 'cards' | 'table'): void {
+    this.itemsView.set(view);
+    try { localStorage.setItem('pos.inventory.itemsView', view); } catch { /* storage unavailable */ }
+  }
+
+  setCategoryFilter(value: string): void {
+    this.categoryFilter = value;
+    this.filterItems();
+  }
+
+  categoryCount(cat: string): number {
+    return this.items().filter((i) => i.category === cat).length;
+  }
+
+  categoryIcon(cat: string | null | undefined): string {
+    const icons: Record<string, string> = {
+      ingredients: '🥬', beverages: '🥤', packaging: '📦', cleaning: '🧼', equipment: '🔧', other: '🏷️',
+    };
+    return icons[cat ?? ''] ?? '🏷️';
+  }
+
+  /** ok / low / out: drives the colour of the card and the gauge. */
+  stockTone(item: InventoryItem): 'ok' | 'low' | 'out' {
+    if ((item.current_quantity || 0) <= 0) return 'out';
+    return item.is_low_stock ? 'low' : 'ok';
+  }
+
+  /** Gauge: the bar is full at twice the minimum stock (or at any stock when no minimum is set). */
+  stockPercent(item: InventoryItem): number {
+    const q = Math.max(0, item.current_quantity || 0);
+    const min = item.reorder_level || 0;
+    if (min <= 0) return q > 0 ? 100 : 0;
+    return Math.min(100, (q / (min * 2)) * 100);
+  }
+
+  reorderMarkPercent(_item: InventoryItem): number {
+    return 50; // the minimum is always drawn at half of the gauge
+  }
+
+  unitOptions(): AppSelectOption[] {
+    return this.units.map((u) => ({ value: u, label: this.translate.instant(this.unitKey(u)) }));
+  }
+
+  categoryOptions(): AppSelectOption[] {
+    return this.categories.map((c) => ({ value: c, label: this.categoryIcon(c) + ' ' + this.translate.instant(this.categoryKey(c)) }));
+  }
+
+  warehouseOptions(): AppSelectOption[] {
+    return this.warehouses().map((w) => ({
+      value: w.id,
+      label: w.name,
+      sub: w.is_default ? this.translate.instant('INVENTORY.WAREHOUSES.DEFAULT_BADGE') : undefined,
+    }));
+  }
 
   /** Arrow step: whole numbers for countable/small units, decimals for large ones. */
   stepFor(unit: string | null | undefined): number {
