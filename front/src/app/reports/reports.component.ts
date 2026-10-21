@@ -31,6 +31,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LanguageService } from '../services/language.service';
 import { intlLocaleFromTranslate } from '../shared/intl-locale';
 import { formatMoneyCents } from '../shared/currency-symbol';
+import { AppDatePickerComponent } from '../shared/app-date-picker.component';
 import { getCategoryLabel } from '../shared/product-category-label.util';
 
 export type ReportsDatePreset =
@@ -43,7 +44,7 @@ export type ReportsDatePreset =
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, FormsModule, SidebarComponent, TranslateModule],
+  imports: [CommonModule, FormsModule, SidebarComponent, TranslateModule, AppDatePickerComponent],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.scss',
 })
@@ -528,6 +529,24 @@ export class ReportsComponent implements OnInit {
   }
 
   /** `datetime-local` value in the user’s local timezone from an API ISO timestamp. */
+  /** Net length of the session being corrected, from the two pickers. */
+  adjustPreview = computed(() => {
+    const start = new Date(this.workSessionAdjustStartedLocal());
+    const endRaw = this.workSessionAdjustEndedLocal();
+    if (!endRaw || isNaN(start.getTime())) return null;
+    const end = new Date(endRaw);
+    if (isNaN(end.getTime())) return null;
+    const mins = Math.round((end.getTime() - start.getTime()) / 60000);
+    const h = Math.floor(Math.abs(mins) / 60);
+    const m = Math.abs(mins) % 60;
+    return { bad: mins <= 0, text: `${h} h ${String(m).padStart(2, '0')} min` };
+  });
+
+  initialsOf(name: string): string {
+    const parts = (name || '?').trim().split(/\s+/);
+    return ((parts[0]?.[0] ?? '?') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+  }
+
   private isoToDatetimeLocalValue(iso: string): string {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return '';

@@ -14,6 +14,7 @@
   box-shadow: 0 18px 34px -22px var(--color-primary), inset 0 1px 0 rgba(255, 255, 255, 0.35);
   overflow: hidden;
   isolation: isolate;
+  z-index: 5;
 
   // Fine dot texture + concentric rings, purely decorative
   &::before {
@@ -76,17 +77,6 @@
       color: rgba(255, 255, 255, 0.85);
     }
 
-    input[type='date'] {
-      min-height: 42px;
-      padding: 0 16px;
-      border: 0;
-      border-radius: 999px;
-      background: #fff;
-      color: #1c1917;
-      font: inherit;
-      font-size: 0.9rem;
-      font-weight: 700;
-    }
   }
 
   .export-buttons {
@@ -265,14 +255,6 @@
       color: var(--color-text-muted);
     }
 
-    input[type='month'] {
-      padding: var(--space-2) var(--space-3);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      background: var(--color-bg);
-      color: var(--color-text);
-      font-size: 0.875rem;
-    }
   }
 
   .attendance-excel-staff {
@@ -937,70 +919,194 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-4);
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(3px);
 }
 
 .reports-modal-panel {
   position: relative;
   z-index: 1001;
   width: 100%;
-  max-width: 420px;
-  max-height: min(90vh, 640px);
+  max-width: 460px;
+  max-height: min(92vh, 780px);
   overflow: auto;
-  padding: var(--space-5);
   background: var(--color-surface, #fff);
   color: var(--color-text);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  border-radius: 28px;
+  box-shadow: 0 40px 80px -24px rgba(0, 0, 0, 0.55);
+  animation: wsa-in 0.18s ease-out;
+
+  @media (prefers-reduced-motion: reduce) { animation: none; }
 }
 
+@keyframes wsa-in { from { opacity: 0; transform: translateY(10px) scale(0.98); } }
+
+.wsa-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 24px;
+  color: #fff;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 70%, #000));
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -50px;
+    top: -80px;
+    width: 230px;
+    height: 230px;
+    border-radius: 50%;
+    background: radial-gradient(circle, transparent 38%, rgba(255, 255, 255, 0.16) 39%, transparent 40%, transparent 54%, rgba(255, 255, 255, 0.12) 55%, transparent 56%);
+    pointer-events: none;
+  }
+}
+
+.wsa-ico {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.wsa-head-text { position: relative; z-index: 1; min-width: 0; }
+
 .reports-modal-title {
-  margin: 0 0 var(--space-2);
-  font-size: 1.125rem;
-  font-weight: 600;
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff;
 }
 
 .reports-modal-staff {
-  margin: 0 0 var(--space-4);
-  font-size: 0.9375rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
 }
 
-.reports-modal-error {
-  margin-bottom: var(--space-3);
+.wsa-avatar {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--color-primary);
+  font-size: 0.7rem;
+  font-weight: 800;
 }
+
+.wsa-body { padding: 20px 24px 24px; }
+
+.reports-modal-error { margin-bottom: var(--space-3); }
+
+.wsa-was {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-bottom: 18px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--color-bg);
+  border: 1px dashed var(--color-border);
+  font-size: 0.85rem;
+
+  b { font-variant-numeric: tabular-nums; }
+}
+
+.wsa-was-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.wsa-arrow { color: var(--color-primary); font-weight: 800; }
 
 .reports-modal-field {
+  --tone: var(--color-primary);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  margin-bottom: var(--space-4);
+  gap: 6px;
+  margin-bottom: 16px;
 
   label {
-    font-size: 0.75rem;
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     color: var(--color-text-muted);
   }
 
-  input[type='datetime-local'],
   textarea {
-    padding: var(--space-2) var(--space-3);
+    padding: 12px 14px;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    border-radius: 16px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 0.875rem;
+    font-size: 0.9rem;
     font-family: inherit;
+    resize: vertical;
+    min-height: 4.5rem;
+
+    &:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
   }
 
-  textarea {
-    resize: vertical;
-    min-height: 4rem;
-  }
+  &.wsa-in { --tone: #059669; }
+  &.wsa-out { --tone: #dc2626; }
+}
+
+.wsa-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tone);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--tone) 22%, transparent);
 }
 
 .reports-modal-hint {
   margin: 0;
   font-size: 0.75rem;
+}
+
+.wsa-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: #1c1917;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  strong {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &.bad strong { color: #f87171; }
 }
 
 .reports-modal-actions {
@@ -1009,7 +1115,21 @@
   justify-content: flex-end;
   gap: var(--space-2);
   margin-top: var(--space-2);
+
+  .btn {
+    min-height: 44px;
+    padding: 0 24px;
+    font-weight: 800;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 70%, #000));
+    box-shadow: 0 12px 20px -12px var(--color-primary);
+  }
 }
+
+.rp-dp { width: 230px; }
+.rp-dp-month { width: 220px; }
 
 .rk-grid {
   display: grid;

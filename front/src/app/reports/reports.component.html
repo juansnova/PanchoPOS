@@ -8,11 +8,11 @@
     <div class="header-actions">
       <div class="date-range">
         <label>{{ 'REPORTS.FROM' | translate }}</label>
-        <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)" />
+        <app-date-picker class="rp-dp" [compact]="true" [pill]="true" [clearable]="false" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)" />
       </div>
       <div class="date-range">
         <label>{{ 'REPORTS.TO' | translate }}</label>
-        <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event)" />
+        <app-date-picker class="rp-dp" [compact]="true" [pill]="true" [clearable]="false" [min]="fromDate()" [ngModel]="toDate()" (ngModelChange)="toDate.set($event)" />
       </div>
       <button class="btn btn-primary" (click)="loadReport()" [disabled]="loading()">
         {{ loading() ? ('REPORTS.LOADING' | translate) : ('REPORTS.REFRESH' | translate) }}
@@ -393,10 +393,11 @@
         <p class="muted work-sessions-hint">{{ 'REPORTS.ATTENDANCE_EXCEL_HINT' | translate }}</p>
         <div class="attendance-excel-toolbar">
           <div class="attendance-excel-month">
-            <label for="attendance-excel-month">{{ 'REPORTS.ATTENDANCE_EXCEL_MONTH' | translate }}</label>
-            <input
-              id="attendance-excel-month"
-              type="month"
+            <label>{{ 'REPORTS.ATTENDANCE_EXCEL_MONTH' | translate }}</label>
+            <app-date-picker
+              class="rp-dp rp-dp-month"
+              mode="month"
+              [clearable]="false"
               [ngModel]="attendanceExcelMonth()"
               (ngModelChange)="attendanceExcelMonth.set($event); attendanceExcelError.set(null)"
             />
@@ -591,33 +592,61 @@
   @if (workSessionAdjustOpen()) {
     <div class="reports-modal-overlay" role="presentation">
     <div class="reports-modal-panel" role="dialog" aria-modal="true" [attr.aria-label]="'REPORTS.WORK_SESSION_ADJUST_TITLE' | translate" (click)="$event.stopPropagation()">
-      <h3 class="reports-modal-title">{{ 'REPORTS.WORK_SESSION_ADJUST_TITLE' | translate }}</h3>
-      @if (workSessionAdjustTarget(); as adjRow) {
-        <p class="muted reports-modal-staff">{{ adjRow.user_name }}</p>
-      }
-      @if (workSessionAdjustError()) {
-        <div class="error-banner reports-modal-error">{{ workSessionAdjustError() }}</div>
-      }
-      <div class="reports-modal-field">
-        <label for="ws-adjust-start">{{ 'REPORTS.WORK_SESSION_ADJUST_START' | translate }}</label>
-        <input id="ws-adjust-start" type="datetime-local" [ngModel]="workSessionAdjustStartedLocal()" (ngModelChange)="workSessionAdjustStartedLocal.set($event)" />
+      <div class="wsa-head">
+        <span class="wsa-ico" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+        </span>
+        <div class="wsa-head-text">
+          <h3 class="reports-modal-title">{{ 'REPORTS.WORK_SESSION_ADJUST_TITLE' | translate }}</h3>
+          @if (workSessionAdjustTarget(); as adjRow) {
+            <p class="reports-modal-staff"><span class="wsa-avatar">{{ initialsOf(adjRow.user_name) }}</span>{{ adjRow.user_name }}</p>
+          }
+        </div>
       </div>
-      <div class="reports-modal-field">
-        <label for="ws-adjust-end">{{ 'REPORTS.WORK_SESSION_ADJUST_END' | translate }}</label>
-        <input id="ws-adjust-end" type="datetime-local" [ngModel]="workSessionAdjustEndedLocal()" (ngModelChange)="workSessionAdjustEndedLocal.set($event)" />
-        <p class="muted reports-modal-hint">{{ 'REPORTS.WORK_SESSION_ADJUST_END_HINT' | translate }}</p>
-      </div>
-      <div class="reports-modal-field">
-        <label for="ws-adjust-note">{{ 'REPORTS.WORK_SESSION_ADJUST_NOTE' | translate }}</label>
-        <textarea id="ws-adjust-note" rows="3" [ngModel]="workSessionAdjustNote()" (ngModelChange)="workSessionAdjustNote.set($event)"></textarea>
-      </div>
-      <div class="reports-modal-actions">
-        <button type="button" class="btn btn-secondary" (click)="closeWorkSessionAdjust()" [disabled]="workSessionAdjustSaving()">
-          {{ 'COMMON.CANCEL' | translate }}
-        </button>
-        <button type="button" class="btn btn-primary" (click)="submitWorkSessionAdjust()" [disabled]="workSessionAdjustSaving()">
-          {{ workSessionAdjustSaving() ? ('COMMON.SAVING' | translate) : ('REPORTS.WORK_SESSION_ADJUST_SAVE' | translate) }}
-        </button>
+
+      <div class="wsa-body">
+        @if (workSessionAdjustError()) {
+          <div class="error-banner reports-modal-error">{{ workSessionAdjustError() }}</div>
+        }
+
+        @if (workSessionAdjustTarget(); as t) {
+          <div class="wsa-was">
+            <span class="wsa-was-label">{{ 'REPORTS.WORK_SESSION_ADJUST_REGISTERED' | translate }}</span>
+            <b>{{ formatWorkSessionDt(t.started_at) }}</b>
+            <span class="wsa-arrow">→</span>
+            <b>{{ t.ended_at ? formatWorkSessionDt(t.ended_at) : '—' }}</b>
+          </div>
+        }
+
+        <div class="reports-modal-field wsa-in">
+          <label><span class="wsa-dot"></span>{{ 'REPORTS.WORK_SESSION_ADJUST_START' | translate }}</label>
+          <app-date-picker mode="datetime" [clearable]="false" [ngModel]="workSessionAdjustStartedLocal()" (ngModelChange)="workSessionAdjustStartedLocal.set($event)" />
+        </div>
+        <div class="reports-modal-field wsa-out">
+          <label><span class="wsa-dot"></span>{{ 'REPORTS.WORK_SESSION_ADJUST_END' | translate }}</label>
+          <app-date-picker mode="datetime" [ngModel]="workSessionAdjustEndedLocal()" (ngModelChange)="workSessionAdjustEndedLocal.set($event || '')" />
+          <p class="muted reports-modal-hint">{{ 'REPORTS.WORK_SESSION_ADJUST_END_HINT' | translate }}</p>
+        </div>
+
+        @if (adjustPreview(); as pv) {
+          <div class="wsa-total" [class.bad]="pv.bad">
+            <span>{{ 'REPORTS.WORK_SESSION_ADJUST_TOTAL' | translate }}</span>
+            <strong>{{ pv.bad ? '—' : pv.text }}</strong>
+          </div>
+        }
+
+        <div class="reports-modal-field">
+          <label for="ws-adjust-note">{{ 'REPORTS.WORK_SESSION_ADJUST_NOTE' | translate }}</label>
+          <textarea id="ws-adjust-note" rows="3" [ngModel]="workSessionAdjustNote()" (ngModelChange)="workSessionAdjustNote.set($event)"></textarea>
+        </div>
+        <div class="reports-modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeWorkSessionAdjust()" [disabled]="workSessionAdjustSaving()">
+            {{ 'COMMON.CANCEL' | translate }}
+          </button>
+          <button type="button" class="btn btn-primary" (click)="submitWorkSessionAdjust()" [disabled]="workSessionAdjustSaving()">
+            {{ workSessionAdjustSaving() ? ('COMMON.SAVING' | translate) : ('REPORTS.WORK_SESSION_ADJUST_SAVE' | translate) }}
+          </button>
+        </div>
       </div>
     </div>
     </div>
