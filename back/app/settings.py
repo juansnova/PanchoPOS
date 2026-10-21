@@ -225,6 +225,14 @@ class Settings(BaseSettings):
         validation_alias="DIAN_PROVIDER_PASSWORD",
         description="Factus account password (never commit real values)",
     )
+    dian_sandbox_client_id: str = Field(default="", validation_alias="DIAN_SANDBOX_CLIENT_ID")
+    dian_sandbox_client_secret: str = Field(default="", validation_alias="DIAN_SANDBOX_CLIENT_SECRET")
+    dian_sandbox_username: str = Field(default="", validation_alias="DIAN_SANDBOX_USERNAME")
+    dian_sandbox_password: str = Field(
+        default="",
+        validation_alias="DIAN_SANDBOX_PASSWORD",
+        description="Optional Factus sandbox credentials used for dian_mode=test; DIAN_PROVIDER_* are live",
+    )
     dian_live_unlock: bool = Field(
         default=False,
         validation_alias="DIAN_LIVE_UNLOCK",

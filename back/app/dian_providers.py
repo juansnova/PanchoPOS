@@ -52,6 +52,18 @@ def _password() -> str:
     return (getattr(settings, "dian_provider_password", None) or "").strip()
 
 
+def _credentials(mode: str) -> tuple[str, str, str, str]:
+    """(client_id, client_secret, username, password). Test mode prefers DIAN_SANDBOX_*."""
+    if mode != "live":
+        sandbox = tuple(
+            (getattr(settings, f"dian_sandbox_{k}", None) or "").strip()
+            for k in ("client_id", "client_secret", "username", "password")
+        )
+        if all(sandbox):
+            return sandbox  # type: ignore[return-value]
+    return _client_id(), _client_secret(), _username(), _password()
+
+
 def factus_base_url(*, live: bool) -> str:
     configured = (getattr(settings, "dian_provider_base_url", None) or "").strip().rstrip("/")
     if configured:
@@ -126,7 +138,7 @@ def _submit_factus(
     mode: str,
 ) -> dict[str, Any]:
     """Map POS order → Factus `POST /bills/validate` (invoice) create call."""
-    if not (_client_id() and _client_secret() and _username() and _password()):
+    if not all(_credentials(mode)):
         return {
             "status": "provider_error",
             "channel": "factus",
@@ -344,15 +356,16 @@ def _factus_auth(base: str, *, mode: str) -> str | None:
     if root.endswith("/v2"):
         root = root[: -len("/v2")]
     url = f"{root}/oauth/token"
+    creds = _credentials(mode)
     try:
         resp = requests.post(
             url,
             json={
                 "grant_type": "password",
-                "client_id": _client_id(),
-                "client_secret": _client_secret(),
-                "username": _username(),
-                "password": _password(),
+                "client_id": creds[0],
+                "client_secret": creds[1],
+                "username": creds[2],
+                "password": creds[3],
             },
             headers={"Content-Type": "application/json", "Accept": "application/json"},
             timeout=12,
