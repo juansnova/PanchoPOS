@@ -257,7 +257,7 @@
       }
 
       @if (step() === 'browse' && !menuLoading() && categories().length > 0) {
-        <section class="about-section" aria-labelledby="about-title">
+        <section class="about-section" aria-labelledby="about-title" data-testid="public-menu-contact-footer">
           <header class="about-head">
             <p class="about-eyebrow"><i></i>{{ 'MENU.ABOUT_EYEBROW' | translate }}</p>
             <h2 id="about-title" class="about-title">{{ 'MENU.ABOUT_TITLE' | translate }}</h2>
@@ -298,15 +298,21 @@
                 </div>
               </div>
               }
+              @if (googleMapsUrl() || openstreetmapUrl()) {
+              <p class="about-maps">
+                @if (googleMapsUrl(); as gu) { <a [href]="gu" target="_blank" rel="noopener noreferrer">{{ 'BOOK.OPEN_IN_GOOGLE_MAPS' | translate }}</a> }
+                @if (openstreetmapUrl(); as ou) { <a [href]="ou" target="_blank" rel="noopener noreferrer">{{ 'BOOK.OPEN_IN_OPENSTREETMAP' | translate }}</a> }
+              </p>
+              }
               <div class="about-actions">
-                @if (mapsUrl(); as mu) {
-                <a class="about-btn about-btn-main" [href]="mu" target="_blank" rel="noopener noreferrer">{{ 'MENU.HOW_TO_GET' | translate }} <i>→</i></a>
-                }
                 @if (tenant()?.phone) {
-                <a class="about-btn" [href]="'tel:' + tenant()!.phone">{{ 'MENU.CALL' | translate }}</a>
+                <a class="about-btn about-btn-main" [href]="'tel:' + tenant()!.phone">{{ 'MENU.CALL' | translate }} · {{ tenant()!.phone }}</a>
                 }
                 @if (tenant()?.whatsapp) {
                 <a class="about-btn about-btn-wa" [href]="getWhatsAppUrl(tenant()?.whatsapp ?? '')" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                }
+                @if (tenant()?.email?.includes('@') && tenant()?.email?.includes('.')) {
+                <a class="about-btn" [href]="'mailto:' + tenant()!.email">{{ tenant()!.email }}</a>
                 }
               </div>
               @if (socials().length > 0) {
@@ -442,90 +448,6 @@
             {{ 'DELIVERY_CHECKOUT.ORDER_AGAIN' | translate }}
           </button>
         </div>
-      }
-
-      @if (
-        step() === 'browse' &&
-        (tenant()?.phone || tenant()?.email || tenant()?.whatsapp || tenant()?.address?.trim() || googleMapsUrl() || openstreetmapUrl() || facebookUrl() || instagramUrl())
-      ) {
-        <footer class="public-menu-contact-footer" data-testid="public-menu-contact-footer">
-          <h2 class="public-menu-contact-title">{{ 'BOOK.CONTACT_RESTAURANT' | translate }}</h2>
-          @if (tenant()?.phone || tenant()?.email || tenant()?.whatsapp) {
-            <div class="restaurant-contact">
-              @if (tenant()?.phone) {
-                <a [href]="'tel:' + tenant()!.phone" class="contact-link">{{ tenant()!.phone }}</a>
-              }
-              @if (tenant()?.phone && (tenant()?.email || tenant()?.whatsapp)) {
-                <span class="contact-sep">·</span>
-              }
-              @if (tenant()?.whatsapp) {
-                <a
-                  [href]="getWhatsAppUrl(tenant()?.whatsapp ?? '')"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="contact-link contact-link-whatsapp"
-                >
-                  <svg class="whatsapp-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                  </svg>
-                  <span>{{ 'SETTINGS.WHATSAPP' | translate }}</span>
-                </a>
-              }
-              @if (tenant()?.whatsapp && tenant()?.email) {
-                <span class="contact-sep">·</span>
-              }
-              @if (tenant()?.email) {
-                <a [href]="'mailto:' + tenant()!.email" class="contact-link">{{ tenant()!.email }}</a>
-              }
-            </div>
-          }
-          @if (facebookUrl() || instagramUrl()) {
-            <div class="restaurant-social-links">
-              @if (facebookUrl()) {
-                <a [href]="facebookUrl()!" target="_blank" rel="noopener noreferrer" class="contact-link contact-link-social" [attr.aria-label]="'BOOK.FACEBOOK' | translate">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.89h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94Z"/>
-                  </svg>
-                  <span>{{ 'BOOK.FACEBOOK' | translate }}</span>
-                </a>
-              }
-              @if (instagramUrl()) {
-                <a [href]="instagramUrl()!" target="_blank" rel="noopener noreferrer" class="contact-link contact-link-social" [attr.aria-label]="'BOOK.INSTAGRAM' | translate">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <rect x="3" y="3" width="18" height="18" rx="5" ry="5"/>
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37Z"/>
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-                  </svg>
-                  <span>{{ 'BOOK.INSTAGRAM' | translate }}</span>
-                </a>
-              }
-            </div>
-          }
-          @if (tenant()?.address?.trim() || googleMapsUrl() || openstreetmapUrl()) {
-            <div class="restaurant-location">
-              @if (tenant()?.address?.trim()) {
-                <p class="restaurant-address">
-                  <span class="oh-label">{{ 'BOOK.ADDRESS' | translate }}:</span>
-                  {{ tenant()!.address }}
-                </p>
-              }
-              @if (googleMapsUrl() || openstreetmapUrl()) {
-                <div class="book-maps-actions">
-                  @if (googleMapsUrl()) {
-                    <a [href]="googleMapsUrl()!" target="_blank" rel="noopener noreferrer" class="btn btn-secondary book-maps-btn">
-                      {{ 'BOOK.OPEN_IN_GOOGLE_MAPS' | translate }}
-                    </a>
-                  }
-                  @if (openstreetmapUrl()) {
-                    <a [href]="openstreetmapUrl()!" target="_blank" rel="noopener noreferrer" class="btn btn-secondary book-maps-btn">
-                      {{ 'BOOK.OPEN_IN_OPENSTREETMAP' | translate }}
-                    </a>
-                  }
-                </div>
-              }
-            </div>
-          }
-        </footer>
       }
 
       <div class="public-menu-footer-actions">

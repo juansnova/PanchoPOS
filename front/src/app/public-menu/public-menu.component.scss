@@ -1302,6 +1302,8 @@
 .about-addr b { display: block; margin-top: 2px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.1rem; font-weight: 500; line-height: 1.35; }
 .about-ico { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 16px; color: #fff; background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, #000)); box-shadow: 0 14px 20px -12px var(--color-primary); }
 
+.about-maps { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: -6px 0 0 60px; font-size: 0.8rem; font-weight: 700; a { color: var(--color-primary); text-decoration: none; border-bottom: 1px dashed currentColor; &:hover { border-bottom-style: solid; } } }
+.about-btn { max-width: 100%; overflow-wrap: anywhere; }
 .about-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .about-btn {
