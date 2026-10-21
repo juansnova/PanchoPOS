@@ -301,9 +301,8 @@ const ICON: Record<string, string> = {
       gap: 14px;
       padding: 12px 16px;
       border-radius: 18px;
-      border: 1px solid var(--color-border);
-      border-left: 5px solid var(--k);
-      background: var(--color-surface, #fff);
+      border: 1px solid color-mix(in srgb, var(--k) 45%, var(--color-border));
+      background: linear-gradient(100deg, color-mix(in srgb, var(--k) 8%, var(--color-surface, #fff)), var(--color-surface, #fff) 45%);
     }
     .pr-job[data-s='pending'] { --k: #f59e0b; }
     .pr-job[data-s='claimed'] { --k: #3b82f6; }
