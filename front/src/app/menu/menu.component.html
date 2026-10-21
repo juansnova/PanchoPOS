@@ -627,12 +627,12 @@
     <!-- Collapsed state -->
     <div class="cart-summary" (click)="cartExpanded.set(!cartExpanded())">
       <div class="cart-summary-left">
-        <div class="cart-icon-badge">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="9" cy="21" r="1" />
-            <circle cx="20" cy="21" r="1" />
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-          </svg>
+        <div class="cart-thumbs" aria-hidden="true">
+          @for (it of cart().slice(0, 3); track getCartLineKey(it)) {
+          <span class="cart-thumb">
+            @if (getProductImageUrl(it.product); as img) { <img [src]="img" alt="" /> } @else { <b>{{ it.product.name.charAt(0) }}</b> }
+          </span>
+          }
           <span class="cart-count-badge">{{ getTotalItems() }}</span>
         </div>
         <div class="cart-summary-text-block">
@@ -646,7 +646,7 @@
         class="cart-summary-cta"
         (click)="openCartCheckout($event)"
       >
-        {{ 'MENU.CHECKOUT' | translate }}
+        {{ 'MENU.CHECKOUT' | translate }}<i aria-hidden="true">→</i>
       </button>
       } @else {
       <svg class="cart-chevron expanded" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -659,6 +659,10 @@
     <!-- Expanded state -->
     @if (cartExpanded()) {
     <div class="cart-expanded-content">
+      <header class="cart-head">
+        <p class="cart-head-eyebrow"><i></i>{{ 'MENU.YOUR_ORDER_EYEBROW' | translate }}</p>
+        <h3 class="cart-head-title">{{ 'MENU.YOUR_ORDER_TITLE' | translate }}</h3>
+      </header>
       @if (sharedCartEnabled()) {
       <p class="cart-shared-hint">{{ 'MENU.SHARED_CART_HINT' | translate }}</p>
       }
@@ -666,6 +670,9 @@
         @for (item of cart(); track getCartLineKey(item)) {
         <div class="cart-item-card" [class.just-added]="isCartLineJustAdded(item)" [class.cart-item-other]="!isMyCartItem(item)">
           <div class="cart-item-main">
+          <span class="cart-item-thumb" aria-hidden="true">
+            @if (getProductImageUrl(item.product); as img) { <img [src]="img" alt="" /> } @else { <b>{{ item.product.name.charAt(0) }}</b> }
+          </span>
           <div class="cart-item-info">
             <span class="cart-item-name">{{ item.product.name }}</span>
             @if (sharedCartEnabled() && item.customerName) {
@@ -752,7 +759,7 @@
           {{ 'COMMON.LOADING' | translate }}
         </span>
         } @else {
-        {{ placedOrders().length > 0 ? ('MENU.ADD_TO_ORDER' | translate) : ('MENU.PLACE_ORDER' | translate) }}
+        {{ placedOrders().length > 0 ? ('MENU.ADD_TO_ORDER' | translate) : ('MENU.PLACE_ORDER' | translate) }}<i aria-hidden="true">→</i>
         }
       </button>
     </div>
