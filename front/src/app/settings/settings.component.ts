@@ -657,18 +657,50 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                   <div class="st-card">
                   <h3 class="st-card-title">{{ 'SETTINGS.TRANSFER_PAYMENTS_TITLE' | translate }}</h3>
                   <p class="st-card-desc">{{ 'SETTINGS.TRANSFER_PAYMENTS_HINT' | translate }}</p>
-                  <div class="form-group">
-                    <label for="payment_nequi_number">{{ 'SETTINGS.PAYMENT_NEQUI_NUMBER' | translate }}</label>
-                    <input type="tel" id="payment_nequi_number" [(ngModel)]="formData.payment_nequi_number" name="payment_nequi_number" maxlength="40" class="input-medium" data-testid="settings-payment-nequi" />
+                  <div class="tr-grid">
+                    <div class="tr-tile tr-nequi" [class.on]="!!(formData.payment_nequi_number || '').trim()">
+                      <div class="tr-head">
+                        <span class="tr-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span>
+                        <label for="payment_nequi_number">{{ 'SETTINGS.PAYMENT_NEQUI_NUMBER' | translate }}</label>
+                        <span class="tr-state">{{ ((formData.payment_nequi_number || '').trim() ? 'SETTINGS.TR_ACTIVE' : 'SETTINGS.TR_INACTIVE') | translate }}</span>
+                      </div>
+                      <input type="tel" id="payment_nequi_number" class="tr-input" [(ngModel)]="formData.payment_nequi_number" name="payment_nequi_number" maxlength="40" placeholder="300 000 0000" data-testid="settings-payment-nequi" />
+                    </div>
+                    <div class="tr-tile tr-llave" [class.on]="!!(formData.payment_llave || '').trim()">
+                      <div class="tr-head">
+                        <span class="tr-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg></span>
+                        <label for="payment_llave">{{ 'SETTINGS.PAYMENT_LLAVE' | translate }}</label>
+                        <span class="tr-state">{{ ((formData.payment_llave || '').trim() ? 'SETTINGS.TR_ACTIVE' : 'SETTINGS.TR_INACTIVE') | translate }}</span>
+                      </div>
+                      <input type="text" id="payment_llave" class="tr-input" [(ngModel)]="formData.payment_llave" name="payment_llave" maxlength="120" placeholder="@llave" data-testid="settings-payment-llave" />
+                      <p class="tr-hint">{{ 'SETTINGS.PAYMENT_LLAVE_HINT' | translate }}</p>
+                    </div>
+                    <div class="tr-tile tr-holder tr-wide" [class.on]="!!(formData.payment_account_holder || '').trim()">
+                      <div class="tr-head">
+                        <span class="tr-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                        <label for="payment_account_holder">{{ 'SETTINGS.PAYMENT_ACCOUNT_HOLDER' | translate }}</label>
+                      </div>
+                      <input type="text" id="payment_account_holder" class="tr-input tr-input-text" [(ngModel)]="formData.payment_account_holder" name="payment_account_holder" maxlength="120" />
+                      <p class="tr-hint">{{ 'SETTINGS.TR_HOLDER_HINT' | translate }}</p>
+                    </div>
                   </div>
-                  <div class="form-group">
-                    <label for="payment_llave">{{ 'SETTINGS.PAYMENT_LLAVE' | translate }}</label>
-                    <input type="text" id="payment_llave" [(ngModel)]="formData.payment_llave" name="payment_llave" maxlength="120" class="input-medium" data-testid="settings-payment-llave" />
-                    <p class="hint">{{ 'SETTINGS.PAYMENT_LLAVE_HINT' | translate }}</p>
-                  </div>
-                  <div class="form-group">
-                    <label for="payment_account_holder">{{ 'SETTINGS.PAYMENT_ACCOUNT_HOLDER' | translate }}</label>
-                    <input type="text" id="payment_account_holder" [(ngModel)]="formData.payment_account_holder" name="payment_account_holder" maxlength="120" class="input-medium" />
+
+                  <div class="tr-preview" aria-live="polite">
+                    <span class="tr-preview-label">{{ 'SETTINGS.TR_PREVIEW' | translate }}</span>
+                    <div class="tr-preview-chips">
+                      @if ((formData.payment_nequi_number || '').trim()) {
+                        <span class="tr-chip tr-chip-nequi"><b>Nequi</b>{{ formData.payment_nequi_number }}</span>
+                      }
+                      @if ((formData.payment_llave || '').trim()) {
+                        <span class="tr-chip tr-chip-llave"><b>Llave</b>{{ formData.payment_llave }}</span>
+                      }
+                      @if (!(formData.payment_nequi_number || '').trim() && !(formData.payment_llave || '').trim()) {
+                        <span class="tr-preview-empty">{{ 'SETTINGS.TR_PREVIEW_EMPTY' | translate }}</span>
+                      }
+                    </div>
+                    @if ((formData.payment_account_holder || '').trim()) {
+                      <span class="tr-preview-holder">{{ 'SETTINGS.PAYMENT_ACCOUNT_HOLDER' | translate }}: <b>{{ formData.payment_account_holder }}</b></span>
+                    }
                   </div>
                   </div>
                   <div class="st-card bk-wrap">
@@ -2171,6 +2203,38 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .st-fixed-sm .st-fixed-name { font-family: inherit; font-size: .95rem; font-style: normal; font-weight: 600; color: var(--color-text-muted); }
     .st-fixed-sm .st-fixed-chip { padding: 2px 8px; font-size: .6rem; color: var(--color-text-muted); background: #e9e2d8; }
     .st-fixed-chip { flex: none; padding: 4px 12px; border-radius: 999px; font-size: .66rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, #fff); }
+    /* Transferencias */
+    .tr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .tr-wide { grid-column: 1 / -1; }
+    @media (max-width: 640px) { .tr-grid { grid-template-columns: minmax(0, 1fr); } }
+    .tr-tile { --ac: 25; display: flex; flex-direction: column; gap: 10px; padding: 16px 16px 14px; border-radius: 24px; border: 1px solid var(--color-border); background: #fffdfa; transition: border-color .2s, background .2s, box-shadow .2s; }
+    .tr-nequi { --ac: 285; }
+    .tr-llave { --ac: 165; }
+    .tr-holder { --ac: 25; }
+    .tr-tile.on { border-color: hsl(var(--ac) 55% 70%); background: linear-gradient(160deg, hsl(var(--ac) 80% 96%), #fffdfa 65%); box-shadow: 0 22px 34px -30px hsl(var(--ac) 50% 30% / .65); }
+    .tr-head { display: flex; align-items: center; gap: 12px; }
+    .tr-ico { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; color: #a39a90; background: #efe9df; transition: background .2s, color .2s; }
+    .tr-tile.on .tr-ico { color: hsl(var(--ac) 55% 28%); background: hsl(var(--ac) 70% 86%); box-shadow: inset 0 0 0 2px hsl(var(--ac) 65% 76%); }
+    .settings-form .tr-head label { flex: 1; min-width: 0; margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 1.12rem; font-style: italic; font-weight: 500; letter-spacing: -.01em; text-transform: none; color: var(--color-text); }
+    .tr-state { flex: none; padding: 3px 10px; border-radius: 999px; font-size: .62rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #8a817a; background: #ece5da; }
+    .tr-tile.on .tr-state { color: #166534; background: #dcfce7; }
+    .settings-form .tr-input { width: 100%; min-height: 0; padding: 8px 0; border: 0; border-bottom: 2px dashed var(--color-border); border-radius: 0; background: transparent; box-shadow: none; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 1.25rem; font-weight: 700; letter-spacing: .06em; color: var(--color-text); }
+    .settings-form .tr-input-text { font-family: inherit; font-size: 1.05rem; letter-spacing: 0; }
+    .settings-form .tr-input::placeholder { color: #c4baae; font-weight: 600; }
+    .settings-form .tr-input:hover { border-bottom-color: #d9cfc2; }
+    .settings-form .tr-input:focus { outline: none; box-shadow: none; border-bottom: 2px solid hsl(var(--ac) 60% 45%); }
+    .tr-hint { margin: 0; font-size: .76rem; line-height: 1.4; color: var(--color-text-muted); }
+    .tr-preview { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; padding: 12px 16px; margin-bottom: 14px; border-radius: 20px; border: 1px dashed color-mix(in srgb, var(--color-primary) 40%, var(--color-border)); background: color-mix(in srgb, var(--color-primary) 4%, #fffdfa); }
+    .tr-preview-label { font-size: .62rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--color-primary); }
+    .tr-preview-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tr-chip { display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px 5px 6px; border-radius: 999px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: .86rem; font-weight: 700; background: #fff; box-shadow: inset 0 0 0 1px var(--color-border); overflow-wrap: anywhere; }
+    .tr-chip b { padding: 3px 10px; border-radius: 999px; font-family: inherit; font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; }
+    .tr-chip-nequi b { color: hsl(285 55% 28%); background: hsl(285 70% 88%); }
+    .tr-chip-llave b { color: hsl(165 60% 22%); background: hsl(165 60% 84%); }
+    .tr-preview-empty { font-size: .84rem; font-weight: 600; color: var(--color-text-muted); }
+    .tr-preview-holder { margin-left: auto; font-size: .82rem; color: var(--color-text-muted); }
+    .tr-preview-holder b { color: var(--color-text); }
+
     /* Cuentas bancarias y QR */
     .bk-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px; }
     .bk-card { --h: 20; position: relative; display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 18px; border-radius: 24px; border: 1px solid var(--color-border); background: linear-gradient(160deg, hsl(var(--h) 75% 96%), #fffdfa 60%); box-shadow: 0 22px 34px -28px hsl(var(--h) 45% 30% / .6); overflow: hidden; }
