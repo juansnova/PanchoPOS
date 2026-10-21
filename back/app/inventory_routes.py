@@ -9,7 +9,7 @@ Complete REST API for inventory management:
 - Reporting endpoints
 """
 
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from typing import Annotated
 
@@ -334,6 +334,7 @@ def adjust_inventory_stock(
             notes=adjustment.notes,
             created_by_id=current_user.id,
             warehouse_id=adjustment.warehouse_id,
+            reason=(adjustment.reason or "").strip()[:24] or None,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -348,6 +349,130 @@ def adjust_inventory_stock(
         "transaction_id": transaction.id,
         "warehouse_id": transaction.warehouse_id,
     }
+
+
+@router.get("/waste-report")
+@admin_user_limit()
+def waste_report(
+    request: Request,
+    response: Response,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.INVENTORY_READ))],
+    session: Session = Depends(get_session),
+    from_date: date = Query(...),
+    to_date: date = Query(...),
+):
+    """Money lost to waste (spoilage, breakage...) in a date range, by reason and by item."""
+    start = datetime.combine(from_date, time.min, tzinfo=timezone.utc)
+    end = datetime.combine(to_date + timedelta(days=1), time.min, tzinfo=timezone.utc)
+    rows = session.exec(
+        select(InventoryTransaction, InventoryItem)
+        .join(InventoryItem, InventoryItem.id == InventoryTransaction.inventory_item_id)
+        .where(InventoryTransaction.tenant_id == current_user.tenant_id)
+        .where(InventoryTransaction.transaction_type == TransactionType.waste)
+        .where(InventoryTransaction.created_at >= start)
+        .where(InventoryTransaction.created_at < end)
+    ).all()
+    total = 0
+    by_reason: dict[str, dict] = {}
+    by_item: dict[int, dict] = {}
+    for tx, item in rows:
+        cost = int(tx.total_cost_cents or 0)
+        total += cost
+        key = tx.reason or "other"
+        r = by_reason.setdefault(key, {"reason": key, "count": 0, "cost_cents": 0})
+        r["count"] += 1
+        r["cost_cents"] += cost
+        i = by_item.setdefault(
+            item.id, {"item_id": item.id, "name": item.name, "unit": item.unit.value, "quantity": 0.0, "cost_cents": 0}
+        )
+        i["quantity"] += abs(float(tx.quantity))
+        i["cost_cents"] += cost
+    return {
+        "from_date": from_date.isoformat(),
+        "to_date": to_date.isoformat(),
+        "total_cost_cents": total,
+        "events": len(rows),
+        "by_reason": sorted(by_reason.values(), key=lambda x: -x["cost_cents"]),
+        "by_item": sorted(by_item.values(), key=lambda x: -x["cost_cents"])[:10],
+    }
+
+
+def _cost_points(session: Session, item_id: int, limit: int) -> list[dict]:
+    batches = session.exec(
+        select(InventoryBatch)
+        .where(InventoryBatch.inventory_item_id == item_id)
+        .order_by(InventoryBatch.received_at.desc(), InventoryBatch.id.desc())
+        .limit(limit + 1)
+    ).all()
+    points = []
+    for idx, b in enumerate(batches[:limit]):
+        prev = batches[idx + 1] if idx + 1 < len(batches) else None
+        change = None
+        if prev and prev.cost_per_unit_cents > 0:
+            change = round((b.cost_per_unit_cents - prev.cost_per_unit_cents) / prev.cost_per_unit_cents * 100, 1)
+        points.append(
+            {
+                "received_at": b.received_at.isoformat(),
+                "unit_cost_cents": b.cost_per_unit_cents,
+                "quantity": float(b.quantity_received),
+                "change_pct": change,
+            }
+        )
+    return points
+
+
+@router.get("/items/{item_id}/cost-history")
+@admin_user_limit()
+def item_cost_history(
+    request: Request,
+    response: Response,
+    item_id: int,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.INVENTORY_READ))],
+    session: Session = Depends(get_session),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Purchase cost of an item over time (one point per received batch, newest first)."""
+    item = session.get(InventoryItem, item_id)
+    if not item or item.tenant_id != current_user.tenant_id or item.is_deleted:
+        raise HTTPException(status_code=404, detail="Inventory item not found")
+    return {
+        "item_id": item.id,
+        "name": item.name,
+        "unit": item.unit.value,
+        "points": _cost_points(session, item.id, limit),
+    }
+
+
+@router.get("/cost-alerts")
+@admin_user_limit()
+def cost_alerts(
+    request: Request,
+    response: Response,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.INVENTORY_READ))],
+    session: Session = Depends(get_session),
+    threshold_pct: float = Query(10.0, ge=1, le=500),
+):
+    """Items whose latest purchase cost rose by at least threshold_pct versus the previous one."""
+    items = session.exec(
+        select(InventoryItem)
+        .where(InventoryItem.tenant_id == current_user.tenant_id)
+        .where(InventoryItem.is_deleted == False)
+    ).all()
+    alerts = []
+    for item in items:
+        pts = _cost_points(session, item.id, 2)
+        if pts and pts[0]["change_pct"] is not None and pts[0]["change_pct"] >= threshold_pct:
+            alerts.append(
+                {
+                    "item_id": item.id,
+                    "name": item.name,
+                    "unit": item.unit.value,
+                    "unit_cost_cents": pts[0]["unit_cost_cents"],
+                    "change_pct": pts[0]["change_pct"],
+                    "received_at": pts[0]["received_at"],
+                }
+            )
+    return sorted(alerts, key=lambda a: -a["change_pct"])
 
 
 # ============ WAREHOUSES ============

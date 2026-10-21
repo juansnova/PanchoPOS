@@ -488,6 +488,7 @@ def adjust_stock(
     notes: str | None = None,
     created_by_id: int | None = None,
     warehouse_id: int | None = None,
+    reason: str | None = None,
 ) -> InventoryTransaction:
     """
     Manual stock adjustment (add, subtract, or record waste).
@@ -537,6 +538,7 @@ def adjust_stock(
         total_cost_cents=int(abs(quantity_in_base) * inventory_item.average_cost_cents),
         balance_after=new_quantity,
         notes=notes,
+        reason=(reason or None),
         created_by_id=created_by_id,
     )
     session.add(transaction)

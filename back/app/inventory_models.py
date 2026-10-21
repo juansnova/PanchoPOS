@@ -516,6 +516,7 @@ class InventoryTransaction(TenantMixin, table=True):
     
     # Audit trail
     notes: str | None = None
+    reason: str | None = Field(default=None, max_length=24)  # waste/adjustment reason code
     created_by_id: int | None = Field(
         default=None,
         foreign_key="user.id"
@@ -571,6 +572,7 @@ class StockAdjustment(SQLModel):
     unit: UnitOfMeasure
     adjustment_type: TransactionType  # adjustment_add, adjustment_subtract, or waste
     notes: str | None = None
+    reason: str | None = None  # spoiled | broken | expired | theft | other
     warehouse_id: int | None = None  # Defaults to tenant default warehouse
 
 
