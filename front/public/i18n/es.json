@@ -896,6 +896,7 @@
     "FX_NO_DOC": "Sin documento",
     "FX_WARN_DOC": "Este cliente no tiene documento: la factura electrónica lo necesita.",
     "FX_WARN_EMAIL": "Sin correo no se le puede enviar la factura.",
+    "DIAN_ISSUE_SUB": "Se genera con los datos del cliente elegido arriba",
     "DIAN_SECTION_TITLE": "Factura electrónica DIAN (simulación)",
     "DIAN_SECTION_HINT": "Modo prueba: usa un simulador local, no presenta ante la DIAN de verdad. Actívalo en Configuración.",
     "DIAN_STATUS": "Estado",

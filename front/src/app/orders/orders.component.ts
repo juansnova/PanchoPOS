@@ -1242,13 +1242,24 @@ ModuleRegistry.registerModules([
                         @if (di.error_message) { <span class="error-text">{{ di.error_message }}</span> }
                       </p>
                       @if (di.status === 'issued' && di.document_type === 'invoice') {
-                        <button type="button" class="btn btn-secondary fx-dian-btn" [disabled]="dianInvoiceLoading()" (click)="cancelDianInvoiceSimulation()">
+                        <button type="button" class="fx-cancel" [disabled]="dianInvoiceLoading()" (click)="cancelDianInvoiceSimulation()">
                           {{ dianInvoiceLoading() ? ('COMMON.LOADING' | translate) : ('ORDERS.DIAN_CANCEL' | translate) }}
                         </button>
                       }
                     } @else {
-                      <button type="button" class="btn btn-secondary fx-dian-btn" [disabled]="dianInvoiceLoading()" (click)="issueDianInvoiceSimulation()">
-                        {{ dianInvoiceLoading() ? ('COMMON.LOADING' | translate) : ('ORDERS.DIAN_ISSUE' | translate) }}
+                      <button type="button" class="fx-issue" [disabled]="dianInvoiceLoading()" (click)="issueDianInvoiceSimulation()" data-testid="dian-issue">
+                        <span class="fx-issue-ico" aria-hidden="true">
+                          @if (dianInvoiceLoading()) {
+                            <i class="fx-spin"></i>
+                          } @else {
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z"/><polyline points="8.5 12 11 14.5 15.5 9.5"/></svg>
+                          }
+                        </span>
+                        <span class="fx-issue-txt">
+                          <b>{{ dianInvoiceLoading() ? ('COMMON.LOADING' | translate) : ('ORDERS.DIAN_ISSUE' | translate) }}</b>
+                          <small>{{ 'ORDERS.DIAN_ISSUE_SUB' | translate }}</small>
+                        </span>
+                        <span class="fx-issue-arrow" aria-hidden="true">→</span>
                       </button>
                     }
                   </div>
@@ -2798,7 +2809,21 @@ ModuleRegistry.registerModules([
     .fx-dian-hint { margin: 6px 0 12px; font-size: .78rem; line-height: 1.4; color: var(--color-text-muted); }
     .fx-dian-meta { display: flex; flex-direction: column; gap: 4px; margin: 0 0 12px; font-size: .84rem; }
     .fx-cufe { display: block; padding: 8px 10px; border-radius: 12px; font-size: .68rem; background: #fff; box-shadow: inset 0 0 0 1px var(--color-border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .fx-dian-btn { border-radius: 999px; font-weight: 800; }
+    .fx-issue { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 18px 14px 14px; border: 0; border-radius: 22px; font: inherit; text-align: left; color: #fff; cursor: pointer; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 55%, #000)); box-shadow: 0 20px 30px -16px var(--color-primary); transition: transform .15s, filter .15s; }
+    .fx-issue:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.07); }
+    .fx-issue:active:not(:disabled) { transform: scale(.985); }
+    .fx-issue:disabled { opacity: .75; cursor: default; }
+    .fx-issue-ico { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 16px; background: rgba(255,255,255,.2); box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+    .fx-issue-txt { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    .fx-issue-txt b { font-size: 1rem; font-weight: 800; line-height: 1.2; }
+    .fx-issue-txt small { margin-top: 2px; font-size: .74rem; font-weight: 600; line-height: 1.3; opacity: .85; }
+    .fx-issue-arrow { flex: none; font-size: 1.3rem; font-weight: 800; transition: transform .2s; }
+    .fx-issue:hover:not(:disabled) .fx-issue-arrow { transform: translateX(4px); }
+    .fx-spin { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: fx-rot .8s linear infinite; }
+    @keyframes fx-rot { to { transform: rotate(360deg); } }
+    .fx-cancel { min-height: 42px; padding: 0 20px; border: 1.5px solid #fecaca; border-radius: 999px; font: inherit; font-size: .86rem; font-weight: 800; color: #b91c1c; background: #fff; cursor: pointer; }
+    .fx-cancel:hover:not(:disabled) { color: #fff; background: #dc2626; border-color: #dc2626; }
+    @media (prefers-reduced-motion: reduce) { .fx-issue, .fx-issue:hover:not(:disabled) { transition: none; transform: none; } .fx-spin { animation: none; } }
 
     .mx-confirm { max-width: 400px; text-align: center; }
     .mx-confirm-body { padding: 28px 24px 8px; }
