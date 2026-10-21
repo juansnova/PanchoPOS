@@ -22,6 +22,7 @@ import { AgGridAngular } from 'ag-grid-angular';
 import { SidebarComponent } from '../shared/sidebar.component';
 import { StaffPosToolbarComponent } from '../shared/staff-pos-toolbar.component';
 import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
+import { AppSelectComponent, AppSelectOption } from '../shared/app-select.component';
 import { QuickSaleComponent } from './quick-sale.component';
 import { buildInvoiceA4Html } from './invoice-a4';
 import { ProductPickerComponent, PickedLine, PickerProduct } from './product-picker.component';
@@ -50,7 +51,7 @@ ModuleRegistry.registerModules([
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [AgGridAngular, SidebarComponent, StaffPosToolbarComponent, FormsModule, FocusFirstInputDirective, TranslateModule, QuickSaleComponent, ProductPickerComponent],
+  imports: [AgGridAngular, SidebarComponent, StaffPosToolbarComponent, FormsModule, FocusFirstInputDirective, TranslateModule, QuickSaleComponent, ProductPickerComponent, AppSelectComponent],
   template: `
     <app-sidebar>
         <div class="page-header page-header--staff-flow">
@@ -1166,68 +1167,91 @@ ModuleRegistry.registerModules([
         }
 
         <!-- Print Factura Modal -->
-        @if (facturaOrder()) {
+        @if (facturaOrder(); as fo) {
           <div class="modal-overlay">
-            <div class="modal modal-edit-order mx" (click)="$event.stopPropagation()" appFocusFirstInput>
+            <div class="modal modal-edit-order mx fx" (click)="$event.stopPropagation()" appFocusFirstInput>
               <div class="mx-head">
                 <span class="mx-icon" aria-hidden="true">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                 </span>
                 <div class="mx-head-text">
                   <h3>{{ facturaModalEditMode() ? ('ORDERS.EDIT_ORDER' | translate) : ('CUSTOMERS.PRINT_FACTURA' | translate) }}</h3>
-                  <p>{{ 'ORDERS.ORDER_ID' | translate }}{{ facturaOrder()!.id }} · {{ facturaOrder()!.table_name }}</p>
+                  <p>{{ 'ORDERS.ORDER_ID' | translate }}{{ fo.id }} · {{ fo.table_name }}</p>
                 </div>
                 <button class="mx-close" (click)="closeFacturaModal()" [attr.aria-label]="'COMMON.CANCEL' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
               </div>
               <div class="modal-body">
-                <div class="mx-total">
-                  <span>{{ 'ORDERS.TOTAL' | translate }}</span>
-                  <strong>{{ formatPrice(facturaOrder()!.total_cents) }}</strong>
+                <div class="fx-ticket">
+                  <div>
+                    <small>{{ 'ORDERS.TOTAL' | translate }}</small>
+                    <b>{{ formatPrice(fo.total_cents) }}</b>
+                  </div>
+                  <span class="fx-items">{{ 'ORDERS.FX_ITEMS' | translate: { n: fo.items.length } }}</span>
                 </div>
-                <div class="form-group">
-                  <label for="factura-customer">{{ 'CUSTOMERS.SELECT_FOR_FACTURA' | translate }}</label>
-                  <select id="factura-customer" class="form-select" [(ngModel)]="facturaCustomerId" name="facturaCustomer">
-                    <option [ngValue]="null">{{ 'COMMON.NONE' | translate }}</option>
-                    @for (c of facturaCustomers(); track c.id) {
-                      <option [ngValue]="c.id">{{ c.company_name || c.name }}{{ c.tax_id ? ' (' + c.tax_id + ')' : '' }}</option>
-                    }
-                  </select>
+
+                <div class="fx-field">
+                  <label class="fx-label" for="factura-customer">{{ 'ORDERS.FX_BILL_TO' | translate }}</label>
+                  <app-select id="factura-customer" [options]="facturaCustomerOptions()" [searchable]="true"
+                    [ngModel]="facturaCustomerId ?? 0" (ngModelChange)="facturaCustomerId = $event ? +$event : null"
+                    [ngModelOptions]="{ standalone: true }" />
                 </div>
+
+                @if (facturaSelectedCustomer(); as sc) {
+                  <div class="fx-cust">
+                    <span class="fx-av" [style.--h]="facturaHue(sc.name)" aria-hidden="true">{{ (sc.company_name || sc.name).charAt(0).toUpperCase() }}</span>
+                    <div class="fx-cust-body">
+                      <b>{{ sc.company_name || sc.name }}</b>
+                      @if (sc.company_name) { <span>{{ sc.name }}</span> }
+                      <span class="fx-doc">{{ sc.tax_id ? ((sc.document_type || 'CC') + ' ' + sc.tax_id) : ('ORDERS.FX_NO_DOC' | translate) }}</span>
+                      @if (sc.email) { <span>{{ sc.email }}</span> }
+                      @if (sc.address) { <span>{{ sc.address }}</span> }
+                    </div>
+                  </div>
+                  @if (!sc.tax_id || !sc.email) {
+                    <p class="fx-warn">
+                      @if (!sc.tax_id) { {{ 'ORDERS.FX_WARN_DOC' | translate }} }
+                      @if (!sc.email) { {{ 'ORDERS.FX_WARN_EMAIL' | translate }} }
+                    </p>
+                  }
+                } @else {
+                  <p class="fx-final">{{ 'ORDERS.FX_FINAL_NOTE' | translate }}</p>
+                }
+                <a class="fx-new" href="/customers" target="_blank" rel="noopener">＋ {{ 'ORDERS.FX_NEW_CUSTOMER' | translate }}</a>
 
                 @if (dianInvoicingEnabled()) {
-                  <div class="divider"></div>
-                  <h4>{{ 'ORDERS.DIAN_SECTION_TITLE' | translate }}</h4>
-                  <p class="hint">{{ 'ORDERS.DIAN_SECTION_HINT' | translate }}</p>
+                  <div class="fx-dian">
+                    <div class="fx-dian-head">
+                      <h4>{{ 'ORDERS.DIAN_SECTION_TITLE' | translate }}</h4>
+                      @if (dianInvoice(); as di) {
+                        <span class="fx-state" [attr.data-status]="di.status">{{ di.status }}</span>
+                      }
+                    </div>
+                    <p class="fx-dian-hint">{{ 'ORDERS.DIAN_SECTION_HINT' | translate }}</p>
 
-                  @if (dianInvoiceError()) {
-                    <p class="error-text">{{ dianInvoiceError() }}</p>
-                  }
+                    @if (dianInvoiceError()) {
+                      <p class="error-text">{{ dianInvoiceError() }}</p>
+                    }
 
-                  @if (dianInvoice(); as di) {
-                    <p class="order-summary">
-                      @if (di.document_type === 'credit_note' && di.status !== 'error') {
-                        {{ 'ORDERS.DIAN_CREDIT_NOTE_ISSUED' | translate }}
-                      } @else {
-                        {{ 'ORDERS.DIAN_STATUS' | translate }}: <strong>{{ di.status }}</strong>
+                    @if (dianInvoice(); as di) {
+                      <p class="fx-dian-meta">
+                        @if (di.document_type === 'credit_note' && di.status !== 'error') {
+                          {{ 'ORDERS.DIAN_CREDIT_NOTE_ISSUED' | translate }}
+                        }
+                        <small>{{ di.submission_status }} · {{ di.provider }}</small>
+                        @if (di.cufe) { <code class="fx-cufe" [title]="di.cufe">CUFE {{ di.cufe }}</code> }
+                        @if (di.error_message) { <span class="error-text">{{ di.error_message }}</span> }
+                      </p>
+                      @if (di.status === 'issued' && di.document_type === 'invoice') {
+                        <button type="button" class="btn btn-secondary fx-dian-btn" [disabled]="dianInvoiceLoading()" (click)="cancelDianInvoiceSimulation()">
+                          {{ dianInvoiceLoading() ? ('COMMON.LOADING' | translate) : ('ORDERS.DIAN_CANCEL' | translate) }}
+                        </button>
                       }
-                      ({{ di.submission_status }}, {{ di.provider }})
-                      @if (di.cufe) {
-                        <br>CUFE: {{ di.cufe }}
-                      }
-                      @if (di.error_message) {
-                        <br><span class="error-text">{{ di.error_message }}</span>
-                      }
-                    </p>
-                    @if (di.status === 'issued' && di.document_type === 'invoice') {
-                      <button type="button" class="btn btn-secondary" [disabled]="dianInvoiceLoading()" (click)="cancelDianInvoiceSimulation()">
-                        {{ dianInvoiceLoading() ? ('COMMON.LOADING' | translate) : ('ORDERS.DIAN_CANCEL' | translate) }}
+                    } @else {
+                      <button type="button" class="btn btn-secondary fx-dian-btn" [disabled]="dianInvoiceLoading()" (click)="issueDianInvoiceSimulation()">
+                        {{ dianInvoiceLoading() ? ('COMMON.LOADING' | translate) : ('ORDERS.DIAN_ISSUE' | translate) }}
                       </button>
                     }
-                  } @else {
-                    <button type="button" class="btn btn-secondary" [disabled]="dianInvoiceLoading()" (click)="issueDianInvoiceSimulation()">
-                      {{ dianInvoiceLoading() ? ('COMMON.LOADING' | translate) : ('ORDERS.DIAN_ISSUE' | translate) }}
-                    </button>
-                  }
+                  </div>
                 }
               </div>
               <div class="modal-actions">
@@ -2748,6 +2772,34 @@ ModuleRegistry.registerModules([
     .mx .btn.mx-main-ok { background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 8px 18px -8px #15803d; flex: 1 1 auto; }
     .mx .btn.mx-main:hover:not(:disabled) { filter: brightness(1.06); }
     .mx .btn.mx-main:disabled { opacity: .6; }
+    /* Imprimir factura */
+    .fx { max-width: 500px; }
+    .fx-ticket { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; margin-bottom: 16px; border-radius: 22px; background: linear-gradient(150deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 58%, #000)); color: #fff; box-shadow: 0 18px 28px -18px var(--color-primary); }
+    .fx-ticket small { display: block; font-size: .64rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; opacity: .85; }
+    .fx-ticket b { font-family: Georgia, 'Times New Roman', serif; font-size: 2.1rem; font-weight: 500; font-style: italic; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .fx-items { padding: 4px 12px; border-radius: 999px; font-size: .74rem; font-weight: 800; background: rgba(255,255,255,.2); }
+    .fx-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+    .fx-label { font-size: .64rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); }
+    .fx-cust { display: flex; gap: 12px; padding: 14px; margin-bottom: 8px; border-radius: 20px; border: 1px solid var(--color-border); background: #fffdfa; }
+    .fx-av { --h: 20; flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; font-weight: 800; font-size: 1.1rem; color: hsl(var(--h) 55% 26%); background: hsl(var(--h) 70% 87%); box-shadow: inset 0 0 0 2px hsl(var(--h) 65% 75%); }
+    .fx-cust-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: .84rem; color: var(--color-text-muted); }
+    .fx-cust-body b { font-family: Georgia, 'Times New Roman', serif; font-size: 1.1rem; font-weight: 500; color: var(--color-text); overflow-wrap: anywhere; }
+    .fx-doc { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-weight: 700; color: var(--color-text); letter-spacing: .04em; }
+    .fx-warn { margin: 0 0 8px; padding: 10px 14px; border-radius: 16px; font-size: .8rem; font-weight: 600; line-height: 1.4; color: #78350f; background: #fef3c7; }
+    .fx-final { margin: 0 0 8px; padding: 12px 14px; border-radius: 16px; font-size: .84rem; line-height: 1.45; color: var(--color-text-muted); background: var(--color-bg); }
+    .fx-new { display: inline-block; margin-bottom: 4px; font-size: .84rem; font-weight: 800; color: var(--color-primary); text-decoration: none; }
+    .fx-new:hover { text-decoration: underline; }
+    .fx-dian { margin-top: 14px; padding: 16px; border-radius: 22px; border: 1px dashed color-mix(in srgb, var(--color-primary) 40%, var(--color-border)); background: color-mix(in srgb, var(--color-primary) 4%, #fffdfa); }
+    .fx-dian-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .fx-dian-head h4 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 1.05rem; font-style: italic; font-weight: 500; }
+    .fx-state { padding: 3px 12px; border-radius: 999px; font-size: .64rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #92400e; background: #fef3c7; }
+    .fx-state[data-status='issued'] { color: #166534; background: #dcfce7; }
+    .fx-state[data-status='cancelled'], .fx-state[data-status='error'] { color: #b91c1c; background: #fee2e2; }
+    .fx-dian-hint { margin: 6px 0 12px; font-size: .78rem; line-height: 1.4; color: var(--color-text-muted); }
+    .fx-dian-meta { display: flex; flex-direction: column; gap: 4px; margin: 0 0 12px; font-size: .84rem; }
+    .fx-cufe { display: block; padding: 8px 10px; border-radius: 12px; font-size: .68rem; background: #fff; box-shadow: inset 0 0 0 1px var(--color-border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fx-dian-btn { border-radius: 999px; font-weight: 800; }
+
     .mx-confirm { max-width: 400px; text-align: center; }
     .mx-confirm-body { padding: 28px 24px 8px; }
     .mx-confirm-icon {
@@ -2949,6 +3001,26 @@ export class OrdersComponent implements OnInit, OnDestroy {
   facturaCustomerId: number | null = null;
   /** When true, modal is in "Edit order" mode (Save primary); when false, "Print Factura" mode (Print primary). */
   facturaModalEditMode = signal<boolean>(false);
+
+  /** Customer picker for the invoice modal: "Consumidor final" first, then every billing customer. */
+  facturaCustomerOptions = computed<AppSelectOption[]>(() => [
+    { value: 0, label: this.translate.instant('ORDERS.FX_FINAL'), sub: this.translate.instant('ORDERS.FX_FINAL_SUB'), svg: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>', tone: 'a' },
+    ...this.facturaCustomers().map((c) => ({
+      value: c.id,
+      label: c.company_name || c.name,
+      sub: c.tax_id ? `${c.document_type || 'CC'} ${c.tax_id}` : (c.email || ''),
+    })),
+  ]);
+
+  facturaSelectedCustomer(): BillingCustomer | null {
+    return this.facturaCustomerId != null ? (this.facturaCustomers().find((c) => c.id === this.facturaCustomerId) ?? null) : null;
+  }
+
+  facturaHue(name: string): number {
+    let h = 0;
+    for (const ch of name || '') h = (h * 31 + ch.charCodeAt(0)) % 360;
+    return h;
+  }
 
   /** Colombia DIAN electronic invoice (certified-provider simulation) for the Factura modal's order. */
   dianInvoice = signal<DianInvoicePublic | null>(null);
