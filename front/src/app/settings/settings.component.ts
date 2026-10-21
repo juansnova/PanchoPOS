@@ -18,6 +18,7 @@ import {
   OpeningHoursOverrideRow,
 } from '../services/api.service';
 import { SidebarComponent } from '../shared/sidebar.component';
+import { AppDatePickerComponent } from '../shared/app-date-picker.component';
 import { PermissionService } from '../services/permission.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MAX_IMAGE_UPLOAD_BYTES, MAX_IMAGE_UPLOAD_MB } from '../shared/image-upload-limits';
@@ -58,92 +59,52 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     FormsModule,
     SidebarComponent,
     TranslateModule,
+    AppDatePickerComponent,
   ],
   template: `
     <app-sidebar>
-      <div class="page-header">
-        <h1>{{ 'SETTINGS.TITLE' | translate }}</h1>
-      </div>
+      <header class="st-hero">
+        <div class="st-hero-id">
+          <span class="st-plaque">
+            @if (logoPreview() || settings()?.logo_filename) {
+              <img [src]="getDisplayLogoSrc()" alt="" />
+            } @else {
+              <b>{{ (formData.name || '?').charAt(0).toUpperCase() }}</b>
+            }
+          </span>
+          <div>
+            <p class="st-eyebrow"><i></i>{{ 'SETTINGS.TITLE' | translate }}</p>
+            <h1>{{ formData.name || settings()?.name || ('SETTINGS.TITLE' | translate) }}</h1>
+          </div>
+        </div>
+        @if (publicUrl()) {
+          <div class="st-link">
+            <small>{{ 'SETTINGS.PUBLIC_LINK' | translate }}</small>
+            <a [href]="publicUrl()" target="_blank" rel="noopener">{{ publicUrl() }}</a>
+            <button type="button" (click)="copyPublicLink()">{{ linkCopied() ? ('SETTINGS.LINK_COPIED' | translate) : ('SETTINGS.COPY_LINK' | translate) }}</button>
+          </div>
+        }
+      </header>
 
       <div class="settings-layout" data-testid="settings-layout">
-      <!-- Vertical settings menu (desktop sidebar; stacked/scrollable on narrow viewports) -->
       <nav class="settings-nav" data-testid="settings-nav" [attr.aria-label]="'SETTINGS.SECTION_NAV_ARIA' | translate">
         <div class="settings-nav-list">
-          <button 
-            type="button" 
-            class="settings-nav-item" 
-            [class.active]="activeSection() === 'general'"
-            (click)="selectSection('general')">
-            <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="7" height="7"/>
-              <rect x="14" y="3" width="7" height="7"/>
-              <rect x="14" y="14" width="7" height="7"/>
-              <rect x="3" y="14" width="7" height="7"/>
-            </svg>
-            <span>{{ 'SETTINGS.BUSINESS_PROFILE' | translate }}</span>
-          </button>
-
-          <button
-            type="button"
-            class="settings-nav-item"
-            data-testid="settings-navigation-tab"
-            [class.active]="activeSection() === 'navigation'"
-            (click)="selectSection('navigation')">
-            <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 6h16M4 12h16M4 18h10"/>
-            </svg>
-            <span>{{ 'SETTINGS.NAVIGATION_UI_TAB' | translate }}</span>
-          </button>
-          
-          <button 
-            type="button" 
-            class="settings-nav-item" 
-            data-testid="settings-contact-tab"
-            [class.active]="activeSection() === 'contact'"
-            (click)="selectSection('contact')">
-            <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
-            </svg>
-            <span>{{ 'SETTINGS.CONTACT_INFO' | translate }}</span>
-          </button>
-          
-          <button 
-            type="button" 
-            class="settings-nav-item" 
-            data-testid="settings-hours-tab"
-            [class.active]="activeSection() === 'hours'"
-            (click)="selectSection('hours')">
-            <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>
-            <span>{{ 'SETTINGS.OPENING_HOURS' | translate }}</span>
-          </button>
-          
-          <button 
-            type="button" 
-            class="settings-nav-item" 
-            data-testid="settings-payments-tab"
-            [class.active]="activeSection() === 'payments'"
-            (click)="selectSection('payments')">
-            <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-              <line x1="1" y1="10" x2="23" y2="10"/>
-            </svg>
-            <span>{{ 'SETTINGS.PAYMENT_SETTINGS' | translate }}</span>
-          </button>
-          
-          <button
-            type="button"
-            class="settings-nav-item"
-            [class.active]="activeSection() === 'reservations'"
-            (click)="selectSection('reservations')">
-            <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            <span>{{ 'SETTINGS.RESERVATIONS' | translate }}</span>
-          </button>
+          @for (g of navGroups; track g.labelKey) {
+            <p class="st-nav-group">{{ g.labelKey | translate }}</p>
+            @for (it of g.items; track it.id) {
+              <button
+                type="button"
+                class="settings-nav-item"
+                [attr.data-testid]="it.testid"
+                [class.active]="activeSection() === it.id"
+                (click)="selectSection(it.id)">
+                <span class="st-nav-ico" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="it.icon"/></svg>
+                </span>
+                <span class="st-nav-txt"><b>{{ it.labelKey | translate }}</b><small>{{ it.descKey | translate }}</small></span>
+              </button>
+            }
+          }
         </div>
       </nav>
 
@@ -159,7 +120,8 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
               <h2>{{ 'SETTINGS.UI_MODULES_TITLE' | translate }}</h2>
               <p>{{ 'SETTINGS.UI_MODULES_HINT' | translate }}</p>
             </div>
-            <form (ngSubmit)="saveSettings()" class="settings-form">
+            <form (ngSubmit)="saveSettings()" class="settings-form" (input)="markDirty()" (change)="markDirty()">
+              <div class="st-card st-card-list">
               @for (row of uiModuleRows; track row.key) {
                 <div class="form-group checkbox-row">
                   <label class="switch">
@@ -177,11 +139,15 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                   </div>
                 </div>
               }
-              <div class="form-actions">
-                <button type="button" class="btn btn-secondary" (click)="cancel()">{{ 'SETTINGS.CANCEL' | translate }}</button>
-                <button type="submit" class="btn btn-primary" [disabled]="saving()">
-                  {{ saving() ? ('SETTINGS.SAVING' | translate) : ('SETTINGS.SAVE_CHANGES' | translate) }}
-                </button>
+              </div>
+              <div class="st-savebar" [class.dirty]="dirty()">
+                <span class="st-save-state"><i></i>{{ (dirty() ? 'SETTINGS.UNSAVED' : 'SETTINGS.ALL_SAVED') | translate }}</span>
+                <span class="st-save-actions">
+                  <button type="button" class="btn btn-secondary" (click)="cancel()">{{ 'SETTINGS.CANCEL' | translate }}</button>
+                  <button type="submit" class="btn btn-primary" [disabled]="saving()">
+                    {{ saving() ? ('SETTINGS.SAVING' | translate) : ('SETTINGS.SAVE_CHANGES' | translate) }}
+                  </button>
+                </span>
               </div>
               @if (error()) {
                 <div class="toast error">
@@ -199,7 +165,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
           </div>
         } @else {
             <!-- Tenant Settings Sections (Shared Form) -->
-            <form (ngSubmit)="saveSettings()" class="settings-form">
+            <form (ngSubmit)="saveSettings()" class="settings-form" (input)="markDirty()" (change)="markDirty()">
 
               <!-- General Section -->
               @if (activeSection() === 'general') {
@@ -209,6 +175,8 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <p>{{ 'SETTINGS.SUBTITLE' | translate }}</p>
                   </div>
                   
+                  <div class="st-card">
+                  <h3 class="st-card-title">{{ 'SETTINGS.CARD_BRAND_IMAGES' | translate }}</h3>
                   <!-- Logo -->
                   <div class="form-group">
                     <label>{{ 'SETTINGS.LOGO' | translate }}</label>
@@ -261,6 +229,9 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     </div>
                   </div>
 
+                  </div>
+                  <div class="st-card">
+                  <h3 class="st-card-title">{{ 'SETTINGS.CARD_BUSINESS_DATA' | translate }}</h3>
                   <!-- Basic Info -->
                   <div class="form-group">
                     <label for="name">{{ 'SETTINGS.BUSINESS_NAME' | translate }} *</label>
@@ -272,6 +243,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <textarea id="description" [(ngModel)]="formData.description" name="description" rows="3"></textarea>
                   </div>
 
+                  </div>
                 </div>
               }
 
@@ -283,6 +255,8 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <p>{{ 'SETTINGS.CONTACT_INFO_SUBTITLE' | translate }}</p>
                   </div>
                   
+                  <div class="st-card">
+                  <h3 class="st-card-title">{{ 'SETTINGS.CARD_CONTACT' | translate }}</h3>
                   <div class="form-row">
                     <div class="form-group">
                       <label for="phone">{{ 'SETTINGS.PHONE' | translate }}</label>
@@ -299,6 +273,9 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <input type="email" id="email" [(ngModel)]="formData.email" name="email" />
                   </div>
                   
+                  </div>
+                  <div class="st-card">
+                  <h3 class="st-card-title">{{ 'SETTINGS.CARD_PLACE_ONLINE' | translate }}</h3>
                   <div class="form-group">
                     <label for="address">{{ 'SETTINGS.ADDRESS' | translate }}</label>
                     <input type="text" id="address" [(ngModel)]="formData.address" name="address" />
@@ -320,6 +297,9 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                         autocomplete="off"
                       />
                       <small class="field-hint">{{ 'SETTINGS.PUBLIC_SLUG_HINT' | translate }}</small>
+                      @if (formData.public_slug) {
+                        <small class="field-hint st-url">{{ publicBookPreview() }}</small>
+                      }
                     </div>
                   </div>
                   
@@ -358,6 +338,9 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     </div>
                   </div>
 
+                  </div>
+                  <div class="st-card">
+                  <h3 class="st-card-title">{{ 'SETTINGS.CARD_LEGAL' | translate }}</h3>
                   <div class="form-group">
                     <label for="public_terms_of_service_url">{{ 'SETTINGS.PUBLIC_TERMS_OF_SERVICE_URL' | translate }}</label>
                     <input
@@ -382,6 +365,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <small class="field-hint">{{ 'SETTINGS.PUBLIC_PRIVACY_POLICY_HINT' | translate }}</small>
                   </div>
 
+                  </div>
                 </div>
               }
 
@@ -544,7 +528,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <div class="form-row oh-schedule-form">
                       <div class="form-group">
                         <label for="baseline_eff">{{ 'SETTINGS.OPENING_HOURS_EFFECTIVE_FROM' | translate }}</label>
-                        <input id="baseline_eff" type="date" [(ngModel)]="baselineScheduleEffectiveDate" name="baseline_eff" />
+                        <app-date-picker id="baseline_eff" [clearable]="false" [(ngModel)]="baselineScheduleEffectiveDate" name="baseline_eff" />
                       </div>
                       <div class="form-group flex-grow">
                         <label for="baseline_note">{{ 'SETTINGS.OPENING_HOURS_BASELINE_NOTE' | translate }}</label>
@@ -598,11 +582,11 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <div class="form-row oh-schedule-form">
                       <div class="form-group">
                         <label for="ov_from">{{ 'SETTINGS.OPENING_HOURS_DATE_FROM' | translate }}</label>
-                        <input id="ov_from" type="date" [(ngModel)]="overrideDateFrom" name="ov_from" />
+                        <app-date-picker id="ov_from" [clearable]="false" [(ngModel)]="overrideDateFrom" name="ov_from" />
                       </div>
                       <div class="form-group">
                         <label for="ov_to">{{ 'SETTINGS.OPENING_HOURS_DATE_TO' | translate }}</label>
-                        <input id="ov_to" type="date" [(ngModel)]="overrideDateTo" name="ov_to" />
+                        <app-date-picker id="ov_to" [clearable]="false" [(ngModel)]="overrideDateTo" name="ov_to" />
                       </div>
                       <div class="form-group flex-grow">
                         <label for="ov_note">{{ 'SETTINGS.OPENING_HOURS_BASELINE_NOTE' | translate }}</label>
@@ -657,8 +641,9 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <p>{{ 'SETTINGS.PAYMENT_SETTINGS_SUBTITLE' | translate }}</p>
                   </div>
                   
-                  <h3>{{ 'SETTINGS.TRANSFER_PAYMENTS_TITLE' | translate }}</h3>
-                  <p class="hint">{{ 'SETTINGS.TRANSFER_PAYMENTS_HINT' | translate }}</p>
+                  <div class="st-card">
+                  <h3 class="st-card-title">{{ 'SETTINGS.TRANSFER_PAYMENTS_TITLE' | translate }}</h3>
+                  <p class="st-card-desc">{{ 'SETTINGS.TRANSFER_PAYMENTS_HINT' | translate }}</p>
                   <div class="form-group">
                     <label for="payment_nequi_number">{{ 'SETTINGS.PAYMENT_NEQUI_NUMBER' | translate }}</label>
                     <input type="tel" id="payment_nequi_number" [(ngModel)]="formData.payment_nequi_number" name="payment_nequi_number" maxlength="40" class="input-medium" data-testid="settings-payment-nequi" />
@@ -672,11 +657,14 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <label for="payment_account_holder">{{ 'SETTINGS.PAYMENT_ACCOUNT_HOLDER' | translate }}</label>
                     <input type="text" id="payment_account_holder" [(ngModel)]="formData.payment_account_holder" name="payment_account_holder" maxlength="120" class="input-medium" />
                   </div>
+                  </div>
+                  <div class="st-card">
+                  <h3 class="st-card-title">{{ 'SETTINGS.CARD_BANKS' | translate }}</h3>
                   <div class="form-group">
                     <label>{{ 'SETTINGS.BANK_ACCOUNTS_TITLE' | translate }}</label>
                     <p class="hint">{{ 'SETTINGS.BANK_ACCOUNTS_HINT' | translate }}</p>
                     @for (acc of formData.payment_bank_accounts; track $index) {
-                      <div class="form-row" data-testid="settings-bank-account">
+                      <div class="form-row st-bank-row" data-testid="settings-bank-account">
                         <input type="text" [(ngModel)]="acc.bank" [name]="'bank_' + $index" maxlength="120" list="bank-suggestions" [placeholder]="'SETTINGS.BANK_NAME' | translate" />
                         <select [(ngModel)]="acc.account_type" [name]="'bank_type_' + $index">
                           <option value="">{{ 'SETTINGS.BANK_ACCOUNT_TYPE' | translate }}</option>
@@ -708,14 +696,16 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                       <img [src]="qrUrl" alt="QR" class="payment-qr-preview" data-testid="settings-payment-qr-preview" />
                       <button type="button" class="btn btn-secondary" (click)="removePaymentQr()">{{ 'SETTINGS.PAYMENT_QR_REMOVE' | translate }}</button>
                     }
-                    <input type="file" accept="image/png,image/jpeg,image/webp,image/avif" (change)="onPaymentQrSelected($event)" data-testid="settings-payment-qr-input" />
+                    <input id="payment-qr-upload" type="file" hidden accept="image/png,image/jpeg,image/webp,image/avif" (change)="onPaymentQrSelected($event)" data-testid="settings-payment-qr-input" />
+                    <label for="payment-qr-upload" class="btn btn-secondary st-upload">{{ 'SETTINGS.PAYMENT_QR_UPLOAD' | translate }}</label>
                     <p class="hint">{{ 'SETTINGS.PAYMENT_QR_HINT' | translate }}</p>
                   </div>
 
+                  </div>
                   @if (showDianInvoicingPrep()) {
-                    <div class="divider"></div>
-                    <h3>{{ 'SETTINGS.DIAN_TITLE' | translate }}</h3>
-                    <p class="hint">{{ 'SETTINGS.DIAN_DESC' | translate }}</p>
+                    <div class="st-card">
+                    <h3 class="st-card-title">{{ 'SETTINGS.DIAN_TITLE' | translate }}</h3>
+                    <p class="st-card-desc">{{ 'SETTINGS.DIAN_DESC' | translate }}</p>
                     <div class="form-group">
                       <label for="dian_mode">{{ 'SETTINGS.DIAN_MODE' | translate }}</label>
                       <select id="dian_mode" class="form-select" [(ngModel)]="formData.dian_mode" name="dian_mode">
@@ -747,8 +737,10 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                       />
                       <p class="hint">{{ 'SETTINGS.DIAN_CLIENT_ID_HINT' | translate }}</p>
                     </div>
+                    </div>
                   }
 
+                  <div class="st-card st-card-list">
                   <div class="form-group checkbox-row">
                     <label class="switch">
                       <input type="checkbox" [(ngModel)]="formData.immediate_payment_required" name="immediate_payment_required">
@@ -760,6 +752,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     </div>
                   </div>
 
+                  </div>
                 </div>
               }
 
@@ -770,6 +763,8 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <h2>{{ 'SETTINGS.RESERVATIONS' | translate }}</h2>
                     <p>{{ 'SETTINGS.RESERVATIONS_SUBTITLE' | translate }}</p>
                   </div>
+                  <div class="st-card">
+                  <h3 class="st-card-title">{{ 'SETTINGS.CARD_PREPAY' | translate }}</h3>
                   <div class="form-group">
                     <label>{{ 'SETTINGS.RESERVATION_PREPAYMENT' | translate }}</label>
                     <div class="form-row prepayment-amount-row">
@@ -829,6 +824,9 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <label for="reservation_cancellation_policy">{{ 'SETTINGS.RESERVATION_CANCELLATION_POLICY' | translate }}</label>
                     <textarea id="reservation_cancellation_policy" [(ngModel)]="formData.reservation_cancellation_policy" name="reservation_cancellation_policy" rows="2" [placeholder]="'SETTINGS.RESERVATION_CANCELLATION_POLICY_PLACEHOLDER' | translate"></textarea>
                   </div>
+                  </div>
+                  <div class="st-card st-grid">
+                  <h3 class="st-card-title">{{ 'SETTINGS.CARD_CAPACITY' | translate }}</h3>
                   <div class="form-group">
                     <label for="reservation_arrival_tolerance_minutes">{{ 'SETTINGS.RESERVATION_ARRIVAL_TOLERANCE' | translate }}</label>
                     <input type="number" id="reservation_arrival_tolerance_minutes" min="0" max="120" [(ngModel)]="formData.reservation_arrival_tolerance_minutes" name="reservation_arrival_tolerance_minutes" placeholder="15" />
@@ -858,8 +856,10 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <label for="reservation_dress_code">{{ 'SETTINGS.RESERVATION_DRESS_CODE' | translate }}</label>
                     <input type="text" id="reservation_dress_code" [(ngModel)]="formData.reservation_dress_code" name="reservation_dress_code" [placeholder]="'SETTINGS.RESERVATION_DRESS_CODE_PLACEHOLDER' | translate" />
                   </div>
-                  <h3 class="subsection-title">{{ 'SETTINGS.REMINDER_SCHEDULE' | translate }}</h3>
-                  <p class="subsection-desc">{{ 'SETTINGS.REMINDER_SCHEDULE_DESC' | translate }}</p>
+                  </div>
+                  <div class="st-card st-card-list">
+                  <h3 class="st-card-title">{{ 'SETTINGS.REMINDER_SCHEDULE' | translate }}</h3>
+                  <p class="st-card-desc">{{ 'SETTINGS.REMINDER_SCHEDULE_DESC' | translate }}</p>
                   <div class="form-group checkbox-row">
                     <label class="switch">
                       <input type="checkbox" [(ngModel)]="formData.reservation_reminder_24h_enabled" name="reservation_reminder_24h_enabled">
@@ -880,8 +880,10 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                       <p class="hint">{{ 'SETTINGS.RESERVATION_REMINDER_2H_HINT' | translate }}</p>
                     </div>
                   </div>
-                  <h3 class="subsection-title">{{ 'SETTINGS.GUEST_BIRTHDAY' | translate }}</h3>
-                  <p class="subsection-desc">{{ 'SETTINGS.GUEST_BIRTHDAY_DESC' | translate }}</p>
+                  </div>
+                  <div class="st-card st-card-list">
+                  <h3 class="st-card-title">{{ 'SETTINGS.GUEST_BIRTHDAY' | translate }}</h3>
+                  <p class="st-card-desc">{{ 'SETTINGS.GUEST_BIRTHDAY_DESC' | translate }}</p>
                   <div class="form-group checkbox-row">
                     <label class="switch">
                       <input type="checkbox" [(ngModel)]="formData.guest_birthday_capture_enabled" name="guest_birthday_capture_enabled">
@@ -915,15 +917,19 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                       <small class="field-hint">{{ 'SETTINGS.GUEST_BIRTHDAY_CONSENT_HINT' | translate }}</small>
                     </div>
                   }
+                  </div>
                 </div>
               }
 
               <!-- Form Actions -->
-              <div class="form-actions">
-                <button type="button" class="btn btn-secondary" (click)="cancel()">{{ 'SETTINGS.CANCEL' | translate }}</button>
-                <button type="submit" class="btn btn-primary" [disabled]="saving()">
-                  {{ saving() ? ('SETTINGS.SAVING' | translate) : ('SETTINGS.SAVE_CHANGES' | translate) }}
-                </button>
+              <div class="st-savebar" [class.dirty]="dirty()">
+                <span class="st-save-state"><i></i>{{ (dirty() ? 'SETTINGS.UNSAVED' : 'SETTINGS.ALL_SAVED') | translate }}</span>
+                <span class="st-save-actions">
+                  <button type="button" class="btn btn-secondary" (click)="cancel()">{{ 'SETTINGS.CANCEL' | translate }}</button>
+                  <button type="submit" class="btn btn-primary" [disabled]="saving()">
+                    {{ saving() ? ('SETTINGS.SAVING' | translate) : ('SETTINGS.SAVE_CHANGES' | translate) }}
+                  </button>
+                </span>
               </div>
               
               @if (error()) {
@@ -2124,6 +2130,103 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
         opacity: 1;
       }
     }
+
+    /* ==========================================
+       REDISEÑO: portada, menú, tarjetas, barra de guardado
+       ========================================== */
+    .st-hero { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; padding: 20px 24px; border-radius: 28px; border: 1px solid var(--color-border); background: radial-gradient(70% 140% at 0% 0%, color-mix(in srgb, var(--color-primary) 15%, #fff), transparent 70%), #fffdfa; box-shadow: 0 30px 50px -42px rgba(60, 30, 10, .55); }
+    .st-hero-id { display: flex; align-items: center; gap: 16px; min-width: 0; }
+    .st-plaque { flex: none; display: grid; place-items: center; width: 64px; height: 64px; padding: 8px; border-radius: 20px; background: #fff; box-shadow: 0 14px 24px -16px rgba(0,0,0,.45), inset 0 0 0 1px rgba(0,0,0,.05); overflow: hidden; }
+    .st-plaque img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .st-plaque b { font-family: Georgia, 'Times New Roman', serif; font-size: 1.9rem; font-style: italic; font-weight: 500; color: var(--color-primary); }
+    .st-eyebrow { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; font-size: .68rem; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--color-primary); }
+    .st-eyebrow i { width: 26px; height: 2px; background: var(--color-primary); }
+    .st-hero h1 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.5rem, 3.4vw, 2.2rem); font-weight: 500; letter-spacing: -.02em; line-height: 1.1; overflow-wrap: anywhere; }
+    .st-link { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: 100%; padding: 8px 8px 8px 16px; border-radius: 999px; background: #fff; border: 1px dashed color-mix(in srgb, var(--color-primary) 40%, var(--color-border)); }
+    .st-link small { font-size: .62rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); }
+    .st-link a { min-width: 0; font-size: .85rem; font-weight: 700; color: var(--color-text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; }
+    .st-link a:hover { color: var(--color-primary); }
+    .st-link button { flex: none; min-height: 34px; padding: 0 14px; border: 0; border-radius: 999px; font: inherit; font-size: .78rem; font-weight: 800; color: #fff; cursor: pointer; background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); }
+
+    .settings-nav-list { gap: 4px; padding: 10px; border-radius: 26px; border: 1px solid var(--color-border); background: #fffdfa; box-shadow: 0 24px 40px -34px rgba(60, 30, 10, .5); }
+    .st-nav-group { margin: 8px 8px 2px; font-size: .62rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--color-text-muted); }
+    .st-nav-group:first-child { margin-top: 2px; }
+    .settings-nav-item { gap: 12px; padding: 8px 10px; border-radius: 18px; align-items: center; min-height: 52px; white-space: normal; }
+    .settings-nav-item:hover { background: color-mix(in srgb, var(--color-primary) 7%, #fff); border-color: transparent; }
+    .settings-nav-item.active { color: var(--color-text); border-color: transparent; background: color-mix(in srgb, var(--color-primary) 12%, #fff); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-primary) 55%, transparent); }
+    .st-nav-ico { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 10%, #fff); }
+    .st-nav-ico svg { width: 18px; height: 18px; }
+    .settings-nav-item.active .st-nav-ico { color: #fff; background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); box-shadow: 0 10px 14px -8px var(--color-primary); }
+    .st-nav-txt { display: flex; flex-direction: column; min-width: 0; text-align: left; }
+    .st-nav-txt b { font-size: .9rem; font-weight: 800; color: var(--color-text); }
+    .st-nav-txt small { font-size: .72rem; font-weight: 600; line-height: 1.25; color: var(--color-text-muted); }
+    @media (max-width: 899px) {
+      .settings-nav-list { flex-direction: row; max-height: none; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; border-radius: 999px; padding: 6px; }
+      .settings-nav-list::-webkit-scrollbar { display: none; }
+      .st-nav-group, .st-nav-txt small { display: none; }
+      .settings-nav-item { flex: none; width: auto; min-height: 44px; padding: 4px 14px 4px 6px; border-radius: 999px; }
+    }
+    @media (min-width: 900px) { .settings-nav { width: 18rem; } }
+
+    .section-header { padding-bottom: var(--space-3); border-bottom: 2px dashed var(--color-border); }
+    .section-header h2 { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.6rem, 3.2vw, 2.1rem); font-weight: 500; font-style: italic; letter-spacing: -.02em; }
+    .section-header p { margin-top: 4px; font-size: .92rem; }
+
+    .st-card { margin-bottom: 16px; padding: 22px 24px 8px; border-radius: 26px; border: 1px solid var(--color-border); background: #fff; box-shadow: 0 22px 34px -30px rgba(60, 30, 10, .55); }
+    .st-card-title { margin: 0 0 4px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.2rem; font-weight: 500; font-style: italic; letter-spacing: -.01em; }
+    .st-card-desc { margin: 0 0 16px; font-size: .86rem; line-height: 1.45; color: var(--color-text-muted); }
+    .st-card-title + .form-group, .st-card-title + .form-row { margin-top: 14px; }
+    .st-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+    .st-grid > .st-card-title, .st-grid > .st-card-desc { grid-column: 1 / -1; }
+    @media (max-width: 640px) { .st-grid { grid-template-columns: minmax(0, 1fr); } .st-card { padding: 18px 16px 6px; } }
+    .st-card-list { padding-bottom: 14px; }
+
+    .form-group label:not(.switch):not(.check-label):not(.btn):not(.checkbox-small) { font-size: .66rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--color-text-muted); }
+    .form-group input:not([type='checkbox']):not([type='radio']), .form-group select, .form-group textarea { border-radius: 16px; background: #fffdfa; }
+    .field-hint, .form-group .hint { font-size: .78rem; line-height: 1.4; }
+    .st-url { font-weight: 700; color: var(--color-primary); overflow-wrap: anywhere; }
+
+    .checkbox-row { padding: 14px 16px; margin-bottom: 10px; align-items: center; border-radius: 20px; background: #fffdfa; border: 1px solid var(--color-border); transition: border-color .15s, background .15s; }
+    .checkbox-row:has(input:checked) { border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border)); background: color-mix(in srgb, var(--color-primary) 6%, #fff); }
+    .check-label { font-size: .95rem; font-weight: 800; }
+    .switch, .switch .slider { transition: none; }
+    .switch { width: 48px; height: 28px; }
+    .switch .slider:before { height: 22px; width: 22px; }
+    .switch input:checked + .slider:before { transform: translateX(20px); }
+    .switch input:checked + .slider { background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 66%, #000)); }
+    .switch input:focus-visible + .slider { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+    .current-logo { border-radius: 22px; background: #fffdfa; }
+    .upload-controls .btn { border-radius: 999px; }
+    .st-upload { display: inline-flex; width: fit-content; cursor: pointer; margin-top: 4px; }
+    .st-bank-row { padding: 14px; margin-bottom: 10px; border-radius: 20px; border: 1px dashed var(--color-border); background: #fffdfa; align-items: center; }
+    .payment-qr-preview { border-radius: 20px; box-shadow: 0 18px 28px -20px rgba(60, 30, 10, .5); }
+
+    .day-row { border-radius: 22px; border: 1px solid var(--color-border); background: #fff; box-shadow: 0 16px 26px -24px rgba(60, 30, 10, .5); }
+    .day-row.closed { background: repeating-linear-gradient(135deg, #f6f1e9 0 6px, #fbf8f3 6px 12px); box-shadow: none; }
+    .day-name { font-family: Georgia, 'Times New Roman', serif; font-size: 1.15rem; font-style: italic; font-weight: 500; }
+    .closed-badge { padding: 3px 12px; border-radius: 999px; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); background: #ece5da; }
+    .opening-hours-summary { border-radius: 20px; background: color-mix(in srgb, var(--color-primary) 7%, #fff); border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border)); }
+    .oh-schedule-card { padding: 20px 22px; border-radius: 26px; background: #fff; box-shadow: 0 22px 34px -30px rgba(60, 30, 10, .55); }
+    .oh-schedule-card h4 { font-family: Georgia, 'Times New Roman', serif; font-size: 1.1rem; font-style: italic; font-weight: 500; }
+
+    /* Sticky save bar */
+    .st-savebar { position: sticky; bottom: 14px; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 8px; padding: 10px 10px 10px 20px; border-radius: 999px; background: rgba(255, 253, 250, .92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--color-border); box-shadow: 0 24px 40px -22px rgba(60, 30, 10, .55); transition: border-color .2s, box-shadow .2s; }
+    .st-savebar.dirty { border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border)); box-shadow: 0 24px 40px -22px var(--color-primary); }
+    .st-save-state { display: inline-flex; align-items: center; gap: 10px; font-size: .88rem; font-weight: 700; color: var(--color-text-muted); }
+    .st-save-state i { width: 10px; height: 10px; border-radius: 50%; background: #22a05a; }
+    .st-savebar.dirty .st-save-state { color: var(--color-text); }
+    .st-savebar.dirty .st-save-state i { background: var(--color-primary); animation: st-pulse 1.8s ease-in-out infinite; }
+    .st-save-actions { display: inline-flex; gap: 8px; }
+    .st-save-actions .btn { min-height: 44px; border-radius: 999px; padding: 0 22px; font-weight: 800; }
+    .st-save-actions .btn-primary { background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 66%, #000)); border: 0; box-shadow: 0 14px 22px -14px var(--color-primary); }
+    @keyframes st-pulse { 50% { opacity: .35; } }
+    @media (prefers-reduced-motion: reduce) { .st-savebar.dirty .st-save-state i { animation: none; } }
+    @media (max-width: 560px) { .st-savebar { border-radius: 26px; padding: 12px; } .st-save-actions { width: 100%; } .st-save-actions .btn { flex: 1; } }
+
+    .toast { top: auto; bottom: 90px; border-radius: 999px; padding: 12px 18px 12px 22px; background: #1c1917; font-weight: 700; box-shadow: 0 24px 40px -18px rgba(0,0,0,.6); }
+    .toast.success { background: #166534; }
+    .toast.error { background: #991b1b; }
   `]
 })
 export class SettingsComponent implements OnInit, OnDestroy {
@@ -2215,6 +2318,63 @@ export class SettingsComponent implements OnInit, OnDestroy {
   newTaxValidFrom = new Date().toISOString().slice(0, 10);
   newTaxValidTo = '';
   activeSection = signal<SettingsSectionId>('general');
+
+  /** Unsaved-changes flag for the sticky save bar. */
+  dirty = signal(false);
+  markDirty(): void {
+    if (!this.dirty()) this.dirty.set(true);
+  }
+
+  readonly navGroups: {
+    labelKey: string;
+    items: { id: SettingsSectionId; labelKey: string; descKey: string; icon: string; testid: string | null }[];
+  }[] = [
+    {
+      labelKey: 'SETTINGS.NAV_GROUP_BUSINESS',
+      items: [
+        { id: 'general', labelKey: 'SETTINGS.BUSINESS_PROFILE', descKey: 'SETTINGS.NAV_DESC_GENERAL', testid: null,
+          icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
+        { id: 'contact', labelKey: 'SETTINGS.CONTACT_INFO', descKey: 'SETTINGS.NAV_DESC_CONTACT', testid: 'settings-contact-tab',
+          icon: 'M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z' },
+        { id: 'hours', labelKey: 'SETTINGS.OPENING_HOURS', descKey: 'SETTINGS.NAV_DESC_HOURS', testid: 'settings-hours-tab',
+          icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z M12 6v6l4 2' },
+      ],
+    },
+    {
+      labelKey: 'SETTINGS.NAV_GROUP_OPERATION',
+      items: [
+        { id: 'reservations', labelKey: 'SETTINGS.RESERVATIONS', descKey: 'SETTINGS.NAV_DESC_RESERVATIONS', testid: null,
+          icon: 'M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z M16 2v4 M8 2v4 M3 10h18' },
+        { id: 'payments', labelKey: 'SETTINGS.PAYMENT_SETTINGS', descKey: 'SETTINGS.NAV_DESC_PAYMENTS', testid: 'settings-payments-tab',
+          icon: 'M3 6h18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z M1 10h22' },
+        { id: 'navigation', labelKey: 'SETTINGS.NAVIGATION_UI_TAB', descKey: 'SETTINGS.NAV_DESC_NAVIGATION', testid: 'settings-navigation-tab',
+          icon: 'M4 6h16M4 12h16M4 18h10' },
+      ],
+    },
+  ];
+
+  linkCopied = signal(false);
+
+  /** Public booking link of this restaurant (shown in the header, copyable). */
+  publicUrl(): string {
+    const slug = (this.settings()?.public_slug || '').trim();
+    return slug && typeof location !== 'undefined' ? `${location.origin}/${slug}/book` : '';
+  }
+
+  /** Live preview while editing the slug field. */
+  publicBookPreview(): string {
+    const slug = (this.formData.public_slug || '').trim();
+    return slug && typeof location !== 'undefined' ? `${location.origin}/${slug}/book` : '';
+  }
+
+  copyPublicLink(): void {
+    const url = this.publicUrl();
+    if (!url) return;
+    navigator.clipboard?.writeText(url).then(() => {
+      this.linkCopied.set(true);
+      setTimeout(() => this.linkCopied.set(false), 2000);
+    }).catch(() => {});
+  }
 
   private static readonly SETTINGS_SECTION_IDS: readonly SettingsSectionId[] = [
     'general',
@@ -2612,6 +2772,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   loadSettings() {
     this.loading.set(true);
+    this.dirty.set(false);
     this.api.getTenantSettings().subscribe({
       next: (settings) => {
         this.settings.set(settings);
@@ -3764,7 +3925,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
             this.updateSettings();
           },
           error: (err) => {
-            this.error.set('Failed to upload logo. Please try again.');
+            this.error.set(this.translate.instant('SETTINGS.UPLOAD_FAILED'));
             this.saving.set(false);
             console.error('Error uploading logo:', err);
           }
@@ -3783,7 +3944,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
           doLogoUpload();
         },
         error: (err) => {
-          this.error.set('Failed to upload header background. Please try again.');
+          this.error.set(this.translate.instant('SETTINGS.UPLOAD_FAILED'));
           this.saving.set(false);
           console.error('Error uploading header background:', err);
         }
@@ -3849,12 +4010,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.formData.location_radius_meters = updatedSettings.location_radius_meters ?? 100;
         this.formData.location_check_enabled = updatedSettings.location_check_enabled ?? false;
         this.api.applyTenantUiModulesFromSettings(updatedSettings);
-        this.success.set('Settings saved successfully!');
+        this.success.set(this.translate.instant('SETTINGS.SAVED_OK'));
+        this.dirty.set(false);
         this.scheduleSuccessDismiss();
         this.saving.set(false);
       },
       error: (err) => {
-        this.error.set('Failed to save settings. Please try again.');
+        this.error.set(this.translate.instant('SETTINGS.SAVE_FAILED'));
         this.saving.set(false);
         console.error('Error updating settings:', err);
       }
@@ -3876,7 +4038,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.saving.set(false);
       },
       error: (err) => {
-        this.error.set('Failed to save settings. Please try again.');
+        this.error.set(this.translate.instant('SETTINGS.SAVE_FAILED'));
         this.saving.set(false);
         console.error('Error updating default tax:', err);
       },
