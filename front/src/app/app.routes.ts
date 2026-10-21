@@ -88,6 +88,9 @@ export const routes: Routes = [
   // Reports (sales / revenue) - owner & admin
   { path: 'reports', canActivate: [authGuard, adminGuard], loadComponent: () => import('./reports/reports.component').then(m => m.ReportsComponent) },
 
+  // Cash close (end-of-day register count) - owner & admin
+  { path: 'cash-close', canActivate: [authGuard, adminGuard], loadComponent: () => import('./cash-close/cash-close.component').then(m => m.CashCloseComponent) },
+
   // Working plan (shift schedule) - all staff can add/edit; owner sees '*' when updated by others
   // pathMatch full + guard: redirect to /working-plan/week or /working-plan/calendar (guard runs first; loadComponent satisfies route config)
   { path: 'working-plan', pathMatch: 'full', canActivate: [authGuard, uiModuleGuard('working_plan'), scheduleGuard, workingPlanViewRedirectGuard], loadComponent: () => import('./working-plan/working-plan.component').then(m => m.WorkingPlanComponent) },

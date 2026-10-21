@@ -292,6 +292,9 @@ type NavGroupKey = 'operations' | 'planning' | 'catalog' | 'admin';
                     <a routerLink="/reports" routerLinkActive="active" class="nav-sublink" (click)="closeSidebar()">
                       <span>{{ 'NAV.REPORTS' | translate }}</span>
                     </a>
+                    <a routerLink="/cash-close" routerLinkActive="active" class="nav-sublink" (click)="closeSidebar()">
+                      <span>{{ 'NAV.CASH_CLOSE' | translate }}</span>
+                    </a>
                   }
                   @if (canViewUsers() && moduleEnabled('users')) {
                     <a routerLink="/users" routerLinkActive="active" class="nav-sublink" (click)="closeSidebar()">
@@ -525,6 +528,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (
       path.startsWith('/reports') ||
+      path.startsWith('/cash-close') ||
       path.startsWith('/users') ||
       path.startsWith('/printing') ||
       path.startsWith('/settings')

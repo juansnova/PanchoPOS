@@ -2485,6 +2485,18 @@ export class ApiService {
   }
 
   // Reports (sales / revenue analysis)
+  getCashCloseSummary(businessDate: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/cash-close/summary`, { params: { business_date: businessDate } });
+  }
+
+  listCashCloses(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/cash-close`);
+  }
+
+  createCashClose(body: { business_date: string; counted_cash_cents: number; opening_float_cents: number; note?: string | null }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/cash-close`, body);
+  }
+
   getSalesReports(fromDate: string, toDate: string): Observable<SalesReport> {
     const params = { from_date: fromDate, to_date: toDate };
     return this.http.get<SalesReport>(`${this.apiUrl}/reports/sales`, { params });
