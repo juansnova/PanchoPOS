@@ -20,7 +20,7 @@ export interface PickedLine {
 
 const ALL = '__all__';
 const NONE = '__none__';
-const HUES = [14, 32, 48, 98, 150, 186, 212, 262, 300, 340];
+const HUES = [12, 18, 24, 30, 36, 42, 48];
 
 /**
  * Full-screen product picker (same look as "Nueva venta" in Venta en barra):
@@ -90,6 +90,7 @@ const HUES = [14, 32, 48, 98, 150, 186, 212, 262, 300, 340];
                   }
                   <span class="pp-tile-name">{{ p.name }}</span>
                   <span class="pp-tile-price">{{ formatPrice(p.price_cents) }}</span>
+                  <span class="pp-add" aria-hidden="true">+</span>
                 </button>
               }
             </div>
@@ -97,9 +98,15 @@ const HUES = [14, 32, 48, 98, 150, 186, 212, 262, 300, 340];
         </main>
 
         <aside class="pp-ticket">
-          <h3>{{ 'QUICK_SALE.TICKET' | translate }}</h3>
+          <div class=\"pp-ticket-head\">
+            <div>
+              <p class=\"pp-eyebrow\"><i></i>{{ 'MENU.YOUR_ORDER_EYEBROW' | translate }}</p>
+              <h3>{{ 'QUICK_SALE.TICKET' | translate }}</h3>
+            </div>
+            @if (cart().length > 0) { <span class=\"pp-count\">{{ cart().length }}</span> }
+          </div>
           @if (cart().length === 0) {
-            <p class="pp-empty">{{ 'QUICK_SALE.TICKET_EMPTY' | translate }}</p>
+            <div class="pp-ticket-empty"><span class="pp-empty-ico" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg></span><p>{{ 'QUICK_SALE.TICKET_EMPTY' | translate }}</p></div>
           } @else {
             <ul class="pp-lines">
               @for (line of cart(); track line.product_id) {
@@ -225,6 +232,84 @@ const HUES = [14, 32, 48, 98, 150, 186, 212, 262, 300, 340];
       .pp-ticket { max-height: 45vh; border-inline-start: none; border-top: 1px solid var(--color-border, #e5e7eb); }
       .pp-top h2 { display: none; }
     }
+    /* ===== v2: warm, ticket-style point of sale ===== */
+    .pp-overlay { background: radial-gradient(120% 80% at 100% 0, rgba(232, 154, 82, 0.10), transparent 55%), #faf6f1; }
+    .pp-top { gap: 1rem; padding: 0.75rem 1.25rem; background: #fff; border-bottom: 0; box-shadow: 0 12px 24px -22px rgba(23, 18, 16, 0.5); position: relative; z-index: 2; }
+    .pp-top h2 { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.5rem; letter-spacing: -0.02em; }
+    .pp-search { min-height: 50px; padding: 0 1.1rem; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--color-primary, #c2612c) 4%, #fff); box-shadow: inset 0 0 0 1.5px var(--color-border, #e5e7eb); transition: box-shadow 0.2s, background 0.2s; }
+    .pp-search svg { color: var(--color-primary, #c2612c); }
+    .pp-search:focus-within { background: #fff; border: 0; box-shadow: inset 0 0 0 2px var(--color-primary, #c2612c), 0 0 0 5px color-mix(in srgb, var(--color-primary, #c2612c) 14%, transparent); }
+    .pp-clear { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: color-mix(in srgb, var(--color-primary, #c2612c) 10%, #fff); color: var(--color-primary, #c2612c); font-size: 1.1rem; }
+    .pp-close { width: 46px; height: 46px; border: 0; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 1.5px var(--color-border, #e5e7eb); transition: transform 0.15s, box-shadow 0.2s; }
+    .pp-close:hover { box-shadow: inset 0 0 0 2px var(--color-primary, #c2612c); }
+    .pp-close:active { transform: scale(0.92); }
+
+    .pp-body { grid-template-columns: 14rem minmax(0, 1fr) 23rem; }
+    .pp-cats { gap: 0.4rem; padding: 1rem 0.85rem; background: transparent; border: 0; }
+    .pp-cats button { min-height: 52px; padding: 0 0.6rem 0 1rem; border-radius: 18px; font-weight: 600; background: transparent; transition: background 0.2s, box-shadow 0.2s, transform 0.15s; }
+    .pp-cats button:hover { background: #fff; box-shadow: 0 10px 18px -14px rgba(23, 18, 16, 0.5); }
+    .pp-cats button:active { transform: scale(0.98); }
+    .pp-cats button small { display: grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 15px; font-family: Georgia, serif; font-style: italic; font-size: 0.9rem; color: var(--color-primary, #c2612c); background: color-mix(in srgb, var(--color-primary, #c2612c) 10%, #fff); }
+    .pp-cats button.active { color: #fff; background: linear-gradient(135deg, var(--color-primary, #c2612c), color-mix(in srgb, var(--color-primary, #c2612c) 62%, #000)); box-shadow: 0 16px 24px -14px var(--color-primary, #c2612c); }
+    .pp-cats button.active small { color: var(--color-primary, #c2612c); background: #fff; }
+
+    .pp-products { padding: 1.1rem 1.25rem 2rem; }
+    .pp-found { font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.7rem; }
+    .pp-grid { grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: 1rem; }
+    .pp-tile { gap: 0.4rem; padding: 0.55rem 0.55rem 0.8rem; border: 0; border-radius: 24px; background: #fff; box-shadow: 0 18px 30px -24px rgba(23, 18, 16, 0.5), 0 0 0 1px rgba(193, 90, 30, 0.1); transition: transform 0.2s, box-shadow 0.2s; }
+    .pp-tile:hover { transform: translateY(-3px); box-shadow: 0 26px 36px -22px rgba(23, 18, 16, 0.55), 0 0 0 1.5px color-mix(in srgb, var(--color-primary, #c2612c) 45%, transparent); }
+    .pp-tile:active { transform: scale(0.97); }
+    .pp-tile.in-cart { box-shadow: 0 22px 34px -22px var(--color-primary, #c2612c), 0 0 0 2.5px var(--color-primary, #c2612c); }
+    .pp-thumb { border-radius: 18px; aspect-ratio: 4 / 3; background: linear-gradient(145deg, hsl(var(--hue, 30) 85% 66%), hsl(var(--hue, 30) 70% 42%)); color: rgba(255, 255, 255, 0.95); }
+    .pp-thumb b { font-family: Georgia, serif; font-style: italic; font-weight: 500; font-size: 2.6rem; text-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); }
+    .pp-tile-name { padding-inline: 0.35rem; font-family: Georgia, 'Times New Roman', serif; font-size: 1rem; font-weight: 500; line-height: 1.2; min-height: 2.4em; }
+    .pp-tile-price { padding-inline: 0.35rem; font-family: Georgia, serif; font-style: italic; font-weight: 600; font-size: 1.15rem; }
+    .pp-add { position: absolute; right: 0.9rem; bottom: 0.7rem; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; font-size: 1.25rem; font-weight: 700; line-height: 1; color: #fff; background: linear-gradient(145deg, var(--color-primary, #c2612c), color-mix(in srgb, var(--color-primary, #c2612c) 62%, #000)); box-shadow: 0 10px 16px -8px var(--color-primary, #c2612c); transition: transform 0.2s; }
+    .pp-tile:hover .pp-add { transform: scale(1.12) rotate(90deg); }
+    .pp-badge { top: 1rem; inset-inline-end: 1rem; min-width: 30px; height: 30px; font-family: Georgia, serif; font-style: italic; font-size: 0.95rem; color: var(--color-primary, #c2612c); background: #fff; box-shadow: 0 8px 14px -6px rgba(0, 0, 0, 0.45); animation: pp-pop 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+    @keyframes pp-pop { from { transform: scale(0.4); opacity: 0; } }
+
+    .pp-ticket { gap: 0.6rem; padding: 1.25rem 1.1rem; margin: 0.75rem 0.75rem 0.75rem 0; border: 0; border-radius: 28px; background: #fff; box-shadow: 0 24px 44px -28px rgba(23, 18, 16, 0.5), 0 0 0 1px rgba(193, 90, 30, 0.12); }
+    .pp-ticket-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 0.5rem; }
+    .pp-ticket h3 { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.7rem; letter-spacing: -0.02em; line-height: 1; }
+    .pp-eyebrow { margin: 0 0 4px; display: flex; align-items: center; gap: 8px; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-primary, #c2612c); }
+    .pp-eyebrow i { width: 16px; height: 1.5px; background: currentColor; }
+    .pp-count { display: grid; place-items: center; min-width: 30px; height: 30px; padding: 0 9px; border-radius: 15px; font-family: Georgia, serif; font-style: italic; font-weight: 700; color: var(--color-primary, #c2612c); background: color-mix(in srgb, var(--color-primary, #c2612c) 12%, #fff); }
+    .pp-ticket-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; border-radius: 22px; border: 1.5px dashed color-mix(in srgb, var(--color-primary, #c2612c) 35%, var(--color-border, #e5e7eb)); background: color-mix(in srgb, var(--color-primary, #c2612c) 3%, #fff); padding: 1.5rem; }
+    .pp-ticket-empty p { margin: 0; max-width: 18ch; font-family: Georgia, serif; font-style: italic; font-size: 1.05rem; color: var(--color-text-muted, #6b7280); }
+    .pp-empty-ico { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 20px; color: #fff; background: linear-gradient(145deg, var(--color-primary, #c2612c), color-mix(in srgb, var(--color-primary, #c2612c) 60%, #000)); box-shadow: 0 14px 22px -12px var(--color-primary, #c2612c); transform: rotate(-4deg); }
+    .pp-lines { gap: 0.5rem; }
+    .pp-lines li { grid-template-columns: 1fr auto; row-gap: 6px; padding: 10px 12px; border-radius: 18px; background: color-mix(in srgb, var(--color-primary, #c2612c) 4%, #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary, #c2612c) 10%, transparent); }
+    .pp-line-name { grid-column: 1 / -1; white-space: normal; font-family: Georgia, serif; font-size: 1rem; line-height: 1.2; }
+    .pp-line-price { min-width: 0; font-weight: 800; letter-spacing: -0.01em; }
+    .pp-stepper { gap: 2px; padding: 3px; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary, #c2612c) 18%, transparent); }
+    .pp-stepper button { width: 30px; height: 30px; border: 0; border-radius: 50%; color: var(--color-primary, #c2612c); background: #fff; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-primary, #c2612c) 30%, transparent); transition: transform 0.15s; }
+    .pp-stepper button:last-child { color: #fff; background: linear-gradient(145deg, var(--color-primary, #c2612c), color-mix(in srgb, var(--color-primary, #c2612c) 62%, #000)); box-shadow: 0 6px 10px -5px var(--color-primary, #c2612c); }
+    .pp-stepper button:active { transform: scale(0.88); }
+    .pp-stepper b { min-width: 28px; font-family: Georgia, serif; font-style: italic; }
+    .pp-checkout { gap: 0.7rem; padding-top: 0.9rem; border-top: 1.5px dashed var(--color-border, #e5e7eb); }
+    .pp-total span { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-text-muted, #6b7280); }
+    .pp-total strong { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 2.1rem; letter-spacing: -0.02em; color: var(--color-primary, #c2612c); }
+    .pp-actions { gap: 0.6rem; }
+    .pp-actions .btn-secondary { min-height: 52px; padding: 0 1rem; border: 0; border-radius: 999px; font-weight: 700; color: #b91c1c; background: #fef2f2; }
+    .pp-actions .btn-secondary:disabled { opacity: 0.45; }
+    .pp-confirm, .pp-charge { min-height: 52px; border: 0; border-radius: 999px; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--color-primary, #c2612c), color-mix(in srgb, var(--color-primary, #c2612c) 60%, #000)); box-shadow: 0 16px 24px -14px var(--color-primary, #c2612c); transition: transform 0.15s; }
+    .pp-confirm:active, .pp-charge:active { transform: scale(0.97); }
+    .pp-confirm:disabled, .pp-charge:disabled { opacity: 0.5; box-shadow: none; }
+    .pp-customer { min-height: 46px; padding: 0 1rem; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--color-primary, #c2612c) 4%, #fff); box-shadow: inset 0 0 0 1.5px var(--color-border, #e5e7eb); outline: none; transition: box-shadow 0.2s; }
+    .pp-customer:focus { box-shadow: inset 0 0 0 2px var(--color-primary, #c2612c), 0 0 0 4px color-mix(in srgb, var(--color-primary, #c2612c) 14%, transparent); }
+    .pp-pay { gap: 0.5rem; }
+    .pp-pay button { min-height: 62px; border: 0; border-radius: 20px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--color-border, #e5e7eb); }
+    .pp-pay button:hover { box-shadow: inset 0 0 0 2px var(--color-primary, #c2612c); }
+    .pp-pay button.active { color: #fff; background: linear-gradient(135deg, var(--color-primary, #c2612c), color-mix(in srgb, var(--color-primary, #c2612c) 60%, #000)); box-shadow: 0 14px 22px -12px var(--color-primary, #c2612c); }
+    @media (max-width: 900px) {
+      .pp-cats { flex-direction: row; padding: 0.75rem 1rem; }
+      .pp-cats button { min-height: 44px; border-radius: 999px; }
+      .pp-ticket { margin: 0 0.75rem 0.75rem; max-height: 45vh; }
+    }
+    .pp-stepper { justify-self: start; align-self: center; }
+    @media (prefers-reduced-motion: reduce) { .pp-badge { animation: none; } .pp-tile, .pp-add { transition: none; } }
+
   `,
 })
 export class ProductPickerComponent {
