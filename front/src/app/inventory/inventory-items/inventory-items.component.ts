@@ -337,74 +337,77 @@ const UNIT_ICONS: Record<string, string> = {
       <!-- Stock Adjustment Modal -->
       @if (showAdjustModal()) {
         <div class="modal-overlay">
-          <div class="modal modal-sm" (click)="$event.stopPropagation()" appFocusFirstInput>
-            <div class="form-header">
-              <h3>{{ 'INVENTORY.ITEMS.ADJUST_STOCK' | translate }}</h3>
-              <button class="icon-btn" (click)="closeModals()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-              </button>
+          <div class="modal im ad" (click)="$event.stopPropagation()" appFocusFirstInput>
+            <div class="im-head">
+              <span class="im-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V10M18 20V4M6 20v-4"/></svg></span>
+              <div class="im-head-text">
+                <h3>{{ 'INVENTORY.ITEMS.ADJUST_STOCK' | translate }}</h3>
+                <p>{{ adjustingItem()?.name }}</p>
+              </div>
+              <button type="button" class="im-close" (click)="closeModals()" [attr.aria-label]="'INVENTORY.COMMON.CANCEL' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             </div>
-            <form [formGroup]="adjustForm" (ngSubmit)="submitAdjustment()">
-              <div class="adjust-item-info">
-                <strong>{{ adjustingItem()?.name }}</strong>
-                <span>{{ 'INVENTORY.ITEMS.CURRENT' | translate }}: {{ adjustingItem()?.current_quantity?.toFixed(2) }} {{ unitKey(adjustingItem()!.unit) | translate }}</span>
-              </div>
-              <fieldset class="adjust-type-fieldset">
-                <legend>{{ 'INVENTORY.ITEMS.ADJUSTMENT_TYPE' | translate }}</legend>
-                <div
-                  class="adjust-type-options segmented-control"
-                  role="group"
-                  [attr.aria-label]="'INVENTORY.ITEMS.ADJUSTMENT_TYPE' | translate"
-                >
-                  <button
-                    type="button"
-                    class="adjust-type-option"
-                    [class.active]="adjustForm.get('adjustment_type')?.value === 'adjustment_add'"
-                    (click)="setAdjustmentType('adjustment_add')"
-                  >
-                    {{ 'INVENTORY.ITEMS.ADD_STOCK' | translate }}
-                  </button>
-                  <button
-                    type="button"
-                    class="adjust-type-option"
-                    [class.active]="adjustForm.get('adjustment_type')?.value === 'adjustment_subtract'"
-                    (click)="setAdjustmentType('adjustment_subtract')"
-                  >
-                    {{ 'INVENTORY.ITEMS.REMOVE_STOCK' | translate }}
-                  </button>
-                  <button
-                    type="button"
-                    class="adjust-type-option"
-                    [class.active]="adjustForm.get('adjustment_type')?.value === 'waste'"
-                    (click)="setAdjustmentType('waste')"
-                  >
-                    {{ 'INVENTORY.ITEMS.RECORD_WASTE' | translate }}
-                  </button>
+            <form [formGroup]="adjustForm" (ngSubmit)="submitAdjustment()" class="im-form">
+              <div class="im-body">
+                <div class="ad-now">
+                  <span class="ad-now-ico" aria-hidden="true">{{ categoryIcon(adjustingItem()?.category) }}</span>
+                  <div>
+                    <small>{{ 'INVENTORY.ITEMS.CURRENT' | translate }}</small>
+                    <strong>{{ adjustingItem()?.current_quantity?.toFixed(2) }} <span>{{ unitKey(adjustingItem()!.unit) | translate }}</span></strong>
+                  </div>
                 </div>
-              </fieldset>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="adjust_quantity">{{ 'INVENTORY.ITEMS.QUANTITY' | translate }}</label>
-                  <input type="number" id="adjust_quantity" formControlName="quantity" [step]="stepFor(adjustForm.value['unit'])" [min]="stepFor(adjustForm.value['unit'])" />
-                </div>
-                <div class="form-group">
-                  <label for="adjust_unit">{{ 'INVENTORY.ITEMS.UNIT' | translate }}</label>
-                  <app-select id="adjust_unit" formControlName="unit" [options]="unitOptions()" [searchable]="false" />
-                </div>
+
+                <section class="im-sec">
+                  <h4><i>1</i>{{ 'INVENTORY.ITEMS.ADJUSTMENT_TYPE' | translate }}</h4>
+                  <div class="ad-types" role="group" [attr.aria-label]="'INVENTORY.ITEMS.ADJUSTMENT_TYPE' | translate">
+                    <button type="button" class="ad-type ad-type-add" [class.on]="adjustType() === 'adjustment_add'" (click)="setAdjustmentType('adjustment_add')">
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><b>{{ 'INVENTORY.ITEMS.ADD_STOCK' | translate }}</b><small>{{ 'INVENTORY.ITEMS.ADD_STOCK_HINT' | translate }}</small>
+                    </button>
+                    <button type="button" class="ad-type ad-type-sub" [class.on]="adjustType() === 'adjustment_subtract'" (click)="setAdjustmentType('adjustment_subtract')">
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg><b>{{ 'INVENTORY.ITEMS.REMOVE_STOCK' | translate }}</b><small>{{ 'INVENTORY.ITEMS.REMOVE_STOCK_HINT' | translate }}</small>
+                    </button>
+                    <button type="button" class="ad-type ad-type-waste" [class.on]="adjustType() === 'waste'" (click)="setAdjustmentType('waste')">
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg><b>{{ 'INVENTORY.ITEMS.RECORD_WASTE' | translate }}</b><small>{{ 'INVENTORY.ITEMS.WASTE_HINT' | translate }}</small>
+                    </button>
+                  </div>
+                </section>
+
+                <section class="im-sec">
+                  <h4><i>2</i>{{ 'INVENTORY.ITEMS.QUANTITY' | translate }}</h4>
+                  <div class="ad-qty">
+                    <button type="button" class="ad-step" (click)="stepAdjustQty(-1)" aria-label="-">−</button>
+                    <input type="number" id="adjust_quantity" formControlName="quantity" [step]="stepFor(adjustForm.value['unit'])" [min]="stepFor(adjustForm.value['unit'])" />
+                    <button type="button" class="ad-step ad-step-plus" (click)="stepAdjustQty(1)" aria-label="+">+</button>
+                  </div>
+                  <div class="im-two">
+                    <div class="im-field">
+                      <label for="adjust_unit">{{ 'INVENTORY.ITEMS.UNIT' | translate }}</label>
+                      <app-select id="adjust_unit" formControlName="unit" [options]="unitRichOptions()" [searchable]="false" />
+                    </div>
+                    <div class="im-field">
+                      <label for="adjust_warehouse">{{ 'INVENTORY.WAREHOUSES.WAREHOUSE' | translate }}</label>
+                      <app-select id="adjust_warehouse" formControlName="warehouse_id" [options]="warehouseOptions()" [searchable]="false" />
+                    </div>
+                  </div>
+                  @if (adjustResult(); as r) {
+                    <div class="ad-result" [attr.data-type]="adjustType()">
+                      <span>{{ adjustingItem()?.current_quantity?.toFixed(2) }}</span>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                      <strong [class.negative]="r.value < 0">{{ r.value.toFixed(2) }} {{ unitKey(adjustingItem()!.unit) | translate }}</strong>
+                      <small>{{ 'INVENTORY.ITEMS.NEW_STOCK' | translate }}</small>
+                    </div>
+                  }
+                </section>
+
+                <section class="im-sec">
+                  <h4><i>3</i>{{ 'INVENTORY.ITEMS.NOTES' | translate }}</h4>
+                  <div class="im-field">
+                    <input type="text" id="adjust_notes" formControlName="notes" [placeholder]="'INVENTORY.ITEMS.NOTES_PLACEHOLDER' | translate" />
+                  </div>
+                </section>
               </div>
-              <div class="form-group">
-                <label for="adjust_warehouse">{{ 'INVENTORY.WAREHOUSES.WAREHOUSE' | translate }}</label>
-                <app-select id="adjust_warehouse" formControlName="warehouse_id" [options]="warehouseOptions()" [searchable]="false" />
-              </div>
-              <div class="form-group">
-                <label for="adjust_notes">{{ 'INVENTORY.ITEMS.NOTES' | translate }}</label>
-                <input type="text" id="adjust_notes" formControlName="notes" [placeholder]="'INVENTORY.ITEMS.NOTES_PLACEHOLDER' | translate" />
-              </div>
-              <div class="form-actions">
-                <button type="button" class="btn btn-secondary" (click)="closeModals()">{{ 'INVENTORY.COMMON.CANCEL' | translate }}</button>
-                <button type="submit" class="btn btn-primary" [disabled]="!adjustForm.valid || saving()">
+              <div class="im-foot">
+                <button type="button" class="im-btn im-btn-ghost" (click)="closeModals()">{{ 'INVENTORY.COMMON.CANCEL' | translate }}</button>
+                <button type="submit" class="im-btn im-btn-main" [disabled]="!adjustForm.valid || saving()">
                   {{ saving() ? ('INVENTORY.ITEMS.PROCESSING' | translate) : ('INVENTORY.ITEMS.APPLY' | translate) }}
                 </button>
               </div>
@@ -679,10 +682,34 @@ export class InventoryItemsComponent implements OnInit {
       warehouse_id: defaultWh?.id ?? null,
       notes: '',
     });
+    this.adjustType.set('adjustment_add');
     this.showAdjustModal.set(true);
   }
 
+  /** Current adjustment type (signal mirror of the form so the template and result react). */
+  adjustType = signal('adjustment_add');
+
+  /** Quantity +/- buttons (step depends on the unit). */
+  stepAdjustQty(dir: 1 | -1): void {
+    const step = this.stepFor(this.adjustForm.value['unit']);
+    const cur = Number(this.adjustForm.value['quantity']) || 0;
+    const next = Math.max(step, Math.round((cur + dir * step) * 100) / 100);
+    this.adjustForm.patchValue({ quantity: next });
+  }
+
+  /** New stock after applying the adjustment; only shown when the unit matches the item's. */
+  adjustResult(): { value: number } | null {
+    const item = this.adjustingItem();
+    const v = this.adjustForm.value;
+    const qty = Number(v['quantity']);
+    if (!item || !Number.isFinite(qty) || qty <= 0 || v['unit'] !== item.unit) return null;
+    this.adjustType(); // re-evaluate when the type changes
+    const sign = v['adjustment_type'] === 'adjustment_add' ? 1 : -1;
+    return { value: (item.current_quantity || 0) + sign * qty };
+  }
+
   setAdjustmentType(type: string) {
+    this.adjustType.set(type);
     this.adjustForm.patchValue({ adjustment_type: type });
   }
 
