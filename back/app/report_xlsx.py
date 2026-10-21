@@ -156,6 +156,8 @@ _ES = {
     "chart_hours": "Ingresos por hora",
     "chart_income_vs_expenses": "Ingresos vs gastos por día",
     "unspecified": "Sin especificar",
+    "uncategorized": "Sin categoría",
+    "unassigned": "Sin asignar",
     "none": "—",
     "abc_hint": "A = productos que suman el 80 % de los ingresos · B = hasta el 95 % · C = el resto",
     "cost_hint": "Costo y utilidad se calculan con el costo registrado en las recetas.",
@@ -275,6 +277,8 @@ _EN = {
     "chart_hours": "Revenue by hour",
     "chart_income_vs_expenses": "Income vs expenses per day",
     "unspecified": "Unspecified",
+    "uncategorized": "Uncategorized",
+    "unassigned": "Unassigned",
     "abc_hint": "A = products making up 80 % of revenue · B = up to 95 % · C = the rest",
     "cost_hint": "Cost and profit use the cost recorded in the recipes.",
     "weekdays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
@@ -522,6 +526,7 @@ def _pie_chart(ws_data, title, cat_col, val_col, top, first, last, w=13, h=8.5):
     ch.dataLabels = DataLabelList()
     ch.dataLabels.showPercent = True
     ch.dataLabels.showVal = False
+    ch.dataLabels.showLegendKey = False
     ch.dataLabels.showCatName = False
     ch.dataLabels.showSerName = False
     ch.dataLabels.showLeaderLines = False
@@ -604,6 +609,25 @@ def _pay_label(raw: str | None, L: dict) -> str:
     }.get(key, key.replace("_", " ").title())
 
 
+def _localize_names(data: dict, rows: list[dict], L: dict):
+    """The API stores English placeholders ("Uncategorized", "Unassigned"); show them in the report language."""
+    def cat(v):
+        return L["uncategorized"] if (not v or v == "Uncategorized") else v
+
+    def wtr(v):
+        return L["unassigned"] if (not v or v == "Unassigned") else v
+
+    rows = [{**r, "category": cat(r.get("category")), "waiter_name": wtr(r.get("waiter_name"))} for r in rows]
+    if data:
+        data = {
+            **data,
+            "by_category": [{**c, "category": cat(c["category"])} for c in data["by_category"]],
+            "by_product": [{**p, "category": cat(p.get("category"))} for p in data["by_product"]],
+            "by_waiter": [{**w, "waiter_name": wtr(w["waiter_name"])} for w in data["by_waiter"]],
+        }
+    return data, rows
+
+
 def _abc(cum: float, L: dict) -> str:
     return "A" if cum <= 0.8 else ("B" if cum <= 0.95 else "C")
 
@@ -631,6 +655,7 @@ def build_sales_workbook(
     """Multi-sheet analytical workbook for the report range described by ``data``."""
     L = labels(lang)
     tz = _tz(tz_name)
+    data, rows = _localize_names(data, rows, L)
     s = data["summary"]
     from_date = date.fromisoformat(data["from_date"])
     to_date = date.fromisoformat(data["to_date"])
@@ -983,6 +1008,7 @@ def build_detailed_workbook(
     """Line-by-line income and expenses with a net analysis."""
     L = labels(lang)
     tz = _tz(tz_name)
+    _, income_rows = _localize_names({}, income_rows, L)
     sub = _subtitle(L, tenant_name, from_date, to_date, tz)
     income_total = sum(r["revenue_cents"] for r in income_rows)
     cost_total = sum(r["cost_cents"] for r in income_rows)
