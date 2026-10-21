@@ -3982,3 +3982,36 @@ $cart-expanded-max: 60vh;
   i { font-style: normal; transition: transform 0.2s; }
   &:hover i { transform: translateX(4px); }
 }
+
+// v3: refined placeholders (plate glyph on warm gradient) and compact totals / CTA
+.cart-thumb, .cart-item-thumb {
+  color: rgba(255, 255, 255, 0.92);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.35), transparent 55%),
+    linear-gradient(145deg, #e89a52, #b4551f);
+  svg { width: 58%; height: 58%; filter: drop-shadow(0 2px 3px rgba(80, 30, 5, 0.35)); }
+}
+.cart-thumb:nth-child(2) { background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.3), transparent 55%), linear-gradient(145deg, #e8b25e, #c0702a); }
+.cart-thumb:nth-child(3) { background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.3), transparent 55%), linear-gradient(145deg, #d98a4a, #8f4318); }
+.cart-item-thumb { width: 52px; height: 52px; border-radius: 16px; }
+
+.menu-page .cart-totals {
+  display: flex;
+  margin-top: 6px;
+  padding: 10px 4px 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  border-top: 1px dashed var(--color-border);
+}
+.menu-page .cart-totals .cart-total-row { width: 100%; font-size: 0.64rem; }
+.menu-page .cart-grand-total { font-size: 1.45rem; text-transform: none; letter-spacing: -0.01em; color: var(--color-primary); }
+
+.menu-page .place-order-btn {
+  min-height: 48px;
+  margin-top: 10px;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.22); font-size: 0.9rem; }
+}
+.menu-page .cart-items-list { max-height: none; overflow: visible; }
