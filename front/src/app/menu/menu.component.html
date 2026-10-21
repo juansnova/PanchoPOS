@@ -226,7 +226,6 @@
               </span>
               <div class="item-name-block">
                 <span class="item-name">{{ item.product.name }}</span>
-                <span class="item-unit">{{ formatPrice(item.product.price_cents) }} <em>c/u</em></span>
                 @if (item.notes?.trim()) {
                 <span class="item-comment">{{ item.notes }}</span>
                 }
@@ -246,6 +245,7 @@
               </span>
               <div class="oi-end">
                 <span class="item-price">{{ formatPrice(item.product.price_cents * item.quantity) }}</span>
+                <span class="item-calc">{{ item.quantity }} × {{ formatPrice(item.product.price_cents) }}</span>
                 @if (item.status) {
                 <span class="item-status-label" [class]="'status-' + item.status"><i></i>{{ ('ITEM_STATUS.' + item.status) | translate }}</span>
                 }
