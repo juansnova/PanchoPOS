@@ -181,7 +181,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
                         autocomplete="new-password"
                         [attr.aria-label]="'USERS.PASSWORD' | translate"
                       />
-                      <button type="button" class="pw-toggle" (click)="showPassword.set(!showPassword())" [attr.aria-label]="showPassword() ? ('USERS.HIDE_PASSWORD' | translate) : ('USERS.SHOW_PASSWORD' | translate)" tabindex="-1">
+                      <button type="button" class="pw-toggle" [class.on]="showPassword()" (click)="showPassword.set(!showPassword())" [attr.aria-label]="showPassword() ? ('USERS.HIDE_PASSWORD' | translate) : ('USERS.SHOW_PASSWORD' | translate)" tabindex="-1">
                         @if (showPassword()) {
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                         } @else {
@@ -209,7 +209,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
                         [placeholder]="'USERS.CONFIRM_PASSWORD' | translate"
                         [attr.aria-label]="'USERS.CONFIRM_PASSWORD' | translate"
                       />
-                      <button type="button" class="pw-toggle" (click)="showPasswordConfirm.set(!showPasswordConfirm())" [attr.aria-label]="showPasswordConfirm() ? ('USERS.HIDE_PASSWORD' | translate) : ('USERS.SHOW_PASSWORD' | translate)" tabindex="-1">
+                      <button type="button" class="pw-toggle" [class.on]="showPasswordConfirm()" (click)="showPasswordConfirm.set(!showPasswordConfirm())" [attr.aria-label]="showPasswordConfirm() ? ('USERS.HIDE_PASSWORD' | translate) : ('USERS.SHOW_PASSWORD' | translate)" tabindex="-1">
                         @if (showPasswordConfirm()) {
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                         } @else {
@@ -797,7 +797,32 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       box-shadow: none;
     }
     .us-field input:focus { outline: none; box-shadow: none; }
-    .us-field-pw .pw-toggle { position: static; transform: none; margin-right: 8px; }
+    .us-field-pw .pw-toggle {
+      position: static;
+      transform: none;
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      margin-right: 6px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .us-field-pw .pw-toggle svg { transition: transform 0.25s ease; }
+    .us-field-pw .pw-toggle:hover { background: var(--color-primary); color: #fff; box-shadow: 0 8px 14px -8px var(--color-primary); }
+    .us-field-pw .pw-toggle:active { transform: scale(0.92); }
+    .us-field-pw .pw-toggle.on { background: var(--color-primary); color: #fff; }
+    .us-field-pw .pw-toggle.on svg { transform: rotate(-8deg) scale(1.05); }
+    .us-field-pw .pw-toggle:focus-visible { outline: 3px solid var(--color-primary-light); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      .us-field-pw .pw-toggle, .us-field-pw .pw-toggle svg { transition: none; }
+    }
 
     .us-meter { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
     .us-meter div { flex: 1; display: flex; gap: 6px; }
