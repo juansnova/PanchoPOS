@@ -5,29 +5,76 @@
     <p class="error">{{ error() }}</p>
     <a [routerLink]="['/delivery', tenantId()]">{{ 'DELIVERY_CHECKOUT.ORDER_AGAIN' | translate }}</a>
   } @else if (status(); as s) {
-    <h1>{{ 'DELIVERY_TRACK.TITLE' | translate }}</h1>
-    @if (s.tenant_name) {
-      <p class="tenant-name">{{ s.tenant_name }}</p>
-    }
-    <p class="order-ref">{{ 'DELIVERY_CHECKOUT.ORDER_REF' | translate: { id: s.order_id } }}</p>
+    <header class="trk-head">
+      @if (s.tenant_name) {
+        <p class="tenant-name">{{ s.tenant_name }}</p>
+      }
+      <h1>{{ 'DELIVERY_TRACK.TITLE' | translate }}</h1>
+    </header>
 
-    <p class="current-status" data-testid="delivery-track-status">
-      {{ statusLabelKey(s.status) | translate }}
-    </p>
+    <section class="trk-ticket">
+      <div class="trk-top">
+        <div>
+          <p class="trk-eyebrow"><i></i>{{ 'MENU.ORDER_WORD' | translate }}</p>
+          <p class="order-ref">Nº {{ s.order_id }}</p>
+        </div>
+        <span class="current-status" [class]="'st-' + s.status" data-testid="delivery-track-status">
+          <span class="trk-dot"></span>{{ statusLabelKey(s.status) | translate }}
+        </span>
+      </div>
 
-    @if (s.status === 'awaiting_payment') {
-      <p class="hint">{{ 'DELIVERY_TRACK.AWAITING_PAYMENT_HINT' | translate }}</p>
-    } @else if (s.status === 'cancelled') {
-      <p class="hint">{{ 'DELIVERY_TRACK.CANCELLED_HINT' | translate }}</p>
-    } @else {
-      <ol class="status-steps" aria-label="{{ 'DELIVERY_TRACK.TITLE' | translate }}">
-        @for (step of steps; track step) {
-          <li [class.done]="isStepDone(step, s.status)" [class.current]="s.status === step">
-            {{ statusLabelKey(step) | translate }}
-          </li>
+      @if (s.status === 'awaiting_payment') {
+        <p class="hint">{{ 'DELIVERY_TRACK.AWAITING_PAYMENT_HINT' | translate }}</p>
+      } @else if (s.status === 'cancelled') {
+        <p class="hint">{{ 'DELIVERY_TRACK.CANCELLED_HINT' | translate }}</p>
+      } @else {
+        <ol class="status-steps" [attr.data-step]="stepIndex(s.status)" aria-label="{{ 'DELIVERY_TRACK.TITLE' | translate }}">
+          @for (step of steps; track step; let i = $index) {
+            <li [class.done]="isStepDone(step, s.status)" [class.current]="s.status === step">
+              <i>{{ i + 1 }}</i>
+              <span>{{ statusLabelKey(step) | translate }}</span>
+            </li>
+          }
+        </ol>
+      }
+
+      @if (s.delivery_address) {
+        <div class="trk-addr">
+          <span class="trk-ico" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          </span>
+          <div>
+            <small>{{ 'DELIVERY_CHECKOUT.ADDRESS' | translate }}</small>
+            <b>{{ s.delivery_address }}</b>
+          </div>
+        </div>
+      }
+
+      @if (s.items && s.items.length > 0) {
+        <ul class="order-items">
+          @for (item of s.items; track item.product_name) {
+            <li>
+              <span class="oi-thumb" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h0A2.5 2.5 0 0 0 9 9V3M6.5 3v18"/><path d="M20 21V3c-2.8 1.2-4.5 4-4.5 7.5 0 1.4 1 2.5 2.3 2.5H20"/></svg>
+              </span>
+              <span class="name">{{ item.product_name }}</span>
+              <span class="oi-end">
+                <span class="line-price">{{ formatCents(item.price_cents * item.quantity) }}</span>
+                <span class="qty">{{ item.quantity }} × {{ formatCents(item.price_cents) }}</span>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="totals">
+        @if (s.delivery_fee_cents > 0) {
+          <span class="trk-row subtotal"><span>{{ 'DELIVERY_CHECKOUT.SUBTOTAL' | translate }}</span><b>{{ formatCents(s.subtotal_cents) }}</b></span>
+          <span class="trk-row fee"><span>{{ 'DELIVERY_CHECKOUT.DELIVERY_FEE' | translate }}</span><b>{{ formatCents(s.delivery_fee_cents) }}</b></span>
         }
-      </ol>
-    }
+        <span class="trk-row grand-total"><span>{{ 'DELIVERY_CHECKOUT.TOTAL' | translate }}</span><b>{{ formatCents(s.total_cents) }}</b></span>
+      </div>
+    </section>
 
     @if (s.status === 'delivered') {
       <section class="rate-card" aria-label="{{ 'DELIVERY_TRACK.RATE_TITLE' | translate }}">
@@ -54,42 +101,13 @@
       </section>
     }
 
-    @if (s.delivery_address) {
-      <p class="address">
-        <strong>{{ 'DELIVERY_CHECKOUT.ADDRESS' | translate }}:</strong>
-        {{ s.delivery_address }}
-      </p>
-    }
-
-    @if (s.items && s.items.length > 0) {
-      <ul class="order-items">
-        @for (item of s.items; track item.product_name) {
-          <li>
-            <span class="qty">{{ item.quantity }}×</span>
-            <span class="name">{{ item.product_name }}</span>
-            <span class="line-price">{{ formatCents(item.price_cents * item.quantity) }}</span>
-          </li>
-        }
-      </ul>
-    }
-
-    <p class="totals">
-      @if (s.delivery_fee_cents > 0) {
-        <span class="subtotal">
-          {{ 'DELIVERY_CHECKOUT.SUBTOTAL' | translate }}: {{ formatCents(s.subtotal_cents) }}
-        </span>
-        <span class="fee">
-          {{ 'DELIVERY_CHECKOUT.DELIVERY_FEE' | translate }}: {{ formatCents(s.delivery_fee_cents) }}
-        </span>
-      }
-      <span class="grand-total">{{ 'DELIVERY_CHECKOUT.TOTAL' | translate }}: {{ formatCents(s.total_cents) }}</span>
-    </p>
-
+    <div class="trk-actions">
     <button type="button" class="btn btn-secondary" (click)="refresh()">
       {{ 'DELIVERY_TRACK.REFRESH' | translate }}
     </button>
     <a [routerLink]="['/delivery', tenantId()]" class="btn btn-primary">
-      {{ 'DELIVERY_CHECKOUT.ORDER_AGAIN' | translate }}
+      {{ 'DELIVERY_CHECKOUT.ORDER_AGAIN' | translate }}<i aria-hidden="true">→</i>
     </a>
+    </div>
   }
 </div>
