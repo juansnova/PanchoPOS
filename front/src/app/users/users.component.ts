@@ -102,10 +102,13 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
           <div class="modal-overlay">
             <div class="modal" (click)="$event.stopPropagation()" appFocusFirstInput>
               <div class="modal-header" [attr.data-role]="formRole">
-                <span class="us-m-ico" [attr.data-role]="formRole" [innerHTML]="roleIcon(formRole, 26)" aria-hidden="true"></span>
+                <span class="us-m-avatar" [attr.data-role]="formRole" aria-hidden="true">
+                  <b>{{ formInitials() }}</b>
+                  <span class="us-m-badge" [innerHTML]="roleIcon(formRole, 14)"></span>
+                </span>
                 <div class="us-m-text">
                   <h2>{{ editingUser() ? ('USERS.EDIT_USER' | translate) : ('USERS.ADD_USER' | translate) }}</h2>
-                  <p>{{ getRoleDisplayName(formRole) }}</p>
+                  <p>{{ formFullName || formUsername || getRoleDisplayName(formRole) }}</p>
                 </div>
                 <button class="btn-close" (click)="closeModal()" [attr.aria-label]="'COMMON.CANCEL' | translate">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -114,29 +117,28 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
                 </button>
               </div>
               <form class="modal-body" (ngSubmit)="saveUser()">
-                <div class="form-group">
-                  <label for="username">{{ 'USERS.USERNAME' | translate }}</label>
-                  <input
-                    type="text"
-                    id="username"
-                    [(ngModel)]="formUsername"
-                    name="username"
-                    required
-                    [disabled]="editingUser()?.id === currentUser()?.id"
-                  />
-                </div>
-                <div class="form-group">
-                  <label for="fullName">{{ 'USERS.FULL_NAME' | translate }}</label>
-                  <input
-                    type="text"
-                    id="fullName"
-                    [(ngModel)]="formFullName"
-                    name="fullName"
-                  />
-                </div>
-                <div class="form-group">
-                  <label id="role-label">{{ 'USERS.ROLE' | translate }}</label>
-                  <div class="us-roles" role="radiogroup" aria-labelledby="role-label">
+                <section class="us-sec">
+                  <h4><i>1</i>{{ 'USERS.STEP_WHO' | translate }}</h4>
+                  <div class="form-group">
+                    <label for="fullName">{{ 'USERS.FULL_NAME' | translate }}</label>
+                    <div class="us-field">
+                      <span class="us-field-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                      <input type="text" id="fullName" [(ngModel)]="formFullName" name="fullName" autocomplete="off" />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="username">{{ 'USERS.USERNAME' | translate }}</label>
+                    <div class="us-field">
+                      <span class="us-field-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 006 0v-1a10 10 0 10-3.9 7.9"/></svg></span>
+                      <input type="text" id="username" [(ngModel)]="formUsername" name="username" required autocomplete="off"
+                        [disabled]="editingUser()?.id === currentUser()?.id" />
+                    </div>
+                  </div>
+                </section>
+
+                <section class="us-sec">
+                  <h4><i>2</i>{{ 'USERS.ROLE' | translate }}</h4>
+                  <div class="us-roles" role="radiogroup" [attr.aria-label]="'USERS.ROLE' | translate">
                     @for (role of roleOptionsForModal(); track role) {
                       <button
                         type="button"
@@ -151,54 +153,79 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
                         <span class="us-role-ico" [innerHTML]="roleIcon(role, 24)" aria-hidden="true"></span>
                         <b>{{ getRoleDisplayName(role) }}</b>
                         <small>{{ 'USERS.ROLE_DESC_' + role.toUpperCase() | translate }}</small>
+                        @if (formRole === role) {
+                          <span class="us-role-check" aria-hidden="true">✓</span>
+                        }
                       </button>
                     }
                   </div>
-                </div>
-                <div class="form-group">
-                  <label for="password">
-                    {{ editingUser() ? ('USERS.NEW_PASSWORD' | translate) : ('USERS.PASSWORD' | translate) }}
+                </section>
+
+                <section class="us-sec">
+                  <h4>
+                    <i>3</i>{{ editingUser() ? ('USERS.NEW_PASSWORD' | translate) : ('USERS.PASSWORD' | translate) }}
                     @if (editingUser()) {
                       <span class="optional">({{ 'USERS.LEAVE_BLANK' | translate }})</span>
                     }
-                  </label>
-                  <div class="input-with-toggle">
-                    <input
-                      [type]="showPassword() ? 'text' : 'password'"
-                      id="password"
-                      [(ngModel)]="formPassword"
-                      name="password"
-                      [required]="!editingUser()"
-                      minlength="6"
-                    />
-                    <button type="button" class="pw-toggle" (click)="showPassword.set(!showPassword())" [attr.aria-label]="showPassword() ? ('USERS.HIDE_PASSWORD' | translate) : ('USERS.SHOW_PASSWORD' | translate)" tabindex="-1">
-                      @if (showPassword()) {
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                      } @else {
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      }
-                    </button>
+                  </h4>
+                  <div class="form-group">
+                    <div class="us-field us-field-pw">
+                      <span class="us-field-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>
+                      <input
+                        [type]="showPassword() ? 'text' : 'password'"
+                        id="password"
+                        [(ngModel)]="formPassword"
+                        name="password"
+                        [required]="!editingUser()"
+                        minlength="6"
+                        autocomplete="new-password"
+                        [attr.aria-label]="'USERS.PASSWORD' | translate"
+                      />
+                      <button type="button" class="pw-toggle" (click)="showPassword.set(!showPassword())" [attr.aria-label]="showPassword() ? ('USERS.HIDE_PASSWORD' | translate) : ('USERS.SHOW_PASSWORD' | translate)" tabindex="-1">
+                        @if (showPassword()) {
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        } @else {
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        }
+                      </button>
+                    </div>
+                    @if (formPassword) {
+                      <div class="us-meter" [attr.data-level]="passwordLevel()">
+                        <div><span></span><span></span><span></span></div>
+                        <small>{{ 'USERS.STRENGTH_' + passwordLevel().toUpperCase() | translate }}</small>
+                      </div>
+                    }
                   </div>
-                </div>
-                <div class="form-group">
-                  <label for="password_confirm">{{ 'USERS.CONFIRM_PASSWORD' | translate }}</label>
-                  <div class="input-with-toggle">
-                    <input
-                      [type]="showPasswordConfirm() ? 'text' : 'password'"
-                      id="password_confirm"
-                      [(ngModel)]="formPasswordConfirm"
-                      name="password_confirm"
-                      minlength="6"
-                    />
-                    <button type="button" class="pw-toggle" (click)="showPasswordConfirm.set(!showPasswordConfirm())" [attr.aria-label]="showPasswordConfirm() ? ('USERS.HIDE_PASSWORD' | translate) : ('USERS.SHOW_PASSWORD' | translate)" tabindex="-1">
-                      @if (showPasswordConfirm()) {
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                      } @else {
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      }
-                    </button>
+                  <div class="form-group">
+                    <div class="us-field us-field-pw" [class.ok]="passwordsMatch()" [class.bad]="formPasswordConfirm && !passwordsMatch()">
+                      <span class="us-field-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4M9 16l2 2 4-4"/></svg></span>
+                      <input
+                        [type]="showPasswordConfirm() ? 'text' : 'password'"
+                        id="password_confirm"
+                        [(ngModel)]="formPasswordConfirm"
+                        name="password_confirm"
+                        minlength="6"
+                        autocomplete="new-password"
+                        [placeholder]="'USERS.CONFIRM_PASSWORD' | translate"
+                        [attr.aria-label]="'USERS.CONFIRM_PASSWORD' | translate"
+                      />
+                      <button type="button" class="pw-toggle" (click)="showPasswordConfirm.set(!showPasswordConfirm())" [attr.aria-label]="showPasswordConfirm() ? ('USERS.HIDE_PASSWORD' | translate) : ('USERS.SHOW_PASSWORD' | translate)" tabindex="-1">
+                        @if (showPasswordConfirm()) {
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        } @else {
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        }
+                      </button>
+                    </div>
+                    @if (formPasswordConfirm) {
+                      <small class="us-match" [class.ok]="passwordsMatch()">
+                        {{ passwordsMatch() ? ('USERS.MATCH' | translate) : ('USERS.PASSWORDS_DO_NOT_MATCH' | translate) }}
+                      </small>
+                    }
                   </div>
-                </div>
+                  <button type="button" class="us-gen" (click)="generatePassword()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1"/><circle cx="15.5" cy="8.5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="8.5" cy="15.5" r="1"/><circle cx="15.5" cy="15.5" r="1"/></svg> {{ 'USERS.GENERATE' | translate }}</button>
+                </section>
+
                 @if (editingUser() && currentUser()?.role === 'owner' && editingUser()?.id !== currentUser()?.id) {
                   <p class="role-hint">{{ 'USERS.CO_OWNER_HINT' | translate }}</p>
                 }
@@ -685,6 +712,148 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       gap: var(--space-3);
       margin-top: var(--space-5);
     }
+
+    /* Create / edit modal v2 */
+    .us-m-avatar {
+      --rc: var(--color-primary);
+      --rc2: var(--color-primary);
+      position: relative;
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 1.3rem;
+      background: linear-gradient(145deg, var(--rc2), var(--rc));
+      box-shadow: 0 0 0 3px var(--rc2), 0 12px 20px -10px var(--rc);
+      transition: background 0.25s ease;
+    }
+    .us-m-avatar[data-role='owner'] { --rc: #d9a014; --rc2: #f5c451; }
+    .us-m-avatar[data-role='kitchen'] { --rc: #db4f7a; --rc2: #f088a8; }
+    .us-m-avatar[data-role='waiter'] { --rc: #2f9e64; --rc2: #62c58f; }
+    .us-m-avatar[data-role='courier'] { --rc: #2f86d6; --rc2: #6cb2ee; }
+    .us-m-avatar b { font-weight: 800; }
+    .us-m-badge {
+      position: absolute;
+      right: -6px;
+      bottom: -4px;
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--color-surface);
+      color: var(--rc);
+      border: 2px solid var(--rc);
+    }
+    .us-m-text p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .us-sec { margin-bottom: 20px; }
+    .us-sec h4 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+    .us-sec h4 i {
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      color: #fff;
+      font-style: normal;
+      font-size: 0.78rem;
+    }
+    .us-sec h4 .optional { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); }
+
+    .us-field {
+      position: relative;
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--color-border);
+      border-radius: 14px;
+      background: var(--color-surface);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .us-field:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+    .us-field.ok { border-color: #3f9d62; box-shadow: 0 0 0 3px rgba(63, 157, 98, 0.15); }
+    .us-field.bad { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12); }
+    .us-field-ico { flex: none; display: grid; place-items: center; width: 44px; color: var(--color-primary); }
+    .us-field input,
+    .form-group .us-field input {
+      flex: 1;
+      min-width: 0;
+      min-height: 48px;
+      padding: 0 12px 0 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .us-field input:focus { outline: none; box-shadow: none; }
+    .us-field-pw .pw-toggle { position: static; transform: none; margin-right: 8px; }
+
+    .us-meter { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .us-meter div { flex: 1; display: flex; gap: 6px; }
+    .us-meter span { flex: 1; height: 6px; border-radius: 999px; background: var(--color-bg); }
+    .us-meter small { font-size: 0.72rem; font-weight: 800; min-width: 62px; text-align: right; }
+    .us-meter[data-level='weak'] span:nth-child(1) { background: #dc2626; }
+    .us-meter[data-level='weak'] small { color: #dc2626; }
+    .us-meter[data-level='ok'] span:nth-child(-n+2) { background: #f59e0b; }
+    .us-meter[data-level='ok'] small { color: #b45309; }
+    .us-meter[data-level='strong'] span { background: #3f9d62; }
+    .us-meter[data-level='strong'] small { color: #2f7a4c; }
+
+    .us-match { display: block; margin-top: 6px; font-size: 0.75rem; font-weight: 700; color: #dc2626; }
+    .us-match.ok { color: #2f7a4c; }
+
+    .us-gen {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px dashed var(--color-primary);
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .us-gen:hover { background: var(--color-primary); color: #fff; }
+
+    .us-role { position: relative; }
+    .us-role-check {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--rc);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .modal-actions {
+      position: sticky;
+      bottom: -22px;
+      margin: 8px -22px -22px;
+      padding: 14px 22px;
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+    }
   `]
 })
 export class UsersComponent implements OnInit {
@@ -780,6 +949,40 @@ export class UsersComponent implements OnInit {
   /** Roles shown in create/edit modal. */
   roleOptionsForModal(): UserRole[] {
     return this.availableRoles();
+  }
+
+  formInitials(): string {
+    const name = (this.formFullName || this.formUsername || '').trim();
+    if (!name) return '+';
+    const parts = name.split(/\s+/);
+    return parts.map((x) => x[0]).join('').toUpperCase().slice(0, 2);
+  }
+
+  passwordLevel(): 'weak' | 'ok' | 'strong' {
+    const v = this.formPassword;
+    let score = 0;
+    if (v.length >= 6) score++;
+    if (v.length >= 10) score++;
+    if (/[a-z]/.test(v) && /[A-Z]/.test(v)) score++;
+    if (/\d/.test(v)) score++;
+    if (/[^A-Za-z0-9]/.test(v)) score++;
+    return score >= 4 ? 'strong' : score >= 2 ? 'ok' : 'weak';
+  }
+
+  passwordsMatch(): boolean {
+    return !!this.formPassword && this.formPassword === this.formPasswordConfirm;
+  }
+
+  /** Random 12-char password (no look-alike characters), shown so it can be shared with the person. */
+  generatePassword(): void {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    const bytes = new Uint32Array(12);
+    crypto.getRandomValues(bytes);
+    const pw = Array.from(bytes, (b) => chars[b % chars.length]).join('');
+    this.formPassword = pw;
+    this.formPasswordConfirm = pw;
+    this.showPassword.set(true);
+    this.showPasswordConfirm.set(true);
   }
 
   getInitials(user: User): string {
