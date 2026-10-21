@@ -3225,3 +3225,152 @@ $cart-expanded-max: 60vh;
   height: 46px;
   background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000));
 }
+
+// ================================================================ "super top" pass: hero ticket, headings, sheets
+.menu-page { background: radial-gradient(70% 36% at 100% 0%, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 70%), var(--color-bg); }
+
+// hero: the table is a ticket stub across the bottom of the banner
+.menu-page .hero-meta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 12px 12px 12px 20px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px dashed rgba(255, 255, 255, 0.28);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.mt-table { display: flex; flex-direction: column; min-width: 0; }
+.mt-table small { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gm-ember, #f08a3c); }
+.mt-table b { font-family: Georgia, 'Times New Roman', serif; font-size: 2rem; font-style: italic; font-weight: 500; line-height: 1.05; letter-spacing: -0.02em; color: #fbf6ee; overflow-wrap: anywhere; }
+
+.menu-page .hero-meta-bar .restaurant-contact { flex: 1 1 100%; justify-content: center; margin-top: 2px; }
+
+// section headings: serif italic with a hairline
+.menu-page .customer-orders-heading,
+.menu-page .products-header .section-title,
+.menu-page .section-header-row .section-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.7rem, 6vw, 2.3rem);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.menu-page .section-header-row { display: flex; align-items: center; gap: 12px; &::after { content: ''; flex: 1; border-top: 2px dashed var(--color-border); } }
+
+// empty current order: an inviting receipt
+.menu-page .mt-empty {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  text-align: left;
+  border: 2px dashed color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
+  border-radius: 26px;
+  background: color-mix(in srgb, var(--color-primary) 5%, #fffdfa);
+}
+
+.mt-empty-ico {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  color: #fff;
+  background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, #000));
+  box-shadow: 0 14px 20px -12px var(--color-primary);
+}
+
+.menu-page .mt-empty .no-order-title { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 1.25rem; font-style: italic; font-weight: 500; }
+.menu-page .mt-empty .no-order-hint { margin: 2px 0 0; }
+
+// order tracker / status
+.menu-page .order-tracker-card { border-radius: 28px; background: #fffdfa; }
+.menu-page .order-total-badge { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 1.1rem; }
+
+// floating cart
+.menu-page .cart-sheet {
+  border-radius: 30px;
+  background: #fffdfa;
+  box-shadow: 0 30px 60px -18px rgba(23, 18, 16, 0.55), 0 0 0 1px rgba(60, 30, 10, 0.08);
+}
+
+.menu-page .cart-summary-total { font-family: Georgia, 'Times New Roman', serif; font-size: 1.35rem; font-style: italic; font-weight: 500; }
+
+.menu-page .cart-summary-cta {
+  min-height: 48px;
+  padding: 0 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 58%, #000));
+  box-shadow: 0 16px 24px -14px var(--color-primary);
+}
+
+.menu-page .cart-count-badge { background: var(--color-primary); color: #fff; }
+
+.menu-page .place-order-btn {
+  min-height: 54px;
+  border-radius: 999px;
+  font-size: 1.02rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 58%, #000));
+  box-shadow: 0 18px 28px -14px var(--color-primary);
+}
+
+.menu-page .cart-item-card { border-radius: 22px; }
+.menu-page .cart-item-name { font-family: Georgia, 'Times New Roman', serif; font-size: 1.1rem; font-weight: 500; }
+.menu-page .cart-item-price { font-family: Georgia, 'Times New Roman', serif; font-style: italic; }
+.menu-page .cart-grand-total { font-family: Georgia, 'Times New Roman', serif; font-size: 1.7rem; font-style: italic; font-weight: 500; }
+
+// product detail sheet
+.menu-page .product-detail-sheet { border-radius: 34px 34px 0 0; background: #fffdfa; }
+.menu-page .detail-name { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.8rem, 7vw, 2.4rem); font-weight: 500; letter-spacing: -0.025em; line-height: 1.05; }
+
+.menu-page .detail-price {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.3rem;
+  font-style: italic;
+  font-weight: 500;
+  color: #fff;
+  background: rgba(23, 18, 16, 0.9);
+}
+
+.menu-page .detail-section h4 { font-size: 0.64rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-primary); }
+.menu-page .detail-section p { font-family: Georgia, 'Times New Roman', serif; font-size: 1.02rem; line-height: 1.6; }
+.menu-page .detail-tag { border-radius: 999px; font-weight: 700; }
+
+.menu-page .detail-add-btn {
+  min-height: 56px;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 58%, #000));
+  box-shadow: 0 20px 30px -14px var(--color-primary);
+}
+
+// modals (name, payment)
+.menu-page .modal-sheet { border-radius: 34px 34px 0 0; background: #fffdfa; }
+.menu-page .modal-title { font-family: Georgia, 'Times New Roman', serif; font-size: 1.6rem; font-weight: 500; letter-spacing: -0.02em; }
+.menu-page .modal-actions .btn-primary { border-radius: 999px; font-weight: 800; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 58%, #000)); }
+.menu-page .modal-actions .btn-secondary { border-radius: 999px; font-weight: 800; }
+.menu-page .payment-option-btn { border-radius: 22px; }
+.menu-page .payment-value { font-family: Georgia, 'Times New Roman', serif; font-size: 2.3rem; font-style: italic; font-weight: 500; }
+
+// cart lines: names wrap instead of "Caz…", controls sit on their own row when tight
+.menu-page .cart-item-main { flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+.menu-page .cart-item-info { flex: 1 1 150px; }
+.menu-page .cart-item-info .cart-item-name { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.2; }
+.menu-page .cart-item-controls { flex: 0 0 auto; margin-left: auto; }
+.menu-page .qty-control-btn { box-shadow: 0 6px 10px -8px rgba(0, 0, 0, 0.4); }
+.menu-page .qty-control-btn.plus { color: #fff; border-color: transparent; background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, #000)); }
+.menu-page .order-code-field input { border-radius: 18px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+.menu-page .order-code-field input::placeholder { letter-spacing: 0; font-size: 0.9rem; font-family: inherit; }

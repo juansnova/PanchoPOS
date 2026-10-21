@@ -88,12 +88,9 @@
     }
 
     <div class="hero-meta-bar">
-      <div class="table-pill">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <polyline points="9,22 9,12 15,12 15,22" />
-        </svg>
-        <span>{{ tableGreeting() }}</span>
+      <div class="mt-table">
+        <small>{{ 'MENU.YOUR_TABLE' | translate }}</small>
+        <b>{{ tableName() || tableGreeting() }}</b>
       </div>
 
       <button type="button" class="call-waiter-pill" (click)="openCallWaiter()" [disabled]="waiterCallCooldown()">
@@ -162,9 +159,14 @@
       <h2 class="customer-orders-heading">{{ 'MENU.CURRENT_ORDER' | translate }}</h2>
 
       @if (placedOrders().length === 0) {
-      <div class="no-order-card">
-        <p class="no-order-title">{{ 'MENU.NO_ACTIVE_ORDER' | translate }}</p>
-        <p class="no-order-hint">{{ 'MENU.NO_ACTIVE_ORDER_HINT' | translate }}</p>
+      <div class="no-order-card mt-empty">
+        <span class="mt-empty-ico" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
+        </span>
+        <div>
+          <p class="no-order-title">{{ 'MENU.NO_ACTIVE_ORDER' | translate }}</p>
+          <p class="no-order-hint">{{ 'MENU.NO_ACTIVE_ORDER_HINT' | translate }}</p>
+        </div>
       </div>
       } @else {
       <!-- Order status bar -->
