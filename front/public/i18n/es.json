@@ -2182,6 +2182,11 @@
     "PURCHASE_ORDERS": {
       "TITLE": "Pedidos de Compra",
       "SUBTITLE": "Pide a tus proveedores y sigue cada pedido hasta que llega",
+      "LINE_COMPLETE": "Completo ✓",
+      "LINE_PENDING": "Faltan {{n}}",
+      "DUE_IN_SHORT": "Llega en {{n}} d",
+      "DUE_LATE_SHORT": "Atrasada {{n}} d",
+      "RECEIVE_ALL": "Recibir todo lo pendiente",
       "PICK_DATE": "Elegir fecha",
       "FORM_DETAILS": "Datos del pedido",
       "ARTICLES_SHORT": "artículos",
