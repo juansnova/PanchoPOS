@@ -1228,6 +1228,23 @@ function isValidView(v: string | null): v is ViewMode {
     .wpm-btn-ghost { background: transparent; border: 1px solid var(--color-border); color: var(--color-text); }
     .wpm-btn-main { border: 0; background: var(--color-primary); color: #fff; box-shadow: 0 10px 20px -10px var(--color-primary); }
     .wpm-btn-main:hover { filter: brightness(1.07); }
+
+    /* ===== Ajustes de ancho (barra de plantillas y gestor) ===== */
+    :host { display: block; min-width: 0; max-width: 100%; }
+    .working-plan-page { min-width: 0; max-width: 100%; }
+    .wp-grid-scroll { max-width: 100%; }
+    .wp-templates { min-width: 0; }
+    .wp-templates-title { flex: 1 1 100%; margin: 0 0 2px; }
+    .wp-tpl { max-width: 100%; }
+    .wp-tpl-hint { order: 10; flex: 1 1 100%; margin: 4px 0 0; text-align: left; }
+    .wp-tpl-modal { width: min(640px, 94vw); max-width: 94vw; overflow-x: hidden; }
+    .wp-tpl-modal .modal-body { overflow-x: hidden; }
+    .wp-tpl-row { grid-template-columns: minmax(0, 1fr) auto; min-width: 0; }
+    .wp-tpl-row .wp-tpl-name-input { grid-column: 1; min-width: 0; }
+    .wp-tpl-row .wp-tpl-del { grid-column: 2; grid-row: 1; }
+    .wp-tpl-times { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+    .wp-tpl-times input[type='time'] { width: 100% !important; min-width: 0; box-sizing: border-box; }
+    .wp-tpl-split { grid-column: 1 / -1; white-space: normal; }
   `],
 })
 export class WorkingPlanComponent implements OnInit, OnDestroy {
