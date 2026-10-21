@@ -289,6 +289,10 @@ def _tenant_missing_demo_names(session, tenant_id: int) -> list[str]:
 
 DEFAULT_ADDRESS = "Calle 10 N° 11-04, Segundo Piso, Barrio El Centro, San Vicente de Chucurí, Santander."
 FIXED_CITY = "San Vicente de Chucurí"
+# Issuer defaults for Colombian electronic invoicing (from the RUT). Only applied while empty:
+# the admin can change them in Settings > Facturación electrónica.
+DEFAULT_NIT = "63508103"  # without check digit; the DV (1) is computed in Settings
+DEFAULT_DIAN_TAX_REGIME = "no_responsable_iva"  # RUT responsibility 49
 
 
 def _ensure_location(session: Session, tenant_id: int) -> None:
@@ -302,6 +306,12 @@ def _ensure_location(session: Session, tenant_id: int) -> None:
         changed = True
     if tenant.city != FIXED_CITY:
         tenant.city = FIXED_CITY
+        changed = True
+    if not (tenant.tax_id or "").strip():
+        tenant.tax_id = DEFAULT_NIT
+        changed = True
+    if not (tenant.dian_tax_regime or "").strip():
+        tenant.dian_tax_regime = DEFAULT_DIAN_TAX_REGIME
         changed = True
     if changed:
         session.add(tenant)
