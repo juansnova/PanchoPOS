@@ -1,212 +1,313 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
-import { ApiService, StaffActivity, WorkSession } from '../services/api.service';
+import { ApiService, StaffActivity, WorkSession, workSessionNetWorkSeconds } from '../services/api.service';
+import { AppDatePickerComponent } from '../shared/app-date-picker.component';
 
-function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+/** Local calendar day as YYYY-MM-DD (never UTC, so "today" is the restaurant's today). */
+function localIso(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
 @Component({
   selector: 'app-shift-supervision',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslateModule, AppDatePickerComponent],
   template: `
-    <div class="shift-supervision-page" data-testid="shift-supervision-page">
-      <div class="page-header">
-        <h1>{{ 'SHIFT_SUPERVISION.TITLE' | translate }}</h1>
-        <p class="subtitle">{{ 'SHIFT_SUPERVISION.SUBTITLE' | translate }}</p>
-      </div>
+    <div class="sv-page" data-testid="shift-supervision-page">
+      <header class="sv-hero">
+        <div>
+          <span class="sv-eyebrow">{{ 'SHIFT_SUPERVISION.EYEBROW' | translate }}</span>
+          <h1>{{ 'SHIFT_SUPERVISION.TITLE' | translate }}</h1>
+          <p>{{ 'SHIFT_SUPERVISION.SUBTITLE' | translate }}</p>
+        </div>
+        <div class="sv-now">
+          <div><strong>{{ working() }}</strong><span>{{ 'SHIFT_SUPERVISION.WORKING' | translate }}</span></div>
+          <div class="amber"><strong>{{ onBreak() }}</strong><span>{{ 'SHIFT_SUPERVISION.ON_BREAK' | translate }}</span></div>
+        </div>
+      </header>
 
       @if (error()) {
-        <div class="error-banner">{{ error() }}</div>
+        <div class="sv-error">{{ error() }}</div>
       }
 
-      <section class="card">
-        <h2>{{ 'SHIFT_SUPERVISION.LIVE_TITLE' | translate }}</h2>
+      <!-- ===================== live ===================== -->
+      <section class="sv-card sv-live">
+        <div class="sv-card-head">
+          <span class="sv-badge"><i class="sv-dot"></i>{{ 'SHIFT_SUPERVISION.LIVE_BADGE' | translate }}</span>
+          <h2>{{ 'SHIFT_SUPERVISION.LIVE_TITLE' | translate }}</h2>
+        </div>
         @if (loadingLive()) {
-          <p class="muted">{{ 'SHIFT_SUPERVISION.LOADING' | translate }}</p>
+          <div class="sv-skeleton"><i></i><i></i><i></i></div>
         } @else if (live().length === 0) {
-          <p class="muted">{{ 'SHIFT_SUPERVISION.LIVE_EMPTY' | translate }}</p>
+          <div class="sv-empty">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5" /></svg>
+            <p>{{ 'SHIFT_SUPERVISION.LIVE_EMPTY' | translate }}</p>
+          </div>
         } @else {
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_EMPLOYEE' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_ROLE' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_START' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_STATUS' | translate }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of live(); track row.id) {
-                  <tr>
-                    <td>{{ row.user_name }}</td>
-                    <td>{{ roleLabel(row.user_role) }}</td>
-                    <td>{{ formatDt(row.started_at) }}</td>
-                    <td>
-                      @if (row.on_break) {
-                        <span class="status-badge status-break">{{ 'SHIFT_SUPERVISION.ON_BREAK' | translate }}</span>
-                      } @else {
-                        <span class="status-badge status-working">{{ 'SHIFT_SUPERVISION.WORKING' | translate }}</span>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          <div class="sv-live-grid">
+            @for (row of live(); track row.id) {
+              <article class="sv-person" [class.brk]="row.on_break">
+                <span class="sv-avatar" [style.--h]="hueOf(row.user_name)">{{ initialsOf(row.user_name) }}</span>
+                <div class="sv-person-main">
+                  <b>{{ row.user_name }}</b>
+                  <div class="sv-person-tags">
+                    @if (row.user_role) { <span class="sv-role">{{ roleLabel(row.user_role) }}</span> }
+                    <span class="sv-state" [class.brk]="row.on_break">
+                      {{ (row.on_break ? 'SHIFT_SUPERVISION.ON_BREAK' : 'SHIFT_SUPERVISION.WORKING') | translate }}
+                    </span>
+                  </div>
+                  <small>{{ 'SHIFT_SUPERVISION.SINCE' | translate }} {{ timeOnly(row.started_at) }}</small>
+                </div>
+                <strong class="sv-elapsed">{{ elapsed(row) }}</strong>
+              </article>
+            }
           </div>
         }
       </section>
 
-      <section class="card">
-        <div class="range-row">
-          <h2>{{ 'SHIFT_SUPERVISION.RANGE_TITLE' | translate }}</h2>
-          <div class="range-controls">
-            <label>
-              {{ 'SHIFT_SUPERVISION.FROM' | translate }}
-              <input type="date" [(ngModel)]="fromDate" [max]="toDate">
-            </label>
-            <label>
-              {{ 'SHIFT_SUPERVISION.TO' | translate }}
-              <input type="date" [(ngModel)]="toDate" [min]="fromDate">
-            </label>
-            <button type="button" class="btn btn-secondary" (click)="loadRange()" [disabled]="loadingRange()">
+      <!-- ===================== range ===================== -->
+      <section class="sv-card sv-range">
+        <div class="sv-range-top">
+          <div>
+            <h2>{{ 'SHIFT_SUPERVISION.RANGE_TITLE' | translate }}</h2>
+            <p class="sv-muted">{{ 'SHIFT_SUPERVISION.RANGE_HINT' | translate }}</p>
+          </div>
+          <div class="sv-controls">
+            <div class="sv-field">
+              <label>{{ 'SHIFT_SUPERVISION.FROM' | translate }}</label>
+              <app-date-picker [compact]="true" [clearable]="false" [(ngModel)]="fromDate" />
+            </div>
+            <span class="sv-arrow" aria-hidden="true">→</span>
+            <div class="sv-field">
+              <label>{{ 'SHIFT_SUPERVISION.TO' | translate }}</label>
+              <app-date-picker [compact]="true" [clearable]="false" [min]="fromDate" [(ngModel)]="toDate" />
+            </div>
+            <button type="button" class="sv-go" (click)="loadRange()" [disabled]="loadingRange()">
               {{ loadingRange() ? ('SHIFT_SUPERVISION.LOADING' | translate) : ('SHIFT_SUPERVISION.APPLY' | translate) }}
             </button>
           </div>
         </div>
+        <div class="sv-presets" role="group">
+          @for (p of presets; track p.days) {
+            <button type="button" [class.on]="activeDays() === p.days" (click)="setRange(p.days)" [disabled]="loadingRange()">{{ p.label | translate }}</button>
+          }
+        </div>
+      </section>
 
-        <h3>{{ 'SHIFT_SUPERVISION.ACTIVITY_TITLE' | translate }}</h3>
-        <p class="hint">{{ 'SHIFT_SUPERVISION.ACTIVITY_HINT' | translate }}</p>
+      <!-- ===================== activity ===================== -->
+      <section class="sv-block">
+        <div class="sv-block-head">
+          <h2>{{ 'SHIFT_SUPERVISION.ACTIVITY_TITLE' | translate }}</h2>
+          <p class="sv-muted">{{ 'SHIFT_SUPERVISION.ACTIVITY_HINT' | translate }}</p>
+        </div>
         @if (loadingRange()) {
-          <p class="muted">{{ 'SHIFT_SUPERVISION.LOADING' | translate }}</p>
+          <div class="sv-skeleton"><i></i><i></i></div>
         } @else if (activity().length === 0) {
-          <p class="muted">{{ 'SHIFT_SUPERVISION.ACTIVITY_EMPTY' | translate }}</p>
+          <div class="sv-empty"><p>{{ 'SHIFT_SUPERVISION.ACTIVITY_EMPTY' | translate }}</p></div>
         } @else {
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_EMPLOYEE' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_ROLE' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_SHIFTS' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_HOURS' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_PREPARED' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_DELIVERED' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_REMOVED' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_ORDERS_PAID' | translate }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of activity(); track row.user_id) {
-                  <tr>
-                    <td>{{ row.user_name }}</td>
-                    <td>{{ roleLabel(row.user_role) }}</td>
-                    <td>{{ row.shifts_count }}</td>
-                    <td>{{ formatHours(row.worked_minutes) }}</td>
-                    <td>{{ row.items_prepared }}</td>
-                    <td>{{ row.items_delivered }}</td>
-                    <td>{{ row.items_removed }}</td>
-                    <td>{{ row.orders_paid }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          @let tt = totals();
+          <div class="sv-totals">
+            <div><strong>{{ tt.hours }}</strong><span>{{ 'SHIFT_SUPERVISION.COL_HOURS' | translate }}</span></div>
+            <div><strong>{{ tt.shifts }}</strong><span>{{ 'SHIFT_SUPERVISION.COL_SHIFTS' | translate }}</span></div>
+            <div><strong>{{ tt.prepared }}</strong><span>{{ 'SHIFT_SUPERVISION.COL_PREPARED' | translate }}</span></div>
+            <div><strong>{{ tt.paid }}</strong><span>{{ 'SHIFT_SUPERVISION.COL_ORDERS_PAID' | translate }}</span></div>
+          </div>
+          <div class="sv-people">
+            @for (a of activity(); track a.user_id) {
+              <article class="sv-act">
+                <div class="sv-act-top">
+                  <span class="sv-avatar" [style.--h]="hueOf(a.user_name)">{{ initialsOf(a.user_name) }}</span>
+                  <div class="sv-act-name">
+                    <b>{{ a.user_name }}</b>
+                    <div class="sv-person-tags">
+                      @if (a.user_role) { <span class="sv-role">{{ roleLabel(a.user_role) }}</span> }
+                      @if (a.user_id === topHours()) { <span class="sv-star">★ {{ 'SHIFT_SUPERVISION.TOP_HOURS' | translate }}</span> }
+                      @if (a.user_id === topPaid()) { <span class="sv-star">★ {{ 'SHIFT_SUPERVISION.TOP_PAID' | translate }}</span> }
+                    </div>
+                  </div>
+                  <div class="sv-act-hours">
+                    <strong>{{ formatHours(a.worked_minutes) }}</strong>
+                    <span>{{ a.shifts_count }} {{ 'SHIFT_SUPERVISION.COL_SHIFTS' | translate }}</span>
+                  </div>
+                </div>
+                <div class="sv-bar" aria-hidden="true"><i [style.width.%]="hoursPct(a)"></i></div>
+                <div class="sv-act-stats">
+                  <div><strong>{{ a.items_prepared }}</strong><span>{{ 'SHIFT_SUPERVISION.COL_PREPARED' | translate }}</span></div>
+                  <div><strong>{{ a.items_delivered }}</strong><span>{{ 'SHIFT_SUPERVISION.COL_DELIVERED' | translate }}</span></div>
+                  <div [class.warn]="a.items_removed > 0"><strong>{{ a.items_removed }}</strong><span>{{ 'SHIFT_SUPERVISION.COL_REMOVED' | translate }}</span></div>
+                  <div><strong>{{ a.orders_paid }}</strong><span>{{ 'SHIFT_SUPERVISION.COL_ORDERS_PAID' | translate }}</span></div>
+                </div>
+              </article>
+            }
           </div>
         }
+      </section>
 
-        <h3>{{ 'SHIFT_SUPERVISION.HISTORY_TITLE' | translate }}</h3>
+      <!-- ===================== history ===================== -->
+      <section class="sv-block">
+        <div class="sv-block-head">
+          <h2>{{ 'SHIFT_SUPERVISION.HISTORY_TITLE' | translate }}</h2>
+        </div>
         @if (loadingRange()) {
-          <p class="muted">{{ 'SHIFT_SUPERVISION.LOADING' | translate }}</p>
+          <div class="sv-skeleton"><i></i><i></i><i></i></div>
         } @else if (history().length === 0) {
-          <p class="muted">{{ 'SHIFT_SUPERVISION.HISTORY_EMPTY' | translate }}</p>
+          <div class="sv-empty"><p>{{ 'SHIFT_SUPERVISION.HISTORY_EMPTY' | translate }}</p></div>
         } @else {
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_EMPLOYEE' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_START' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_END' | translate }}</th>
-                  <th>{{ 'SHIFT_SUPERVISION.COL_DURATION' | translate }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of history(); track row.id) {
-                  <tr [class.open-row]="!row.ended_at">
-                    <td>{{ row.user_name }}</td>
-                    <td>{{ formatDt(row.started_at) }}</td>
-                    <td>{{ row.ended_at ? formatDt(row.ended_at) : '—' }}</td>
-                    <td>{{ formatDuration(row) }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          <div class="sv-rows">
+            <div class="sv-row sv-row-head">
+              <span>{{ 'SHIFT_SUPERVISION.COL_EMPLOYEE' | translate }}</span>
+              <span>{{ 'SHIFT_SUPERVISION.COL_DAY' | translate }}</span>
+              <span>{{ 'SHIFT_SUPERVISION.COL_START' | translate }}</span>
+              <span>{{ 'SHIFT_SUPERVISION.COL_END' | translate }}</span>
+              <span>{{ 'SHIFT_SUPERVISION.COL_DURATION' | translate }}</span>
+            </div>
+            @for (row of visibleHistory(); track row.id) {
+              <div class="sv-row" [class.open]="!row.ended_at">
+                <div class="sv-who">
+                  <span class="sv-avatar sm" [style.--h]="hueOf(row.user_name)">{{ initialsOf(row.user_name) }}</span>
+                  <b>{{ row.user_name }}</b>
+                </div>
+                <span class="sv-day">{{ dayLabel(row.started_at) }}</span>
+                <span class="sv-t">{{ timeOnly(row.started_at) }}</span>
+                <span class="sv-t">
+                  @if (row.ended_at) { {{ timeOnly(row.ended_at) }} } @else { <em class="sv-open">{{ 'SHIFT_SUPERVISION.WORKING' | translate }}</em> }
+                </span>
+                <span class="sv-dur">{{ formatDuration(row) }}</span>
+              </div>
+            }
           </div>
+          @if (history().length > 12) {
+            <button type="button" class="sv-more" (click)="showAll.set(!showAll())">
+              {{ (showAll() ? 'SHIFT_SUPERVISION.SHOW_LESS' : 'SHIFT_SUPERVISION.SHOW_ALL') | translate: { n: history().length } }}
+            </button>
+          }
         }
       </section>
     </div>
   `,
   styles: `
-    .shift-supervision-page {
-      max-width: 960px;
+    .sv-page { max-width: 1020px; display: flex; flex-direction: column; gap: 18px; }
+    .sv-muted { margin: 2px 0 0; font-size: 0.86rem; color: var(--color-text-muted); }
+
+    /* ---- hero ---- */
+    .sv-hero { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+    .sv-hero h1 { margin: 6px 0 2px; font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+    .sv-hero p { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-style: italic; color: var(--color-text-muted); max-width: 48ch; }
+    .sv-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--color-primary); }
+    .sv-eyebrow::before { content: ''; width: 26px; height: 2px; background: var(--color-primary); }
+    .sv-now { display: flex; gap: 26px; }
+    .sv-now div { display: flex; align-items: baseline; gap: 8px; }
+    .sv-now strong { font-family: Georgia, 'Times New Roman', serif; font-size: 3rem; font-weight: 500; line-height: 1; color: #059669; font-variant-numeric: tabular-nums; }
+    .sv-now .amber strong { color: #d97706; }
+    .sv-now span { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-muted); }
+
+    .sv-error { padding: 12px 18px; border-radius: 16px; background: #fee2e2; color: #991b1b; font-weight: 700; }
+
+    .sv-card { padding: 22px 24px; border-radius: 28px; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: 0 18px 30px -28px rgba(0,0,0,.45); }
+    .sv-card h2, .sv-block h2 { margin: 0; font-size: 1.2rem; font-weight: 800; }
+
+    /* ---- live ---- */
+    .sv-live { background: linear-gradient(135deg, color-mix(in srgb, #10b981 8%, var(--color-surface)), var(--color-surface) 55%); border-color: color-mix(in srgb, #10b981 26%, var(--color-border)); }
+    .sv-card-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+    .sv-badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px; background: #d1fae5; color: #047857; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.16em; }
+    .sv-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: #10b981; }
+    .sv-dot::after { content: ''; position: absolute; inset: -5px; border-radius: 50%; border: 1.5px solid #10b981; animation: sv-ping 1.8s ease-out infinite; }
+    @keyframes sv-ping { from { transform: scale(.5); opacity: 1; } to { transform: scale(1.3); opacity: 0; } }
+    .sv-live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+    .sv-person { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 22px; background: var(--color-surface); border: 1px solid color-mix(in srgb, #10b981 35%, var(--color-border)); box-shadow: 0 14px 24px -22px #10b981; }
+    .sv-person.brk { border-color: color-mix(in srgb, #f59e0b 45%, var(--color-border)); box-shadow: 0 14px 24px -22px #f59e0b; }
+    .sv-person-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .sv-person-main b, .sv-act-name b { font-size: 1.02rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sv-person-main small { font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted); }
+    .sv-person-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .sv-role { padding: 1px 9px; border-radius: 999px; background: var(--color-bg); border: 1px solid var(--color-border); font-size: 0.68rem; font-weight: 800; color: var(--color-text-muted); }
+    .sv-state { padding: 1px 9px; border-radius: 999px; background: #d1fae5; color: #047857; font-size: 0.68rem; font-weight: 800; }
+    .sv-state.brk { background: #fef3c7; color: #b45309; }
+    .sv-star { padding: 1px 9px; border-radius: 999px; background: #fef3c7; color: #92400e; font-size: 0.68rem; font-weight: 800; }
+    .sv-elapsed { font-family: Georgia, 'Times New Roman', serif; font-size: 1.5rem; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    .sv-avatar { --h: 24; flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; color: #fff; font-size: 1rem; font-weight: 800; background: linear-gradient(145deg, hsl(var(--h) 72% 56%), hsl(calc(var(--h) + 28) 72% 40%)); box-shadow: 0 10px 16px -10px hsl(var(--h) 72% 40%); }
+    .sv-avatar.sm { width: 36px; height: 36px; font-size: 0.78rem; }
+
+    .sv-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 24px 16px; border-radius: 20px; border: 2px dashed var(--color-border); color: var(--color-text-muted); text-align: center; }
+    .sv-empty p { margin: 0; font-weight: 700; }
+    .sv-skeleton { display: flex; flex-direction: column; gap: 8px; }
+    .sv-skeleton i { display: block; height: 60px; border-radius: 20px; background: linear-gradient(90deg, var(--color-bg) 25%, color-mix(in srgb, var(--color-border) 60%, var(--color-bg)) 50%, var(--color-bg) 75%); background-size: 200% 100%; animation: sv-shimmer 1.4s linear infinite; }
+    @keyframes sv-shimmer { to { background-position: -200% 0; } }
+
+    /* ---- range ---- */
+    .sv-range { position: relative; z-index: 4; }
+    .sv-range-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+    .sv-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+    .sv-field { display: flex; flex-direction: column; gap: 6px; width: 220px; }
+    .sv-field label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-muted); }
+    .sv-arrow { padding-bottom: 12px; font-weight: 800; color: var(--color-primary); }
+    .sv-go { min-height: 46px; padding: 0 26px; border: 0; border-radius: 999px; color: #fff; font: inherit; font-weight: 800; cursor: pointer; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 70%, #000)); box-shadow: 0 14px 22px -14px var(--color-primary); }
+    .sv-go:hover:not(:disabled) { filter: brightness(1.08); }
+    .sv-go:disabled { opacity: .6; cursor: not-allowed; }
+    .sv-presets { display: inline-flex; gap: 2px; margin-top: 16px; padding: 4px; border-radius: 999px; background: var(--color-bg); box-shadow: inset 0 0 0 1px var(--color-border); }
+    .sv-presets button { min-height: 34px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--color-text-muted); font: inherit; font-size: 0.82rem; font-weight: 800; cursor: pointer; }
+    .sv-presets button:hover:not(.on):not(:disabled) { color: var(--color-text); }
+    .sv-presets button.on { background: #1c1917; color: #fff; }
+
+    /* ---- activity ---- */
+    .sv-block-head { margin-bottom: 14px; }
+    .sv-totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+    .sv-totals div { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 22px; color: #fff; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); box-shadow: 0 18px 28px -22px var(--color-primary); }
+    .sv-totals div:nth-child(2) { background: linear-gradient(135deg, #0e7490, #164e63); box-shadow: 0 18px 28px -22px #0e7490; }
+    .sv-totals div:nth-child(3) { background: linear-gradient(135deg, #059669, #065f46); box-shadow: 0 18px 28px -22px #059669; }
+    .sv-totals div:nth-child(4) { background: linear-gradient(135deg, #7c3aed, #4c1d95); box-shadow: 0 18px 28px -22px #7c3aed; }
+    .sv-totals strong { font-family: Georgia, 'Times New Roman', serif; font-size: 1.9rem; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
+    .sv-totals span { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,.82); }
+    .sv-people { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+    .sv-act { padding: 18px 20px; border-radius: 26px; background: var(--color-surface); border: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 14px; transition: border-color .15s, box-shadow .15s; }
+    .sv-act:hover { border-color: var(--color-primary); box-shadow: 0 18px 28px -24px var(--color-primary); }
+    .sv-act-top { display: flex; align-items: center; gap: 14px; }
+    .sv-act-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .sv-act-hours { text-align: right; display: flex; flex-direction: column; }
+    .sv-act-hours strong { font-family: Georgia, 'Times New Roman', serif; font-size: 1.55rem; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
+    .sv-act-hours span { font-size: 0.72rem; font-weight: 700; color: var(--color-text-muted); }
+    .sv-bar { height: 8px; border-radius: 999px; background: var(--color-bg); box-shadow: inset 0 0 0 1px var(--color-border); overflow: hidden; }
+    .sv-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 55%, #fbbf24)); transition: width .5s ease; }
+    .sv-act-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .sv-act-stats div { display: flex; flex-direction: column; gap: 2px; padding: 10px 6px; border-radius: 16px; background: var(--color-bg); text-align: center; }
+    .sv-act-stats strong { font-size: 1.15rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .sv-act-stats span { font-size: 0.6rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--color-text-muted); }
+    .sv-act-stats .warn strong { color: #b45309; }
+
+    /* ---- history ---- */
+    .sv-rows { display: flex; flex-direction: column; gap: 6px; max-height: min(60vh, 560px); overflow-y: auto; overscroll-behavior: contain; padding-right: 6px; }
+    .sv-row { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) 96px 110px 110px; align-items: center; gap: 14px; padding: 9px 14px; border-radius: 18px; background: var(--color-surface); border: 1px solid var(--color-border); box-sizing: border-box; }
+    .sv-row:not(.sv-row-head):hover { border-color: var(--color-primary); }
+    .sv-row.open { background: #ecfdf5; border-color: #6ee7b7; }
+    .sv-row-head { position: sticky; top: 0; z-index: 2; min-height: 48px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--color-primary) 32%, var(--color-border)); border-bottom: 4px double var(--color-primary); background: linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,0) 55%), color-mix(in srgb, var(--color-primary) 11%, var(--color-surface)); box-shadow: 0 0 0 4px var(--color-surface); }
+    .sv-row-head span { font-family: Georgia, 'Times New Roman', serif; font-size: 1rem; font-style: italic; text-transform: capitalize; color: color-mix(in srgb, var(--color-primary) 38%, #1c1917); }
+    .sv-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .sv-who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; }
+    .sv-day { font-family: Georgia, 'Times New Roman', serif; font-style: italic; }
+    .sv-t { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .sv-open { font-style: normal; padding: 3px 12px; border-radius: 999px; background: #d1fae5; color: #047857; font-size: .78rem; }
+    .sv-dur { justify-self: start; padding: 5px 14px; border-radius: 999px; background: #1c1917; color: #fff; font-size: .85rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .sv-row.open .sv-dur { background: #059669; }
+    .sv-more { display: block; margin: 14px auto 0; min-height: 40px; padding: 0 22px; border-radius: 999px; border: 1px dashed var(--color-border); background: transparent; color: var(--color-text); font: inherit; font-weight: 800; cursor: pointer; }
+    .sv-more:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+    @media (prefers-reduced-motion: reduce) { .sv-dot::after, .sv-skeleton i { animation: none; } .sv-bar i { transition: none; } }
+    @media (max-width: 760px) {
+      .sv-totals { grid-template-columns: 1fr 1fr; }
+      .sv-row-head { display: none; }
+      .sv-row { grid-template-columns: 1fr 1fr; row-gap: 8px; }
+      .sv-who { grid-column: 1 / -1; }
+      .sv-field { width: 100%; }
+      .sv-arrow { display: none; }
     }
-    .page-header { margin-bottom: var(--space-4, 1rem); }
-    .page-header h1 { margin: 0 0 4px; }
-    .subtitle { color: var(--color-text-muted, #6b7280); margin: 0; }
-    .card {
-      background: var(--color-surface, #fff);
-      border: 1px solid var(--color-border, #e5e7eb);
-      border-radius: var(--radius-md, 8px);
-      padding: 1.25rem;
-      margin-bottom: 1rem;
-    }
-    .card h2 { margin: 0 0 0.75rem; font-size: 1.05rem; }
-    .card h3 { margin: 1.25rem 0 0.25rem; font-size: 0.95rem; }
-    .hint { color: var(--color-text-muted, #6b7280); font-size: 0.85rem; margin: 0 0 0.75rem; }
-    .muted { color: var(--color-text-muted, #6b7280); }
-    .error-banner {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius-md, 8px);
-      margin-bottom: 1rem;
-    }
-    .range-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
-    .range-row h2 { margin: 0; }
-    .range-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 0.75rem; }
-    .range-controls label {
-      display: flex;
-      flex-direction: column;
-      font-size: 0.8rem;
-      color: var(--color-text-muted, #6b7280);
-      gap: 2px;
-    }
-    .range-controls input[type="date"] {
-      padding: 0.4rem 0.5rem;
-      border: 1px solid var(--color-border, #e5e7eb);
-      border-radius: var(--radius-sm, 6px);
-    }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--color-border, #e5e7eb); white-space: nowrap; }
-    tr.open-row td { font-weight: 600; }
-    .status-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    .status-working { background: #dcfce7; color: #166534; }
-    .status-break { background: #fef3c7; color: #92400e; }
   `,
 })
-export class ShiftSupervisionComponent implements OnInit {
+export class ShiftSupervisionComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private translate = inject(TranslateService);
 
@@ -218,20 +319,83 @@ export class ShiftSupervisionComponent implements OnInit {
   loadingRange = signal(true);
   history = signal<WorkSession[]>([]);
   activity = signal<StaffActivity[]>([]);
+  showAll = signal(false);
 
   fromDate: string;
   toDate: string;
+
+  readonly presets = [
+    { days: 7, label: 'SHIFT_SUPERVISION.PRESET_7' },
+    { days: 14, label: 'SHIFT_SUPERVISION.PRESET_14' },
+    { days: 30, label: 'SHIFT_SUPERVISION.PRESET_30' },
+  ];
+
+  private tick = signal(0);
+  private timer: ReturnType<typeof setInterval> | null = null;
+
+  working = computed(() => this.live().filter((r) => !r.on_break).length);
+  onBreak = computed(() => this.live().filter((r) => r.on_break).length);
+
+  totals = computed(() => {
+    const rows = this.activity();
+    const mins = rows.reduce((s, r) => s + r.worked_minutes, 0);
+    return {
+      hours: this.formatHours(mins),
+      shifts: rows.reduce((s, r) => s + r.shifts_count, 0),
+      prepared: rows.reduce((s, r) => s + r.items_prepared, 0),
+      paid: rows.reduce((s, r) => s + r.orders_paid, 0),
+    };
+  });
+
+  private maxMinutes = computed(() => Math.max(1, ...this.activity().map((a) => a.worked_minutes)));
+
+  topHours = computed(() => {
+    const rows = this.activity().filter((a) => a.worked_minutes > 0);
+    return rows.length > 1 ? rows.reduce((b, a) => (a.worked_minutes > b.worked_minutes ? a : b)).user_id : null;
+  });
+
+  topPaid = computed(() => {
+    const rows = this.activity().filter((a) => a.orders_paid > 0);
+    return rows.length > 1 ? rows.reduce((b, a) => (a.orders_paid > b.orders_paid ? a : b)).user_id : null;
+  });
+
+  visibleHistory = computed(() => (this.showAll() ? this.history() : this.history().slice(0, 12)));
+
+  /** Which preset (7 / 14 / 30 days ending today) matches the selected dates. */
+  activeDays(): number | null {
+    const today = localIso(new Date());
+    for (const p of this.presets) {
+      const from = new Date();
+      from.setDate(from.getDate() - (p.days - 1));
+      if (this.toDate === today && this.fromDate === localIso(from)) return p.days;
+    }
+    return null;
+  }
 
   constructor() {
     const today = new Date();
     const weekAgo = new Date(today);
     weekAgo.setDate(weekAgo.getDate() - 6);
-    this.toDate = isoDate(today);
-    this.fromDate = isoDate(weekAgo);
+    this.toDate = localIso(today);
+    this.fromDate = localIso(weekAgo);
   }
 
   ngOnInit(): void {
     this.loadLive();
+    this.loadRange();
+    this.timer = setInterval(() => this.tick.update((n) => n + 1), 30000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.timer != null) clearInterval(this.timer);
+  }
+
+  setRange(days: number): void {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - (days - 1));
+    this.toDate = localIso(to);
+    this.fromDate = localIso(from);
     this.loadRange();
   }
 
@@ -257,7 +421,8 @@ export class ShiftSupervisionComponent implements OnInit {
     }).subscribe({
       next: ({ history, activity }) => {
         this.history.set(history);
-        this.activity.set(activity);
+        this.activity.set([...activity].sort((a, b) => b.worked_minutes - a.worked_minutes));
+        this.showAll.set(false);
         this.loadingRange.set(false);
       },
       error: () => {
@@ -267,19 +432,48 @@ export class ShiftSupervisionComponent implements OnInit {
     });
   }
 
+  hoursPct(a: StaffActivity): number {
+    return Math.max(a.worked_minutes ? 4 : 0, (a.worked_minutes / this.maxMinutes()) * 100);
+  }
+
+  /** Net time worked so far in an open session (re-evaluated every 30 s). */
+  elapsed(row: WorkSession): string {
+    void this.tick();
+    const sec = workSessionNetWorkSeconds(row);
+    return this.formatHours(Math.floor(sec / 60));
+  }
+
+  hueOf(name: string): number {
+    let hash = 0;
+    for (const ch of name || '?') hash = (hash * 31 + ch.charCodeAt(0)) % 360;
+    return hash;
+  }
+
+  initialsOf(name: string): string {
+    const parts = (name || '?').trim().split(/\s+/);
+    return ((parts[0]?.[0] ?? '?') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+  }
+
   roleLabel(role: string | null | undefined): string {
     if (!role) return '';
     return this.translate.instant(`USERS.ROLES.${role.toUpperCase()}`);
   }
 
-  formatDt(iso: string): string {
+  timeOnly(iso: string): string {
     const d = new Date(iso);
-    return isNaN(d.getTime()) ? iso : d.toLocaleString();
+    return isNaN(d.getTime()) ? iso : d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+
+  dayLabel(iso: string): string {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    const s = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+    return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
   formatDuration(row: WorkSession): string {
     if (row.duration_minutes != null && row.duration_minutes >= 0) {
-      return this.formatHours(row.duration_minutes);
+      return row.duration_minutes === 0 ? '<1 min' : this.formatHours(row.duration_minutes);
     }
     if (!row.ended_at && row.open_duration_minutes != null) {
       return this.formatHours(row.open_duration_minutes);
