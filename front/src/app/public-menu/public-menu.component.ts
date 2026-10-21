@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl, SafeStyle, Title } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml, SafeResourceUrl, SafeStyle, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { merge } from 'rxjs';
@@ -233,9 +233,133 @@ export class PublicMenuComponent implements OnInit {
     );
   }
 
-  categories(): PublicTenantMenuCategory[] {
-    return this.menu()?.categories ?? [];
+  /** Menu order: starters, mains, fast food, chicken, desserts, sides, anything else; beverages last. */
+  private categoryRank(name: string): number {
+    const text = `${name} ${this.getCategoryLabel(name)}`.toLowerCase();
+    if (/starter|entrada/.test(text)) return 0;
+    if (/main course|plato principal|plato fuerte|almuerzo|carne|pescado|especial/.test(text)) return 1;
+    if (/fast|r[aá]pid|hamburgues|perro|picada|papas|infantil/.test(text)) return 2;
+    if (/pollo|chicken/.test(text)) return 3;
+    if (/dessert|postre/.test(text)) return 4;
+    if (/side|acompa/.test(text)) return 5;
+    if (/beverage|bebida|drink|agua|cerveza|gaseosa|jugo|granizada|licor|vino|caf[eé]/.test(text)) return 99;
+    return 10;
   }
+
+  private sortedCategories = computed(() =>
+    [...(this.menu()?.categories ?? [])].sort((a, b) => this.categoryRank(a.name) - this.categoryRank(b.name)),
+  );
+
+  categories(): PublicTenantMenuCategory[] {
+    return this.sortedCategories();
+  }
+
+  // ---------------------------------------------------------------- restaurant info (social, hours, maps)
+  private hostIs(url: string | null | undefined, hosts: string[]): boolean {
+    try {
+      const h = new URL(url || '').hostname.replace(/^www\./, '').toLowerCase();
+      return hosts.some((x) => h === x || h.endsWith('.' + x));
+    } catch {
+      return false;
+    }
+  }
+
+  /** Social / web links that really point where they claim to. */
+  socials = computed(() => {
+    const t = this.tenant();
+    const out: { key: string; url: string; label: string; icon: SafeHtml }[] = [];
+    if (!t) return out;
+    const html = (v: string) => this.sanitizer.bypassSecurityTrustHtml(v);
+    if (this.hostIs(t.public_instagram_url, ['instagram.com']))
+      out.push({ key: 'instagram', url: t.public_instagram_url!, label: 'Instagram', icon: html('<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.8" fill="currentColor"/>') });
+    if (this.hostIs(t.public_facebook_url, ['facebook.com', 'fb.com', 'fb.me']))
+      out.push({ key: 'facebook', url: t.public_facebook_url!, label: 'Facebook', icon: html('<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>') });
+    if (t.website && /^https?:\/\//i.test(t.website))
+      out.push({ key: 'web', url: t.website, label: 'Web', icon: html('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>') });
+    if (t.email && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t.email))
+      out.push({ key: 'email', url: 'mailto:' + t.email, label: 'Email', icon: html('<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/>') });
+    return out;
+  });
+
+  mapsUrl = computed(() => this.googleMapsUrl() || this.openstreetmapUrl() || null);
+
+  private static readonly DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+  private fmtTime(hhmm: string): string {
+    const m = /^(\d{1,2}):(\d{2})/.exec(hhmm || '');
+    if (!m) return hhmm || '';
+    return new Date(2000, 0, 1, +m[1], +m[2]).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+
+  private dayRanges(d: Record<string, unknown> | undefined): { from: string; to: string }[] {
+    if (!d || d['closed']) return [];
+    if (d['hasBreak']) {
+      const r: { from: string; to: string }[] = [];
+      if (d['morningOpen'] && d['morningClose']) r.push({ from: String(d['morningOpen']), to: String(d['morningClose']) });
+      if (d['eveningOpen'] && d['eveningClose']) r.push({ from: String(d['eveningOpen']), to: String(d['eveningClose']) });
+      return r;
+    }
+    return d['open'] && d['close'] ? [{ from: String(d['open']), to: String(d['close']) }] : [];
+  }
+
+  private parsedHours(): Record<string, Record<string, unknown>> | null {
+    const raw = this.tenant()?.opening_hours;
+    if (!raw) return null;
+    try {
+      const o = JSON.parse(raw);
+      return o && typeof o === 'object' ? o : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private nowInTenant(): { dayKey: string; minutes: number } {
+    const tz = this.tenant()?.timezone?.trim();
+    let d = new Date();
+    if (tz) {
+      try {
+        d = new Date(d.toLocaleString('en-US', { timeZone: tz }));
+      } catch { /* keep local time */ }
+    }
+    return { dayKey: PublicMenuComponent.DAY_KEYS[d.getDay()], minutes: d.getHours() * 60 + d.getMinutes() };
+  }
+
+  weekHours = computed(() => {
+    const hours = this.parsedHours();
+    if (!hours) return [];
+    const today = this.nowInTenant().dayKey;
+    return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((k) => {
+      const ranges = this.dayRanges(hours[k]);
+      return {
+        key: k,
+        labelKey: 'SETTINGS.DAY_' + k.toUpperCase(),
+        today: k === today,
+        closed: ranges.length === 0,
+        text: ranges.map((r) => `${this.fmtTime(r.from)} – ${this.fmtTime(r.to)}`).join('  ·  '),
+      };
+    });
+  });
+
+  todayHours = computed(() => {
+    const d = this.weekHours().find((x) => x.today);
+    return d ? (d.closed ? null : d.text) : null;
+  });
+
+  openStatus = computed<{ open: boolean; time: string } | null>(() => {
+    const hours = this.parsedHours();
+    if (!hours) return null;
+    const { dayKey, minutes } = this.nowInTenant();
+    const toMin = (t: string) => {
+      const m = /^(\d{1,2}):(\d{2})/.exec(t);
+      return m ? +m[1] * 60 + +m[2] : 0;
+    };
+    const ranges = this.dayRanges(hours[dayKey]);
+    for (const r of ranges) {
+      if (minutes >= toMin(r.from) && minutes < toMin(r.to)) return { open: true, time: this.fmtTime(r.to) };
+    }
+    const next = ranges.find((r) => toMin(r.from) > minutes);
+    return { open: false, time: next ? this.fmtTime(next.from) : '' };
+  });
 
   /** Total dishes across categories (shown in the "all" filter chip). */
   totalProducts(): number {

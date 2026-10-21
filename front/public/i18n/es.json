@@ -198,6 +198,9 @@
   },
   "PUBLIC_MENU": {
     "PAGE_TITLE": "Carta",
+    "ORDER_EYEBROW": "Pide en línea",
+    "ORDER_TITLE": "Nuestra carta",
+    "RESERVE": "Reservar mesa",
     "LOADING": "Cargando la carta…",
     "READ_ONLY_HINT": "Consulte nuestra carta — el pedido está disponible en la mesa o al reservar.",
     "EMPTY_MENU": "No hay platos disponibles en este momento.",
