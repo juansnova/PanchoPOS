@@ -281,6 +281,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     .us-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
     .us-chip {
       --rc: var(--color-primary);
+      --rc2: color-mix(in srgb, var(--color-primary) 70%, #fff);
       display: inline-flex;
       align-items: center;
       gap: 8px;
