@@ -300,7 +300,7 @@ export class MenuComponent implements OnInit, OnDestroy {
             categories.add(product.category);
           }
         });
-        this.availableCategories.set(Array.from(categories).sort());
+        this.availableCategories.set(Array.from(categories).sort((a, b) => this.categoryRank(a) - this.categoryRank(b) || a.localeCompare(b)));
 
         this.updateSubcategories(null);
         this.applyFilter(null, null);
@@ -603,6 +603,22 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   /** Number of dishes in a category chip (null = all), for the filter counters. */
+  /**
+   * Menu order: starters first, then mains, fast food, chicken, desserts, sides, anything else,
+   * and beverages always last.
+   */
+  private categoryRank(category: string): number {
+    const text = `${category} ${this.getCategoryLabel(category)}`.toLowerCase();
+    if (/starter|entrada/.test(text)) return 0;
+    if (/main course|plato principal|plato fuerte/.test(text)) return 1;
+    if (/fast|r[aá]pid/.test(text)) return 2;
+    if (/pollo|chicken/.test(text)) return 3;
+    if (/dessert|postre/.test(text)) return 4;
+    if (/side|acompa/.test(text)) return 5;
+    if (/beverage|bebida|drink/.test(text)) return 99;
+    return 10;
+  }
+
   categoryCount(category: string | null): number {
     const all = this.products();
     return category ? all.filter((p) => p.category === category).length : all.length;

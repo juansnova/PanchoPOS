@@ -3162,3 +3162,66 @@ $cart-expanded-max: 60vh;
 @media (prefers-reduced-motion: reduce) {
   .dish-more i { transition: none; }
 }
+
+// ---------------------------------------------------------------- featured carousel: same "ficha" look, nothing cut off
+.menu-page .featured-scroll {
+  // bleed to the screen edges so the next card peeks in and the last one can be seen whole
+  margin-inline: calc(-1 * var(--space-4));
+  padding: var(--space-2) var(--space-4) var(--space-5);
+  scroll-padding-inline: var(--space-4);
+}
+
+.menu-page .featured-card {
+  width: min(76vw, 16.5rem);
+  padding: 8px;
+  border-radius: 28px;
+  background: #fffdfa;
+  box-shadow: 0 0 0 1px rgba(60, 30, 10, 0.07), 0 22px 34px -26px rgba(60, 30, 10, 0.55);
+  overflow: visible;
+
+  &.in-cart {
+    background: #fffdfa;
+    box-shadow: 0 0 0 2px var(--color-primary), 0 22px 34px -22px var(--color-primary);
+  }
+}
+
+.menu-page .featured-image-container {
+  aspect-ratio: 4 / 3;
+  border-radius: 21px;
+}
+
+.menu-page .featured-info {
+  padding: 12px 8px 8px;
+  padding-right: 62px;
+  min-height: 74px;
+}
+
+.menu-page .featured-name {
+  display: -webkit-box;
+  margin: 0 0 4px;
+  overflow: hidden;
+  white-space: normal;
+  text-overflow: clip;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.menu-page .featured-price {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--color-primary);
+}
+
+.menu-page .featured-card .quick-add-btn {
+  right: 14px;
+  bottom: 14px;
+  width: 46px;
+  height: 46px;
+  background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000));
+}
