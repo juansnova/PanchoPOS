@@ -16,28 +16,82 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
       <!-- ============ brand side ============ -->
       <aside class="lg-brand" aria-hidden="false">
         <svg class="lg-art" viewBox="0 0 640 640" fill="none" aria-hidden="true">
-          <!-- a table seen from above: two plates, knife and fork -->
+          <defs>
+            <clipPath id="lgSteak"><path d="M262 384c-8-42 30-70 72-64 48 6 82 36 74 76-8 42-54 64-96 58-32-5-44-32-50-70z" /></clipPath>
+          </defs>
           <g stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+            <!-- soft dotted orbit around the table -->
+            <circle cx="330" cy="390" r="268" stroke-opacity=".3" stroke-width="2" stroke-dasharray="1.5 11" />
+
+            <!-- main plate: grilled steak, potatoes, lemon and a sprig of herbs -->
             <circle cx="330" cy="390" r="236" stroke-opacity=".22" stroke-width="1.5" />
             <circle cx="330" cy="390" r="196" fill="#fff" fill-opacity=".07" stroke-opacity=".38" stroke-width="1.5" />
-            <circle cx="330" cy="390" r="132" stroke-opacity=".26" stroke-width="1.2" />
-            <circle cx="330" cy="390" r="70" fill="#fff" fill-opacity=".08" stroke-opacity=".3" stroke-width="1.2" />
-            <circle cx="540" cy="70" r="116" stroke-opacity=".2" stroke-width="1.5" />
-            <circle cx="540" cy="70" r="84" fill="#fff" fill-opacity=".05" stroke-opacity=".3" stroke-width="1.2" />
-            <!-- fork -->
-            <g transform="translate(34 300) rotate(-8)" stroke-opacity=".55" stroke-width="2.4">
-              <path d="M0 0v44M16 0v44M32 0v44M0 44c0 22 32 22 32 0M16 66v104" />
+            <circle cx="330" cy="390" r="150" stroke-opacity=".18" stroke-width="1.2" stroke-dasharray="3 7" />
+            <path d="M262 384c-8-42 30-70 72-64 48 6 82 36 74 76-8 42-54 64-96 58-32-5-44-32-50-70z" fill="#fff" fill-opacity=".13" stroke-opacity=".6" stroke-width="1.8" />
+            <g clip-path="url(#lgSteak)" stroke-opacity=".5" stroke-width="3">
+              <path d="M268 340l92 92M290 322l100 100M316 312l96 96M246 366l86 86" />
             </g>
-            <!-- knife -->
+            <path d="M286 396c10-26 38-40 66-34" stroke-opacity=".35" stroke-width="1.4" />
+            <circle cx="424" cy="342" r="16" fill="#fff" fill-opacity=".1" stroke-opacity=".55" stroke-width="1.6" />
+            <circle cx="448" cy="372" r="12" fill="#fff" fill-opacity=".1" stroke-opacity=".55" stroke-width="1.6" />
+            <circle cx="430" cy="404" r="14" fill="#fff" fill-opacity=".1" stroke-opacity=".55" stroke-width="1.6" />
+            <path d="M417 340q6-6 12 0M441 372q5-5 10 0M423 404q6-6 12 0" stroke-opacity=".4" stroke-width="1.2" />
+            <!-- lemon wedge -->
+            <path d="M298 300a30 30 0 0 1 60 0z" fill="#fff" fill-opacity=".1" stroke-opacity=".55" stroke-width="1.6" />
+            <path d="M328 300v-26M312 300l-8-22M344 300l8-22" stroke-opacity=".35" stroke-width="1.2" />
+            <!-- herb sprig -->
+            <path d="M262 452c22 22 58 30 96 24" stroke-opacity=".55" stroke-width="2" />
+            <g stroke-opacity=".5" stroke-width="1.5" fill="#fff" fill-opacity=".1">
+              <ellipse cx="286" cy="466" rx="13" ry="6" transform="rotate(-40 286 466)" />
+              <ellipse cx="312" cy="476" rx="13" ry="6" transform="rotate(30 312 476)" />
+              <ellipse cx="336" cy="474" rx="13" ry="6" transform="rotate(-35 336 474)" />
+              <ellipse cx="360" cy="468" rx="12" ry="5.5" transform="rotate(25 360 468)" />
+            </g>
+            <!-- peppercorns -->
+            <g fill="#fff" fill-opacity=".45" stroke="none">
+              <circle cx="400" cy="440" r="2.4" /><circle cx="388" cy="452" r="2" /><circle cx="410" cy="452" r="2.2" /><circle cx="300" cy="336" r="2" />
+            </g>
+
+            <!-- soup bowl -->
+            <circle cx="300" cy="66" r="70" stroke-opacity=".22" stroke-width="1.5" />
+            <circle cx="300" cy="66" r="52" fill="#fff" fill-opacity=".07" stroke-opacity=".4" stroke-width="1.5" />
+            <path d="M258 66q11-9 21 0t21 0 21 0 21 0" stroke-opacity=".45" stroke-width="1.6" />
+            <path d="M264 82q10-8 19 0t19 0 19 0 17 0" stroke-opacity=".3" stroke-width="1.4" />
+            <!-- spoon -->
+            <g transform="translate(214 58) rotate(-22)" stroke-opacity=".5" stroke-width="1.8">
+              <ellipse cx="0" cy="0" rx="13" ry="20" fill="#fff" fill-opacity=".1" />
+              <path d="M0 20v82" />
+            </g>
+
+            <!-- the bill -->
+            <g transform="translate(420 12) rotate(5)">
+              <path d="M0 0H120V200l-10-9-10 9-10-9-10 9-10-9-10 9-10-9-10 9-10-9-10 9-10-9-10 9-10-9-10 9Z" fill="#fff" fill-opacity=".1" stroke-opacity=".5" stroke-width="1.6" />
+              <path d="M20 24h52" stroke-opacity=".7" stroke-width="3.5" />
+              <path d="M18 44h84M18 62h56M92 62h10M18 80h70M92 80h10M18 98h48M92 98h10M18 116h64M92 116h10" stroke-opacity=".38" stroke-width="2" />
+              <path d="M16 136h88" stroke-opacity=".4" stroke-width="1.4" stroke-dasharray="3 4" />
+              <path d="M18 160h28M70 160h32" stroke-opacity=".75" stroke-width="3.5" />
+              <circle cx="96" cy="26" r="6" stroke-opacity=".45" stroke-width="1.5" />
+            </g>
+
+            <!-- fork and knife -->
+            <g transform="translate(66 320) rotate(-8)" stroke-opacity=".6" stroke-width="2.4">
+              <path d="M0 0v44M16 0v44M32 0v44M0 44c0 22 32 22 32 0M16 66v110" />
+            </g>
             <g transform="translate(612 330) rotate(7)" stroke-opacity=".55" stroke-width="2.4">
               <path d="M0 0c26 20 26 120 0 150h-10V0zM-5 150v66" />
+            </g>
+
+            <!-- salt and pepper -->
+            <g stroke-opacity=".4" stroke-width="1.4" fill="#fff" fill-opacity=".08">
+              <circle cx="560" cy="250" r="9" />
+              <circle cx="582" cy="268" r="6" />
             </g>
           </g>
         </svg>
 
         <div class="lg-brand-top">
           @if (selectedTenantLogoUrl()) {
-            <span class="lg-logo"><img [src]="selectedTenantLogoUrl()!" [alt]="brandName()" /></span>
+            <span class="lg-plaque"><img [src]="selectedTenantLogoUrl()!" [alt]="brandName()" /></span>
           } @else {
             <span class="lg-logo lg-logo-mono">{{ brandInitial() }}</span>
           }
@@ -221,15 +275,25 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
 
     .lg-art {
       position: absolute;
-      right: -150px;
-      bottom: -170px;
-      width: min(760px, 120%);
+      right: -8%;
+      bottom: -8%;
+      width: min(760px, 84%, 104vh);
       pointer-events: none;
       animation: lg-drift 18s ease-in-out infinite alternate;
     }
     @keyframes lg-drift { to { transform: translate(-14px, -10px) rotate(-1.5deg); } }
 
-    .lg-brand-top, .lg-brand-main, .lg-brand-foot { position: relative; z-index: 1; }
+    .lg-brand-top, .lg-brand-main, .lg-brand-foot { position: relative; z-index: 2; }
+    .lg-brand-main::before {
+      content: '';
+      position: absolute;
+      inset: -40px -70px -30px -60px;
+      z-index: -1;
+      background: radial-gradient(closest-side, color-mix(in srgb, var(--color-primary) 62%, #1c1917) 0%, transparent 100%);
+      opacity: 0.85;
+      pointer-events: none;
+    }
+    .lg-brand-foot { text-shadow: 0 1px 8px rgba(0, 0, 0, 0.25); }
 
     .lg-brand-top { display: flex; align-items: center; gap: 16px; }
 
@@ -244,6 +308,18 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
       overflow: hidden;
     }
     .lg-logo img { width: 100%; height: 100%; object-fit: contain; padding: 6px; box-sizing: border-box; }
+
+    /* the restaurant's own logo on a white plaque */
+    .lg-plaque {
+      display: grid;
+      place-items: center;
+      height: 92px;
+      padding: 10px 20px;
+      border-radius: 24px;
+      background: #fff;
+      box-shadow: 0 22px 36px -18px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+    }
+    .lg-plaque img { display: block; height: 100%; width: auto; max-width: 190px; object-fit: contain; }
     .lg-logo-mono { font-family: Georgia, 'Times New Roman', serif; font-size: 2rem; font-style: italic; color: var(--color-primary); }
 
     .lg-kicker { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); }
@@ -519,29 +595,22 @@ export class LoginComponent implements OnInit {
   });
   showPassword = signal(false);
 
-  /**
-   * Single-tenant deployment: this instance is Pancho Panza's own POS, so the
-   * login screen shows its logo/name directly instead of a generic picker.
-   */
-  private static readonly DEFAULT_TENANT_SLUG = 'pancho-panza';
-
   private loadSelectedTenant(): void {
     const tenantParam = this.route.snapshot.queryParamMap.get('tenant');
     const tenantId = tenantParam != null ? Number.parseInt(tenantParam, 10) : NaN;
     const explicit = Number.isInteger(tenantId) && tenantId > 0;
     this.hasExplicitTenantParam.set(explicit);
-    const tenantRef: number | string = explicit ? tenantId : LoginComponent.DEFAULT_TENANT_SLUG;
+    const apply = (tenant: TenantSummary | undefined) => {
+      this.selectedTenant.set(tenant ?? null);
+      this.selectedTenantLogoUrl.set(tenant ? this.api.getTenantLogoUrl(tenant.logo_filename, tenant.id) : null);
+    };
 
-    this.api.getPublicTenant(tenantRef).subscribe({
-      next: (tenant) => {
-        this.selectedTenant.set(tenant);
-        this.selectedTenantLogoUrl.set(this.api.getTenantLogoUrl(tenant.logo_filename, tenant.id));
-      },
-      error: () => {
-        this.selectedTenant.set(null);
-        this.selectedTenantLogoUrl.set(null);
-      },
-    });
+    if (explicit) {
+      this.api.getPublicTenant(tenantId).subscribe({ next: apply, error: () => apply(undefined) });
+      return;
+    }
+    // Single-restaurant deployment: show its own logo and name (the first public tenant).
+    this.api.getPublicTenants().subscribe({ next: (list) => apply(list[0]), error: () => apply(undefined) });
   }
 
   /** iOS Safari Keychain can fill inputs without updating the reactive form model. */
