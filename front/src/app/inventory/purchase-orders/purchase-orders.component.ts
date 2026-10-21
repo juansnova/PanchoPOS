@@ -14,6 +14,8 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, F
 import { SidebarComponent } from '../../shared/sidebar.component';
 import { FocusFirstInputDirective } from '../../shared/focus-first-input.directive';
 import { AppSelectComponent, AppSelectOption } from '../../shared/app-select.component';
+import { AppDatePickerComponent } from '../../shared/app-date-picker.component';
+import { unitSelectOptions } from '../unit-select-options';
 import { InventoryService } from '../inventory.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
@@ -44,6 +46,7 @@ import {
     FocusFirstInputDirective,
     TranslateModule,
     AppSelectComponent,
+    AppDatePickerComponent,
   ],
   template: `
     <app-sidebar>
@@ -179,7 +182,7 @@ import {
                   <div class="pm-two">
                     <div class="pm-field">
                       <label for="expected_date">{{ 'INVENTORY.PURCHASE_ORDERS.EXPECTED_DELIVERY' | translate }}</label>
-                      <div class="pm-date"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><input type="date" id="expected_date" formControlName="expected_date" /></div>
+                      <app-date-picker id="expected_date" formControlName="expected_date" [placeholder]="'INVENTORY.PURCHASE_ORDERS.PICK_DATE' | translate" />
                     </div>
                     <div class="pm-field">
                       <label for="notes">{{ 'INVENTORY.ITEMS.NOTES' | translate }}</label>
@@ -226,8 +229,9 @@ import {
                             </div>
                             <div class="pm-field">
                               <label>{{ 'INVENTORY.PURCHASE_ORDERS.UNIT_COST' | translate }}</label>
-                              <div class="pm-money"><span>$</span>
-                                <input type="text" inputmode="numeric" [value]="formatThousands(item.get('unit_cost_dollars')?.value)" (input)="onUnitCostInput(i, $event)" placeholder="0" />
+                              <div class="pm-money">
+                                <span aria-hidden="true">$</span>
+                                <input type="text" inputmode="numeric" autocomplete="off" [value]="formatThousands(item.get('unit_cost_dollars')?.value)" (input)="onUnitCostInput(i, $event)" [attr.aria-label]="'INVENTORY.PURCHASE_ORDERS.UNIT_COST' | translate" />
                               </div>
                             </div>
                             <div class="pm-line-total">
@@ -340,7 +344,7 @@ export class PurchaseOrdersComponent implements OnInit {
   }
 
   unitOptions(): AppSelectOption[] {
-    return this.units.map((u) => ({ value: u, label: this.translate.instant(this.unitKey(u)) }));
+    return unitSelectOptions(this.translate, this.units);
   }
 
   createForm: FormGroup = this.fb.group({

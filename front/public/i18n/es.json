@@ -1,5 +1,9 @@
 {
   "COMMON": {
+    "TODAY": "Hoy",
+    "TOMORROW": "Mañana",
+    "IN_ONE_WEEK": "En 1 semana",
+    "CLEAR": "Borrar",
     "ACTIONS": "Acciones",
     "COPY": "Copiar",
     "SAVE": "Guardar",
@@ -2178,6 +2182,7 @@
     "PURCHASE_ORDERS": {
       "TITLE": "Pedidos de Compra",
       "SUBTITLE": "Pide a tus proveedores y sigue cada pedido hasta que llega",
+      "PICK_DATE": "Elegir fecha",
       "FORM_DETAILS": "Datos del pedido",
       "ARTICLES_SHORT": "artículos",
       "NO_ITEMS_CTA": "Toca aquí para agregar el primero",
