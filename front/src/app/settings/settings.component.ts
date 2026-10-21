@@ -671,49 +671,82 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <input type="text" id="payment_account_holder" [(ngModel)]="formData.payment_account_holder" name="payment_account_holder" maxlength="120" class="input-medium" />
                   </div>
                   </div>
-                  <div class="st-card">
+                  <div class="st-card bk-wrap">
                   <h3 class="st-card-title">{{ 'SETTINGS.CARD_BANKS' | translate }}</h3>
-                  <div class="form-group">
-                    <label>{{ 'SETTINGS.BANK_ACCOUNTS_TITLE' | translate }}</label>
-                    <p class="hint">{{ 'SETTINGS.BANK_ACCOUNTS_HINT' | translate }}</p>
+                  <p class="st-card-desc">{{ 'SETTINGS.BANK_ACCOUNTS_HINT' | translate }}</p>
+
+                  <div class="bk-list">
                     @for (acc of formData.payment_bank_accounts; track $index) {
-                      <div class="form-row st-bank-row" data-testid="settings-bank-account">
-                        <input type="text" [(ngModel)]="acc.bank" [name]="'bank_' + $index" maxlength="120" list="bank-suggestions" [placeholder]="'SETTINGS.BANK_NAME' | translate" />
-                        <select [(ngModel)]="acc.account_type" [name]="'bank_type_' + $index">
-                          <option value="">{{ 'SETTINGS.BANK_ACCOUNT_TYPE' | translate }}</option>
-                          <option value="Ahorros">{{ 'SETTINGS.BANK_TYPE_SAVINGS' | translate }}</option>
-                          <option value="Corriente">{{ 'SETTINGS.BANK_TYPE_CHECKING' | translate }}</option>
-                        </select>
-                        <input type="text" [(ngModel)]="acc.account_number" [name]="'bank_num_' + $index" maxlength="120" [placeholder]="'SETTINGS.BANK_ACCOUNT_NUMBER' | translate" />
-                        <input type="text" [(ngModel)]="acc.holder" [name]="'bank_holder_' + $index" maxlength="120" [placeholder]="'SETTINGS.PAYMENT_ACCOUNT_HOLDER' | translate" />
-                        <button type="button" class="btn btn-link danger" (click)="removeBankAccount($index)">{{ 'COMMON.DELETE' | translate }}</button>
+                      <div class="bk-card" data-testid="settings-bank-account" [style.--h]="bankHue(acc.bank)">
+                        <div class="bk-top">
+                          <span class="bk-logo" aria-hidden="true">{{ (acc.bank || '?').trim().charAt(0).toUpperCase() || '?' }}</span>
+                          <input class="bk-name" type="text" [(ngModel)]="acc.bank" [name]="'bank_' + $index" maxlength="120" list="bank-suggestions" [placeholder]="'SETTINGS.BANK_NAME' | translate" />
+                          <button type="button" class="bk-del" (click)="bankToDelete.set($index)" [attr.aria-label]="'COMMON.DELETE' | translate" [title]="'COMMON.DELETE' | translate"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
+                        </div>
+                        <div class="bk-type" role="group" [attr.aria-label]="'SETTINGS.BANK_ACCOUNT_TYPE' | translate">
+                          <button type="button" [class.on]="acc.account_type === 'Ahorros'" (click)="setBankType(acc, 'Ahorros')">{{ 'SETTINGS.BANK_TYPE_SAVINGS' | translate }}</button>
+                          <button type="button" [class.on]="acc.account_type === 'Corriente'" (click)="setBankType(acc, 'Corriente')">{{ 'SETTINGS.BANK_TYPE_CHECKING' | translate }}</button>
+                        </div>
+                        <label class="bk-field">
+                          <small>{{ 'SETTINGS.BANK_ACCOUNT_NUMBER' | translate }}</small>
+                          <input class="bk-num" type="text" [(ngModel)]="acc.account_number" [name]="'bank_num_' + $index" maxlength="120" inputmode="numeric" placeholder="0000 0000 0000" />
+                        </label>
+                        <label class="bk-field">
+                          <small>{{ 'SETTINGS.PAYMENT_ACCOUNT_HOLDER' | translate }}</small>
+                          <input type="text" [(ngModel)]="acc.holder" [name]="'bank_holder_' + $index" maxlength="120" />
+                        </label>
+                        @if (bankToDelete() === $index) {
+                          <div class="bk-confirm" role="alertdialog">
+                            <span>{{ 'SETTINGS.BANK_DELETE_ASK' | translate }}</span>
+                            <span class="bk-confirm-actions">
+                              <button type="button" class="bk-no" (click)="bankToDelete.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
+                              <button type="button" class="bk-yes" (click)="confirmRemoveBank($index)">{{ 'COMMON.DELETE' | translate }}</button>
+                            </span>
+                          </div>
+                        }
                       </div>
                     }
-                    <datalist id="bank-suggestions">
-                      <option value="Bancolombia"></option>
-                      <option value="Davivienda"></option>
-                      <option value="Banco de Bogotá"></option>
-                      <option value="BBVA"></option>
-                      <option value="Banco de Occidente"></option>
-                      <option value="Banco Popular"></option>
-                      <option value="Banco Caja Social"></option>
-                      <option value="Scotiabank Colpatria"></option>
-                      <option value="Nu"></option>
-                      <option value="Daviplata"></option>
-                    </datalist>
-                    <button type="button" class="btn btn-secondary" (click)="addBankAccount()" data-testid="settings-bank-add">{{ 'SETTINGS.BANK_ADD' | translate }}</button>
+                    <button type="button" class="bk-add" (click)="addBankAccount()" data-testid="settings-bank-add">
+                      <span class="bk-add-ico" aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      </span>
+                      <b>{{ 'SETTINGS.BANK_ADD' | translate }}</b>
+                      <small>{{ 'SETTINGS.BANK_ADD_HINT' | translate }}</small>
+                    </button>
                   </div>
-                  <div class="form-group">
-                    <label>{{ 'SETTINGS.PAYMENT_QR' | translate }}</label>
-                    @if (paymentQrUrl(); as qrUrl) {
-                      <img [src]="qrUrl" alt="QR" class="payment-qr-preview" data-testid="settings-payment-qr-preview" />
-                      <button type="button" class="btn btn-secondary" (click)="removePaymentQr()">{{ 'SETTINGS.PAYMENT_QR_REMOVE' | translate }}</button>
-                    }
-                    <input id="payment-qr-upload" type="file" hidden accept="image/png,image/jpeg,image/webp,image/avif" (change)="onPaymentQrSelected($event)" data-testid="settings-payment-qr-input" />
-                    <label for="payment-qr-upload" class="btn btn-secondary st-upload">{{ 'SETTINGS.PAYMENT_QR_UPLOAD' | translate }}</label>
-                    <p class="hint">{{ 'SETTINGS.PAYMENT_QR_HINT' | translate }}</p>
-                  </div>
+                  <datalist id="bank-suggestions">
+                    <option value="Bancolombia"></option>
+                    <option value="Davivienda"></option>
+                    <option value="Banco de Bogotá"></option>
+                    <option value="BBVA"></option>
+                    <option value="Banco de Occidente"></option>
+                    <option value="Banco Popular"></option>
+                    <option value="Banco Caja Social"></option>
+                    <option value="Scotiabank Colpatria"></option>
+                    <option value="Nu"></option>
+                    <option value="Daviplata"></option>
+                  </datalist>
 
+                  <div class="qr-tile">
+                    <div class="qr-frame" [class.empty]="!paymentQrUrl()">
+                      @if (paymentQrUrl(); as qrUrl) {
+                        <img [src]="qrUrl" alt="QR" class="payment-qr-preview" data-testid="settings-payment-qr-preview" />
+                      } @else {
+                        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1"/></svg>
+                      }
+                    </div>
+                    <div class="qr-body">
+                      <h4>{{ 'SETTINGS.PAYMENT_QR' | translate }}</h4>
+                      <p>{{ 'SETTINGS.PAYMENT_QR_HINT' | translate }}</p>
+                      <div class="qr-actions">
+                        <input id="payment-qr-upload" type="file" hidden accept="image/png,image/jpeg,image/webp,image/avif" (change)="onPaymentQrSelected($event)" data-testid="settings-payment-qr-input" />
+                        <label for="payment-qr-upload" class="qr-upload">{{ (paymentQrUrl() ? 'SETTINGS.PAYMENT_QR_CHANGE' : 'SETTINGS.PAYMENT_QR_UPLOAD') | translate }}</label>
+                        @if (paymentQrUrl()) {
+                          <button type="button" class="qr-remove" (click)="removePaymentQr()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>{{ 'SETTINGS.PAYMENT_QR_REMOVE' | translate }}</button>
+                        }
+                      </div>
+                    </div>
+                  </div>
                   </div>
                   @if (showDianInvoicingPrep()) {
                     <div class="st-card">
@@ -2138,6 +2171,50 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .st-fixed-sm .st-fixed-name { font-family: inherit; font-size: .95rem; font-style: normal; font-weight: 600; color: var(--color-text-muted); }
     .st-fixed-sm .st-fixed-chip { padding: 2px 8px; font-size: .6rem; color: var(--color-text-muted); background: #e9e2d8; }
     .st-fixed-chip { flex: none; padding: 4px 12px; border-radius: 999px; font-size: .66rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, #fff); }
+    /* Cuentas bancarias y QR */
+    .bk-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .bk-card { --h: 20; position: relative; display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 18px; border-radius: 24px; border: 1px solid var(--color-border); background: linear-gradient(160deg, hsl(var(--h) 75% 96%), #fffdfa 60%); box-shadow: 0 22px 34px -28px hsl(var(--h) 45% 30% / .6); overflow: hidden; }
+    .bk-card::after { content: ''; position: absolute; right: -40px; top: -40px; width: 130px; height: 130px; border-radius: 50%; background: hsl(var(--h) 70% 85% / .45); pointer-events: none; }
+    .bk-top { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; }
+    .bk-logo { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.3rem; font-style: italic; font-weight: 600; color: hsl(var(--h) 55% 26%); background: hsl(var(--h) 70% 86%); box-shadow: inset 0 0 0 2px hsl(var(--h) 65% 75%); }
+    .settings-form .bk-card input { width: 100%; min-height: 0; padding: 0; border: 0; border-bottom: 1.5px dashed transparent; border-radius: 0; background: transparent; box-shadow: none; color: var(--color-text); font: inherit; font-weight: 700; }
+    .settings-form .bk-card input:hover { border-bottom-color: var(--color-border); }
+    .settings-form .bk-card input:focus { outline: none; box-shadow: none; border-bottom-color: var(--color-primary); }
+    .settings-form .bk-card input::placeholder { color: #b3a99f; font-weight: 600; }
+    .settings-form .bk-card .bk-name { flex: 1; min-width: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 1.3rem; font-weight: 500; letter-spacing: -.01em; padding: 4px 0; }
+    .settings-form .bk-card .bk-num { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 1.1rem; letter-spacing: .08em; padding: 6px 0; }
+    .bk-del { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; color: var(--color-text-muted); background: rgba(255,255,255,.7); cursor: pointer; transition: background .15s, color .15s; }
+    .bk-del:hover { color: #fff; background: #dc2626; }
+    .bk-type { position: relative; z-index: 1; display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(255,255,255,.75); align-self: flex-start; box-shadow: inset 0 0 0 1px var(--color-border); }
+    .bk-type button { min-height: 32px; padding: 0 14px; border: 0; border-radius: 999px; font: inherit; font-size: .78rem; font-weight: 800; color: var(--color-text-muted); background: transparent; cursor: pointer; }
+    .bk-type button.on { color: #fff; background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); box-shadow: 0 8px 12px -8px var(--color-primary); }
+    .bk-field { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 2px; margin: 0; }
+    .bk-field small { font-size: .6rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--color-text-muted); }
+    .bk-confirm { position: absolute; inset: auto 0 0 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 14px; font-size: .84rem; font-weight: 700; color: #7f1d1d; background: #fee2e2; border-top: 1px solid #fecaca; }
+    .bk-confirm-actions { display: inline-flex; gap: 6px; }
+    .bk-confirm button { min-height: 32px; padding: 0 14px; border: 0; border-radius: 999px; font: inherit; font-size: .78rem; font-weight: 800; cursor: pointer; }
+    .bk-no { color: var(--color-text); background: #fff; }
+    .bk-yes { color: #fff; background: #dc2626; }
+    .bk-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 190px; padding: 18px; border-radius: 24px; border: 2px dashed color-mix(in srgb, var(--color-primary) 45%, var(--color-border)); background: color-mix(in srgb, var(--color-primary) 4%, #fffdfa); color: var(--color-text); font: inherit; text-align: center; cursor: pointer; transition: background .15s, border-color .15s, transform .15s; }
+    .bk-add:hover { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 9%, #fff); transform: translateY(-2px); }
+    .bk-add-ico { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; color: #fff; background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); box-shadow: 0 14px 20px -12px var(--color-primary); }
+    .bk-add b { font-size: .95rem; font-weight: 800; }
+    .bk-add small { max-width: 22ch; font-size: .76rem; font-weight: 600; line-height: 1.35; color: var(--color-text-muted); }
+
+    .qr-tile { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; padding: 18px; margin-bottom: 14px; border-radius: 24px; border: 1px solid var(--color-border); background: #fffdfa; }
+    .qr-frame { position: relative; flex: none; display: grid; place-items: center; width: 168px; height: 168px; padding: 12px; border-radius: 22px; background: #fff; box-shadow: 0 18px 28px -20px rgba(60, 30, 10, .55), inset 0 0 0 1px var(--color-border); color: #c9bfb3; }
+    .qr-frame.empty { background: repeating-linear-gradient(135deg, #faf6ef 0 8px, #f5efe5 8px 16px); }
+    .qr-frame .payment-qr-preview { width: 100%; height: 100%; margin: 0; border: 0; border-radius: 10px; box-shadow: none; object-fit: contain; }
+    .qr-body { flex: 1 1 220px; min-width: 0; }
+    .qr-body h4 { margin: 0 0 4px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.2rem; font-style: italic; font-weight: 500; }
+    .qr-body p { margin: 0 0 14px; font-size: .84rem; line-height: 1.45; color: var(--color-text-muted); }
+    .qr-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .qr-upload, .qr-remove { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 20px; border-radius: 999px; font: inherit; font-size: .86rem; font-weight: 800; cursor: pointer; }
+    .qr-upload { color: #fff; border: 0; background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); box-shadow: 0 14px 20px -14px var(--color-primary); }
+    .qr-remove { color: #b91c1c; background: #fff; border: 1.5px solid #fecaca; }
+    .qr-remove:hover { color: #fff; background: #dc2626; border-color: #dc2626; }
+    @media (prefers-reduced-motion: reduce) { .bk-add, .bk-add:hover { transition: none; transform: none; } }
+
     .toast { top: auto; bottom: 90px; border-radius: 999px; padding: 12px 18px 12px 22px; background: #1c1917; font-weight: 700; box-shadow: 0 24px 40px -18px rgba(0,0,0,.6); }
     .toast.success { background: #166534; }
     .toast.error { background: #991b1b; }
@@ -3637,6 +3714,27 @@ export class SettingsComponent implements OnInit, OnDestroy {
       ...list,
       { bank: '', account_type: '', account_number: '', holder: '' },
     ];
+    this.markDirty();
+  }
+
+  /** Index of the bank account awaiting delete confirmation. */
+  bankToDelete = signal<number | null>(null);
+
+  bankHue(name: string | null | undefined): number {
+    let h = 0;
+    for (const ch of name || '') h = (h * 31 + ch.charCodeAt(0)) % 360;
+    return h;
+  }
+
+  setBankType(acc: { account_type?: string | null }, type: string): void {
+    acc.account_type = acc.account_type === type ? '' : type;
+    this.markDirty();
+  }
+
+  confirmRemoveBank(index: number): void {
+    this.removeBankAccount(index);
+    this.bankToDelete.set(null);
+    this.markDirty();
   }
 
   removeBankAccount(index: number) {
