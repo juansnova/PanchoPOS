@@ -287,6 +287,11 @@
             </div>
             }
             <div class="about-card about-visit">
+              <div class="about-map" aria-hidden="true">
+                <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice"><path d="M-10 90 L120 60 L220 85 L410 30" /><path d="M60 130 L110 -10" /><path d="M250 130 L300 -10" /><path d="M-10 30 L410 100" /><rect x="130" y="64" width="46" height="26" rx="6" /><rect x="310" y="18" width="52" height="30" rx="6" /></svg>
+                <span class="about-pin"><i></i><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12zm0-9.5A2.5 2.5 0 1 1 12 7.5a2.5 2.5 0 0 1 0 5z"/></svg></span>
+                <em>{{ displayName() }}</em>
+              </div>
               @if (tenant()?.address?.trim()) {
               <div class="about-addr">
                 <span class="about-ico" aria-hidden="true">
