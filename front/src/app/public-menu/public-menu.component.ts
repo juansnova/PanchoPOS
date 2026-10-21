@@ -286,8 +286,8 @@ export class PublicMenuComponent implements OnInit {
     this.featPos.set({
       w: Math.min(100, (cw / sw) * 100),
       l: (el.scrollLeft / sw) * 100,
-      atStart: el.scrollLeft <= 2,
-      atEnd: el.scrollLeft + cw >= sw - 2,
+      atStart: el.scrollLeft <= 24,
+      atEnd: el.scrollLeft + cw >= sw - 24,
       overflow: sw > cw + 4,
     });
   }

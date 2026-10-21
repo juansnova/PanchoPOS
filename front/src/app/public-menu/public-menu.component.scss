@@ -1805,7 +1805,7 @@
 
 .fc .featured-scroll {
   scroll-snap-type: x proximity;
-  scroll-padding-inline: 4px;
+  scroll-padding-inline: var(--space-4);
   cursor: grab;
   overscroll-behavior-x: contain;
 }
@@ -1815,7 +1815,7 @@
 
 .fc .featured-scroll {
   scroll-snap-type: x proximity;
-  scroll-padding-inline: 4px;
+  scroll-padding-inline: var(--space-4);
   cursor: grab;
   overscroll-behavior-x: contain;
 }
