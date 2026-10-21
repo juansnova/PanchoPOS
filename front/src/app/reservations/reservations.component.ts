@@ -21,6 +21,7 @@ import { SidebarComponent } from '../shared/sidebar.component';
 import { ConfirmationModalComponent } from '../shared/confirmation-modal.component';
 import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
 import { ReservationWeekSlotGridComponent } from '../shared/reservation-week-slot-grid.component';
+import { AppDatePickerComponent } from '../shared/app-date-picker.component';
 import { tenantOpeningHoursHasMealSplit, resolveBookingServiceLabel } from '../shared/booking-meal-split';
 import { reservationDietaryNotesDisplay, reservationDietaryNotesFormValue } from '../shared/reservation-dietary-notes';
 import { contactEmailValid, contactPhoneValid } from '../shared/contact-validators';
@@ -39,28 +40,70 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     FocusFirstInputDirective,
     LowerCasePipe,
     ReservationWeekSlotGridComponent,
+    AppDatePickerComponent,
   ],
   template: `
     <app-sidebar>
-      <div class="page-header rs-header">
-        <div class="rs-title">
-          <h1>{{ 'RESERVATIONS.TITLE' | translate }}</h1>
-          <p>{{ filterDateLabel() }}</p>
+      <section class="rs-hero">
+        <div class="rs-hero-top">
+          <p class="rs-eyebrow"><i></i>{{ 'RESERVATIONS.TITLE' | translate }}</p>
+          <div class="rs-hero-actions">
+            @if (tenantId != null) {
+              <div class="rs-links" [attr.aria-label]="'RESERVATIONS.SHARE_LINKS' | translate">
+                <a [routerLink]="['/book', tenantId]" target="_blank" rel="noopener" class="rs-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>{{ 'RESERVATIONS.LINK_BOOKING' | translate }}</a>
+                <a [routerLink]="['/waitlist', tenantId]" target="_blank" rel="noopener" class="rs-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>{{ 'RESERVATIONS.LINK_WAITLIST' | translate }}</a>
+                <a [routerLink]="['/feedback', tenantId]" target="_blank" rel="noopener" class="rs-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>{{ 'RESERVATIONS.LINK_FEEDBACK' | translate }}</a>
+              </div>
+            }
+            <a [routerLink]="['/settings']" [queryParams]="{ section: 'reservations' }" class="rs-icon-btn" [title]="'RESERVATIONS.EDIT_RESERVATION_OPTIONS' | translate" aria-label="{{ 'RESERVATIONS.EDIT_RESERVATION_OPTIONS' | translate }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
+            @if (canWrite()) {
+              <button class="rs-new" (click)="openCreate()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{{ 'RESERVATIONS.NEW' | translate }}</button>
+            }
+          </div>
         </div>
-        <div class="page-header-actions">
-          @if (tenantId != null) {
-            <div class="rs-links" [attr.aria-label]="'RESERVATIONS.SHARE_LINKS' | translate">
-              <a [routerLink]="['/book', tenantId]" target="_blank" rel="noopener" class="rs-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>{{ 'RESERVATIONS.LINK_BOOKING' | translate }}</a>
-              <a [routerLink]="['/waitlist', tenantId]" target="_blank" rel="noopener" class="rs-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>{{ 'RESERVATIONS.LINK_WAITLIST' | translate }}</a>
-              <a [routerLink]="['/feedback', tenantId]" target="_blank" rel="noopener" class="rs-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>{{ 'RESERVATIONS.LINK_FEEDBACK' | translate }}</a>
+
+        @if (viewTab() === 'reservations') {
+          <div class="rs-hero-main">
+            <h1 class="rs-date">
+              <span class="rs-date-num">{{ filterParts().day }}</span>
+              <span class="rs-date-txt">
+                <b>{{ filterParts().weekday }}</b>
+                <span>{{ filterParts().month }} {{ filterParts().year }}</span>
+              </span>
+              @if (isFilterToday()) { <em class="rs-today">{{ 'RESERVATIONS.TODAY_PILL' | translate }}</em> }
+            </h1>
+            <dl class="rs-stats" data-testid="reservations-kpis">
+              <div><dt>{{ 'RESERVATIONS.KPI_RESERVATIONS' | translate }}</dt><dd>{{ resStats().total }}</dd></div>
+              <div><dt>{{ 'RESERVATIONS.KPI_GUESTS' | translate }}</dt><dd>{{ resStats().guests }}</dd></div>
+              <div class="rs-stat-info"><dt>{{ 'RESERVATIONS.KPI_PENDING' | translate }}</dt><dd>{{ resStats().booked }}</dd></div>
+              <div class="rs-stat-ok"><dt>{{ 'RESERVATIONS.KPI_SEATED' | translate }}</dt><dd>{{ resStats().seated }}</dd></div>
+            </dl>
+          </div>
+
+          <div class="rs-flow" aria-hidden="true">
+            <span class="rs-flow-b" [style.flex-grow]="flow().booked"></span>
+            <span class="rs-flow-s" [style.flex-grow]="flow().seated"></span>
+            <span class="rs-flow-f" [style.flex-grow]="flow().finished"></span>
+          </div>
+
+          <div class="rs-strip">
+            <button type="button" class="rs-strip-arrow" (click)="shiftDay(-1)" [attr.aria-label]="'RESERVATIONS.PREV_DAY' | translate">‹</button>
+            <div class="rs-days" role="group">
+              @for (d of stripDays(); track d.date) {
+                <button type="button" class="rs-day" [class.on]="d.date === filterDate" [class.today]="d.today" (click)="pickDate(d.date)">
+                  <small>{{ d.weekday }}</small>
+                  <b>{{ d.day }}</b>
+                </button>
+              }
             </div>
-          }
-          <a [routerLink]="['/settings']" [queryParams]="{ section: 'reservations' }" class="rs-icon-btn" [title]="'RESERVATIONS.EDIT_RESERVATION_OPTIONS' | translate" aria-label="{{ 'RESERVATIONS.EDIT_RESERVATION_OPTIONS' | translate }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
-          @if (canWrite()) {
-            <button class="rs-new" (click)="openCreate()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{{ 'RESERVATIONS.NEW' | translate }}</button>
-          }
-        </div>
-      </div>
+            <button type="button" class="rs-strip-arrow" (click)="shiftDay(1)" [attr.aria-label]="'RESERVATIONS.NEXT_DAY' | translate">›</button>
+            <app-date-picker class="rs-picker" [compact]="true" [clearable]="false" [ngModel]="filterDate" (ngModelChange)="pickDate($event)" />
+            @if (!isFilterToday()) {
+              <button type="button" class="rs-gotoday" (click)="goToday()">{{ 'RESERVATIONS.GO_TODAY' | translate }}</button>
+            }
+          </div>
+        }
+      </section>
 
       <div class="rs-tabs" role="tablist">
         <button type="button" role="tab" class="rs-tab" [class.active]="viewTab() === 'reservations'" (click)="setViewTab('reservations')">
@@ -74,15 +117,7 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
       </div>
 
       @if (viewTab() === 'reservations') {
-      <div class="rs-kpis" data-testid="reservations-kpis">
-        <div class="rs-kpi"><span>{{ 'RESERVATIONS.KPI_RESERVATIONS' | translate }}</span><strong>{{ resStats().total }}</strong></div>
-        <div class="rs-kpi"><span>{{ 'RESERVATIONS.KPI_GUESTS' | translate }}</span><strong>{{ resStats().guests }}</strong></div>
-        <div class="rs-kpi rs-kpi-info"><span>{{ 'RESERVATIONS.KPI_PENDING' | translate }}</span><strong>{{ resStats().booked }}</strong></div>
-        <div class="rs-kpi rs-kpi-ok"><span>{{ 'RESERVATIONS.KPI_SEATED' | translate }}</span><strong>{{ resStats().seated }}</strong></div>
-      </div>
-
       <div class="rs-filters">
-        <label class="rs-field rs-field-date"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><input type="date" [(ngModel)]="filterDate" (ngModelChange)="load()" aria-label="date" /></label>
         <label class="rs-field rs-field-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="text" [(ngModel)]="filterPhone" (ngModelChange)="load()" placeholder="{{ 'RESERVATIONS.SEARCH_PHONE' | translate }}" /></label>
         <button class="rs-refresh" (click)="load()">{{ 'ORDERS.REFRESH' | translate }}</button>
         <div class="rs-chips" role="group">
@@ -108,64 +143,74 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
       } @else {
         <div class="reservation-grid">
           @for (r of reservations(); track r.id) {
-            <article class="rv-card" [class]="'rv-card status-' + r.status">
-              <header class="rv-head">
-                <div class="rv-time">
-                  <strong>{{ timeLabel(r.reservation_time) }}</strong>
-                  <small>{{ dayLabel(r.reservation_date) }}</small>
-                </div>
-                <div class="rv-who">
-                  <h3>{{ r.customer_name }}</h3>
-                  <span class="rv-party"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>{{ r.party_size }}</span>
-                </div>
-                <div class="rv-badges">
-                  <span class="status-badge" [class]="r.status">{{ getStatusLabel(r.status) | translate }}</span>
-                  @if (r.delay_notice && (r.status === 'booked' || r.status === 'seated')) {
-                    <span class="rv-late-badge">{{ 'RESERVATIONS.LATE_BADGE' | translate }}</span>
-                  }
-                  @if (isSlotOverbooked(r)) {
-                    <span class="overbooked-badge">{{ 'RESERVATIONS.OVERBOOKED' | translate }}</span>
-                  }
-                </div>
-              </header>
-              @if (r.delay_notice && (r.status === 'booked' || r.status === 'seated')) {
-                <div class="rv-delay" role="status">
-                  <span class="rv-delay-bell" aria-hidden="true">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
-                  </span>
-                  <div>
-                    <b>{{ 'RESERVATIONS.DELAY_NOTICE' | translate }}</b>
-                    <p>{{ r.delay_notice }}</p>
+            <article class="tk" [class]="'tk status-' + r.status" [class.is-late]="!!r.delay_notice && (r.status === 'booked' || r.status === 'seated')">
+              <div class="tk-stub">
+                <span class="tk-time">{{ timeLabel(r.reservation_time) }}</span>
+                <span class="tk-day">{{ dayLabel(r.reservation_date) }}</span>
+                <span class="tk-num">#{{ r.id }}</span>
+              </div>
+              <div class="tk-perf" aria-hidden="true"></div>
+              <div class="tk-main">
+                <header class="tk-head">
+                  <span class="tk-avatar" [style.--h]="hue(r.customer_name)" aria-hidden="true">{{ initial(r.customer_name) }}</span>
+                  <div class="tk-who">
+                    <h3>{{ r.customer_name }}</h3>
+                    <span class="tk-party">
+                      <span class="tk-dots" aria-hidden="true">
+                        @for (i of partyDots(r.party_size); track i) { <i></i> }
+                        @if (r.party_size > 8) { <em>+{{ r.party_size - 8 }}</em> }
+                      </span>
+                      {{ r.party_size }} {{ 'RESERVATIONS.PERSONS_SHORT' | translate }}
+                    </span>
                   </div>
-                </div>
-              }
-              <div class="rv-body">
-                <div class="rv-line"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.9.34 1.78.65 2.62a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.46-1.27a2 2 0 012.11-.45c.84.31 1.72.53 2.62.65A2 2 0 0122 16.92z"/></svg><span>{{ r.customer_phone }}</span></div>
-                @if (r.customer_email) {
-                  <div class="rv-line"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/></svg><span>{{ r.customer_email }}</span></div>
+                  <div class="tk-badges">
+                    <span class="status-badge" [class]="r.status">{{ getStatusLabel(r.status) | translate }}</span>
+                    @if (r.delay_notice && (r.status === 'booked' || r.status === 'seated')) {
+                      <span class="rv-late-badge">{{ 'RESERVATIONS.LATE_BADGE' | translate }}</span>
+                    }
+                    @if (isSlotOverbooked(r)) {
+                      <span class="overbooked-badge">{{ 'RESERVATIONS.OVERBOOKED' | translate }}</span>
+                    }
+                  </div>
+                </header>
+                @if (r.delay_notice && (r.status === 'booked' || r.status === 'seated')) {
+                  <div class="rv-delay" role="status">
+                    <span class="rv-delay-bell" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+                    </span>
+                    <div>
+                      <b>{{ 'RESERVATIONS.DELAY_NOTICE' | translate }}</b>
+                      <p>{{ r.delay_notice }}</p>
+                    </div>
+                  </div>
                 }
-                <div class="rv-tags">
-                  <span class="rv-tag rv-tag-table"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h18M5 10v9M19 10v9M7 10V6h10v4"/></svg>{{ getTableDisplay(r) }}</span>
-                  @if (r.service_type) {
-                    <span class="rv-tag">{{ serviceTypeLabel(r.service_type) }}</span>
+                <div class="tk-body">
+                  <div class="rv-line"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.9.34 1.78.65 2.62a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.46-1.27a2 2 0 012.11-.45c.84.31 1.72.53 2.62.65A2 2 0 0122 16.92z"/></svg><span>{{ r.customer_phone }}</span></div>
+                  @if (r.customer_email) {
+                    <div class="rv-line"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/></svg><span>{{ r.customer_email }}</span></div>
                   }
-                  @if (r.seating_preference) {
-                    <span class="rv-tag">{{ seatingLabel(r.seating_preference) }}</span>
+                  <div class="rv-tags">
+                    <span class="rv-tag rv-tag-table"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h18M5 10v9M19 10v9M7 10V6h10v4"/></svg>{{ getTableDisplay(r) }}</span>
+                    @if (r.service_type) {
+                      <span class="rv-tag">{{ serviceTypeLabel(r.service_type) }}</span>
+                    }
+                    @if (r.seating_preference) {
+                      <span class="rv-tag">{{ seatingLabel(r.seating_preference) }}</span>
+                    }
+                    @if (!dietaryNotesLine(r) && r.allergies_has) {
+                      <span class="rv-tag rv-tag-warn">{{ 'BOOK.ALLERGIES_HAS' | translate }}</span>
+                    }
+                  </div>
+                  @if (r.client_notes) {
+                    <div class="rv-note"><b>{{ 'RESERVATIONS.RESERVATION_NOTES' | translate }}</b>{{ r.client_notes }}</div>
                   }
-                  @if (!dietaryNotesLine(r) && r.allergies_has) {
-                    <span class="rv-tag rv-tag-warn">{{ 'BOOK.ALLERGIES_HAS' | translate }}</span>
+                  @if (dietaryNotesLine(r); as dn) {
+                    <div class="rv-note rv-note-warn"><b>{{ 'RESERVATIONS.CUSTOMER_NOTES' | translate }}</b>{{ dn }}</div>
                   }
-                </div>
-                @if (r.client_notes) {
-                  <div class="rv-note"><b>{{ 'RESERVATIONS.RESERVATION_NOTES' | translate }}</b>{{ r.client_notes }}</div>
-                }
-                @if (dietaryNotesLine(r); as dn) {
-                  <div class="rv-note rv-note-warn"><b>{{ 'RESERVATIONS.CUSTOMER_NOTES' | translate }}</b>{{ dn }}</div>
-                }
-                @if (r.owner_notes) {
-                  <div class="rv-note rv-note-owner"><b>{{ 'RESERVATIONS.OWNER_NOTES' | translate }}</b>{{ r.owner_notes }}</div>
-                }
-                @if (r.client_ip || r.client_user_agent || r.client_fingerprint != null || r.client_screen_width != null) {
+                  @if (r.owner_notes) {
+                    <div class="rv-note rv-note-owner"><b>{{ 'RESERVATIONS.OWNER_NOTES' | translate }}</b>{{ r.owner_notes }}</div>
+                  }
+                  @if (r.client_ip || r.client_user_agent || r.client_fingerprint != null || r.client_screen_width != null) {
                   <details class="client-tech">
                     <summary>{{ 'RESERVATIONS.CLIENT_TECH_SUMMARY' | translate }}</summary>
                     <div class="client-tech-inner">
@@ -176,24 +221,26 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
                     </div>
                   </details>
                 }
-              </div>
-              @if (canWrite() && (r.status === 'booked' || r.status === 'seated')) {
-                <footer class="rv-actions">
-                  @if (r.status === 'booked') {
-                    <button class="rv-btn rv-btn-main" (click)="openSeat(r)">{{ 'RESERVATIONS.SEAT' | translate }}</button>
-                    <button class="rv-btn" (click)="openEdit(r)">{{ 'RESERVATIONS.EDIT' | translate }}</button>
-                    @if (r.customer_email || r.customer_phone) {
-                      <button class="rv-btn" (click)="sendReminder(r)" [disabled]="sendingReminderId() === r.id" [title]="'RESERVATIONS.SEND_REMINDER' | translate">
-                        {{ sendingReminderId() === r.id ? ('COMMON.LOADING' | translate) : ('RESERVATIONS.SEND_REMINDER' | translate) }}
-                      </button>
+                </div>
+                @if (canWrite() && (r.status === 'booked' || r.status === 'seated')) {
+                  <footer class="tk-actions">
+                    @if (r.status === 'booked') {
+                      <button class="tk-btn tk-btn-main" (click)="openSeat(r)">{{ 'RESERVATIONS.SEAT' | translate }}<i>→</i></button>
+                      <button class="tk-btn" (click)="openEdit(r)">{{ 'RESERVATIONS.EDIT' | translate }}</button>
+                      @if (r.customer_email || r.customer_phone) {
+                        <button class="tk-btn" (click)="sendReminder(r)" [disabled]="sendingReminderId() === r.id" [title]="'RESERVATIONS.SEND_REMINDER' | translate">
+                          {{ sendingReminderId() === r.id ? ('COMMON.LOADING' | translate) : ('RESERVATIONS.SEND_REMINDER' | translate) }}
+                        </button>
+                      }
+                      <span class="tk-spacer"></span>
+                      <button class="tk-btn tk-btn-warn" (click)="confirmNoShow(r)">{{ 'RESERVATIONS.NO_SHOW' | translate }}</button>
+                      <button class="tk-btn tk-btn-danger" (click)="confirmCancel(r)">{{ 'RESERVATIONS.CANCEL' | translate }}</button>
+                    } @else {
+                      <button class="tk-btn tk-btn-main" (click)="finish(r)">{{ 'RESERVATIONS.FINISH' | translate }}<i>→</i></button>
                     }
-                    <button class="rv-btn rv-btn-warn" (click)="confirmNoShow(r)">{{ 'RESERVATIONS.NO_SHOW' | translate }}</button>
-                    <button class="rv-btn rv-btn-danger" (click)="confirmCancel(r)">{{ 'RESERVATIONS.CANCEL' | translate }}</button>
-                  } @else {
-                    <button class="rv-btn rv-btn-main" (click)="finish(r)">{{ 'RESERVATIONS.FINISH' | translate }}</button>
-                  }
-                </footer>
-              }
+                  </footer>
+                }
+              </div>
             </article>
           }
         </div>
@@ -339,6 +386,7 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
                       [serviceType]="hasMealSplit() ? formService : 'all'"
                       [openingHoursJson]="tenantSummary()?.opening_hours ?? null"
                       [bookFloorId]="formFloorId"
+                      [elegant]="true"
                       [(selectedDate)]="formDate"
                       [(selectedTime)]="formTime"
                       (selectedDateChange)="loadSlotCapacity()"
@@ -414,33 +462,44 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
       }
 
       <!-- Seat modal -->
-      @if (reservationToSeat()) {
-        <div class="modal-overlay">
-          <div class="modal-content" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h3>{{ 'RESERVATIONS.SEAT_AT_TABLE' | translate }}</h3>
-              <button class="close-btn" (click)="closeSeatModal()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
-            </div>
-            <div class="modal-body">
-              @if (upcomingNoTableCount() !== null && upcomingNoTableCount()! > 0) {
-                <p class="upcoming-no-table-warning">{{ 'RESERVATIONS.UPCOMING_NO_TABLE' | translate: { count: upcomingNoTableCount()! } }}</p>
-              }
-              <p>{{ 'RESERVATIONS.PARTY_SIZE' | translate }}: {{ reservationToSeat()?.party_size }}</p>
-              <div class="table-list">
-                @for (t of availableTablesForSeat(); track t.id) {
-                  <div class="table-option-wrap">
-                    @if (t.upcoming_reservation) {
-                      <p class="table-upcoming-warning">{{ 'RESERVATIONS.TABLE_UPCOMING' | translate: { table: t.name, time: t.upcoming_reservation.reservation_time, name: t.upcoming_reservation.customer_name } }}</p>
-                    }
-                    <button class="table-option" (click)="seatAt(t.id!)">
-                      {{ t.name }} ({{ t.seat_count }} {{ 'TABLES.SEATS' | translate | lowercase }})
-                    </button>
-                  </div>
-                }
+      @if (reservationToSeat(); as sr) {
+        <div class="modal-overlay" (click)="closeSeatModal()">
+          <div class="sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+            <div class="sm-head">
+              <span class="tk-avatar sm-avatar" [style.--h]="hue(sr.customer_name)" aria-hidden="true">{{ initial(sr.customer_name) }}</span>
+              <div class="sm-head-text">
+                <small>{{ 'RESERVATIONS.SEAT_AT_TABLE' | translate }}</small>
+                <h3>{{ sr.customer_name }}</h3>
+                <p>
+                  <span class="tk-dots" aria-hidden="true">@for (i of partyDots(sr.party_size); track i) { <i></i> }</span>
+                  {{ sr.party_size }} {{ 'RESERVATIONS.PERSONS_SHORT' | translate }} · {{ timeLabel(sr.reservation_time) }}
+                </p>
               </div>
-              @if (availableTablesForSeat().length === 0) {
+              <button type="button" class="rf-close" (click)="closeSeatModal()" [attr.aria-label]="'COMMON.CLOSE' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div class="sm-body">
+              @if (upcomingNoTableCount() !== null && upcomingNoTableCount()! > 0) {
+                <p class="sm-warn">{{ 'RESERVATIONS.UPCOMING_NO_TABLE' | translate: { count: upcomingNoTableCount()! } }}</p>
+              }
+              @if (availableTablesForSeat().length > 0) {
+                <p class="sm-hint">{{ 'RESERVATIONS.SEAT_PICK_HINT' | translate }}</p>
+                <div class="sm-grid">
+                  @for (t of availableTablesForSeat(); track t.id) {
+                    <button type="button" class="sm-table" [class.best]="t.seat_count === bestFitSeats()" [class.warn]="!!t.upcoming_reservation" (click)="seatAt(t.id!)">
+                      @if (t.seat_count === bestFitSeats()) { <span class="sm-best">{{ 'RESERVATIONS.BEST_FIT' | translate }}</span> }
+                      <svg class="sm-ring" viewBox="0 0 48 48" aria-hidden="true">
+                        <circle cx="24" cy="24" r="10" class="sm-top"/>
+                        @for (c of chairs(t.seat_count ?? 0); track $index) { <circle [attr.cx]="c.x" [attr.cy]="c.y" r="3.2" class="sm-chair"/> }
+                      </svg>
+                      <b>{{ t.name }}</b>
+                      <small>{{ t.seat_count }} {{ 'TABLES.SEATS' | translate | lowercase }}</small>
+                      @if (t.upcoming_reservation) {
+                        <span class="sm-up">{{ 'RESERVATIONS.TABLE_UPCOMING' | translate: { table: t.name, time: t.upcoming_reservation.reservation_time, name: t.upcoming_reservation.customer_name } }}</span>
+                      }
+                    </button>
+                  }
+                </div>
+              } @else {
                 <p class="no-tables">{{ 'RESERVATIONS.NO_AVAILABLE_TABLES' | translate }}</p>
               }
             </div>
@@ -462,16 +521,27 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
         />
       }
       <!-- No-show confirm -->
-      @if (reservationToNoShow()) {
-        <app-confirmation-modal
-          title="RESERVATIONS.NO_SHOW_CONFIRM_TITLE"
-          message="RESERVATIONS.NO_SHOW_CONFIRM_MESSAGE"
-          [confirmText]="'RESERVATIONS.NO_SHOW'"
-          cancelText="COMMON.CANCEL"
-          confirmBtnClass="btn-primary"
-          (confirm)="doNoShow()"
-          (cancel)="reservationToNoShow.set(null)"
-        />
+      @if (reservationToNoShow(); as nr) {
+        <div class="modal-overlay" (click)="reservationToNoShow.set(null)">
+          <div class="ns" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+            <span class="ns-ico" aria-hidden="true">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 8l5 5M22 8l-5 5"/></svg>
+            </span>
+            <h3>{{ 'RESERVATIONS.NO_SHOW_CONFIRM_TITLE' | translate }}</h3>
+            <div class="ns-guest">
+              <span class="tk-avatar" [style.--h]="hue(nr.customer_name)" aria-hidden="true">{{ initial(nr.customer_name) }}</span>
+              <div>
+                <b>{{ nr.customer_name }}</b>
+                <small>{{ nr.party_size }} {{ 'RESERVATIONS.PERSONS_SHORT' | translate }} · {{ dayLabel(nr.reservation_date) }} · {{ timeLabel(nr.reservation_time) }}</small>
+              </div>
+            </div>
+            <p>{{ 'RESERVATIONS.NO_SHOW_CONFIRM_MESSAGE' | translate }}</p>
+            <div class="ns-actions">
+              <button type="button" class="rf-btn rf-btn-ghost" (click)="reservationToNoShow.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
+              <button type="button" class="rf-btn ns-go" (click)="doNoShow()">{{ 'RESERVATIONS.NO_SHOW' | translate }}</button>
+            </div>
+          </div>
+        </div>
       }
     </app-sidebar>
   `,
@@ -659,6 +729,142 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     @media (prefers-reduced-motion: reduce) { .rv-card, .rv-card:hover { transition: none; transform: none; } }
     @media (max-width: 600px) { .rs-links { display: none; } .rv-head { flex-wrap: wrap; } .rv-badges { flex-direction: row; margin-left: auto; } }
 
+    /* ===== Reservaciones: portada del día, tiques, mesas ===== */
+    .rs-hero { position: relative; margin-bottom: 16px; padding: 22px 26px 20px; border-radius: 30px; overflow: hidden; background: radial-gradient(70% 120% at 0% 0%, color-mix(in srgb, var(--color-primary) 16%, #fff), transparent 70%), #fffdfa; border: 1px solid var(--color-border); box-shadow: 0 30px 50px -40px rgba(60, 30, 10, .55); }
+    .rs-hero-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+    .rs-eyebrow { display: flex; align-items: center; gap: 10px; margin: 0; font-size: .7rem; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--color-primary); }
+    .rs-eyebrow i { width: 28px; height: 2px; background: var(--color-primary); }
+    .rs-hero-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .rs-hero-main { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .rs-date { display: flex; align-items: center; gap: 18px; margin: 0; font-weight: 400; flex-wrap: wrap; }
+    .rs-date-num { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(4.6rem, 9vw, 7rem); line-height: .85; font-weight: 500; letter-spacing: -.04em; color: var(--color-primary); }
+    .rs-date-txt { display: flex; flex-direction: column; gap: 2px; }
+    .rs-date-txt b { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.5rem, 3vw, 2.2rem); font-style: italic; font-weight: 500; line-height: 1.05; }
+    .rs-date-txt span { font-size: .78rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--color-text-muted); }
+    .rs-today { align-self: flex-start; padding: 5px 14px; border-radius: 999px; font-style: normal; font-size: .7rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #fff; background: var(--color-primary); box-shadow: 0 10px 16px -10px var(--color-primary); }
+    .rs-stats { display: flex; margin: 0; }
+    .rs-stats > div { padding: 2px 22px; border-left: 1px dashed var(--color-border); }
+    .rs-stats > div:first-child { border-left: 0; padding-left: 0; }
+    .rs-stats dt { font-size: .64rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); }
+    .rs-stats dd { margin: 2px 0 0; font-family: Georgia, 'Times New Roman', serif; font-size: 2.3rem; line-height: 1; font-variant-numeric: tabular-nums; }
+    .rs-stat-info dd { color: #1d4ed8; }
+    .rs-stat-ok dd { color: #15803d; }
+    .rs-flow { display: flex; gap: 3px; height: 6px; margin: 18px 0 16px; border-radius: 999px; overflow: hidden; background: var(--color-border); }
+    .rs-flow span { flex: 0 1 0; min-width: 0; transition: flex-grow .4s; }
+    .rs-flow-b { background: #3b82f6; }
+    .rs-flow-s { background: #22a05a; }
+    .rs-flow-f { background: #a8a29e; }
+
+    .rs-strip { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .rs-strip-arrow { flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; background: #fff; color: var(--color-primary); font-size: 1.3rem; font-weight: 800; line-height: 1; cursor: pointer; box-shadow: 0 6px 12px -8px rgba(0,0,0,.4), 0 0 0 1px var(--color-border); }
+    .rs-strip-arrow:hover { background: var(--color-primary); color: #fff; }
+    .rs-days { display: flex; gap: 6px; flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+    .rs-days::-webkit-scrollbar { display: none; }
+    .rs-day { flex: 1 0 54px; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 8px 4px 9px; border: 0; border-radius: 18px; background: transparent; color: var(--color-text); font: inherit; cursor: pointer; transition: background .15s; position: relative; }
+    .rs-day small { font-size: .62rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--color-text-muted); }
+    .rs-day b { font-family: Georgia, 'Times New Roman', serif; font-size: 1.35rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .rs-day:hover { background: color-mix(in srgb, var(--color-primary) 10%, #fff); }
+    .rs-day.today::after { content: ''; position: absolute; bottom: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--color-primary); }
+    .rs-day.on { color: #fff; background: linear-gradient(150deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); box-shadow: 0 14px 20px -12px var(--color-primary); }
+    .rs-day.on small { color: rgba(255,255,255,.85); }
+    .rs-day.on.today::after { background: #fff; }
+    .rs-gotoday { flex: none; min-height: 40px; padding: 0 16px; border: 1px solid var(--color-primary); border-radius: 999px; background: color-mix(in srgb, var(--color-primary) 10%, #fff); color: var(--color-primary); font: inherit; font-size: .82rem; font-weight: 800; cursor: pointer; }
+    .rs-gotoday:hover { background: var(--color-primary); color: #fff; }
+    @media (max-width: 700px) { .rs-hero { padding: 18px 16px; } .rs-stats > div { padding: 2px 14px; } .rs-picker { order: 5; } }
+
+    /* ticket card */
+    .reservation-grid { grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); }
+    .tk { --rc: #3b82f6; position: relative; display: flex; min-width: 0; border-radius: 24px; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 18px 32px -24px rgba(60, 30, 10, .5); transition: transform .18s, box-shadow .18s; }
+    .tk:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(0,0,0,.05), 0 26px 38px -24px rgba(60, 30, 10, .55); }
+    .tk.status-booked { --rc: #3b82f6; }
+    .tk.status-seated { --rc: #22a05a; }
+    .tk.status-finished { --rc: #9ca3af; }
+    .tk.status-cancelled { --rc: #dc2626; opacity: .78; }
+    .tk.status-no_show { --rc: #d9772b; opacity: .88; }
+    .tk.is-late { box-shadow: 0 0 0 2px #fbbf24, 0 18px 32px -24px rgba(180, 83, 9, .55); }
+    .tk-stub { flex: none; width: 104px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 20px 10px; border-radius: 23px 0 0 23px; color: #fff; text-align: center; background: linear-gradient(160deg, var(--rc), color-mix(in srgb, var(--rc) 58%, #000)); }
+    .tk-time { font-family: Georgia, 'Times New Roman', serif; font-size: 1.95rem; font-style: italic; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .tk-day { font-size: .66rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; opacity: .9; }
+    .tk-num { margin-top: 8px; padding: 2px 9px; border-radius: 999px; font-size: .68rem; font-weight: 800; background: rgba(255,255,255,.2); }
+    .tk-perf { position: relative; flex: none; width: 0; border-left: 2px dashed var(--color-border); }
+    .tk-perf::before, .tk-perf::after { content: ''; position: absolute; left: -13px; width: 24px; height: 24px; border-radius: 50%; background: var(--color-bg); box-shadow: inset 0 0 0 1px var(--color-border); }
+    .tk-perf::before { top: -13px; clip-path: inset(50% 0 0 0); }
+    .tk-perf::after { bottom: -13px; clip-path: inset(0 0 50% 0); }
+    .tk-main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 16px 16px 14px; gap: 10px; }
+    .tk-head { display: flex; align-items: flex-start; gap: 12px; }
+    .tk-avatar { --h: 20; flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; font-weight: 800; font-size: 1.05rem; color: hsl(var(--h) 55% 28%); background: hsl(var(--h) 70% 88%); box-shadow: inset 0 0 0 2px hsl(var(--h) 70% 76%); }
+    .tk-who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+    .tk-who h3 { margin: 0; font-size: 1.08rem; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+    .tk-party { display: inline-flex; align-items: center; gap: 8px; font-size: .8rem; font-weight: 700; color: var(--color-text-muted); }
+    .tk-dots { display: inline-flex; align-items: center; gap: 3px; }
+    .tk-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--rc, var(--color-primary)); }
+    .tk-dots em { font-style: normal; font-size: .7rem; font-weight: 800; color: var(--color-primary); }
+    .tk-badges { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .tk-body { display: flex; flex-direction: column; gap: 8px; }
+    .tk .rv-delay { margin: 0; }
+    .tk-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-top: 12px; border-top: 1px dashed var(--color-border); }
+    .tk-spacer { flex: 1; }
+    .tk-btn { min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--color-bg); color: var(--color-text); font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; touch-action: manipulation; transition: background .15s, color .15s; }
+    .tk-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--color-primary) 12%, #fff); color: var(--color-primary); }
+    .tk-btn:disabled { opacity: .5; cursor: default; }
+    .tk-btn-main { display: inline-flex; align-items: center; gap: 8px; padding: 0 18px; color: #fff; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 70%, #000)); box-shadow: 0 12px 18px -12px var(--color-primary); }
+    .tk-btn-main:hover:not(:disabled) { color: #fff; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 70%, #000)); filter: brightness(1.08); }
+    .tk-btn-main i { font-style: normal; transition: transform .2s; }
+    .tk-btn-main:hover i { transform: translateX(3px); }
+    .tk-btn-warn { color: #a8531a; background: transparent; }
+    .tk-btn-warn:hover:not(:disabled) { background: #fbe9d9; color: #a8531a; }
+    .tk-btn-danger { color: #b91c1c; background: transparent; }
+    .tk-btn-danger:hover:not(:disabled) { background: #fde8e6; color: #b91c1c; }
+    @media (max-width: 480px) {
+      .reservation-grid { grid-template-columns: minmax(0, 1fr); }
+      .tk { flex-direction: column; }
+      .tk-stub { width: auto; flex-direction: row; justify-content: space-between; gap: 10px; padding: 12px 16px; border-radius: 23px 23px 0 0; }
+      .tk-num { margin: 0; }
+      .tk-perf { width: auto; height: 0; border-left: 0; border-top: 2px dashed var(--color-border); }
+      .tk-perf::before, .tk-perf::after { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { .tk, .tk:hover { transition: none; transform: none; } .rs-flow span { transition: none; } }
+
+    /* seat-at-table modal */
+    .sm { width: 100%; max-width: min(640px, 96vw); max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 28px; background: var(--color-surface); box-shadow: 0 30px 70px -18px rgba(0,0,0,.5); }
+    .sm-head { display: flex; align-items: center; gap: 14px; padding: 20px 22px 16px; background: linear-gradient(150deg, color-mix(in srgb, var(--color-primary) 16%, #fff), transparent 80%); }
+    .sm-avatar { width: 54px; height: 54px; font-size: 1.3rem; }
+    .sm-head-text { flex: 1; min-width: 0; }
+    .sm-head-text small { display: block; font-size: .64rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--color-primary); }
+    .sm-head-text h3 { margin: 2px 0 4px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.5rem; font-weight: 500; overflow-wrap: anywhere; }
+    .sm-head-text p { display: flex; align-items: center; gap: 8px; margin: 0; font-size: .85rem; font-weight: 700; color: var(--color-text-muted); }
+    .sm-head-text .tk-dots i { background: var(--color-primary); }
+    .sm-body { padding: 8px 22px 22px; overflow-y: auto; }
+    .sm-hint { margin: 0 0 12px; font-size: .85rem; font-weight: 600; color: var(--color-text-muted); }
+    .sm-warn { margin: 0 0 12px; padding: 10px 14px; border-radius: 14px; background: #fef3c7; color: #78350f; font-size: .85rem; font-weight: 600; }
+    .sm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px; }
+    .sm-table { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 16px 10px 14px; border: 1.5px solid var(--color-border); border-radius: 22px; background: #fffdfa; color: var(--color-text); font: inherit; cursor: pointer; touch-action: manipulation; transition: transform .15s, border-color .15s, box-shadow .15s; }
+    .sm-table:hover { transform: translateY(-3px); border-color: var(--color-primary); box-shadow: 0 18px 26px -18px var(--color-primary); }
+    .sm-table.best { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 7%, #fff); }
+    .sm-table.warn { border-color: #fbbf24; }
+    .sm-table b { font-size: 1rem; font-weight: 800; overflow-wrap: anywhere; text-align: center; }
+    .sm-table small { font-size: .74rem; font-weight: 700; color: var(--color-text-muted); }
+    .sm-ring { width: 64px; height: 64px; margin-bottom: 6px; }
+    .sm-top { fill: color-mix(in srgb, var(--color-primary) 18%, #fff); stroke: var(--color-primary); stroke-width: 1.5; }
+    .sm-chair { fill: var(--color-primary); }
+    .sm-best { position: absolute; top: -9px; padding: 2px 10px; border-radius: 999px; font-size: .62rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #fff; background: var(--color-primary); box-shadow: 0 8px 12px -8px var(--color-primary); }
+    .sm-up { margin-top: 6px; font-size: .68rem; font-weight: 700; line-height: 1.25; text-align: center; color: #b45309; }
+    @media (prefers-reduced-motion: reduce) { .sm-table, .sm-table:hover { transition: none; transform: none; } }
+
+    /* no-show modal */
+    .ns { width: 100%; max-width: min(440px, 94vw); padding: 28px 26px 22px; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 28px; background: var(--color-surface); box-shadow: 0 30px 70px -18px rgba(0,0,0,.5); }
+    .ns-ico { display: grid; place-items: center; width: 68px; height: 68px; margin-bottom: 12px; border-radius: 50%; color: #b45309; background: #fef3c7; box-shadow: 0 0 0 8px #fffbeb; }
+    .ns h3 { margin: 0 0 14px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.55rem; font-weight: 500; }
+    .ns-guest { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 18px; background: var(--color-bg); border: 1px dashed var(--color-border); text-align: left; }
+    .ns-guest div { min-width: 0; }
+    .ns-guest b { display: block; font-weight: 800; overflow-wrap: anywhere; }
+    .ns-guest small { font-size: .78rem; font-weight: 700; color: var(--color-text-muted); }
+    .ns p { margin: 14px 0 20px; font-size: .92rem; line-height: 1.5; color: var(--color-text-muted); }
+    .ns-actions { display: flex; gap: 10px; width: 100%; }
+    .ns-actions .rf-btn { flex: 1; padding: 0 12px; }
+    .rf-btn.ns-go { border: 0; color: #fff; background: linear-gradient(135deg, #f59e0b, #b45309); box-shadow: 0 12px 20px -12px #b45309; }
+    .rf-btn.ns-go:hover { filter: brightness(1.06); }
+
     /* ===== Nueva reservación (formulario) ===== */
     .rf { max-width: min(760px, 96vw); padding: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: 26px; }
     .rf-head { display: flex; align-items: center; gap: 14px; padding: 18px 22px 16px; background: linear-gradient(135deg, var(--color-primary-light), transparent 80%); }
@@ -739,6 +945,92 @@ export class ReservationsComponent implements OnInit, OnDestroy {
       booked: list.filter((r) => r.status === 'booked').length,
       seated: list.filter((r) => r.status === 'seated').length,
     };
+  });
+
+  /** Big date of the hero (weekday / day / month / year). */
+  filterParts(): { weekday: string; day: string; month: string; year: string } {
+    const d = new Date((this.filterDate || '') + 'T12:00:00');
+    if (Number.isNaN(d.getTime())) return { weekday: '', day: '', month: '', year: '' };
+    const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
+    return {
+      weekday: cap(d.toLocaleDateString(undefined, { weekday: 'long' })),
+      day: String(d.getDate()),
+      month: cap(d.toLocaleDateString(undefined, { month: 'long' })),
+      year: String(d.getFullYear()),
+    };
+  }
+
+  isFilterToday(): boolean {
+    return this.filterDate === this.localCalendarTodayYyyyMmDd();
+  }
+
+  /** Seven days around the selected one, for the quick day strip. */
+  stripDays(): { date: string; weekday: string; day: number; today: boolean }[] {
+    const base = new Date((this.filterDate || this.localCalendarTodayYyyyMmDd()) + 'T12:00:00');
+    const today = this.localCalendarTodayYyyyMmDd();
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(base);
+      d.setDate(base.getDate() + i - 3);
+      const date = this.localCalendarTodayYyyyMmDd(d);
+      return {
+        date,
+        weekday: d.toLocaleDateString(undefined, { weekday: 'short' }).replace('.', ''),
+        day: d.getDate(),
+        today: date === today,
+      };
+    });
+  }
+
+  pickDate(date: string | null): void {
+    if (!date || date === this.filterDate) return;
+    this.filterDate = date;
+    this.load();
+  }
+
+  shiftDay(delta: number): void {
+    const d = new Date((this.filterDate || this.localCalendarTodayYyyyMmDd()) + 'T12:00:00');
+    d.setDate(d.getDate() + delta);
+    this.pickDate(this.localCalendarTodayYyyyMmDd(d));
+  }
+
+  goToday(): void {
+    this.pickDate(this.localCalendarTodayYyyyMmDd());
+  }
+
+  /** Share of the day's pending / seated / finished reservations (bar in the hero). */
+  flow = computed(() => {
+    const list = this.reservations();
+    const n = (st: string) => list.filter((r) => r.status === st).length;
+    return { booked: n('booked'), seated: n('seated'), finished: n('finished') };
+  });
+
+  hue(name: string): number {
+    let h = 0;
+    for (const ch of name || '') h = (h * 31 + ch.charCodeAt(0)) % 360;
+    return h;
+  }
+
+  initial(name: string): string {
+    return (name || '?').trim().charAt(0).toUpperCase();
+  }
+
+  partyDots(n: number): number[] {
+    return Array.from({ length: Math.max(0, Math.min(8, n || 0)) }, (_, i) => i);
+  }
+
+  /** Chair positions around a round table (viewBox 48). */
+  chairs(n: number): { x: number; y: number }[] {
+    const count = Math.max(0, Math.min(12, n));
+    return Array.from({ length: count }, (_, i) => {
+      const a = (i / count) * Math.PI * 2 - Math.PI / 2;
+      return { x: +(24 + 17 * Math.cos(a)).toFixed(2), y: +(24 + 17 * Math.sin(a)).toFixed(2) };
+    });
+  }
+
+  /** Smallest table that still fits the party: highlighted as the ideal choice. */
+  bestFitSeats = computed(() => {
+    const seats = this.availableTablesForSeat().map((t) => t.seat_count ?? 0);
+    return seats.length ? Math.min(...seats) : -1;
   });
 
   stepParty(delta: number): void {
@@ -1360,7 +1652,9 @@ export class ReservationsComponent implements OnInit, OnDestroy {
     const r = this.reservationToSeat();
     const tables = this.tablesWithStatus();
     if (!r) return [];
-    return tables.filter(t => (t.status === 'available' || t.status === 'reserved') && (t.seat_count ?? 0) >= r.party_size);
+    return tables
+      .filter(t => (t.status === 'available' || t.status === 'reserved') && (t.seat_count ?? 0) >= r.party_size)
+      .sort((a, b) => (a.seat_count ?? 0) - (b.seat_count ?? 0));
   });
 
   seatAt(tableId: number) {
