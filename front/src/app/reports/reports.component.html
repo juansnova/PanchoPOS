@@ -388,9 +388,23 @@
     }
 
     @if (canViewAttendance()) {
-      <section class="report-section" data-testid="reports-attendance-excel">
-        <h2>{{ 'REPORTS.ATTENDANCE_EXCEL_TITLE' | translate }}</h2>
-        <p class="muted work-sessions-hint">{{ 'REPORTS.ATTENDANCE_EXCEL_HINT' | translate }}</p>
+      <section class="report-section att-sec att-excel" data-testid="reports-attendance-excel">
+        <div class="att-head">
+          <span class="att-badge att-badge-green" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="m9.5 12.5 4 5m0-5-4 5" /></svg>
+          </span>
+          <div class="att-head-text">
+            <h2>{{ 'REPORTS.ATTENDANCE_EXCEL_TITLE' | translate }}</h2>
+            <p class="muted">{{ 'REPORTS.ATTENDANCE_EXCEL_HINT' | translate }}</p>
+          </div>
+        </div>
+        <div class="att-chips" aria-hidden="true">
+          <span>☀️ {{ 'REPORTS.ATT_CHIP_DAY_NIGHT' | translate }}</span>
+          <span>🎉 {{ 'REPORTS.ATT_CHIP_HOLIDAYS' | translate }}</span>
+          <span>⏱️ {{ 'REPORTS.ATT_CHIP_OVERTIME' | translate }}</span>
+          <span>📅 {{ 'REPORTS.ATT_CHIP_CALENDAR' | translate }}</span>
+          <span>🚨 {{ 'REPORTS.ATT_CHIP_ALERTS' | translate }}</span>
+        </div>
         <div class="attendance-excel-toolbar">
           <div class="attendance-excel-month">
             <label>{{ 'REPORTS.ATTENDANCE_EXCEL_MONTH' | translate }}</label>
@@ -480,10 +494,11 @@
           }
           <button
             type="button"
-            class="btn btn-secondary"
+            class="btn att-download"
             (click)="downloadAttendanceExcel()"
             [disabled]="attendanceExcelExporting()"
           >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 20h16" /></svg>
             {{
               attendanceExcelExporting()
                 ? ('REPORTS.ATTENDANCE_EXCEL_EXPORTING' | translate)
@@ -498,90 +513,116 @@
     }
 
     @if (canViewAttendance()) {
-      <section class="report-section" data-testid="reports-work-sessions-live">
-        <h2>{{ 'REPORTS.WORK_SESSIONS_LIVE_TITLE' | translate }}</h2>
-        <p class="muted work-sessions-hint">{{ 'REPORTS.WORK_SESSIONS_LIVE_HINT' | translate }}</p>
+      <section class="report-section att-sec att-live" data-testid="reports-work-sessions-live">
+        <div class="att-head">
+          <span class="att-badge att-badge-live" aria-hidden="true"><i class="att-pulse"></i></span>
+          <div class="att-head-text">
+            <h2>{{ 'REPORTS.WORK_SESSIONS_LIVE_TITLE' | translate }}</h2>
+            <p class="muted">{{ 'REPORTS.WORK_SESSIONS_LIVE_HINT' | translate }}</p>
+          </div>
+          @if (workSessionsLive().length > 0) {
+            <span class="att-count">{{ workSessionsLive().length }}</span>
+          }
+        </div>
         @if (workSessionsLiveLoading()) {
           <p class="muted">{{ 'REPORTS.WORK_SESSIONS_LOADING' | translate }}</p>
         } @else if (workSessionsLiveError()) {
           <div class="error-banner">{{ workSessionsLiveError() }}</div>
         } @else if (workSessionsLive().length === 0) {
-          <p class="muted">{{ 'REPORTS.WORK_SESSIONS_LIVE_EMPTY' | translate }}</p>
+          <div class="att-empty">
+            <span aria-hidden="true">😴</span>
+            <p>{{ 'REPORTS.WORK_SESSIONS_LIVE_EMPTY' | translate }}</p>
+          </div>
         } @else {
-          <div class="data-table-wrap">
-            <table class="data-table work-sessions-attendance-table">
-              <thead>
-                <tr>
-                  <th>{{ 'REPORTS.WORK_SESSIONS_COL_STAFF' | translate }}</th>
-                  <th>{{ 'REPORTS.WORK_SESSIONS_COL_STATUS' | translate }}</th>
-                  <th>{{ 'REPORTS.WORK_SESSIONS_COL_START' | translate }}</th>
-                  <th>{{ 'REPORTS.WORK_SESSIONS_COL_NET' | translate }}</th>
-                  <th class="work-sessions-actions">{{ 'REPORTS.WORK_SESSION_ADJUST_COL_ACTIONS' | translate }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of workSessionsLive(); track row.id) {
-                  <tr>
-                    <td>{{ row.user_name }}</td>
-                    <td>{{ liveAttendanceStatus(row) }}</td>
-                    <td>{{ formatWorkSessionDt(row.started_at) }}</td>
-                    <td>{{ formatWorkSessionDuration(row) }}</td>
-                    <td class="work-sessions-actions">
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="openWorkSessionAdjust(row)">
-                        {{ 'REPORTS.WORK_SESSION_ADJUST' | translate }}
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          <div class="att-live-grid">
+            @for (row of workSessionsLive(); track row.id) {
+              <article class="att-person" [class.on-break]="row.on_break">
+                <span class="att-avatar" [style.--h]="hueOf(row.user_name)">{{ initialsOf(row.user_name) }}</span>
+                <div class="att-person-main">
+                  <b>{{ row.user_name }}</b>
+                  <span class="att-state" [class.brk]="row.on_break">{{ liveAttendanceStatus(row) }}</span>
+                  <small>{{ 'REPORTS.WORK_SESSIONS_COL_START' | translate }} {{ timeOnly(row.started_at) }}</small>
+                </div>
+                <div class="att-elapsed">
+                  <strong>{{ formatWorkSessionDuration(row) }}</strong>
+                </div>
+                <button type="button" class="att-fix" (click)="openWorkSessionAdjust(row)">
+                  {{ 'REPORTS.WORK_SESSION_ADJUST' | translate }}
+                </button>
+              </article>
+            }
           </div>
         }
       </section>
     }
 
     @if (canViewAttendance()) {
-      <section class="report-section" data-testid="reports-work-sessions">
-        <h2>{{ 'REPORTS.WORK_SESSIONS_TITLE' | translate }}</h2>
-        <p class="muted work-sessions-hint">{{ 'REPORTS.WORK_SESSIONS_HINT' | translate }}</p>
+      <section class="report-section att-sec att-history" data-testid="reports-work-sessions">
+        <div class="att-head">
+          <span class="att-badge att-badge-blue" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+          </span>
+          <div class="att-head-text">
+            <h2>{{ 'REPORTS.WORK_SESSIONS_TITLE' | translate }}</h2>
+            <p class="muted">{{ 'REPORTS.WORK_SESSIONS_HINT' | translate }}</p>
+          </div>
+        </div>
         @if (workSessionsLoading()) {
           <p class="muted">{{ 'REPORTS.WORK_SESSIONS_LOADING' | translate }}</p>
         } @else if (workSessionsError()) {
           <div class="error-banner">{{ workSessionsError() }}</div>
         } @else if (workSessions().length === 0) {
-          <p class="muted">{{ 'REPORTS.WORK_SESSIONS_EMPTY' | translate }}</p>
+          <div class="att-empty">
+            <span aria-hidden="true">🗓️</span>
+            <p>{{ 'REPORTS.WORK_SESSIONS_EMPTY' | translate }}</p>
+          </div>
         } @else {
-          <div class="data-table-wrap">
-            <table class="data-table work-sessions-attendance-table">
-              <thead>
-                <tr>
-                  <th>{{ 'REPORTS.WORK_SESSIONS_COL_STAFF' | translate }}</th>
-                  <th>{{ 'REPORTS.WORK_SESSIONS_COL_START' | translate }}</th>
-                  <th>{{ 'REPORTS.WORK_SESSIONS_COL_END' | translate }}</th>
-                  <th>{{ 'REPORTS.WORK_SESSIONS_COL_DURATION' | translate }}</th>
-                  <th>{{ 'REPORTS.WORK_SESSIONS_COL_START_IP' | translate }}</th>
-                  <th>{{ 'REPORTS.WORK_SESSIONS_COL_END_IP' | translate }}</th>
-                  <th class="work-sessions-actions">{{ 'REPORTS.WORK_SESSION_ADJUST_COL_ACTIONS' | translate }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of workSessions(); track row.id) {
-                  <tr>
-                    <td>{{ row.user_name }}</td>
-                    <td>{{ formatWorkSessionDt(row.started_at) }}</td>
-                    <td>{{ row.ended_at ? formatWorkSessionDt(row.ended_at) : '—' }}</td>
-                    <td>{{ formatWorkSessionDuration(row) }}</td>
-                    <td class="muted">{{ row.start_ip || '—' }}</td>
-                    <td class="muted">{{ row.end_ip || '—' }}</td>
-                    <td class="work-sessions-actions">
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="openWorkSessionAdjust(row)">
-                        {{ 'REPORTS.WORK_SESSION_ADJUST' | translate }}
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          @if (sessionsSummary(); as sm) {
+            <div class="att-stats">
+              <div><strong>{{ sm.count }}</strong><span>{{ 'REPORTS.ATT_STAT_SESSIONS' | translate }}</span></div>
+              <div><strong>{{ sm.people }}</strong><span>{{ 'REPORTS.ATT_STAT_PEOPLE' | translate }}</span></div>
+              <div><strong>{{ sm.hours }}</strong><span>{{ 'REPORTS.ATT_STAT_HOURS' | translate }}</span></div>
+            </div>
+          }
+          <div class="att-rows">
+            <div class="att-row att-row-head">
+              <span>{{ 'REPORTS.WORK_SESSIONS_COL_STAFF' | translate }}</span>
+              <span>{{ 'REPORTS.WORK_SESSIONS_COL_START' | translate }}</span>
+              <span>{{ 'REPORTS.WORK_SESSIONS_COL_END' | translate }}</span>
+              <span>{{ 'REPORTS.WORK_SESSIONS_COL_DURATION' | translate }}</span>
+              <span>IP</span>
+              <span></span>
+            </div>
+            @for (row of workSessions(); track row.id) {
+              <div class="att-row">
+                <div class="att-who">
+                  <span class="att-avatar sm" [style.--h]="hueOf(row.user_name)">{{ initialsOf(row.user_name) }}</span>
+                  <b>{{ row.user_name }}</b>
+                </div>
+                <div class="att-when">
+                  <em>{{ dayOnly(row.started_at) }}</em>
+                  <span>{{ timeOnly(row.started_at) }}</span>
+                </div>
+                <div class="att-when">
+                  @if (row.ended_at) {
+                    <em>{{ dayOnly(row.ended_at) }}</em>
+                    <span>{{ timeOnly(row.ended_at) }}</span>
+                  } @else {
+                    <span class="att-open">{{ 'REPORTS.WORK_SESSIONS_STATUS_WORKING' | translate }}</span>
+                  }
+                </div>
+                <div><span class="att-dur">{{ formatWorkSessionDuration(row) }}</span></div>
+                <div class="att-ips">
+                  <code title="IP">{{ row.start_ip || '—' }}</code>
+                  @if (row.end_ip && row.end_ip !== row.start_ip) {
+                    <code title="IP">{{ row.end_ip }}</code>
+                  }
+                </div>
+                <button type="button" class="att-fix" (click)="openWorkSessionAdjust(row)">
+                  {{ 'REPORTS.WORK_SESSION_ADJUST' | translate }}
+                </button>
+              </div>
+            }
           </div>
         }
       </section>

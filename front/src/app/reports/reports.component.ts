@@ -529,6 +529,38 @@ export class ReportsComponent implements OnInit {
   }
 
   /** `datetime-local` value in the user’s local timezone from an API ISO timestamp. */
+  hueOf(name: string): number {
+    let hash = 0;
+    for (const ch of name || '?') hash = (hash * 31 + ch.charCodeAt(0)) % 360;
+    return hash;
+  }
+
+  timeOnly(iso: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+
+  dayOnly(iso: string | null): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const s = d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  /** Quick totals above the clock-in history. */
+  sessionsSummary = computed(() => {
+    const rows = this.workSessions();
+    if (!rows.length) return null;
+    const mins = rows.reduce((sum, r) => sum + (r.duration_minutes ?? 0), 0);
+    return {
+      count: rows.length,
+      people: new Set(rows.map((r) => r.user_name)).size,
+      hours: `${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, '0')} min`,
+    };
+  });
+
   /** Net length of the session being corrected, from the two pickers. */
   adjustPreview = computed(() => {
     const start = new Date(this.workSessionAdjustStartedLocal());
