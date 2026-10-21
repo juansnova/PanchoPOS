@@ -905,6 +905,13 @@
   },
   "CUSTOMERS": {
     "TITLE": "Clientes (Factura)",
+    "LOYALTY": "Fidelidad",
+    "SPENT": "Gastado",
+    "VISITS": "visitas",
+    "TIER_NEW": "Nuevo",
+    "TIER_REGULAR": "Cliente",
+    "TIER_FREQUENT": "Frecuente",
+    "TIER_VIP": "VIP ⭐",
     "ADD": "Añadir cliente",
     "EDIT": "Editar cliente",
     "CREATE": "Crear",

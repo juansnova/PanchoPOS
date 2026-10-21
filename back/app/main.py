@@ -13304,8 +13304,50 @@ def set_order_staff_urgent(
     return {"order_id": order.id, "staff_urgent": order.staff_urgent}
 
 
-def _billing_customer_dict(c: models.BillingCustomer, current_tenant_id: int) -> dict:
+def _customer_visit_stats(session: Session, customer_ids: list[int]) -> dict[int, dict]:
+    """Loyalty numbers per billing customer: paid orders (visits), money spent, last visit."""
+    if not customer_ids:
+        return {}
+    from sqlalchemy import func
+
+    paid = [models.OrderStatus.paid.value, models.OrderStatus.completed.value]
+    order_rows = session.exec(
+        select(
+            models.Order.billing_customer_id,
+            func.count(models.Order.id),
+            func.max(func.coalesce(models.Order.paid_at, models.Order.created_at)),
+        )
+        .where(models.Order.billing_customer_id.in_(customer_ids))
+        .where(models.Order.deleted_at.is_(None))
+        .where(models.Order.status.in_(paid))
+        .group_by(models.Order.billing_customer_id)
+    ).all()
+    spent_rows = session.exec(
+        select(models.Order.billing_customer_id, func.sum(models.OrderItem.price_cents * models.OrderItem.quantity))
+        .join(models.OrderItem, models.OrderItem.order_id == models.Order.id)
+        .where(models.Order.billing_customer_id.in_(customer_ids))
+        .where(models.Order.deleted_at.is_(None))
+        .where(models.Order.status.in_(paid))
+        .where(models.OrderItem.removed_by_customer == False)  # noqa: E712
+        .where(models.OrderItem.status != models.OrderItemStatus.cancelled)
+        .group_by(models.Order.billing_customer_id)
+    ).all()
+    stats = {
+        cid: {"visits": int(n), "last_visit": last.isoformat() if last else None, "total_spent_cents": 0}
+        for cid, n, last in order_rows
+    }
+    for cid, total in spent_rows:
+        if cid in stats:
+            stats[cid]["total_spent_cents"] = int(total or 0)
+    return stats
+
+
+def _billing_customer_dict(c: models.BillingCustomer, current_tenant_id: int, stats: dict | None = None) -> dict:
+    stats = stats or {}
     return {
+        "visits": stats.get("visits", 0),
+        "total_spent_cents": stats.get("total_spent_cents", 0),
+        "last_visit": stats.get("last_visit"),
         "id": c.id,
         "name": c.name,
         "company_name": c.company_name,
@@ -13347,7 +13389,8 @@ def list_billing_customers(
             models.BillingCustomer.tenant_id == current_user.tenant_id
         ).order_by(models.BillingCustomer.name.asc())
     customers = session.exec(q).all()
-    return [_billing_customer_dict(c, current_user.tenant_id) for c in customers]
+    stats = _customer_visit_stats(session, [c.id for c in customers])
+    return [_billing_customer_dict(c, current_user.tenant_id, stats.get(c.id)) for c in customers]
 
 
 @app.post("/billing-customers")

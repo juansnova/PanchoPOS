@@ -9,6 +9,7 @@ import { PermissionService } from '../services/permission.service';
 import { SidebarComponent } from '../shared/sidebar.component';
 import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
 import { TranslateModule } from '@ngx-translate/core';
+import { formatMoneyCents } from '../shared/currency-symbol';
 
 @Component({
   selector: 'app-customers',
@@ -80,6 +81,8 @@ import { TranslateModule } from '@ngx-translate/core';
                   <th>{{ 'CUSTOMERS.EMAIL' | translate }}</th>
                   <th>{{ 'CUSTOMERS.PHONE' | translate }}</th>
                   <th>{{ 'CUSTOMERS.BIRTH_DATE' | translate }}</th>
+                  <th>{{ 'CUSTOMERS.LOYALTY' | translate }}</th>
+                  <th class="num">{{ 'CUSTOMERS.SPENT' | translate }}</th>
                   @if (canWrite()) {
                     <th></th>
                   }
@@ -94,6 +97,11 @@ import { TranslateModule } from '@ngx-translate/core';
                     <td>{{ c.email || '—' }}</td>
                     <td>{{ c.phone || '—' }}</td>
                     <td>{{ c.birth_date || '—' }}</td>
+                    <td>
+                      <span class="loy" [attr.data-tier]="tier(c)">{{ ('CUSTOMERS.TIER_' + tier(c).toUpperCase()) | translate }}</span>
+                      <small class="loy-visits">{{ c.visits || 0 }} {{ 'CUSTOMERS.VISITS' | translate }}</small>
+                    </td>
+                    <td class="num">{{ money(c.total_spent_cents || 0) }}</td>
                     @if (canWrite()) {
                       <td class="actions">
                         <button class="icon-btn" [title]="'COMMON.EDIT' | translate" (click)="openModal(c)">
@@ -201,6 +209,12 @@ import { TranslateModule } from '@ngx-translate/core';
     .error-banner { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: #fef2f2; color: #b91c1c; border-radius: 6px; margin-bottom: 1rem; }
     .empty-icon { margin-bottom: 0.5rem; color: var(--color-text-muted); }
     .field-hint { margin: 0.35rem 0 0; font-size: 0.8rem; color: var(--color-text-muted); }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .loy { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 800; background: var(--color-bg); color: var(--color-text-muted); }
+    .loy[data-tier='regular'] { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
+    .loy[data-tier='frequent'] { background: rgba(63, 157, 98, 0.15); color: #2f7a4c; }
+    .loy[data-tier='vip'] { background: linear-gradient(135deg, #f5b942, #e08a1e); color: #fff; }
+    .loy-visits { display: block; margin-top: 2px; font-size: 0.7rem; color: var(--color-text-muted); }
   `]
 })
 export class CustomersComponent implements OnInit {
@@ -215,6 +229,16 @@ export class CustomersComponent implements OnInit {
   editing = signal<BillingCustomer | null>(null);
   deleting = signal<BillingCustomer | null>(null);
   searchTerm = '';
+
+  /** Loyalty tier from the number of paid visits: 0 new, 1-4 regular, 5-9 frequent, 10+ VIP. */
+  tier(c: BillingCustomer): 'new' | 'regular' | 'frequent' | 'vip' {
+    const v = c.visits || 0;
+    return v >= 10 ? 'vip' : v >= 5 ? 'frequent' : v >= 1 ? 'regular' : 'new';
+  }
+
+  money(cents: number): string {
+    return formatMoneyCents(cents);
+  }
 
   form: {
     name: string;

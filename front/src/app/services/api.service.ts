@@ -1061,6 +1061,10 @@ export interface BillingCustomer {
   /** Present when listing group-shared customers from another location */
   tenant_id?: number;
   is_shared?: boolean;
+  /** Loyalty numbers computed from paid orders linked to this customer */
+  visits?: number;
+  total_spent_cents?: number;
+  last_visit?: string | null;
 }
 
 /** One split-bill payment leg (#318). */
