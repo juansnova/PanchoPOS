@@ -218,8 +218,19 @@
         <div class="order-tracker-body">
           <div class="order-items-list">
             @for (item of order.items; track getProductKey(item.product) + (item.itemId ?? 0)) {
-            <div class="order-item-row">
-              <div class="item-status-dot" [class]="'status-' + (item.status || 'pending')"></div>
+            <div class="order-item-row" [class.is-delivered]="item.status === 'delivered'">
+              <span class="oi-thumb" aria-hidden="true">
+                @if (cartImage(item.product); as img) { <img [src]="img" alt="" /> } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h0A2.5 2.5 0 0 0 9 9V3M6.5 3v18"/><path d="M20 21V3c-2.8 1.2-4.5 4-4.5 7.5 0 1.4 1 2.5 2.3 2.5H20"/></svg>
+                }
+              </span>
+              <div class="item-name-block">
+                <span class="item-name">{{ item.product.name }}</span>
+                <span class="item-unit">{{ formatPrice(item.product.price_cents) }} <em>c/u</em></span>
+                @if (item.notes?.trim()) {
+                <span class="item-comment">{{ item.notes }}</span>
+                }
+              </div>
               <span class="item-qty-badge">
                 @if (canEditItem(item)) {
                 <span class="qty-stepper">
@@ -233,18 +244,12 @@
                 {{ item.quantity }}×
                 }
               </span>
-              <div class="item-name-block">
-                <span class="item-name">{{ item.product.name }}</span>
-                @if (item.notes?.trim()) {
-                <span class="item-comment">{{ item.notes }}</span>
+              <div class="oi-end">
+                <span class="item-price">{{ formatPrice(item.product.price_cents * item.quantity) }}</span>
+                @if (item.status) {
+                <span class="item-status-label" [class]="'status-' + item.status"><i></i>{{ ('ITEM_STATUS.' + item.status) | translate }}</span>
                 }
               </div>
-              <span class="item-price">{{ formatPrice(item.product.price_cents * item.quantity) }}</span>
-              @if (item.status) {
-              <span class="item-status-label" [class]="'status-' + item.status">
-                {{ ('ITEM_STATUS.' + item.status) | translate }}
-              </span>
-              }
               @if (canEditItem(item)) {
               <button class="remove-item-btn" (click)="removeItemFromOrder(order.id, item.itemId!)" title="Remove item">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
