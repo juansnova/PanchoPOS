@@ -537,6 +537,8 @@
     "KPI_OOS": "Agotados",
     "KPI_MARGIN": "Margen prom.",
     "MARGIN": "margen",
+    "NO_COST": "Sin costo registrado",
+    "NO_CATEGORY": "Sin categoría",
     "TITLE": "Productos",
     "FORM_BASICS": "Información básica",
     "FORM_CATEGORY": "Categoría",

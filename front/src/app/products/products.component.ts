@@ -486,200 +486,144 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
               @if (productsView() === 'cards') {
                 <div class="pr-grid" data-testid="products-cards">
                   @for (product of filteredProducts(); track product.id) {
-                    <article class="pr-card" [class.pr-card--low]="product.stock_alert_enabled && isProductLowStock(product)" [class.pr-card--oos]="product.out_of_stock">
-                      <div class="pr-media">
-                        @if (product.image_filename) {
-                          <img [src]="getImageUrl(product)" alt="" loading="lazy" (error)="handleImageError($event)">
-                        } @else {
-                          <div class="pr-noimg" aria-hidden="true">
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
-                            </svg>
-                          </div>
-                        }
-                        <span class="pr-price">{{ formatPrice(product.price_cents) }}</span>
-                        @if (product.out_of_stock) {
-                          <span class="pr-oos-ribbon">{{ 'PRODUCTS.OUT_OF_STOCK_SHORT' | translate }}</span>
-                        }
-                        @if (product.stock_alert_enabled) {
-                          <span class="pr-stock" [class.pr-stock--low]="isProductLowStock(product)"
-                            [attr.title]="'PRODUCTS.STOCK_BADGE_TITLE' | translate:{qty: product.stock_qty ?? 0, level: product.stock_alert_level ?? 0}">
-                            {{ (isProductLowStock(product) ? 'PRODUCTS.STOCK_LOW' : 'PRODUCTS.STOCK_OK') | translate }} · {{ product.stock_qty ?? 0 }}
-                          </span>
-                        }
-                      </div>
-                      <div class="pr-body">
-                        <h3 class="pr-name">{{ product.name }}</h3>
-                        <div class="pr-tags">
-                          @if (product.category) {
-                            <span class="pr-tag">{{ getCategoryLabel(product.category) }}</span>
-                          }
-                          @if (product.subcategory) {
-                            <span class="pr-tag pr-tag-soft">{{ getSubcategoryLabel(product.subcategory) }}</span>
-                          }
+                    <article class="pr-card pz" [style.--h]="catHue(product.category)" [class.pr-card--low]="product.stock_alert_enabled && isProductLowStock(product)" [class.pr-card--oos]="product.out_of_stock">
+                    <div class="pz-top">
+                      <span class="pz-cat">{{ product.category ? getCategoryLabel(product.category) : '—' }}@if (product.subcategory) { <i>·</i> {{ getSubcategoryLabel(product.subcategory) }} }</span>
+                      @if (product.stock_alert_enabled) {
+                      <span class="pz-stock" [class.low]="isProductLowStock(product)"
+                        [attr.title]="'PRODUCTS.STOCK_BADGE_TITLE' | translate:{qty: product.stock_qty ?? 0, level: product.stock_alert_level ?? 0}">
+                        {{ (isProductLowStock(product) ? 'PRODUCTS.STOCK_LOW' : 'PRODUCTS.STOCK_OK') | translate }} · {{ product.stock_qty ?? 0 }}
+                      </span>
+                    }
+                    </div>
+                    <div class="pz-plate">
+                      <span class="pz-ring" aria-hidden="true"></span>
+                      @if (product.image_filename) {
+                        <img [src]="getImageUrl(product)" alt="" loading="lazy" (error)="handleImageError($event)">
+                      } @else {
+                        <span class="pz-initial" aria-hidden="true">{{ product.name.charAt(0).toUpperCase() }}</span>
+                      }
+                      @if (product.out_of_stock) {
+                        <span class="pz-stamp">{{ 'PRODUCTS.OUT_OF_STOCK_SHORT' | translate }}</span>
+                      }
+                    </div>
+                    <h3 class="pr-name">{{ product.name }}</h3>
+                    @if (product.ingredients) {
+                      <p class="pr-ingredients">{{ product.ingredients }}</p>
+                    }
+                    <div class="pz-money">
+                      <span class="pz-price">{{ formatPrice(product.price_cents) }}</span>
+                      @if (marginPct(product); as mg) {
+                        <div class="pz-gauge" [attr.title]="('PRODUCTS.COST_HEADER' | translate) + ' ' + formatPrice(product.cost_cents ?? 0) + ' · ' + mg + '% ' + ('PRODUCTS.MARGIN' | translate)">
+                          <span class="pz-gauge-cost" [style.width.%]="100 - mg"></span>
+                          <span class="pz-gauge-margin" [class.low]="mg < 30" [style.width.%]="mg"></span>
                         </div>
-                        @if (product.ingredients) {
-                          <p class="pr-ingredients">{{ product.ingredients }}</p>
-                        }
-                        <div class="pr-foot">
-                          <span class="pr-cost">
-                            @if (product.cost_cents != null) { {{ 'PRODUCTS.COST_HEADER' | translate }}: {{ formatPrice(product.cost_cents) }} }
-                            @if (marginPct(product); as mg) {
-                              <span class="pr-margin" [class.low]="mg < 30">{{ mg }}% {{ 'PRODUCTS.MARGIN' | translate }}</span>
-                            }
-                          </span>
-                          <div class="pr-actions">
-                            @if (canEditProducts()) {
-                              <button class="pr-act" [class.pr-act-on]="product.out_of_stock" (click)="toggleOutOfStock(product)"
-                                [attr.title]="(product.out_of_stock ? 'PRODUCTS.PUT_BACK_ON_MENU' : 'PRODUCTS.REMOVE_FROM_MENU') | translate"
-                                [attr.aria-label]="(product.out_of_stock ? 'PRODUCTS.PUT_BACK_ON_MENU' : 'PRODUCTS.REMOVE_FROM_MENU') | translate">
-                                @if (product.out_of_stock) {
-                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                                } @else {
-                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                }
-                              </button>
-                            }
-                            <button class="pr-act" (click)="startEdit(product)" [attr.title]="'PRODUCTS.EDIT_TOOLTIP' | translate" [attr.aria-label]="'PRODUCTS.EDIT_TOOLTIP' | translate">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            </button>
-                            @if (canEditProducts()) {
-                              <button class="pr-act pr-act-danger" (click)="confirmDelete(product)" [disabled]="deleting() === product.id" [attr.title]="'PRODUCTS.DELETE_TOOLTIP' | translate" [attr.aria-label]="'PRODUCTS.DELETE_TOOLTIP' | translate">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                              </button>
-                            }
-                          </div>
+                        <div class="pz-gauge-lbl">
+                          <span>{{ 'PRODUCTS.COST_HEADER' | translate }} {{ formatPrice(product.cost_cents ?? 0) }}</span>
+                          <b [class.low]="mg < 30">{{ mg }}% {{ 'PRODUCTS.MARGIN' | translate }}</b>
                         </div>
-                      </div>
+                      } @else {
+                        <span class="pz-nocost">{{ 'PRODUCTS.NO_COST' | translate }}</span>
+                      }
+                    </div>
+                    <div class="pz-acts">
+                      @if (canEditProducts()) {
+                        <button class="pr-act" [class.pr-act-on]="product.out_of_stock" (click)="toggleOutOfStock(product)"
+                          [attr.title]="(product.out_of_stock ? 'PRODUCTS.PUT_BACK_ON_MENU' : 'PRODUCTS.REMOVE_FROM_MENU') | translate"
+                          [attr.aria-label]="(product.out_of_stock ? 'PRODUCTS.PUT_BACK_ON_MENU' : 'PRODUCTS.REMOVE_FROM_MENU') | translate">
+                          @if (product.out_of_stock) { <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> } @else { <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> }
+                        </button>
+                      }
+                      <button class="pr-act pz-edit" (click)="startEdit(product)" [attr.title]="'PRODUCTS.EDIT_TOOLTIP' | translate" [attr.aria-label]="'PRODUCTS.EDIT_TOOLTIP' | translate">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span>{{ 'PRODUCTS.EDIT_TOOLTIP' | translate }}</span>
+                      </button>
+                      @if (canEditProducts()) {
+                        <button class="pr-act pr-act-danger" (click)="confirmDelete(product)" [disabled]="deleting() === product.id" [attr.title]="'PRODUCTS.DELETE_TOOLTIP' | translate" [attr.aria-label]="'PRODUCTS.DELETE_TOOLTIP' | translate">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                        </button>
+                      }
+                    </div>
                     </article>
                   } @empty {
                     <p class="pr-empty">{{ 'PRODUCTS.NO_PRODUCTS' | translate }}</p>
                   }
                 </div>
               } @else {
-              <div class="table-card products-data-table">
-                <div class="products-table-scroll">
-                 <table>
-                   <thead>
-                     <tr>
-                       <th style="width:60px"></th>
-                       <th>{{ 'PRODUCTS.NAME_HEADER' | translate }}</th>
-                       <th>{{ 'PRODUCTS.CATEGORY_HEADER' | translate }}</th>
-                       <th>{{ 'PRODUCTS.SUBCATEGORY_HEADER' | translate }}</th>
-                       <th>{{ 'PRODUCTS.PRICE_HEADER' | translate }}</th>
-                       <th>{{ 'PRODUCTS.COST_HEADER' | translate }}</th>
-                       <th>{{ 'PRODUCTS.STOCK_HEADER' | translate }}</th>
-                       <th></th>
-                     </tr>
-                   </thead>
-                  <tbody>
-                    @for (product of filteredProducts(); track product.id) {
-                      <tr>
-                        <td>
-                          @if (product.image_filename) {
-                            <div class="image-preview-wrapper">
-                              <img [src]="getImageUrl(product)" class="table-thumb" alt="" (error)="handleImageError($event)">
-                              @if (product.image_size_formatted) {
-                                <div class="file-size">{{ product.image_size_formatted }}</div>
-                              }
+              <div class="pc-menu" data-testid="products-table">
+                @for (g of productGroups(); track g.key; let gi = $index) {
+                  <section class="pc-group" [style.--h]="catHue(g.key)">
+                    <header class="pc-head">
+                      <span class="pc-num">{{ gi + 1 < 10 ? '0' : '' }}{{ gi + 1 }}</span>
+                      <h3>{{ g.key ? getCategoryLabel(g.key) : ('PRODUCTS.NO_CATEGORY' | translate) }}</h3>
+                      <span class="pc-line" aria-hidden="true"></span>
+                      <span class="pc-count">{{ g.items.length }}</span>
+                    </header>
+                    <ul class="pc-list">
+                      @for (product of g.items; track product.id) {
+                        <li class="pc-row" [class.oos]="product.out_of_stock" [class.low]="product.stock_alert_enabled && isProductLowStock(product)">
+                          <span class="pc-thumb">
+                            @if (product.image_filename) {
+                              <img [src]="getImageUrl(product)" alt="" loading="lazy" (error)="handleImageError($event)">
+                            } @else {
+                              <b aria-hidden="true">{{ product.name.charAt(0).toUpperCase() }}</b>
+                            }
+                          </span>
+                          <div class="pc-main">
+                            <div class="pc-line1">
+                              <span class="pc-name">{{ product.name }}</span>
+                              @if (product.out_of_stock) { <em class="pc-oos">{{ 'PRODUCTS.OUT_OF_STOCK_SHORT' | translate }}</em> }
+                              <span class="pc-dots" aria-hidden="true"></span>
+                              <span class="pc-price">{{ formatPrice(product.price_cents) }}</span>
                             </div>
-                          } @else {
-                            <div class="no-image" title="No image">
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                <circle cx="8.5" cy="8.5" r="1.5"/>
-                                <path d="M21 15l-5-5L5 21"/>
-                              </svg>
-                            </div>
-                          }
-                        </td>
-                        <td>
-                          <div class="pl-name">{{ product.name }}@if (product.out_of_stock) { <span class="pl-oos">{{ 'PRODUCTS.OUT_OF_STOCK_SHORT' | translate }}</span> }</div>
-                          @if (product.ingredients) {
-                            <small class="ingredients">{{ product.ingredients }}</small>
-                          }
-                        </td>
-                        <td>
-                          @if (editingCategoryProductId() === product.id && canEditProducts()) {
-                            <select 
-                              class="inline-select" 
-                              [(ngModel)]="editingCategory" 
-                              (change)="onCategoryChangeInline()"
-                              (blur)="saveCategoryInline(product)"
-                              (keydown.escape)="cancelCategoryEdit()"
-                              [attr.data-product-id]="product.id">
-                              <option value="">None</option>
-                              @for (category of getCategoryKeys(); track category) {
-                                <option [value]="category">{{ getCategoryLabel(category) }}</option>
-                              }
-                            </select>
-                          } @else {
-                            <span class="category-cell" [class.clickable]="canEditProducts()" (click)="canEditProducts() && startCategoryEdit(product, $event)">
-                              {{ product.category ? getCategoryLabel(product.category) : '—' }}
-                            </span>
-                          }
-                        </td>
-                        <td>
-                          @if (editingCategoryProductId() === product.id && canEditProducts()) {
-                            <select 
-                              class="inline-select" 
-                              [(ngModel)]="editingSubcategory" 
-                              [disabled]="!editingCategory || getSubcategoriesForCategory(editingCategory || '').length === 0"
-                              (blur)="saveCategoryInline(product)"
-                              (keydown.escape)="cancelCategoryEdit()">
-                              <option value="">None</option>
-                              @for (subcat of getSubcategoriesForCategory(editingCategory); track subcat) {
-                                <option [value]="subcat">{{ getSubcategoryLabel(subcat) }}</option>
-                              }
-                            </select>
-                          } @else {
-                            <span class="category-cell" [class.clickable]="canEditProducts()" (click)="canEditProducts() && startCategoryEdit(product, $event)">
-                              {{ product.subcategory ? getSubcategoryLabel(product.subcategory) : '—' }}
-                            </span>
-                          }
-                        </td>
-                        <td class="price">{{ formatPrice(product.price_cents) }}</td>
-                        <td class="price">{{ product.cost_cents != null ? formatPrice(product.cost_cents) : '—' }}</td>
-                        <td data-testid="product-stock-cell">
-                          @if (product.stock_alert_enabled) {
-                            <span
-                              class="stock-badge"
-                              [class.stock-badge--low]="isProductLowStock(product)"
-                              [attr.title]="'PRODUCTS.STOCK_BADGE_TITLE' | translate:{qty: product.stock_qty ?? 0, level: product.stock_alert_level ?? 0}"
-                            >
-                              @if (isProductLowStock(product)) {
-                                {{ 'PRODUCTS.STOCK_LOW' | translate }}
+                            <div class="pc-line2">
+                              @if (product.ingredients) { <span class="pc-ing">{{ product.ingredients }}</span> }
+                              @if (editingCategoryProductId() === product.id && canEditProducts()) {
+                                <select class="inline-select" [(ngModel)]="editingCategory" (change)="onCategoryChangeInline()" (blur)="saveCategoryInline(product)" (keydown.escape)="cancelCategoryEdit()" [attr.data-product-id]="product.id">
+                                  <option value="">None</option>
+                                  @for (category of getCategoryKeys(); track category) {
+                                    <option [value]="category">{{ getCategoryLabel(category) }}</option>
+                                  }
+                                </select>
+                                <select class="inline-select" [(ngModel)]="editingSubcategory" [disabled]="!editingCategory || getSubcategoriesForCategory(editingCategory || '').length === 0" (blur)="saveCategoryInline(product)" (keydown.escape)="cancelCategoryEdit()">
+                                  <option value="">None</option>
+                                  @for (subcat of getSubcategoriesForCategory(editingCategory); track subcat) {
+                                    <option [value]="subcat">{{ getSubcategoryLabel(subcat) }}</option>
+                                  }
+                                </select>
                               } @else {
-                                {{ 'PRODUCTS.STOCK_OK' | translate }}
+                                <button type="button" class="pc-chip" [class.clickable]="canEditProducts()" (click)="canEditProducts() && startCategoryEdit(product, $event)">
+                                  {{ product.subcategory ? getSubcategoryLabel(product.subcategory) : (product.category ? getCategoryLabel(product.category) : '—') }}
+                                </button>
                               }
-                              <small>{{ product.stock_qty ?? 0 }} / {{ product.stock_alert_level ?? 0 }}</small>
-                            </span>
-                          } @else {
-                            <span class="muted">—</span>
-                          }
-                        </td>
-                        <td class="actions">
-                          <div class="actions-inner">
-                          <button class="pr-act" (click)="startEdit(product)" [attr.title]="'PRODUCTS.EDIT_TOOLTIP' | translate">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                          </button>
-                          @if (canEditProducts()) {
-                            <button class="pr-act pr-act-danger" (click)="confirmDelete(product)" [attr.title]="'PRODUCTS.DELETE_TOOLTIP' | translate" [disabled]="deleting() === product.id">
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                              </svg>
-                            </button>
-                          }
+                              @if (marginPct(product); as mg) {
+                                <span class="pc-chip pc-margin" [class.low]="mg < 30" [attr.title]="('PRODUCTS.COST_HEADER' | translate) + ' ' + formatPrice(product.cost_cents ?? 0)">{{ mg }}% {{ 'PRODUCTS.MARGIN' | translate }}</span>
+                              }
+                              @if (product.stock_alert_enabled) {
+                                <span class="pc-chip pc-stock" data-testid="product-stock-cell" [class.low]="isProductLowStock(product)"
+                                  [attr.title]="'PRODUCTS.STOCK_BADGE_TITLE' | translate:{qty: product.stock_qty ?? 0, level: product.stock_alert_level ?? 0}">
+                                  {{ (isProductLowStock(product) ? 'PRODUCTS.STOCK_LOW' : 'PRODUCTS.STOCK_OK') | translate }} {{ product.stock_qty ?? 0 }}/{{ product.stock_alert_level ?? 0 }}
+                                </span>
+                              }
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-                </div>
+                          <div class="pc-acts">
+                            @if (canEditProducts()) {
+                              <button class="pr-act" [class.pr-act-on]="product.out_of_stock" (click)="toggleOutOfStock(product)"
+                                [attr.title]="(product.out_of_stock ? 'PRODUCTS.PUT_BACK_ON_MENU' : 'PRODUCTS.REMOVE_FROM_MENU') | translate"
+                                [attr.aria-label]="(product.out_of_stock ? 'PRODUCTS.PUT_BACK_ON_MENU' : 'PRODUCTS.REMOVE_FROM_MENU') | translate">
+                                @if (product.out_of_stock) { <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> } @else { <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> }
+                              </button>
+                            }
+                            <button class="pr-act" (click)="startEdit(product)" [attr.title]="'PRODUCTS.EDIT_TOOLTIP' | translate" [attr.aria-label]="'PRODUCTS.EDIT_TOOLTIP' | translate"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                            @if (canEditProducts()) {
+                              <button class="pr-act pr-act-danger" (click)="confirmDelete(product)" [attr.title]="'PRODUCTS.DELETE_TOOLTIP' | translate" [disabled]="deleting() === product.id"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                            }
+                          </div>
+                        </li>
+                      }
+                    </ul>
+                  </section>
+                }
               </div>
               }
             }
@@ -785,6 +729,23 @@ export class ProductsComponent implements OnInit {
   avgMargin = computed(() => {
     const m = this.products().map((p) => this.marginPct(p)).filter((x): x is number => x !== null);
     return m.length ? Math.round(m.reduce((a, b) => a + b, 0) / m.length) : null;
+  });
+
+  /** Hue (0-359) of a category: tints cards and list groups so categories read at a glance. */
+  catHue(category: string | null | undefined): number {
+    let h = 0;
+    for (const ch of category || '') h = (h * 31 + ch.charCodeAt(0)) % 360;
+    return h;
+  }
+
+  /** Visible products grouped by category, for the "carta" list view. */
+  productGroups = computed(() => {
+    const map = new Map<string, Product[]>();
+    for (const p of this.filteredProducts()) {
+      const k = p.category || '';
+      map.set(k, [...(map.get(k) ?? []), p]);
+    }
+    return [...map.entries()].map(([key, items]) => ({ key, items }));
   });
 
   categoryCount(category: string): number {
