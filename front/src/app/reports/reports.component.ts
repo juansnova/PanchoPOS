@@ -644,6 +644,21 @@ export class ReportsComponent implements OnInit {
     return points.join(' ');
   }
 
+  /** Revenue-over-time: one marker per day (with its value for the tooltip). */
+  revenueChartDots(): { x: number; y: number; label: string }[] {
+    const r = this.report();
+    if (!r?.summary.daily?.length) return [];
+    const daily = r.summary.daily;
+    const maxRev = Math.max(1, ...daily.map((d) => d.revenue_cents));
+    const w = this.chartWidth - this.chartPad.left - this.chartPad.right;
+    const h = this.chartHeight - this.chartPad.top - this.chartPad.bottom;
+    return daily.map((d, i) => ({
+      x: this.chartPad.left + (i / (daily.length - 1 || 1)) * w,
+      y: this.chartPad.top + h - (d.revenue_cents / maxRev) * h,
+      label: `${this.formatShortDate(d.date)}: ${this.formatCurrency(d.revenue_cents)}`,
+    }));
+  }
+
   /** Revenue-over-time: area path (fill under the line). */
   revenueChartAreaPath(): string {
     const r = this.report();

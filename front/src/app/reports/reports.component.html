@@ -138,6 +138,9 @@
                     <stop offset="100%" stop-color="var(--color-primary, #0d9488)" stop-opacity="0.02"/>
                   </linearGradient>
                 </defs>
+                @for (tick of revenueChartYLabels(); track tick.y) {
+                  <line class="revenue-graph-grid" [attr.x1]="chartPad.left" [attr.x2]="chartWidth - chartPad.right" [attr.y1]="tick.y" [attr.y2]="tick.y"/>
+                }
                 <!-- Y-axis labels -->
                 @for (tick of revenueChartYLabels(); track tick.y) {
                   <text class="revenue-graph-y-label" [attr.x]="chartPad.left - 6" [attr.y]="tick.y + 4" text-anchor="end">{{ formatCurrency(tick.value) }}</text>
@@ -150,6 +153,9 @@
                 <path [attr.d]="revenueChartAreaPath()" fill="url(#revenueAreaGrad)" class="revenue-graph-area"/>
                 <!-- Line -->
                 <polyline [attr.points]="revenueChartPoints()" class="revenue-graph-line" fill="none"/>
+                @for (dot of revenueChartDots(); track dot.x) {
+                  <circle class="revenue-graph-dot" [attr.cx]="dot.x" [attr.cy]="dot.y" r="4.5"><title>{{ dot.label }}</title></circle>
+                }
               </svg>
             </div>
           </div>
