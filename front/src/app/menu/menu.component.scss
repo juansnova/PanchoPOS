@@ -3374,3 +3374,29 @@ $cart-expanded-max: 60vh;
 .menu-page .qty-control-btn.plus { color: #fff; border-color: transparent; background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, #000)); }
 .menu-page .order-code-field input { border-radius: 18px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
 .menu-page .order-code-field input::placeholder { letter-spacing: 0; font-size: 0.9rem; font-family: inherit; }
+
+// hero ticket: compact and centered on wide screens (it used to stretch edge to edge)
+.menu-page .hero-meta-bar {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  align-items: center;
+  gap: 14px 18px;
+  padding: 16px 16px 14px 22px;
+}
+
+.menu-page .hero-meta-bar .mt-table { flex: 1 1 auto; }
+.menu-page .hero-meta-bar .call-waiter-pill { flex: 0 0 auto; margin: 0; }
+
+.menu-page .hero-meta-bar .restaurant-contact {
+  flex: 1 1 100%;
+  justify-content: center;
+  margin-top: 0;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 420px) {
+  .menu-page .hero-meta-bar { padding: 14px; }
+  .menu-page .hero-meta-bar .call-waiter-pill { flex: 1 1 100%; justify-content: center; }
+}
