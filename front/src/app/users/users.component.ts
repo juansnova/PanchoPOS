@@ -50,6 +50,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
             @for (user of visibleUsers(); track user.id) {
               <article class="user-card" [attr.data-role]="user.role" [class.current-user]="user.id === currentUser()?.id">
                 <div class="us-band"></div>
+                <span class="us-mark" [innerHTML]="roleIcon(user.role, 130)" aria-hidden="true"></span>
                 <div class="us-top">
                   <div class="user-avatar">
                     {{ getInitials(user) }}
@@ -100,7 +101,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
         @if (showModal()) {
           <div class="modal-overlay">
             <div class="modal" (click)="$event.stopPropagation()" appFocusFirstInput>
-              <div class="modal-header">
+              <div class="modal-header" [attr.data-role]="formRole">
                 <span class="us-m-ico" [attr.data-role]="formRole" [innerHTML]="roleIcon(formRole, 26)" aria-hidden="true"></span>
                 <div class="us-m-text">
                   <h2>{{ editingUser() ? ('USERS.EDIT_USER' | translate) : ('USERS.ADD_USER' | translate) }}</h2>
@@ -247,9 +248,16 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       padding: 22px 26px;
       border-radius: 24px;
       color: #fff;
-      background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 70%, #000));
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 92% 20%, rgba(245, 196, 81, 0.55) 0, transparent 28%),
+        radial-gradient(circle at 78% 110%, rgba(108, 178, 238, 0.5) 0, transparent 32%),
+        radial-gradient(circle at 60% -30%, rgba(240, 136, 168, 0.5) 0, transparent 30%),
+        linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 70%, #000));
       box-shadow: 0 18px 34px -22px var(--color-primary);
     }
+    .us-hero > * { position: relative; z-index: 1; }
     .us-hero h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; }
     .us-hero p { margin: 2px 0 0; opacity: 0.85; font-weight: 600; }
 
@@ -297,16 +305,18 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       font-size: 0.75rem;
       text-align: center;
     }
+    .us-chip[data-role] { border-color: color-mix(in srgb, var(--rc) 40%, transparent); background: color-mix(in srgb, var(--rc) 9%, var(--color-surface)); }
+    .us-chip[data-role] i { background: color-mix(in srgb, var(--rc) 18%, transparent); color: var(--rc); }
     .us-chip:hover { border-color: var(--rc); }
-    .us-chip.on { background: var(--rc); border-color: var(--rc); color: #fff; }
-    .us-chip.on i { background: rgba(255, 255, 255, 0.25); }
+    .us-chip.on { background: linear-gradient(135deg, var(--rc2), var(--rc)) !important; border-color: var(--rc); color: #fff; box-shadow: 0 10px 18px -12px var(--rc); }
+    .us-chip.on i { background: rgba(255, 255, 255, 0.28) !important; color: #fff !important; }
     .us-chip-ico { display: inline-flex; color: var(--rc); }
     .us-chip.on .us-chip-ico { color: #fff; }
 
-    [data-role='owner'] { --rc: #d9a014; --rc2: #f5c451; }
-    [data-role='kitchen'] { --rc: #db4f7a; --rc2: #f088a8; }
-    [data-role='waiter'] { --rc: #2f9e64; --rc2: #62c58f; }
-    [data-role='courier'] { --rc: #2f86d6; --rc2: #6cb2ee; }
+    [data-role][data-role='owner'] { --rc: #d9a014; --rc2: #f5c451; }
+    [data-role][data-role='kitchen'] { --rc: #db4f7a; --rc2: #f088a8; }
+    [data-role][data-role='waiter'] { --rc: #2f9e64; --rc2: #62c58f; }
+    [data-role][data-role='courier'] { --rc: #2f86d6; --rc2: #6cb2ee; }
 
     .btn-primary {
       display: flex;
@@ -355,8 +365,8 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       flex-direction: column;
       gap: 14px;
       padding: 0 18px 16px;
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--rc) 12%, var(--color-surface)) 0, var(--color-surface) 62%);
+      border: 1px solid color-mix(in srgb, var(--rc) 35%, var(--color-border));
       border-radius: 24px;
       overflow: hidden;
       transition: transform 0.18s ease, box-shadow 0.18s ease;
@@ -369,10 +379,26 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     }
 
     .us-band {
-      height: 64px;
+      position: relative;
+      height: 72px;
       margin: 0 -18px;
-      background: linear-gradient(120deg, var(--rc), var(--rc2));
+      background:
+        radial-gradient(circle at 88% 30%, rgba(255, 255, 255, 0.35) 0, transparent 26%),
+        radial-gradient(circle at 70% 120%, rgba(255, 255, 255, 0.28) 0, transparent 30%),
+        radial-gradient(rgba(255, 255, 255, 0.28) 1.5px, transparent 1.6px) 0 0 / 14px 14px,
+        linear-gradient(120deg, var(--rc), var(--rc2));
     }
+
+    .us-mark {
+      position: absolute;
+      right: -14px;
+      bottom: -18px;
+      color: var(--rc);
+      opacity: 0.09;
+      pointer-events: none;
+      transform: rotate(-12deg);
+    }
+    .us-top, .us-bottom { position: relative; z-index: 1; }
 
     .us-top {
       display: flex;
@@ -395,7 +421,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       font-size: 1.35rem;
       flex-shrink: 0;
       border: 4px solid var(--color-surface);
-      box-shadow: 0 10px 18px -10px var(--rc);
+      box-shadow: 0 0 0 3px var(--rc2), 0 12px 20px -10px var(--rc);
     }
     .us-avatar-role {
       position: absolute;
@@ -465,14 +491,15 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       place-items: center;
       width: 40px;
       height: 40px;
-      background: var(--color-bg);
-      border: 1px solid var(--color-border);
+      background: color-mix(in srgb, var(--rc, var(--color-primary)) 12%, var(--color-surface));
+      border: 1px solid color-mix(in srgb, var(--rc, var(--color-primary)) 35%, transparent);
       border-radius: 50%;
-      color: var(--color-text-muted);
+      color: var(--rc, var(--color-text-muted));
       cursor: pointer;
       transition: all 0.15s ease;
     }
-    .btn-icon:hover { background: var(--color-primary-light); border-color: var(--color-primary); color: var(--color-primary); }
+    .btn-icon:hover { background: var(--rc, var(--color-primary)); border-color: var(--rc, var(--color-primary)); color: #fff; }
+    .btn-icon.btn-danger { background: rgba(220, 38, 38, 0.08); border-color: rgba(220, 38, 38, 0.3); color: #dc2626; }
     .btn-icon.btn-danger:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
 
     .loading, .error, .empty-state {
@@ -509,8 +536,12 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       align-items: center;
       gap: 14px;
       padding: 18px 22px 14px;
-      background: linear-gradient(135deg, var(--color-primary-light), transparent 80%);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--rc, var(--color-primary)) 22%, transparent), transparent 85%);
     }
+    .modal-header[data-role='owner'] { --rc: #d9a014; }
+    .modal-header[data-role='kitchen'] { --rc: #db4f7a; }
+    .modal-header[data-role='waiter'] { --rc: #2f9e64; }
+    .modal-header[data-role='courier'] { --rc: #2f86d6; }
     .us-m-ico {
       --rc: var(--color-primary);
       --rc2: var(--color-primary);
@@ -598,15 +629,16 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     .us-role-ico {
       display: grid;
       place-items: center;
-      width: 40px;
-      height: 40px;
-      border-radius: 13px;
-      background: color-mix(in srgb, var(--rc) 14%, transparent);
-      color: var(--rc);
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(145deg, var(--rc2), var(--rc));
+      color: #fff;
+      box-shadow: 0 10px 16px -10px var(--rc);
     }
+    .us-role { background: color-mix(in srgb, var(--rc) 6%, var(--color-surface)); border-color: color-mix(in srgb, var(--rc) 25%, var(--color-border)); }
     .us-role:hover:not(:disabled) { border-color: var(--rc); }
-    .us-role.on { border-color: var(--rc); background: color-mix(in srgb, var(--rc) 8%, var(--color-surface)); }
-    .us-role.on .us-role-ico { background: linear-gradient(145deg, var(--rc2), var(--rc)); color: #fff; }
+    .us-role.on { border-color: var(--rc); background: color-mix(in srgb, var(--rc) 14%, var(--color-surface)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rc) 25%, transparent); }
     .us-role:disabled { opacity: 0.55; cursor: not-allowed; }
 
     .input-with-toggle { position: relative; display: flex; }
