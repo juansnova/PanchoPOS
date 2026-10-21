@@ -1300,7 +1300,8 @@ export class ProductsComponent implements OnInit {
       price_cents: Math.round(this.formData.price * 100),
       cost_cents: this.formData.cost != null && this.formData.cost >= 0 ? Math.round(this.formData.cost * 100) : undefined,
       ingredients: this.formData.ingredients || undefined,
-      description: this.formData.description || undefined,
+      // Always sent (blank clears it on edit): `undefined` would be dropped and the old text would stay.
+      description: (this.formData.description || '').trim(),
       category: this.formData.category || undefined,
       subcategory: this.formData.subcategory || undefined,
       tax_id: this.formData.tax_id,

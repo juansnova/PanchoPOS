@@ -4667,6 +4667,7 @@ def create_product(
 ) -> models.Product:
     product.tenant_id = current_user.tenant_id
     product.image_filename = None  # set only via the image upload endpoint
+    product.description = (product.description or "").strip() or None
     if product.category is not None:
         from .category_codes import normalize_product_category
 
@@ -4729,6 +4730,9 @@ def update_product(
                 raise HTTPException(status_code=400, detail="Invalid tax")
         product.tax_id = product_update.tax_id or None
     pu = product_update.model_dump(exclude_unset=True)
+    if "description" in pu:
+        desc = (pu["description"] or "").strip()
+        product.description = desc or None
     # The date window is no longer edited in the UI; an explicit null clears any leftover dates.
     if "available_from" in pu:
         product.available_from = pu["available_from"]
