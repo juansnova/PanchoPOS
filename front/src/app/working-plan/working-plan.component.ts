@@ -188,6 +188,10 @@ function isValidView(v: string | null): v is ViewMode {
           <button type="button" class="btn btn-ghost btn-sm" [class.active]="viewMode() === 'calendar'" (click)="setViewMode('calendar')" data-testid="working-plan-view-calendar">{{ 'WORKING_PLAN.VIEW_CALENDAR' | translate }}</button>
         </div>
         @if (viewMode() === 'week') {
+          <div class="view-toggle wp-layout-toggle" data-testid="working-plan-layout-toggle">
+            <button type="button" class="btn btn-ghost btn-sm" [class.active]="weekLayout() === 'grid'" (click)="setWeekLayout('grid')">{{ 'WORKING_PLAN.LAYOUT_GRID' | translate }}</button>
+            <button type="button" class="btn btn-ghost btn-sm" [class.active]="weekLayout() === 'list'" (click)="setWeekLayout('list')">{{ 'WORKING_PLAN.LAYOUT_LIST' | translate }}</button>
+          </div>
           <button type="button" class="btn btn-ghost btn-sm" (click)="prevWeek()">‹</button>
           <span class="week-label">{{ weekLabel() }}</span>
           <button type="button" class="btn btn-ghost btn-sm" (click)="nextWeek()">›</button>
@@ -405,10 +409,102 @@ function isValidView(v: string | null): v is ViewMode {
       @if (viewMode() === 'week') {
         @if (loading()) {
           <div class="empty-state"><p>{{ 'COMMON.LOADING' | translate }}</p></div>
-        } @else if (shifts().length === 0) {
+        } @else if (shifts().length === 0 && weekLayout() === 'list') {
           <div class="empty-state">
             <p>{{ 'WORKING_PLAN.NO_SHIFTS' | translate }}</p>
             <button class="btn btn-primary" (click)="openCreate()">{{ 'WORKING_PLAN.ADD_SHIFT' | translate }}</button>
+          </div>
+        } @else if (weekLayout() === 'grid') {
+          <!-- Week summary -->
+          <div class="wp-kpis" data-testid="working-plan-kpis">
+            <div class="wp-kpi">
+              <span class="wp-kpi-label">{{ 'WORKING_PLAN.KPI_HOURS' | translate }}</span>
+              <strong>{{ formatMinutes(weekStats().totalMinutes) }}</strong>
+            </div>
+            <div class="wp-kpi">
+              <span class="wp-kpi-label">{{ 'WORKING_PLAN.KPI_PEOPLE' | translate }}</span>
+              <strong>{{ weekStats().people }}</strong>
+            </div>
+            <div class="wp-kpi" [class.wp-kpi-ok]="weekStats().gapDays === 0 && weekStats().requirementDays > 0" [class.wp-kpi-warn]="weekStats().gapDays > 0">
+              <span class="wp-kpi-label">{{ 'WORKING_PLAN.KPI_COVERAGE' | translate }}</span>
+              <strong>
+                @if (weekStats().requirementDays === 0) { — } @else { {{ weekStats().requirementDays - weekStats().gapDays }}/{{ weekStats().requirementDays }} }
+              </strong>
+              <small>{{ 'WORKING_PLAN.KPI_COVERAGE_HINT' | translate }}</small>
+            </div>
+            <div class="wp-kpi" [class.wp-kpi-warn]="weekStats().emptyDays > 0">
+              <span class="wp-kpi-label">{{ 'WORKING_PLAN.KPI_EMPTY_DAYS' | translate }}</span>
+              <strong>{{ weekStats().emptyDays }}</strong>
+            </div>
+          </div>
+
+          <div class="wp-grid-scroll">
+            <div class="wp-grid" data-testid="working-plan-week-grid">
+              <div class="wp-row wp-head">
+                <div class="wp-cell wp-name-cell"></div>
+                @for (d of weekDays(); track d.date) {
+                  <div class="wp-cell wp-day-head" [class.wp-today]="d.isToday" [class.wp-closed]="d.closed">
+                    <span class="wp-dow">{{ d.dow }}</span>
+                    <span class="wp-dom">{{ d.dom }}</span>
+                    @if (d.closed) { <small>{{ 'WORKING_PLAN.CLOSED_DAY' | translate }}</small> }
+                  </div>
+                }
+                <div class="wp-cell wp-total-head">{{ 'WORKING_PLAN.COL_TOTAL' | translate }}</div>
+              </div>
+
+              @for (row of weekGrid(); track row.id) {
+                <div class="wp-row">
+                  <div class="wp-cell wp-name-cell">
+                    <span class="wp-avatar" [style.--wp-h]="shiftHue(row.id)">{{ (row.user.full_name || row.user.username || '?').charAt(0).toUpperCase() }}</span>
+                    <span class="wp-person">
+                      <b>{{ row.user.full_name || row.user.username }}</b>
+                      <small>{{ getRoleLabel(row.user.role) }}</small>
+                    </span>
+                  </div>
+                  @for (c of row.days; track c.date) {
+                    <div class="wp-cell wp-day-cell" [class.wp-today]="c.isToday" [class.wp-closed]="c.closed">
+                      @for (sh of c.shifts; track sh.id) {
+                        @if (canEditShift(sh)) {
+                          <button type="button" class="wp-chip" [style.--wp-h]="shiftHue(row.id)" (click)="openEdit(sh)" [attr.aria-label]="calendarShiftEditAria(sh)">
+                            <span class="wp-chip-time">{{ sh.start_time }}–{{ sh.end_time }}</span>
+                            @if (sh.label) { <span class="wp-chip-label">{{ sh.label }}</span> }
+                          </button>
+                        } @else {
+                          <div class="wp-chip wp-chip-static" [style.--wp-h]="shiftHue(row.id)">
+                            <span class="wp-chip-time">{{ sh.start_time }}–{{ sh.end_time }}</span>
+                            @if (sh.label) { <span class="wp-chip-label">{{ sh.label }}</span> }
+                          </div>
+                        }
+                      }
+                      @if (canAddFor(row.id) && !c.closed) {
+                        <button type="button" class="wp-add" (click)="openCreateFor(row.id, c.date)" [attr.aria-label]="'WORKING_PLAN.ADD_SHIFT' | translate" [title]="'WORKING_PLAN.ADD_SHIFT' | translate">+</button>
+                      }
+                    </div>
+                  }
+                  <div class="wp-cell wp-total-cell">{{ row.totalMinutes ? formatMinutes(row.totalMinutes) : '—' }}</div>
+                </div>
+              }
+
+              <!-- Coverage + hours per day -->
+              <div class="wp-row wp-foot">
+                <div class="wp-cell wp-name-cell"><b>{{ 'WORKING_PLAN.COVERAGE_ROW' | translate }}</b></div>
+                @for (d of weekDays(); track d.date) {
+                  <div class="wp-cell wp-foot-cell" [class.wp-today]="d.isToday" [class.wp-closed]="d.closed">
+                    @if (d.closed) {
+                      <span class="wp-muted">—</span>
+                    } @else {
+                      @for (cv of d.coverage; track cv.key) {
+                        <span class="wp-cov" [class.wp-cov-ok]="cv.state === 'ok'" [class.wp-cov-low]="cv.state === 'low'" [class.wp-cov-high]="cv.state === 'high'">
+                          {{ cv.label }} {{ cv.scheduled }}/{{ cv.required }}
+                        </span>
+                      }
+                      <span class="wp-day-hours">{{ d.minutes ? formatMinutes(d.minutes) : '—' }}</span>
+                    }
+                  </div>
+                }
+                <div class="wp-cell wp-total-cell"><b>{{ formatMinutes(weekStats().totalMinutes) }}</b></div>
+              </div>
+            </div>
           </div>
         } @else {
           <div class="shift-list">
@@ -832,6 +928,85 @@ function isValidView(v: string | null): v is ViewMode {
     .pva-empty-filtered { font-size: 0.875rem; color: var(--text-muted, #666); margin: 0 0 0.5rem 0; }
     .pva-var-pos { color: var(--color-success, #16a34a); }
     .pva-var-neg { color: var(--danger, #dc2626); }
+
+    /* ===== Plan de trabajo: rediseño ===== */
+    .page-header h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.01em; margin: 0; }
+    .page-header-actions .btn { border-radius: 999px; font-weight: 700; min-height: 42px; padding: 0 18px; }
+    .page-header-actions .btn-primary { box-shadow: 0 8px 18px -8px var(--color-primary); }
+    .filters {
+      padding: 8px 10px; border-radius: 18px; background: var(--color-surface); border: 1px solid var(--color-border); gap: 6px;
+    }
+    .filters .btn-sm { border-radius: 999px; font-weight: 600; }
+    .view-toggle { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--color-bg); border: 1px solid var(--color-border); }
+    .view-toggle .btn.active { background: var(--color-surface); color: var(--color-primary); box-shadow: 0 1px 4px rgba(0,0,0,.12); font-weight: 700; }
+    .week-label { min-width: 11rem; text-align: center; font-weight: 800; font-size: 1.05rem; }
+    .export-worker-select { border-radius: 999px; padding: 0.4rem 0.9rem; }
+    .compliance-banner { border-radius: 16px; }
+
+    .wp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 14px 0; }
+    .wp-kpi {
+      display: flex; flex-direction: column; gap: 2px; padding: 14px 18px; border-radius: 18px;
+      background: var(--color-surface); border: 1px solid var(--color-border);
+    }
+    .wp-kpi-label { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); }
+    .wp-kpi strong { font-size: 1.7rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .wp-kpi small { font-size: .72rem; color: var(--color-text-muted); }
+    .wp-kpi-ok { border-color: rgba(34,197,94,.45); background: rgba(34,197,94,.07); }
+    .wp-kpi-ok strong { color: #15803d; }
+    .wp-kpi-warn { border-color: rgba(220,38,38,.4); background: rgba(220,38,38,.05); }
+    .wp-kpi-warn strong { color: #b91c1c; }
+
+    .wp-grid-scroll { overflow-x: auto; border-radius: 20px; border: 1px solid var(--color-border); background: var(--color-surface); box-shadow: 0 16px 36px -28px rgba(0,0,0,.45); }
+    .wp-grid { min-width: 940px; display: flex; flex-direction: column; }
+    .wp-row { display: grid; grid-template-columns: 190px repeat(7, minmax(112px, 1fr)) 84px; border-bottom: 1px solid var(--color-border); }
+    .wp-row:last-child { border-bottom: 0; }
+    .wp-cell { padding: 8px; border-right: 1px solid var(--color-border); min-width: 0; }
+    .wp-cell:last-child { border-right: 0; }
+    .wp-head { background: var(--color-bg); position: sticky; top: 0; z-index: 2; }
+    .wp-day-head { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 10px 4px; }
+    .wp-dow { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); }
+    .wp-dom { font-size: 1.35rem; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; }
+    .wp-day-head small { font-size: .65rem; color: var(--color-text-muted); }
+    .wp-today { background: var(--color-primary-light); }
+    .wp-head .wp-today .wp-dom { color: var(--color-primary); }
+    .wp-closed { background: repeating-linear-gradient(135deg, transparent 0 8px, rgba(120,113,108,.08) 8px 16px); color: var(--color-text-muted); }
+    .wp-total-head { display: grid; place-items: center; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); }
+    .wp-name-cell { display: flex; align-items: center; gap: 10px; }
+    .wp-avatar {
+      flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; font-weight: 800; color: #fff;
+      background: hsl(var(--wp-h) 52% 42%);
+    }
+    .wp-person { display: flex; flex-direction: column; min-width: 0; }
+    .wp-person b { font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wp-person small { font-size: .72rem; color: var(--color-text-muted); }
+    .wp-day-cell { display: flex; flex-direction: column; gap: 4px; min-height: 64px; position: relative; }
+    .wp-chip {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 0; width: 100%; padding: 5px 8px; border: 0; border-radius: 10px; text-align: left;
+      background: hsl(var(--wp-h) 70% 93%); color: hsl(var(--wp-h) 55% 24%); border-left: 4px solid hsl(var(--wp-h) 52% 42%);
+      font: inherit; cursor: pointer; touch-action: manipulation; transition: filter .15s, transform .12s;
+    }
+    button.wp-chip:hover { filter: brightness(.96); transform: translateY(-1px); }
+    .wp-chip-static { cursor: default; }
+    .wp-chip-time { font-size: .8rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .wp-chip-label { font-size: .7rem; opacity: .8; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wp-add {
+      margin-top: auto; align-self: center; width: 28px; height: 28px; border: 1.5px dashed var(--color-border); border-radius: 50%; background: transparent;
+      color: var(--color-text-muted); font-size: 1.1rem; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .15s, border-color .15s, color .15s;
+    }
+    .wp-day-cell:hover .wp-add, .wp-add:focus-visible { opacity: 1; }
+    .wp-add:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    @media (hover: none) { .wp-add { opacity: .55; } }
+    .wp-total-cell { display: grid; place-items: center; font-variant-numeric: tabular-nums; font-size: .9rem; background: var(--color-bg); }
+    .wp-foot { background: var(--color-bg); }
+    .wp-foot-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; }
+    .wp-cov { padding: 2px 8px; border-radius: 999px; font-size: .7rem; font-weight: 800; white-space: nowrap; }
+    .wp-cov-ok { background: rgba(34,197,94,.16); color: #15803d; }
+    .wp-cov-low { background: rgba(220,38,38,.14); color: #b91c1c; }
+    .wp-cov-high { background: rgba(245,158,11,.18); color: #a16207; }
+    .wp-day-hours { font-size: .75rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+    .wp-muted { color: var(--color-text-muted); }
+
+    .shift-card { border-radius: 14px; }
   `],
 })
 export class WorkingPlanComponent implements OnInit, OnDestroy {
@@ -906,6 +1081,152 @@ export class WorkingPlanComponent implements OnInit, OnDestroy {
   formEndTime2 = '20:00';
 
   weekRange = computed(() => getWeekRange(this.weekStart()));
+
+  /** Week view layout: staff × day grid (default) or the plain list. Remembered in this browser. */
+  weekLayout = signal<'grid' | 'list'>(
+    (() => {
+      try {
+        return localStorage.getItem('pos.workingPlan.weekLayout') === 'list' ? 'list' : 'grid';
+      } catch {
+        return 'grid';
+      }
+    })()
+  );
+
+  setWeekLayout(layout: 'grid' | 'list'): void {
+    this.weekLayout.set(layout);
+    try {
+      localStorage.setItem('pos.workingPlan.weekLayout', layout);
+    } catch {
+      /* storage unavailable */
+    }
+  }
+
+  private shiftMinutes(s: Shift): number {
+    const toMin = (t: string) => {
+      const [h, m] = (t || '0:0').split(':').map((x) => parseInt(x, 10) || 0);
+      return h * 60 + m;
+    };
+    let d = toMin(s.end_time) - toMin(s.start_time);
+    if (d < 0) d += 24 * 60; // overnight
+    return d;
+  }
+
+  /** Seven days of the visible week with today / closed flags and per-role coverage. */
+  weekDays = computed(() => {
+    void this.openingHours();
+    const shifts = this.shifts();
+    const { from } = this.weekRange();
+    const start = new Date(from + 'T12:00:00');
+    const todayStr = this.toIso(new Date());
+    const dows = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    return Array.from({ length: 7 }, (_, i) => {
+      const dt = new Date(start);
+      dt.setDate(start.getDate() + i);
+      const date = this.toIso(dt);
+      const dayKey = DAY_KEYS[dt.getDay()];
+      const closed = this.isDayClosed(dayKey);
+      const dayShifts = shifts.filter((s) => s.date === date);
+      const coverage = closed
+        ? []
+        : STAFF_KEYS.filter((sk) => this.getRequiredForRole(dayKey, sk) > 0).map((sk) => {
+            const required = this.getRequiredForRole(dayKey, sk);
+            const scheduled = this.getScheduledCountForRole(date, sk);
+            return {
+              key: sk,
+              label: this.getRoleLabel(sk),
+              required,
+              scheduled,
+              state: scheduled < required ? 'low' : scheduled > required ? 'high' : 'ok',
+            } as { key: string; label: string; required: number; scheduled: number; state: 'low' | 'ok' | 'high' };
+          });
+      return {
+        date,
+        dow: this.translate.instant('WORKING_PLAN.' + dows[i]),
+        dom: dt.getDate(),
+        isToday: date === todayStr,
+        closed,
+        coverage,
+        minutes: dayShifts.reduce((sum, s) => sum + this.shiftMinutes(s), 0),
+        shiftCount: dayShifts.length,
+      };
+    });
+  });
+
+  /** One row per staff member with their shifts for each day of the week. */
+  weekGrid = computed(() => {
+    const days = this.weekDays();
+    const shifts = this.shifts();
+    const byUser = new Map<number, Shift[]>();
+    for (const sh of shifts) {
+      const list = byUser.get(sh.user_id) ?? [];
+      list.push(sh);
+      byUser.set(sh.user_id, list);
+    }
+    const known = new Map<number, User>();
+    for (const u of this.scheduleUsers()) if (u.id != null) known.set(u.id, u);
+    // Someone with a shift but not in the staff list still gets a row.
+    for (const [uid, list] of byUser) {
+      if (!known.has(uid)) {
+        const f = list[0];
+        known.set(uid, { id: uid, full_name: f.user_name, username: f.user_name, role: f.user_role } as unknown as User);
+      }
+    }
+    const users = [...known.values()].sort((a, b) =>
+      (a.full_name || a.username || '').localeCompare(b.full_name || b.username || '')
+    );
+    return users.map((user) => {
+      const id = user.id as number;
+      const mine = byUser.get(id) ?? [];
+      const cells = days.map((d) => ({
+        date: d.date,
+        isToday: d.isToday,
+        closed: d.closed,
+        shifts: mine
+          .filter((s) => s.date === d.date)
+          .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')),
+      }));
+      return {
+        id,
+        user,
+        days: cells,
+        totalMinutes: mine.reduce((sum, s) => sum + this.shiftMinutes(s), 0),
+      };
+    });
+  });
+
+  weekStats = computed(() => {
+    const days = this.weekDays();
+    const totalMinutes = days.reduce((sum, d) => sum + d.minutes, 0);
+    const people = new Set(this.shifts().map((s) => s.user_id)).size;
+    const openDays = days.filter((d) => !d.closed);
+    const reqDays = openDays.filter((d) => d.coverage.length > 0);
+    return {
+      totalMinutes,
+      people,
+      requirementDays: reqDays.length,
+      gapDays: reqDays.filter((d) => d.coverage.some((c) => c.state === 'low')).length,
+      emptyDays: openDays.filter((d) => d.shiftCount === 0).length,
+    };
+  });
+
+  canAddFor(userId: number): boolean {
+    if (!this.canWriteSchedule()) return false;
+    return this.canManageAllSchedules() || userId === this.api.getCurrentUser()?.id;
+  }
+
+  /** Create a shift from a grid cell (person + day preselected). */
+  openCreateFor(userId: number, date: string): void {
+    this.openCreate();
+    this.formUserId = userId;
+    this.formDate = date;
+    this.onFormDateChange(date);
+  }
+
+  private toIso(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
 
   /** Staff the current user may assign shifts to (self only unless owner/admin). */
   assignableScheduleUsers = computed(() => {
