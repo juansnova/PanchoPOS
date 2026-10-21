@@ -436,143 +436,18 @@ def export_report(
     L = report_export_labels(lang)
 
     if format.lower() == "xlsx":
-        try:
-            from openpyxl import Workbook
-            from openpyxl.styles import Font, Alignment, PatternFill
-        except ImportError:
-            from fastapi import HTTPException
-            raise HTTPException(500, "Excel export requires openpyxl")
-        wb = Workbook()
-        # Summary sheet
-        ws = wb.active
-        ws.title = L["sheet_summary"][:31]
-        ws.append(
-            [
-                L["date"],
-                L["revenue_cents"],
-                L["cost_cents"],
-                L["profit_cents"],
-                L["tips_cents"],
-                L["orders"],
-            ]
+        from .report_xlsx import build_sales_workbook
+
+        tenant = session.get(models.Tenant, current_user.tenant_id)
+        rows = _get_revenue_items(session, current_user.tenant_id, from_date, to_date)
+        wb = build_sales_workbook(
+            data,
+            rows,
+            lang,
+            tenant_name=(getattr(tenant, "name", "") or ""),
+            tz_name=getattr(tenant, "timezone", None),
         )
-        for row in data["summary"]["daily"]:
-            ws.append([
-                row["date"],
-                row["revenue_cents"],
-                row.get("cost_cents", 0),
-                row.get("profit_cents", 0),
-                row.get("tips_cents", 0),
-                row["order_count"],
-            ])
-        ws.append([])
-        s = data["summary"]
-        ws.append(
-            [
-                L["total"],
-                s["total_revenue_cents"],
-                s.get("total_cost_cents", 0),
-                s.get("total_profit_cents", 0),
-                s.get("total_tips_cents", 0),
-                s["total_orders"],
-            ]
-        )
-        # Reservations
-        res = data.get("reservations", {})
-        ws_res = wb.create_sheet(L["sheet_reservations"][:31])
-        ws_res.append([L["active"], res.get("active_count", 0)])
-        ws_res.append([])
-        ws_res.append([L["status"], L["count"]])
-        for row in res.get("by_status", []):
-            st = row["status"]
-            st_label = L.get(f"res_status_{st}", st)
-            ws_res.append([st_label, row["count"]])
-        ws_res.append([])
-        ws_res.append([L["res_status_finished"], res.get("total", 0)])
-        ws_res.append([L["total"], res.get("all_count", 0)])
-        # Products
-        ws2 = wb.create_sheet(L["sheet_by_product"][:31])
-        ws2.append(
-            [
-                L["product"],
-                L["category"],
-                L["quantity"],
-                L["revenue_cents"],
-                L["cost_cents"],
-                L["profit_cents"],
-            ]
-        )
-        for p in data["by_product"]:
-            ws2.append([
-                p["product_name"],
-                p.get("category", ""),
-                p["quantity"],
-                p["revenue_cents"],
-                p.get("cost_cents", 0),
-                p.get("profit_cents", 0),
-            ])
-        # Category
-        ws3 = wb.create_sheet(L["sheet_by_category"][:31])
-        ws3.append(
-            [
-                L["category"],
-                L["quantity"],
-                L["revenue_cents"],
-                L["cost_cents"],
-                L["profit_cents"],
-            ]
-        )
-        for c in data["by_category"]:
-            ws3.append([
-                c["category"],
-                c["quantity"],
-                c["revenue_cents"],
-                c.get("cost_cents", 0),
-                c.get("profit_cents", 0),
-            ])
-        # Table
-        ws4 = wb.create_sheet(L["sheet_by_table"][:31])
-        ws4.append(
-            [
-                L["table"],
-                L["revenue_cents"],
-                L["cost_cents"],
-                L["profit_cents"],
-                L["orders"],
-            ]
-        )
-        for t in data["by_table"]:
-            ws4.append([
-                t["table_name"],
-                t["revenue_cents"],
-                t.get("cost_cents", 0),
-                t.get("profit_cents", 0),
-                t["order_count"],
-            ])
-        # Waiter
-        ws5 = wb.create_sheet(L["sheet_by_waiter"][:31])
-        ws5.append(
-            [
-                L["waiter"],
-                L["revenue_cents"],
-                L["cost_cents"],
-                L["profit_cents"],
-                L["tips_cents"],
-                L["orders"],
-            ]
-        )
-        for w in data["by_waiter"]:
-            ws5.append([
-                w["waiter_name"],
-                w["revenue_cents"],
-                w.get("cost_cents", 0),
-                w.get("profit_cents", 0),
-                w.get("tips_cents", 0),
-                w["order_count"],
-            ])
         buf = BytesIO()
-        from .export_safety import neutralize_workbook
-        neutralize_workbook(wb)
         wb.save(buf)
         buf.seek(0)
         return StreamingResponse(
@@ -674,71 +549,21 @@ def export_detailed_report(
     """
     if from_date > to_date:
         from_date, to_date = to_date, from_date
-    try:
-        from openpyxl import Workbook
-    except ImportError:
-        raise HTTPException(500, "Excel export requires openpyxl")
+    from .report_xlsx import build_detailed_workbook
 
-    L = report_export_labels(lang)
     income_rows = _get_revenue_items(session, current_user.tenant_id, from_date, to_date)
     expense_rows = _get_expense_rows(session, current_user.tenant_id, from_date, to_date)
-    income_total_cents = sum(r["revenue_cents"] for r in income_rows)
-    expenses_total_cents = sum(r["line_total_cents"] for r in expense_rows)
-
-    wb = Workbook()
-
-    # Summary
-    ws0 = wb.active
-    ws0.title = L["sheet_detail_summary"][:31]
-    ws0.append([L["income_total"], income_total_cents])
-    ws0.append([L["expenses_total"], expenses_total_cents])
-    ws0.append([L["net_total"], income_total_cents - expenses_total_cents])
-
-    # Detailed income — one row per sold item
-    ws1 = wb.create_sheet(L["sheet_income_detail"][:31])
-    ws1.append([
-        L["date"], L["order_number"], L["table"], L["waiter"], L["customer"],
-        L["payment_method"], L["product"], L["category"], L["quantity"],
-        L["revenue_cents"], L["cost_cents"], L["profit_cents"],
-    ])
-    for r in income_rows:
-        ws1.append([
-            r["date"].strftime("%Y-%m-%d %H:%M") if r["date"] else "",
-            r["order_id"],
-            r["table_name"],
-            r["waiter_name"],
-            r["customer_name"],
-            r["payment_method"],
-            r["product_name"],
-            r["category"],
-            r["quantity"],
-            r["revenue_cents"],
-            r["cost_cents"],
-            r["profit_cents"],
-        ])
-
-    # Detailed expenses — one row per received purchase-order item
-    ws2 = wb.create_sheet(L["sheet_expense_detail"][:31])
-    ws2.append([
-        L["date"], L["order_number"], L["supplier"], L["status"], L["item"],
-        L["quantity_received"], L["unit"], L["unit_cost_cents"], L["line_total_cents"],
-    ])
-    for r in expense_rows:
-        ws2.append([
-            r["date"].strftime("%Y-%m-%d %H:%M") if r["date"] else "",
-            r["order_number"],
-            r["supplier_name"],
-            L.get(f"po_status_{r['status']}", r["status"]),
-            r["item_name"],
-            r["quantity_received"],
-            r["unit"],
-            r["unit_cost_cents"],
-            r["line_total_cents"],
-        ])
-
+    tenant = session.get(models.Tenant, current_user.tenant_id)
+    wb = build_detailed_workbook(
+        income_rows,
+        expense_rows,
+        from_date,
+        to_date,
+        lang,
+        tenant_name=(getattr(tenant, "name", "") or ""),
+        tz_name=getattr(tenant, "timezone", None),
+    )
     buf = BytesIO()
-    from .export_safety import neutralize_workbook
-    neutralize_workbook(wb)
     wb.save(buf)
     buf.seek(0)
     return StreamingResponse(
