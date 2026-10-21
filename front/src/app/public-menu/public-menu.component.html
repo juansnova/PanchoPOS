@@ -112,7 +112,7 @@
     </header>
 
     <!-- Sticky Category Navigation: same layout/classes as the table menu -->
-    @if (!menuLoading() && categories().length > 0) {
+    @if (step() === 'browse' && !menuLoading() && categories().length > 0) {
       <nav class="category-nav">
         <div class="category-scroll-container">
           <button type="button" class="category-chip" [class.active]="selectedCategoryId() === null" (click)="selectCategory(null)">
@@ -404,102 +404,148 @@
       }
 
       @if (step() === 'cart') {
-        <div class="order-step-narrow">
-        <h2>{{ 'DELIVERY_CHECKOUT.CART_TITLE' | translate }}</h2>
-        @if (cart().length === 0) {
-          <p>{{ 'DELIVERY_CHECKOUT.CART_EMPTY' | translate }}</p>
-          <button type="button" class="btn btn-secondary" (click)="goToMenu()">
-            {{ 'DELIVERY_CHECKOUT.BACK_TO_MENU' | translate }}
-          </button>
-        } @else {
-          <ul class="cart-list">
-            @for (line of cart(); track line.product.id) {
-              <li class="cart-row">
+        <div class="co-wrap">
+          <header class="co-head">
+            <p class="co-eyebrow"><i></i>{{ 'PUBLIC_MENU.CO_EYEBROW_CART' | translate }}</p>
+            <h2 class="co-title">{{ 'DELIVERY_CHECKOUT.CART_TITLE' | translate }}</h2>
+          </header>
+          <ol class="co-steps" aria-hidden="true">
+            <li class="on"><i>1</i><span>{{ 'PUBLIC_MENU.CO_STEP_CART' | translate }}</span></li>
+            <li class=""><i>2</i><span>{{ 'PUBLIC_MENU.CO_STEP_ADDRESS' | translate }}</span></li>
+            <li class=""><i>3</i><span>{{ 'PUBLIC_MENU.CO_STEP_PAY' | translate }}</span></li>
+          </ol>
+
+          @if (cart().length === 0) {
+            <div class="sel-empty">
+              <span class="sel-empty-ico" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
+              <div>
+                <p class="sel-empty-title">{{ 'DELIVERY_CHECKOUT.CART_EMPTY' | translate }}</p>
+                <p class="sel-empty-hint">{{ 'PUBLIC_MENU.SEL_EMPTY_HINT' | translate }}</p>
+              </div>
+            </div>
+            <div class="co-actions">
+              <button type="button" class="co-btn co-btn-main" (click)="goToMenu()">{{ 'DELIVERY_CHECKOUT.BACK_TO_MENU' | translate }}<i aria-hidden="true">→</i></button>
+            </div>
+          } @else {
+            <div class="sel-card co-ticket">
+              <div class="sel-top">
                 <div>
-                  <strong>{{ line.product.name }}</strong>
-                  <span class="cart-line-price">{{ formatCents(line.product.price_cents * line.quantity) }}</span>
+                  <p class="sel-eyebrow"><i></i>{{ 'MENU.YOUR_ORDER_EYEBROW' | translate }}</p>
+                  <p class="sel-count">{{ cartCount() }} <span>{{ 'COMMON.ITEMS' | translate }}</span></p>
                 </div>
-                <div class="qty-stepper">
-                  <button type="button" (click)="setQty(line.product.id, line.quantity - 1)">−</button>
-                  <span>{{ line.quantity }}</span>
-                  <button type="button" (click)="setQty(line.product.id, line.quantity + 1)">+</button>
+                <div class="sel-top-right">
+                  <span class="sel-total-top">{{ formatCents(cartTotalCents()) }}</span>
                 </div>
-              </li>
-            }
-          </ul>
-          <p class="order-total">
-            <strong>{{ 'DELIVERY_CHECKOUT.TOTAL' | translate }}:</strong>
-            {{ formatCents(cartTotalCents()) }}
-          </p>
-          <div class="step-actions">
-            <button type="button" class="btn btn-secondary" (click)="goToMenu()">
-              {{ 'DELIVERY_CHECKOUT.BACK_TO_MENU' | translate }}
-            </button>
-            <button type="button" class="btn btn-primary" (click)="goToAddress()">
-              {{ 'DELIVERY_CHECKOUT.CONTINUE_ADDRESS' | translate }}
-            </button>
-          </div>
-        }
+              </div>
+              <ul class="sel-list">
+                @for (line of cart(); track line.product.id) {
+                <li class="sel-row">
+                  <span class="sel-thumb" aria-hidden="true">
+                    @if (line.product.image_url) { <img [src]="productImageUrl(line.product.image_url)" alt="" /> } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h0A2.5 2.5 0 0 0 9 9V3M6.5 3v18"/><path d="M20 21V3c-2.8 1.2-4.5 4-4.5 7.5 0 1.4 1 2.5 2.3 2.5H20"/></svg>
+                    }
+                  </span>
+                  <span class="sel-name">{{ line.product.name }}</span>
+                  <span class="sel-stepper">
+                    <button type="button" (click)="setQty(line.product.id, line.quantity - 1)" [attr.aria-label]="'-'">−</button>
+                    <b>{{ line.quantity }}</b>
+                    <button type="button" (click)="setQty(line.product.id, line.quantity + 1)" [attr.aria-label]="'+'">+</button>
+                  </span>
+                  <span class="sel-end">
+                    <span class="sel-price">{{ formatCents(line.product.price_cents * line.quantity) }}</span>
+                    <span class="sel-calc">{{ line.quantity }} × {{ formatCents(line.product.price_cents) }}</span>
+                  </span>
+                </li>
+                }
+              </ul>
+              <div class="sel-totals">
+                @if ((deliveryConfig()?.delivery_fee_cents ?? 0) > 0) {
+                <span class="sel-trow"><span>{{ 'DELIVERY_CHECKOUT.SUBTOTAL' | translate }}</span><b>{{ formatCents(cartSubtotalCents()) }}</b></span>
+                <span class="sel-trow"><span>{{ 'DELIVERY_CHECKOUT.DELIVERY_FEE' | translate }}</span><b>{{ formatCents(deliveryConfig()!.delivery_fee_cents) }}</b></span>
+                }
+                <span class="sel-trow sel-grand"><span>{{ 'DELIVERY_CHECKOUT.TOTAL' | translate }}</span><b>{{ formatCents(cartTotalCents()) }}</b></span>
+              </div>
+            </div>
+            <div class="co-actions">
+              <button type="button" class="co-btn co-btn-ghost" (click)="goToMenu()" [attr.aria-label]="'DELIVERY_CHECKOUT.BACK_TO_MENU' | translate" [title]="'DELIVERY_CHECKOUT.BACK_TO_MENU' | translate">←</button>
+              <button type="button" class="co-btn co-btn-main" (click)="goToAddress()">{{ 'DELIVERY_CHECKOUT.CONTINUE_ADDRESS' | translate }}<i aria-hidden="true">→</i></button>
+            </div>
+          }
         </div>
       }
 
       @if (step() === 'address') {
-        <div class="order-step-narrow">
-        <h2>{{ 'DELIVERY_CHECKOUT.ADDRESS_TITLE' | translate }}</h2>
-        <p class="public-menu-hint">{{ 'DELIVERY_CHECKOUT.ADDRESS_HINT' | translate }}</p>
-        @if (formError()) {
-          <p class="form-error">{{ formError() }}</p>
-        }
-        <form class="order-form" (ngSubmit)="submitAddress()">
-          <label>
-            {{ 'DELIVERY_CHECKOUT.NAME' | translate }}
-            <input type="text" name="name" [(ngModel)]="customerName" autocomplete="name" />
-          </label>
-          <label>
-            {{ 'DELIVERY_CHECKOUT.PHONE' | translate }} *
-            <input type="tel" name="phone" [(ngModel)]="customerPhone" required autocomplete="tel" />
-          </label>
-          <label>
-            {{ 'DELIVERY_CHECKOUT.ADDRESS' | translate }} *
-            <textarea name="address" rows="3" [(ngModel)]="deliveryAddress" required autocomplete="street-address"></textarea>
-          </label>
-          @if (deliveryConfig()?.postal_codes_required) {
-            <label>
-              {{ 'DELIVERY_CHECKOUT.POSTAL_CODE' | translate }} *
-              <input type="text" name="postal" [(ngModel)]="postalCode" required autocomplete="postal-code" />
-            </label>
-            @if (deliveryConfig()?.postal_codes?.length) {
-              <p class="public-menu-hint">
-                {{ 'DELIVERY_CHECKOUT.POSTAL_HINT' | translate }}: {{ deliveryConfig()!.postal_codes.join(', ') }}
-              </p>
-            }
+        <div class="co-wrap">
+          <header class="co-head">
+            <p class="co-eyebrow"><i></i>{{ 'PUBLIC_MENU.CO_EYEBROW_ADDR' | translate }}</p>
+            <h2 class="co-title">{{ 'DELIVERY_CHECKOUT.ADDRESS_TITLE' | translate }}</h2>
+            <p class="co-sub">{{ 'DELIVERY_CHECKOUT.ADDRESS_HINT' | translate }}</p>
+          </header>
+          <ol class="co-steps" aria-hidden="true">
+            <li class="done"><i>1</i><span>{{ 'PUBLIC_MENU.CO_STEP_CART' | translate }}</span></li>
+            <li class="on"><i>2</i><span>{{ 'PUBLIC_MENU.CO_STEP_ADDRESS' | translate }}</span></li>
+            <li class=""><i>3</i><span>{{ 'PUBLIC_MENU.CO_STEP_PAY' | translate }}</span></li>
+          </ol>
+
+          @if (formError()) {
+            <p class="form-error co-error" role="alert">{{ formError() }}</p>
           }
-          @if (deliveryConfig()?.delivery_radius_meters) {
-            <p class="public-menu-hint">
-              {{ 'DELIVERY_CHECKOUT.RADIUS_HINT' | translate: { meters: deliveryConfig()!.delivery_radius_meters } }}
-            </p>
-            <button type="button" class="btn btn-secondary btn-sm" (click)="requestDeliveryLocation()">
-              {{ 'DELIVERY_CHECKOUT.SHARE_LOCATION' | translate }}
-            </button>
-          }
-          @if ((deliveryConfig()?.delivery_fee_cents ?? 0) > 0) {
-            <p class="public-menu-hint">
-              {{ 'DELIVERY_CHECKOUT.DELIVERY_FEE' | translate }}: {{ formatCents(deliveryConfig()!.delivery_fee_cents) }}
-            </p>
-          }
-          <label>
-            {{ 'DELIVERY_CHECKOUT.NOTES' | translate }}
-            <textarea name="notes" rows="2" [(ngModel)]="deliveryNotes"></textarea>
-          </label>
-          <div class="step-actions">
-            <button type="button" class="btn btn-secondary" (click)="goToCart()" [disabled]="submitting()">
-              {{ 'COMMON.BACK' | translate }}
-            </button>
-            <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-              {{ submitting() ? ('COMMON.LOADING' | translate) : ('DELIVERY_CHECKOUT.CONTINUE_PAY' | translate) }}
-            </button>
-          </div>
-        </form>
+          <form class="co-form" (ngSubmit)="submitAddress()">
+            <div class="co-card">
+              <label class="co-field">
+                <span class="co-label">{{ 'DELIVERY_CHECKOUT.NAME' | translate }}</span>
+                <span class="co-input"><span class="co-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+                  <input type="text" name="name" [(ngModel)]="customerName" autocomplete="name" /></span>
+              </label>
+              <label class="co-field">
+                <span class="co-label">{{ 'DELIVERY_CHECKOUT.PHONE' | translate }} <b>*</b></span>
+                <span class="co-input"><span class="co-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></span>
+                  <input type="tel" name="phone" [(ngModel)]="customerPhone" required autocomplete="tel" /></span>
+              </label>
+              <label class="co-field">
+                <span class="co-label">{{ 'DELIVERY_CHECKOUT.ADDRESS' | translate }} <b>*</b></span>
+                <span class="co-input co-input-area"><span class="co-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+                  <textarea name="address" rows="3" [(ngModel)]="deliveryAddress" required autocomplete="street-address"></textarea></span>
+              </label>
+              @if (deliveryConfig()?.postal_codes_required) {
+                <label class="co-field">
+                  <span class="co-label">{{ 'DELIVERY_CHECKOUT.POSTAL_CODE' | translate }} <b>*</b></span>
+                  <span class="co-input"><span class="co-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+                    <input type="text" name="postal" [(ngModel)]="postalCode" required autocomplete="postal-code" /></span>
+                </label>
+                @if (deliveryConfig()?.postal_codes?.length) {
+                  <p class="co-hint">{{ 'DELIVERY_CHECKOUT.POSTAL_HINT' | translate }}: {{ deliveryConfig()!.postal_codes.join(', ') }}</p>
+                }
+              }
+              @if (deliveryConfig()?.delivery_radius_meters) {
+                <div class="co-note">
+                  <p>{{ 'DELIVERY_CHECKOUT.RADIUS_HINT' | translate: { meters: deliveryConfig()!.delivery_radius_meters } }}</p>
+                  <button type="button" class="co-pill" (click)="requestDeliveryLocation()">{{ 'DELIVERY_CHECKOUT.SHARE_LOCATION' | translate }}</button>
+                </div>
+              }
+              <label class="co-field">
+                <span class="co-label">{{ 'DELIVERY_CHECKOUT.NOTES' | translate }}</span>
+                <span class="co-input co-input-area"><span class="co-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg></span>
+                  <textarea name="notes" rows="2" [(ngModel)]="deliveryNotes"></textarea></span>
+              </label>
+            </div>
+
+            <div class="co-summary">
+              <span class="co-ico co-ico-solid" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l4-8h5l3 8M9 9H7M14 9l-2 8"/></svg></span>
+              <div class="co-sum-text">
+                <small>{{ cartCount() }} {{ 'COMMON.ITEMS' | translate }}
+                  @if ((deliveryConfig()?.delivery_fee_cents ?? 0) > 0) { · {{ 'DELIVERY_CHECKOUT.DELIVERY_FEE' | translate }} {{ formatCents(deliveryConfig()!.delivery_fee_cents) }} }</small>
+                <b>{{ formatCents(cartTotalCents()) }}</b>
+              </div>
+            </div>
+
+            <div class="co-actions">
+              <button type="button" class="co-btn co-btn-ghost" (click)="goToCart()" [disabled]="submitting()" [attr.aria-label]="'COMMON.BACK' | translate" [title]="'COMMON.BACK' | translate">←</button>
+              <button type="submit" class="co-btn co-btn-main" [disabled]="submitting()">
+                {{ submitting() ? ('COMMON.LOADING' | translate) : ('DELIVERY_CHECKOUT.CONTINUE_PAY' | translate) }}<i aria-hidden="true">→</i>
+              </button>
+            </div>
+          </form>
         </div>
       }
 
