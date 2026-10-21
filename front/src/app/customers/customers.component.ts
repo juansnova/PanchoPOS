@@ -10,13 +10,12 @@ import { SidebarComponent } from '../shared/sidebar.component';
 import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AppSelectComponent, AppSelectOption } from '../shared/app-select.component';
-import { AppDatePickerComponent } from '../shared/app-date-picker.component';
 import { formatMoneyCents } from '../shared/currency-symbol';
 
 @Component({
   selector: 'app-customers',
   standalone: true,
-  imports: [FormsModule, SidebarComponent, FocusFirstInputDirective, TranslateModule, AppDatePickerComponent, AppSelectComponent],
+  imports: [FormsModule, SidebarComponent, FocusFirstInputDirective, TranslateModule, AppSelectComponent],
   template: `
     <app-sidebar>
       <section class="cu-hero">
@@ -65,21 +64,6 @@ import { formatMoneyCents } from '../shared/currency-symbol';
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
-      }
-
-      @if (upcomingBirthdays().length > 0) {
-        <section class="cu-bday" aria-label="{{ 'CUSTOMERS.BDAY_SOON' | translate }}">
-          <span class="cu-bday-label">🎂 {{ 'CUSTOMERS.BDAY_SOON' | translate }}</span>
-          <div class="cu-bday-list">
-            @for (u of upcomingBirthdays(); track u.c.id) {
-              <span class="cu-bday-chip" [class.today]="u.days === 0">
-                <span class="cu-av cu-av-sm" [style.--h]="hue(u.c.name)">{{ initial(u.c.name) }}</span>
-                <b>{{ u.c.name }}</b>
-                <small>{{ u.days === 0 ? ('CUSTOMERS.BDAY_TODAY' | translate) : ('CUSTOMERS.BDAY_IN' | translate: { n: u.days }) }}</small>
-              </span>
-            }
-          </div>
-        </section>
       }
 
       @if (loading()) {
@@ -160,9 +144,6 @@ import { formatMoneyCents } from '../shared/currency-symbol';
 
               <div class="cu-tags">
                 @if (c.tax_id) { <span class="cu-tag cu-tag-id">{{ c.tax_id }}</span> }
-                @if (c.birth_date) {
-                  <span class="cu-tag cu-tag-bday" [class.soon]="birthdayDays(c) !== null && birthdayDays(c)! <= 14">🎂 {{ birthdayLabel(c) }}</span>
-                }
                 @if (c.address) { <span class="cu-tag" [title]="c.address">{{ c.address }}</span> }
               </div>
 
@@ -262,15 +243,6 @@ import { formatMoneyCents } from '../shared/currency-symbol';
                 </div>
               </div>
 
-              <div class="cu-sec">
-                <h4><i>4</i>{{ 'CUSTOMERS.SEC_EXTRA' | translate }}</h4>
-                <div class="form-group">
-                  <label for="cust-birth">{{ 'CUSTOMERS.BIRTH_DATE' | translate }}</label>
-                  <app-date-picker id="cust-birth" [(ngModel)]="form.birth_date" name="birth_date" />
-                  <p class="field-hint">{{ 'CUSTOMERS.BIRTH_DATE_HINT' | translate }}</p>
-                </div>
-              </div>
-
               <div class="cu-mfoot">
                 <button type="button" class="cu-ghost" (click)="closeModal()">{{ 'COMMON.CANCEL' | translate }}</button>
                 <button type="submit" class="cu-new" [disabled]="!canSave() || saving()">
@@ -340,14 +312,6 @@ import { formatMoneyCents } from '../shared/currency-symbol';
     .cu-sort { display: block; min-width: 190px; }
     @media (max-width: 700px) { .cu-hero { padding: 18px 16px; } .cu-stats > div { padding: 2px 12px; } }
 
-    /* birthdays */
-    .cu-bday { display: flex; align-items: center; gap: 12px 18px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 18px; border-radius: 22px; background: linear-gradient(135deg, #fef3c7, #fde68a); box-shadow: inset 0 0 0 1px rgba(180, 83, 9, .18); }
-    .cu-bday-label { font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #92400e; }
-    .cu-bday-list { display: flex; flex-wrap: wrap; gap: 8px; }
-    .cu-bday-chip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 14px 4px 4px; border-radius: 999px; background: rgba(255,255,255,.75); }
-    .cu-bday-chip b { font-size: .86rem; color: #78350f; }
-    .cu-bday-chip small { font-size: .72rem; font-weight: 800; color: #b45309; }
-    .cu-bday-chip.today { background: #fff; box-shadow: 0 0 0 2px #f59e0b; }
 
     /* avatar */
     .cu-av { --h: 20; flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; font-weight: 800; font-size: 1.15rem; color: hsl(var(--h) 55% 26%); background: hsl(var(--h) 70% 87%); box-shadow: inset 0 0 0 2px hsl(var(--h) 65% 75%); }
@@ -387,7 +351,6 @@ import { formatMoneyCents } from '../shared/currency-symbol';
     .cu-tags { display: flex; flex-wrap: wrap; gap: 6px; }
     .cu-tag { max-width: 100%; padding: 3px 11px; border-radius: 999px; font-size: .74rem; font-weight: 700; color: var(--color-text-muted); background: var(--color-bg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .cu-tag-id { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; color: var(--color-text); }
-    .cu-tag-bday.soon { color: #92400e; background: #fef3c7; }
     .cu-actions { display: flex; gap: 6px; margin-top: auto; padding-top: 12px; border-top: 1px dashed var(--color-border); }
     .cu-btn { min-height: 36px; padding: 0 16px; border: 0; border-radius: 999px; font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; color: var(--color-text); background: var(--color-bg); }
     .cu-btn:hover { color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, #fff); }
@@ -502,32 +465,6 @@ export class CustomersComponent implements OnInit {
     return list;
   });
 
-  /** Birthdays in the next 14 days (month/day only), closest first. */
-  upcomingBirthdays = computed(() =>
-    this.customers()
-      .map((c) => ({ c, days: this.birthdayDays(c) }))
-      .filter((x): x is { c: BillingCustomer; days: number } => x.days !== null && x.days <= 14)
-      .sort((a, b) => a.days - b.days)
-      .slice(0, 8),
-  );
-
-  /** Days until the next birthday (0 = today), or null when there is no date. */
-  birthdayDays(c: BillingCustomer): number | null {
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(c.birth_date || '');
-    if (!m) return null;
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    let next = new Date(today.getFullYear(), +m[2] - 1, +m[3]);
-    if (next < today) next = new Date(today.getFullYear() + 1, +m[2] - 1, +m[3]);
-    return Math.round((next.getTime() - today.getTime()) / 86400000);
-  }
-
-  birthdayLabel(c: BillingCustomer): string {
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(c.birth_date || '');
-    if (!m) return '';
-    return new Date(2000, +m[2] - 1, +m[3]).toLocaleDateString(undefined, { day: 'numeric', month: 'long' });
-  }
-
   lastVisitLabel(c: BillingCustomer): string {
     if (!c.last_visit) return '—';
     const d = new Date(c.last_visit);
@@ -577,7 +514,6 @@ export class CustomersComponent implements OnInit {
     address: string;
     email: string;
     phone: string;
-    birth_date: string;
     document_type: string;
   } = {
     name: '',
@@ -586,7 +522,6 @@ export class CustomersComponent implements OnInit {
     address: '',
     email: '',
     phone: '',
-    birth_date: '',
     document_type: 'CC'
   };
 
@@ -689,7 +624,6 @@ export class CustomersComponent implements OnInit {
         address: c.address ?? '',
         email: c.email ?? '',
         phone: c.phone ?? '',
-        birth_date: c.birth_date ?? '',
         document_type: c.document_type || 'CC'
       };
     } else {
@@ -700,7 +634,6 @@ export class CustomersComponent implements OnInit {
         address: '',
         email: '',
         phone: '',
-        birth_date: '',
         document_type: 'CC'
       };
     }
@@ -726,7 +659,6 @@ export class CustomersComponent implements OnInit {
       address: orNull(f.address),
       email: orNull(f.email),
       phone: orNull(f.phone),
-      birth_date: orNull(f.birth_date),
     };
     if (editing) {
       this.api.updateBillingCustomer(editing.id, payload).subscribe({
