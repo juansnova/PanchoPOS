@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { SidebarComponent } from '../../shared/sidebar.component';
 import { InventoryService } from '../inventory.service';
-import { StockLevel, LowStockItem, InventoryCategory, Warehouse, inventoryUnitKey, inventoryCategoryKey } from '../inventory.types';
+import { StockLevel, LowStockItem, InventoryCategory, Warehouse, WasteReport, CostAlert, CostHistory, inventoryUnitKey, inventoryCategoryKey } from '../inventory.types';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
@@ -36,6 +36,43 @@ import { TranslateModule } from '@ngx-translate/core';
             <div><b>{{ lowStockCount() }}</b><small>{{ 'INVENTORY.DASHBOARD.LOW_STOCK_ALERTS' | translate }}</small></div>
           </div>
           <div class="sk-kpi sk-kpi-main"><span class="sk-kpi-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.5 9a2.5 2.5 0 00-5 0c0 3.5 5 1.5 5 5a2.5 2.5 0 01-5 0M12 6v2M12 16v2"/></svg></span><div><b>{{ formatCurrency(totalValue()) }}</b><small>{{ 'INVENTORY.ITEMS.TOTAL_VALUE' | translate }}</small></div></div>
+        </div>
+
+        <div class="sk-insights">
+          <section class="sk-ins sk-ins-waste">
+            <h2>🗑️ {{ 'INVENTORY.DASHBOARD.WASTE_TITLE' | translate }}</h2>
+            @if (waste(); as w) {
+              @if (w.events === 0) {
+                <p class="sk-ins-empty">{{ 'INVENTORY.DASHBOARD.WASTE_EMPTY' | translate }}</p>
+              } @else {
+                <div class="sk-ins-big">{{ formatCurrency(w.total_cost_cents) }}<small>{{ w.events }} {{ 'INVENTORY.DASHBOARD.WASTE_EVENTS' | translate }}</small></div>
+                <ul class="sk-ins-list">
+                  @for (r of w.by_reason; track r.reason) {
+                    <li><span>{{ reasonLabel(r.reason) | translate }}</span><b>{{ formatCurrency(r.cost_cents) }}</b></li>
+                  }
+                </ul>
+                @if (w.by_item.length > 0) {
+                  <p class="sk-ins-sub">{{ w.by_item[0].name }} · {{ formatCurrency(w.by_item[0].cost_cents) }}</p>
+                }
+              }
+              <p class="sk-ins-hint">{{ 'INVENTORY.DASHBOARD.WASTE_HINT' | translate }}</p>
+            }
+          </section>
+
+          @if (costAlerts().length > 0) {
+            <section class="sk-ins sk-ins-price">
+              <h2>📈 {{ 'INVENTORY.DASHBOARD.PRICE_TITLE' | translate }}</h2>
+              <p class="sk-ins-hint">{{ 'INVENTORY.DASHBOARD.PRICE_HINT' | translate }}</p>
+              <ul class="sk-ins-list">
+                @for (a of costAlerts(); track a.item_id) {
+                  <li>
+                    <button type="button" class="sk-ins-link" (click)="openHistory(a.item_id)">{{ a.name }}</button>
+                    <span class="sk-up">▲ {{ a.change_pct }}%</span>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
         </div>
 
         @if (lowStockItems().length > 0) {
@@ -105,6 +142,31 @@ import { TranslateModule } from '@ngx-translate/core';
           }
         </section>
       </div>
+      @if (history(); as h) {
+        <div class="modal-overlay" (click)="history.set(null)">
+          <div class="modal sk-hist" (click)="$event.stopPropagation()">
+            <div class="sk-hist-head">
+              <div><h3>{{ h.name }}</h3><p>{{ 'INVENTORY.DASHBOARD.PRICE_HISTORY' | translate }}</p></div>
+              <button type="button" class="sk-hist-x" (click)="history.set(null)" [attr.aria-label]="'INVENTORY.DASHBOARD.CLOSE' | translate">×</button>
+            </div>
+            @if (h.points.length === 0) {
+              <p class="sk-ins-empty">{{ 'INVENTORY.DASHBOARD.PRICE_NO_HISTORY' | translate }}</p>
+            } @else {
+              <ol class="sk-hist-list">
+                @for (pt of h.points; track pt.received_at; let i = $index) {
+                  <li [class.first]="i === 0">
+                    <div><b>{{ formatCurrency(pt.unit_cost_cents) }}</b><small>{{ 'INVENTORY.DASHBOARD.PRICE_PER' | translate }} {{ unitKey(h.unit) | translate }}</small></div>
+                    <span>{{ shortDate(pt.received_at) }}</span>
+                    @if (pt.change_pct !== null) {
+                      <em [class.up]="pt.change_pct > 0" [class.down]="pt.change_pct < 0">{{ pt.change_pct > 0 ? '▲' : pt.change_pct < 0 ? '▼' : '=' }} {{ pt.change_pct > 0 ? '+' : '' }}{{ pt.change_pct }}%</em>
+                    }
+                  </li>
+                }
+              </ol>
+            }
+          </div>
+        </div>
+      }
     </app-sidebar>
   `,
   styleUrl: './stock-dashboard.component.scss'
@@ -144,7 +206,39 @@ export class StockDashboardComponent implements OnInit {
     this.loadData();
   }
 
+  waste = signal<WasteReport | null>(null);
+  costAlerts = signal<CostAlert[]>([]);
+  history = signal<CostHistory | null>(null);
+
+  reasonLabel(reason: string): string {
+    const map: Record<string, string> = {
+      spoiled: 'INVENTORY.ITEMS.REASON_SPOILED',
+      expired: 'INVENTORY.ITEMS.REASON_EXPIRED',
+      broken: 'INVENTORY.ITEMS.REASON_BROKEN',
+      theft: 'INVENTORY.ITEMS.REASON_THEFT',
+    };
+    return map[reason] ?? 'INVENTORY.ITEMS.REASON_OTHER';
+  }
+
+  openHistory(itemId: number) {
+    this.inventoryService.getCostHistory(itemId).subscribe({ next: (h) => this.history.set(h), error: () => {} });
+  }
+
+  shortDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  private loadInsights() {
+    const now = new Date();
+    const p = (n: number) => String(n).padStart(2, '0');
+    const from = `${now.getFullYear()}-${p(now.getMonth() + 1)}-01`;
+    const to = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
+    this.inventoryService.getWasteReport(from, to).subscribe({ next: (w) => this.waste.set(w), error: () => {} });
+    this.inventoryService.getCostAlerts().subscribe({ next: (a) => this.costAlerts.set(a), error: () => {} });
+  }
+
   loadData() {
+    this.loadInsights();
     this.loading.set(true);
     const warehouseId = this.warehouseFilter ? Number(this.warehouseFilter) : null;
     this.inventoryService.getStockLevels({ warehouseId }).subscribe({

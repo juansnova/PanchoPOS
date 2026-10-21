@@ -92,7 +92,33 @@ export interface StockAdjustment {
     unit: UnitOfMeasure;
     adjustment_type: 'adjustment_add' | 'adjustment_subtract' | 'waste';
     notes?: string | null;
+    reason?: string | null;
     warehouse_id?: number | null;
+}
+
+export interface WasteReport {
+    from_date: string;
+    to_date: string;
+    total_cost_cents: number;
+    events: number;
+    by_reason: { reason: string; count: number; cost_cents: number }[];
+    by_item: { item_id: number; name: string; unit: string; quantity: number; cost_cents: number }[];
+}
+
+export interface CostAlert {
+    item_id: number;
+    name: string;
+    unit: string;
+    unit_cost_cents: number;
+    change_pct: number;
+    received_at: string;
+}
+
+export interface CostHistory {
+    item_id: number;
+    name: string;
+    unit: string;
+    points: { received_at: string; unit_cost_cents: number; quantity: number; change_pct: number | null }[];
 }
 
 // ============ WAREHOUSES ============

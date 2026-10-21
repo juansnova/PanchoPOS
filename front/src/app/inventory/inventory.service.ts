@@ -13,6 +13,9 @@ import {
     InventoryItem,
     InventoryItemCreate,
     InventoryItemUpdate,
+    WasteReport,
+    CostAlert,
+    CostHistory,
     StockAdjustment,
     Warehouse,
     PurchaseOrder,
@@ -74,6 +77,19 @@ export class InventoryService {
         adjustment: StockAdjustment
     ): Observable<{ status: string; item_id: number; new_quantity: number; unit: string; transaction_id: number; warehouse_id?: number | null }> {
         return this.http.post<any>(`${this.apiUrl}/items/${id}/adjust`, adjustment);
+    }
+
+    getWasteReport(fromDate: string, toDate: string): Observable<WasteReport> {
+        const params = new HttpParams().set('from_date', fromDate).set('to_date', toDate);
+        return this.http.get<WasteReport>(`${this.apiUrl}/waste-report`, { params });
+    }
+
+    getCostAlerts(): Observable<CostAlert[]> {
+        return this.http.get<CostAlert[]>(`${this.apiUrl}/cost-alerts`);
+    }
+
+    getCostHistory(itemId: number): Observable<CostHistory> {
+        return this.http.get<CostHistory>(`${this.apiUrl}/items/${itemId}/cost-history`);
     }
 
     // ============ WAREHOUSES ============

@@ -357,6 +357,13 @@ import {
                       <app-select id="adjust_unit" formControlName="unit" [options]="unitRichOptions()" [searchable]="false" />
                     </div>
                   </div>
+                  @if (adjustType() === 'waste') {
+                    <div class="ad-reasons" role="radiogroup" [attr.aria-label]="'INVENTORY.ITEMS.WASTE_REASON' | translate">
+                      @for (r of wasteReasons; track r.key) {
+                        <button type="button" class="ad-reason" [class.on]="wasteReason() === r.key" (click)="wasteReason.set(r.key)">{{ r.emoji }} {{ r.label | translate }}</button>
+                      }
+                    </div>
+                  }
                   @if (adjustResult(); as r) {
                     <div class="ad-result" [attr.data-type]="adjustType()">
                       <span>{{ adjustingItem()?.current_quantity?.toFixed(2) }}</span>
@@ -610,11 +617,21 @@ export class InventoryItemsComponent implements OnInit {
       notes: '',
     });
     this.adjustType.set('adjustment_add');
+    this.wasteReason.set('spoiled');
     this.showAdjustModal.set(true);
   }
 
   /** Current adjustment type (signal mirror of the form so the template and result react). */
   adjustType = signal('adjustment_add');
+
+  wasteReason = signal('spoiled');
+  readonly wasteReasons = [
+    { key: 'spoiled', emoji: '🤢', label: 'INVENTORY.ITEMS.REASON_SPOILED' },
+    { key: 'expired', emoji: '📅', label: 'INVENTORY.ITEMS.REASON_EXPIRED' },
+    { key: 'broken', emoji: '💥', label: 'INVENTORY.ITEMS.REASON_BROKEN' },
+    { key: 'theft', emoji: '🕵️', label: 'INVENTORY.ITEMS.REASON_THEFT' },
+    { key: 'other', emoji: '❔', label: 'INVENTORY.ITEMS.REASON_OTHER' },
+  ];
 
   /** Quantity +/- buttons (step depends on the unit). */
   stepAdjustQty(dir: 1 | -1): void {
@@ -681,6 +698,7 @@ export class InventoryItemsComponent implements OnInit {
       unit: data.unit,
       adjustment_type: data.adjustment_type,
       notes: data.notes || undefined,
+      reason: data.adjustment_type === 'waste' ? this.wasteReason() : undefined,
       warehouse_id: data.warehouse_id || undefined,
     };
 
