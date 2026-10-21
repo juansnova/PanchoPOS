@@ -152,7 +152,7 @@
           </button>
           <div class="featured-scroll" #fs (scroll)="onFeatScroll(fs)">
               @for (product of featuredProducts(); track product.id) {
-              <div class="featured-card" [class.in-cart]="cartQtyFor(product.id) > 0">
+              <div class="featured-card" [class.in-cart]="cartQtyFor(product.id) > 0" (click)="openDetail(product)">
                 <div class="featured-image-container">
                   <img [src]="productImageUrl(product.image_url)" class="featured-image" [alt]="product.name" loading="lazy" (error)="$any($event.target).style.display = 'none'" />
                   <div class="featured-overlay">
@@ -163,7 +163,7 @@
                   <h3 class="featured-name">{{ product.name }}</h3>
                   <span class="featured-price">{{ formatPrice(product) }}</span>
                 </div>
-                <button class="quick-add-btn" (click)="addToCart(product)" [attr.aria-label]="('DELIVERY_CHECKOUT.ADD' | translate) + ' ' + product.name">
+                <button class="quick-add-btn" (click)="addToCart(product); $event.stopPropagation()" [attr.aria-label]="('DELIVERY_CHECKOUT.ADD' | translate) + ' ' + product.name">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
@@ -190,7 +190,7 @@
               </header>
               <div class="products-grid">
                 @for (product of cat.products; track product.id; let pi = $index) {
-                  <article class="product-card dish" [class.unavailable]="!product.available" [class.in-cart]="cartQtyFor(product.id) > 0">
+                  <article class="product-card dish dish-clickable" [class.unavailable]="!product.available" [class.in-cart]="cartQtyFor(product.id) > 0" (click)="openDetail(product)" tabindex="0" (keydown.enter)="openDetail(product)">
                     <div class="product-image-container dish-photo" [attr.data-initial]="product.name.charAt(0)">
                       @if (product.image_url) {
                         <img
@@ -226,7 +226,8 @@
                       @if (product.description?.trim()) {
                         <p class="product-description">{{ product.description }}</p>
                       }
-                      <div class="dish-foot">
+                      <div class="dish-foot" (click)="$event.stopPropagation()">
+                        <span class="dish-more" (click)="openDetail(product); $event.stopPropagation()">{{ 'MENU.VIEW_DETAIL' | translate }} <i>→</i></span>
                         @if (!product.available) {
                           <span class="unavailable-badge">{{ 'DELIVERY_CHECKOUT.UNAVAILABLE' | translate }}</span>
                         } @else if (cartQtyFor(product.id) > 0) {
@@ -534,6 +535,61 @@
         <app-legal-links [termsUrl]="tenant()?.terms_of_service_url" [privacyUrl]="tenant()?.privacy_policy_url" />
       </div>
     </main>
+
+    @if (selectedProduct(); as sp) {
+      <div class="product-detail-overlay" (click)="closeDetail()">
+        <div class="product-detail-sheet" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+          <div class="detail-handle"><span class="handle-bar"></span></div>
+          <button type="button" class="detail-close-btn" (click)="closeDetail()" [attr.aria-label]="'COMMON.CLOSE' | translate">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+          </button>
+          <div class="detail-content">
+            <div class="detail-image-container">
+              @if (sp.image_url) {
+                <img [src]="productImageUrl(sp.image_url)" class="detail-image" [alt]="sp.name" />
+              } @else {
+                <div class="detail-image-placeholder">
+                  <span class="dish-initial" aria-hidden="true">{{ sp.name.charAt(0) }}</span>
+                </div>
+              }
+              <div class="dt-fade" aria-hidden="true"></div>
+            </div>
+            <div class="detail-info">
+              @if (sp.category) {
+                <p class="dt-eyebrow"><i></i>{{ getCategoryLabel(sp.category) }}@if (sp.subcategory?.trim()) { <em>·</em> {{ sp.subcategory }} }</p>
+              }
+              <div class="detail-header">
+                <h2 class="detail-name">{{ sp.name }}</h2>
+                <span class="detail-price">{{ formatPrice(sp) }}</span>
+              </div>
+              @if (stockLeft(sp); as left) {
+                <p class="stock-left-badge stock-left-badge--detail">{{ 'MENU.STOCK_ONLY_LEFT' | translate:{ count: left } }}</p>
+              }
+              @if (sp.description?.trim()) {
+                <div class="detail-section">
+                  <h4>{{ 'MENU.DESCRIPTION' | translate }}</h4>
+                  <p>{{ sp.description }}</p>
+                </div>
+              }
+            </div>
+          </div>
+          <div class="detail-footer dt-foot">
+            @if (sp.available) {
+              <div class="dt-qty" role="group" [attr.aria-label]="'MENU.QUANTITY' | translate">
+                <button type="button" (click)="changeDetailQty(-1)" [disabled]="detailQty() <= 1" aria-label="-">−</button>
+                <span aria-live="polite">{{ detailQty() }}</span>
+                <button type="button" (click)="changeDetailQty(1)" [disabled]="detailQty() >= 20" aria-label="+">+</button>
+              </div>
+              <button type="button" class="detail-add-btn" (click)="addFromDetail()">
+                {{ 'MENU.ADD_TO_CART' | translate }} · {{ formatCents(sp.price_cents * detailQty()) }}
+              </button>
+            } @else {
+              <span class="unavailable-badge">{{ 'DELIVERY_CHECKOUT.UNAVAILABLE' | translate }}</span>
+            }
+          </div>
+        </div>
+      </div>
+    }
 
     @if (showFloatingCheckoutBar()) {
       <div class="delivery-floating-bar" role="region" [attr.aria-label]="'DELIVERY_CHECKOUT.FLOATING_BAR_ARIA' | translate">

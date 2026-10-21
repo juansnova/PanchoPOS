@@ -503,6 +503,44 @@ export class PublicMenuComponent implements OnInit {
 
   // ---- Cart ----
 
+  // ---------------------------------------------------------------- product detail sheet
+  selectedProduct = signal<PublicTenantMenuProduct | null>(null);
+  detailQty = signal(1);
+
+  openDetail(product: PublicTenantMenuProduct): void {
+    this.detailQty.set(1);
+    this.selectedProduct.set(product);
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeDetail(): void {
+    this.selectedProduct.set(null);
+    document.body.style.overflow = '';
+  }
+
+  changeDetailQty(delta: number): void {
+    this.detailQty.set(Math.min(20, Math.max(1, this.detailQty() + delta)));
+  }
+
+  addFromDetail(): void {
+    const p = this.selectedProduct();
+    if (!p || !p.available) return;
+    const qty = this.detailQty();
+    const current = this.cartQtyFor(p.id);
+    if (current > 0) {
+      this.setQty(p.id, current + qty);
+    } else {
+      this.addToCart(p);
+      if (qty > 1) this.setQty(p.id, qty);
+    }
+    this.closeDetail();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.selectedProduct()) this.closeDetail();
+  }
+
   addToCart(product: PublicTenantMenuProduct): void {
     if (!product.available) return;
     this.cart.update((lines) => {
