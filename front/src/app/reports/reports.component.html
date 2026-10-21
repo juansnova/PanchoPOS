@@ -1,52 +1,65 @@
 <app-sidebar>
   <div class="reports-page" data-testid="reports-page">
-  <div class="page-header">
-    <div class="header-text">
+  <header class="rp-hero">
+    <div class="rp-hero-left">
+      <span class="rp-eyebrow">{{ 'REPORTS.EYEBROW' | translate }}</span>
       <h1>{{ 'REPORTS.TITLE' | translate }}</h1>
       <p class="subtitle">{{ 'REPORTS.SUBTITLE' | translate }}</p>
+      <div class="rp-readout" aria-live="polite">
+        <strong>{{ rangeInfo().days }}</strong>
+        <div>
+          <span>{{ (rangeInfo().days === 1 ? 'REPORTS.RANGE_DAY' : 'REPORTS.RANGE_DAYS') | translate }}</span>
+          <em>{{ rangeInfo().text }}</em>
+        </div>
+      </div>
     </div>
-    <div class="header-actions">
-      <div class="date-range">
-        <label>{{ 'REPORTS.FROM' | translate }}</label>
-        <app-date-picker class="rp-dp" [compact]="true" [pill]="true" [clearable]="false" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)" />
+
+    <div class="rp-hero-right">
+      <div class="rp-dates">
+        <div class="rp-field">
+          <label>{{ 'REPORTS.FROM' | translate }}</label>
+          <app-date-picker [compact]="true" [clearable]="false" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)" />
+        </div>
+        <span class="rp-arrow" aria-hidden="true">→</span>
+        <div class="rp-field">
+          <label>{{ 'REPORTS.TO' | translate }}</label>
+          <app-date-picker [compact]="true" [clearable]="false" [min]="fromDate()" [ngModel]="toDate()" (ngModelChange)="toDate.set($event)" />
+        </div>
       </div>
-      <div class="date-range">
-        <label>{{ 'REPORTS.TO' | translate }}</label>
-        <app-date-picker class="rp-dp" [compact]="true" [pill]="true" [clearable]="false" [min]="fromDate()" [ngModel]="toDate()" (ngModelChange)="toDate.set($event)" />
+
+      @let rail = rangeRail();
+      <div class="rp-rail" aria-hidden="true">
+        <div class="rp-rail-track">
+          <i class="rp-rail-sel" [class.cut-l]="rail.before" [class.cut-r]="rail.after" [style.left.%]="rail.left" [style.width.%]="rail.width"></i>
+        </div>
+        <div class="rp-rail-labels"><span>{{ 'REPORTS.RAIL_START' | translate }}</span><span>{{ 'REPORTS.RAIL_END' | translate }}</span></div>
       </div>
-      <button class="btn btn-primary" (click)="loadReport()" [disabled]="loading()">
-        {{ loading() ? ('REPORTS.LOADING' | translate) : ('REPORTS.REFRESH' | translate) }}
-      </button>
-      <div class="export-buttons">
-        <button class="btn btn-secondary" (click)="exportExcel()" [disabled]="exporting() || !report()">
+
+      <div class="rp-presets" data-testid="reports-date-presets" role="group" [attr.aria-label]="'REPORTS.PRESETS_LABEL' | translate">
+        @for (pr of presetList; track pr.key) {
+          <button type="button" [class.on]="activePreset() === pr.key" (click)="applyDatePreset(pr.key)" [disabled]="loading()">
+            {{ pr.label | translate }}
+          </button>
+        }
+      </div>
+
+      <div class="rp-actions">
+        <button type="button" class="rp-go" (click)="loadReport()" [disabled]="loading()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" /></svg>
+          {{ loading() ? ('REPORTS.LOADING' | translate) : ('REPORTS.REFRESH' | translate) }}
+        </button>
+        <span class="rp-spacer"></span>
+        <button type="button" class="rp-ghost" (click)="exportExcel()" [disabled]="exporting() || !report()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 20h16" /></svg>
           {{ exporting() ? ('REPORTS.EXPORTING' | translate) : ('REPORTS.EXPORT_EXCEL' | translate) }}
         </button>
-        <button class="btn btn-secondary" (click)="exportDetailedExcel()" [disabled]="exportingDetailed() || !report()">
+        <button type="button" class="rp-ghost" (click)="exportDetailedExcel()" [disabled]="exportingDetailed() || !report()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h6" /></svg>
           {{ exportingDetailed() ? ('REPORTS.EXPORTING' | translate) : ('REPORTS.EXPORT_DETAILED_EXCEL' | translate) }}
         </button>
       </div>
     </div>
-    <div class="date-presets-bar" data-testid="reports-date-presets" role="group" [attr.aria-label]="'REPORTS.PRESETS_LABEL' | translate">
-      <span class="presets-label">{{ 'REPORTS.PRESETS_LABEL' | translate }}</span>
-      <div class="date-presets">
-        <button type="button" class="btn btn-secondary btn-sm" (click)="applyDatePreset('today')" [disabled]="loading()">
-          {{ 'REPORTS.PRESET_TODAY' | translate }}
-        </button>
-        <button type="button" class="btn btn-secondary btn-sm" (click)="applyDatePreset('last7')" [disabled]="loading()">
-          {{ 'REPORTS.PRESET_LAST_7_DAYS' | translate }}
-        </button>
-        <button type="button" class="btn btn-secondary btn-sm" (click)="applyDatePreset('thisWeek')" [disabled]="loading()">
-          {{ 'REPORTS.PRESET_THIS_WEEK' | translate }}
-        </button>
-        <button type="button" class="btn btn-secondary btn-sm" (click)="applyDatePreset('thisMonth')" [disabled]="loading()">
-          {{ 'REPORTS.PRESET_THIS_MONTH' | translate }}
-        </button>
-        <button type="button" class="btn btn-secondary btn-sm" (click)="applyDatePreset('previousMonth')" [disabled]="loading()">
-          {{ 'REPORTS.PRESET_PREVIOUS_MONTH' | translate }}
-        </button>
-      </div>
-    </div>
-  </div>
+  </header>
 
   @if (error()) {
     <div class="error-banner">{{ error() }}</div>

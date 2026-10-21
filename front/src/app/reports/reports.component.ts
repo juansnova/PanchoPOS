@@ -207,43 +207,91 @@ export class ReportsComponent implements OnInit {
     return this.addLocalDays(s, delta);
   }
 
-  applyDatePreset(preset: ReportsDatePreset): void {
+  /** Date range a quick-range button stands for (local days). */
+  private presetRange(preset: ReportsDatePreset): [Date, Date] {
     const today = this.startOfLocalDay(new Date());
-    let from: Date;
-    let to: Date;
     switch (preset) {
       case 'today':
-        from = today;
-        to = today;
-        break;
+        return [today, today];
       case 'last7':
-        from = this.addLocalDays(today, -6);
-        to = today;
-        break;
+        return [this.addLocalDays(today, -6), today];
       case 'thisWeek': {
         const mon = this.mondayOfWeekContaining(today);
-        from = mon;
-        to = this.addLocalDays(mon, 6);
-        break;
+        return [mon, this.addLocalDays(mon, 6)];
       }
       case 'thisMonth':
-        from = new Date(today.getFullYear(), today.getMonth(), 1);
-        to = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        break;
+        return [new Date(today.getFullYear(), today.getMonth(), 1), new Date(today.getFullYear(), today.getMonth() + 1, 0)];
       case 'previousMonth': {
-        const firstThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const lastPrev = this.addLocalDays(firstThisMonth, -1);
-        from = new Date(lastPrev.getFullYear(), lastPrev.getMonth(), 1);
-        to = lastPrev;
-        break;
+        const lastPrev = this.addLocalDays(new Date(today.getFullYear(), today.getMonth(), 1), -1);
+        return [new Date(lastPrev.getFullYear(), lastPrev.getMonth(), 1), lastPrev];
       }
-      default:
-        return;
     }
+  }
+
+  applyDatePreset(preset: ReportsDatePreset): void {
+    const [from, to] = this.presetRange(preset);
     this.fromDate.set(this.fmtDate(from));
     this.toDate.set(this.fmtDate(to));
     this.loadReport();
   }
+
+  readonly presetList: { key: ReportsDatePreset; label: string }[] = [
+    { key: 'today', label: 'REPORTS.PRESET_TODAY' },
+    { key: 'last7', label: 'REPORTS.PRESET_LAST_7_DAYS' },
+    { key: 'thisWeek', label: 'REPORTS.PRESET_THIS_WEEK' },
+    { key: 'thisMonth', label: 'REPORTS.PRESET_THIS_MONTH' },
+    { key: 'previousMonth', label: 'REPORTS.PRESET_PREVIOUS_MONTH' },
+  ];
+
+  /** Which quick range (if any) matches the dates currently selected. */
+  activePreset = computed<ReportsDatePreset | null>(() => {
+    const f = this.fromDate();
+    const to = this.toDate();
+    for (const p of this.presetList) {
+      const [a, b] = this.presetRange(p.key);
+      if (this.fmtDate(a) === f && this.fmtDate(b) === to) return p.key;
+    }
+    return null;
+  });
+
+  private parseLocalDay(v: string): Date | null {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v);
+    return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+  }
+
+  /** Big readout in the header: length of the range and its dates. */
+  rangeInfo = computed(() => {
+    void this.reportIntlRevision();
+    const f = this.parseLocalDay(this.fromDate());
+    const t = this.parseLocalDay(this.toDate());
+    if (!f || !t || t < f) return { days: 0, text: '—' };
+    const loc = intlLocaleFromTranslate(this.translate);
+    const fmt = (d: Date, withYear: boolean) =>
+      d.toLocaleDateString(loc, { day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}) }).replace(/\./g, '');
+    const days = Math.round((t.getTime() - f.getTime()) / 86400000) + 1;
+    return { days, text: `${fmt(f, f.getFullYear() !== t.getFullYear())} → ${fmt(t, true)}` };
+  });
+
+  /** Position of the selected range on a 90-day rail ending today. */
+  rangeRail = computed(() => {
+    const span = 90;
+    const today = this.startOfLocalDay(new Date());
+    const start = this.addLocalDays(today, -(span - 1));
+    const f = this.parseLocalDay(this.fromDate());
+    const t = this.parseLocalDay(this.toDate());
+    if (!f || !t) return { left: 0, width: 0, before: false, after: false };
+    const day = 86400000;
+    const l = (f.getTime() - start.getTime()) / day;
+    const r = (t.getTime() - start.getTime()) / day + 1;
+    const left = Math.min(Math.max(l, 0), span);
+    const right = Math.min(Math.max(r, 0), span);
+    return {
+      left: (left / span) * 100,
+      width: Math.max(1.2, ((right - left) / span) * 100),
+      before: l < 0,
+      after: r > span,
+    };
+  });
 
   loadReport() {
     const from = this.fromDate();
