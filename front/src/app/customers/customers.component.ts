@@ -8,14 +8,15 @@ import { ApiService, BillingCustomer } from '../services/api.service';
 import { PermissionService } from '../services/permission.service';
 import { SidebarComponent } from '../shared/sidebar.component';
 import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { AppSelectComponent, AppSelectOption } from '../shared/app-select.component';
 import { AppDatePickerComponent } from '../shared/app-date-picker.component';
 import { formatMoneyCents } from '../shared/currency-symbol';
 
 @Component({
   selector: 'app-customers',
   standalone: true,
-  imports: [FormsModule, SidebarComponent, FocusFirstInputDirective, TranslateModule, AppDatePickerComponent],
+  imports: [FormsModule, SidebarComponent, FocusFirstInputDirective, TranslateModule, AppDatePickerComponent, AppSelectComponent],
   template: `
     <app-sidebar>
       <section class="cu-hero">
@@ -53,12 +54,7 @@ import { formatMoneyCents } from '../shared/currency-symbol';
               </button>
             }
           </div>
-          <select class="cu-sort" [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)" [attr.aria-label]="'CUSTOMERS.SORT' | translate">
-            <option value="spent">{{ 'CUSTOMERS.SORT_SPENT' | translate }}</option>
-            <option value="visits">{{ 'CUSTOMERS.SORT_VISITS' | translate }}</option>
-            <option value="recent">{{ 'CUSTOMERS.SORT_RECENT' | translate }}</option>
-            <option value="name">{{ 'CUSTOMERS.SORT_NAME' | translate }}</option>
-          </select>
+<app-select class="cu-sort" [options]="sortOptions" [searchable]="false" [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)" [ngModelOptions]="{ standalone: true }" />
         </div>
       </section>
 
@@ -306,7 +302,7 @@ import { formatMoneyCents } from '../shared/currency-symbol';
     .cu-chip:hover { border-color: var(--color-primary); color: var(--color-primary); }
     .cu-chip.on { color: #fff; border-color: transparent; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 66%, #000)); box-shadow: 0 10px 16px -10px var(--color-primary); }
     .cu-chip.on b { color: var(--color-primary); background: #fff; }
-    .cu-sort { min-height: 40px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 999px; background: #fff; font: inherit; font-weight: 700; color: var(--color-text); }
+    .cu-sort { display: block; min-width: 190px; }
     @media (max-width: 700px) { .cu-hero { padding: 18px 16px; } .cu-stats > div { padding: 2px 12px; } }
 
     /* birthdays */
@@ -397,6 +393,18 @@ import { formatMoneyCents } from '../shared/currency-symbol';
 export class CustomersComponent implements OnInit {
   private api = inject(ApiService);
   private permissions = inject(PermissionService);
+  private translate = inject(TranslateService);
+
+  sortOptions: AppSelectOption[] = [];
+
+  private buildSortOptions(): AppSelectOption[] {
+    return [
+    { value: 'spent', label: this.translate.instant('CUSTOMERS.SORT_SPENT'), tone: 'a', svg: '<circle cx="12" cy="12" r="9"/><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.5 0-2.5.8-2.5 1.8 0 2.4 5 1.2 5 3.7 0 1-1 1.8-2.5 1.8-1.1 0-2.1-.5-2.6-1.5M12 6.5V8m0 8v1.5"/>' },
+    { value: 'visits', label: this.translate.instant('CUSTOMERS.SORT_VISITS'), tone: 'c', svg: '<path d="M12 21s-7-4.4-9.3-9A5 5 0 0 1 12 6a5 5 0 0 1 9.3 6c-2.3 4.6-9.3 9-9.3 9z"/>' },
+    { value: 'recent', label: this.translate.instant('CUSTOMERS.SORT_RECENT'), tone: 'b', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>' },
+    { value: 'name', label: this.translate.instant('CUSTOMERS.SORT_NAME'), tone: 'a', svg: '<path d="M4 7h7M4 12h5M4 17h3M15 5v14M12 16l3 3 3-3"/>' },
+    ];
+  }
 
   customers = signal<BillingCustomer[]>([]);
   loading = signal(true);
@@ -531,6 +539,9 @@ export class CustomersComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.translate
+      .get('CUSTOMERS.SORT_SPENT')
+      .subscribe(() => (this.sortOptions = this.buildSortOptions()));
     this.load();
   }
 
