@@ -235,7 +235,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                   <!-- Basic Info -->
                   <div class="form-group">
                     <label for="name">{{ 'SETTINGS.BUSINESS_NAME' | translate }} *</label>
-                    <input type="text" id="name" [(ngModel)]="formData.name" name="name" required />
+                    <input type="text" id="name" [(ngModel)]="formData.name" name="name" required readonly tabindex="-1" class="st-locked" />
                   </div>
 
                   <div class="form-group">
@@ -2224,6 +2224,8 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     @media (prefers-reduced-motion: reduce) { .st-savebar.dirty .st-save-state i { animation: none; } }
     @media (max-width: 560px) { .st-savebar { border-radius: 26px; padding: 12px; } .st-save-actions { width: 100%; } .st-save-actions .btn { flex: 1; } }
 
+    .form-group input.st-locked { color: #8a817a; background: #efeae3; border-color: #e0d9cf; cursor: not-allowed; font-weight: 700; }
+    .form-group input.st-locked:focus { box-shadow: none; border-color: #e0d9cf; }
     .toast { top: auto; bottom: 90px; border-radius: 999px; padding: 12px 18px 12px 22px; background: #1c1917; font-weight: 700; box-shadow: 0 24px 40px -18px rgba(0,0,0,.6); }
     .toast.success { background: #166534; }
     .toast.error { background: #991b1b; }
@@ -2777,7 +2779,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
       next: (settings) => {
         this.settings.set(settings);
         this.formData = {
-          name: settings.name || '',
+          name: 'Pancho Panza', // fixed brand name: shown read-only in Settings
           business_type: settings.business_type || null,
           description: settings.description || null,
           phone: settings.phone || null,
