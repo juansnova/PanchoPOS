@@ -159,6 +159,7 @@ class TestPublicSatisfechoDelivery(PgClientTestCase):
         self.assertEqual(track.json()["status"], "received")
         self.assertEqual(track.json()["delivery_fee_cents"], 200)
         self.assertEqual(track.json()["total_cents"], 1400)
+        self.assertTrue(all("image_url" in it for it in track.json()["items"]))
 
         bad = self.client.get(
             f"/public/orders/{order_id}/delivery-status",

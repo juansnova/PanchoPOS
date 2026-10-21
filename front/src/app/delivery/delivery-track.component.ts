@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ApiService, PublicDeliveryTrackStatus } from '../services/api.service';
 import { formatMoneyCents } from '../shared/currency-symbol';
+import { environment } from '../../environments/environment';
 
 const TRACK_POLL_MS = 5000;
 
@@ -104,6 +105,13 @@ export class DeliveryTrackComponent implements OnInit, OnDestroy {
     const cur = this.stepIndex(current);
     const s = STATUS_STEPS.indexOf(step as (typeof STATUS_STEPS)[number]);
     return cur >= 0 && s >= 0 && s <= cur;
+  }
+
+  itemImage(url: string | null | undefined): string | null {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const base = environment.apiUrl.replace(/\/$/, '');
+    return url.startsWith('/') ? base + url : `${base}/${url}`;
   }
 
   formatCents(cents: number): string {

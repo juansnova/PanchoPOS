@@ -55,7 +55,11 @@
           @for (item of s.items; track item.product_name) {
             <li>
               <span class="oi-thumb" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h0A2.5 2.5 0 0 0 9 9V3M6.5 3v18"/><path d="M20 21V3c-2.8 1.2-4.5 4-4.5 7.5 0 1.4 1 2.5 2.3 2.5H20"/></svg>
+                @if (itemImage(item.image_url); as img) {
+                  <img [src]="img" alt="" />
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h0A2.5 2.5 0 0 0 9 9V3M6.5 3v18"/><path d="M20 21V3c-2.8 1.2-4.5 4-4.5 7.5 0 1.4 1 2.5 2.3 2.5H20"/></svg>
+                }
               </span>
               <span class="name">{{ item.product_name }}</span>
               <span class="oi-end">

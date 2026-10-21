@@ -1151,6 +1151,17 @@ def get_public_delivery_order_status(
     subtotal = sum((item.price_cents or 0) * item.quantity for item in active_items)
     fee = order_delivery_fee_cents(order)
     tenant = session.get(models.Tenant, order.tenant_id)
+    from app.public_tenant_menu import resolve_product_image_url
+
+    product_ids = {i.product_id for i in active_items if i.product_id is not None}
+    image_by_product: dict[int, str | None] = {}
+    if product_ids:
+        for prod in session.exec(
+            select(models.Product).where(models.Product.id.in_(product_ids))
+        ).all():
+            image_by_product[prod.id] = resolve_product_image_url(
+                order.tenant_id, prod.image_filename
+            )
     return {
         "order_id": order.id,
         "tenant_id": order.tenant_id,
@@ -1164,6 +1175,7 @@ def get_public_delivery_order_status(
                 "product_name": i.product_name,
                 "quantity": i.quantity,
                 "price_cents": i.price_cents,
+                "image_url": image_by_product.get(i.product_id),
             }
             for i in active_items
         ],

@@ -1210,7 +1210,7 @@ export interface PublicDeliveryTrackStatus {
   order_status: string;
   paid: boolean;
   delivery_address?: string | null;
-  items?: { product_name: string; quantity: number; price_cents: number }[];
+  items?: { product_name: string; quantity: number; price_cents: number; image_url?: string | null }[];
   subtotal_cents: number;
   delivery_fee_cents: number;
   total_cents: number;
