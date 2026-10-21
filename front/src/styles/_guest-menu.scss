@@ -776,9 +776,9 @@
 // ============================================
 .menu-page .category-nav {
   padding: 10px 0;
-  background: linear-gradient(var(--color-bg) 55%, transparent);
-  border-bottom: 0;
-  box-shadow: none;
+  background: var(--color-bg);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-primary) 10%, var(--gm-line));
+  box-shadow: 0 14px 22px -20px rgba(23, 18, 16, 0.35);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
