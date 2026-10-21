@@ -581,12 +581,22 @@
 
     @if (showFloatingCheckoutBar()) {
       <div class="delivery-floating-bar" role="region" [attr.aria-label]="'DELIVERY_CHECKOUT.FLOATING_BAR_ARIA' | translate">
+        <div class="dfb-thumbs" aria-hidden="true">
+          @for (l of cart().slice(0, 3); track l.product.id) {
+          <span class="dfb-thumb">
+            @if (l.product.image_url) { <img [src]="productImageUrl(l.product.image_url)" alt="" /> } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h0A2.5 2.5 0 0 0 9 9V3M6.5 3v18"/><path d="M20 21V3c-2.8 1.2-4.5 4-4.5 7.5 0 1.4 1 2.5 2.3 2.5H20"/></svg>
+            }
+          </span>
+          }
+          <span class="dfb-badge">{{ cartCount() }}</span>
+        </div>
         <div class="delivery-floating-meta">
           <span class="delivery-floating-count">{{ cartCount() }} {{ 'COMMON.ITEMS' | translate }}</span>
           <strong class="delivery-floating-total">{{ formatCents(cartTotalCents()) }}</strong>
         </div>
         <button type="button" class="btn btn-primary delivery-floating-cta" (click)="onFloatingCta()">
-          {{ 'DELIVERY_CHECKOUT.VIEW_CART' | translate }}
+          {{ 'DELIVERY_CHECKOUT.VIEW_CART' | translate }}<i aria-hidden="true">→</i>
         </button>
       </div>
     }
