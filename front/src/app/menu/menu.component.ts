@@ -133,6 +133,8 @@ export class MenuComponent implements OnInit, OnDestroy {
   /** Brief highlight for a specific cart line. */
   justAddedCartKeys = signal<Set<string>>(new Set());
   selectedProduct = signal<Product | null>(null);
+  /** Quantity chosen in the product detail sheet. */
+  detailQty = signal(1);
 
   // Customer identity
   customerName = signal('');
@@ -1014,6 +1016,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   openProductDetail(product: Product) {
+    this.detailQty.set(1);
     this.selectedProduct.set(product);
     document.body.style.overflow = 'hidden';
   }
@@ -1033,10 +1036,10 @@ export class MenuComponent implements OnInit, OnDestroy {
   // ============================================
   // CART OPERATIONS
   // ============================================
-  addToCart(product: Product) {
+  addToCart(product: Product, qty = 1) {
     const newLine: CartItem = {
       product,
-      quantity: 1,
+      quantity: qty,
       notes: '',
       sessionId: this.sessionId,
       customerName: this.customerName() || null,
@@ -1049,7 +1052,7 @@ export class MenuComponent implements OnInit, OnDestroy {
           session_id: this.sessionId,
           customer_name: this.customerName() || undefined,
           product_id: product.id!,
-          quantity: 1,
+          quantity: qty,
           source: product._source || undefined,
         })
         .subscribe({
@@ -1057,19 +1060,19 @@ export class MenuComponent implements OnInit, OnDestroy {
           error: () => {
             // Local fallback if shared cart write fails
             this.sharedCartEnabled.set(false);
-            this.addToCartLocal(product);
+            this.addToCartLocal(product, qty);
           },
         });
       return;
     }
 
-    this.addToCartLocal(product);
+    this.addToCartLocal(product, qty);
   }
 
-  private addToCartLocal(product: Product) {
+  private addToCartLocal(product: Product, qty = 1) {
     const newLine: CartItem = {
       product,
-      quantity: 1,
+      quantity: qty,
       notes: '',
       sessionId: this.sessionId,
     };
@@ -1078,7 +1081,7 @@ export class MenuComponent implements OnInit, OnDestroy {
       const existing = items.find(i => this.getCartLineKey(i) === lineKey);
       if (existing) {
         return items.map(i =>
-          this.getCartLineKey(i) === lineKey ? { ...i, quantity: i.quantity + 1 } : i
+          this.getCartLineKey(i) === lineKey ? { ...i, quantity: i.quantity + qty } : i
         );
       }
       return [...items, newLine];
@@ -1093,8 +1096,20 @@ export class MenuComponent implements OnInit, OnDestroy {
   addToCartFromDetail() {
     const product = this.selectedProduct();
     if (!product) return;
-    this.addToCart(product);
+    this.addToCart(product, this.detailQty());
     this.closeProductDetail();
+  }
+
+  changeDetailQty(delta: number): void {
+    this.detailQty.set(Math.min(20, Math.max(1, this.detailQty() + delta)));
+  }
+
+  /** "papa, yuca, res" -> ["papa", "yuca", "res"] for the ingredient chips. */
+  ingredientList(product: Product): string[] {
+    return (product.ingredients || '')
+      .split(/[,;·\n]/)
+      .map((x) => x.trim())
+      .filter(Boolean);
   }
 
   incrementItem(item: CartItem) {

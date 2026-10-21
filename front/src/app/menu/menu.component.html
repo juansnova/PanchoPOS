@@ -786,6 +786,7 @@
           </div>
           }
 
+          <div class="dt-fade" aria-hidden="true"></div>
           <!-- Badges -->
           <div class="detail-badges">
             @if (selectedProduct()!.wine_type) {
@@ -809,6 +810,9 @@
 
         <!-- Product Info -->
         <div class="detail-info">
+          @if (selectedProduct()!.category) {
+          <p class="dt-eyebrow"><i></i>{{ getCategoryLabel(selectedProduct()!.category!) }}@if (selectedProduct()!.subcategory) { <em>·</em> {{ getSubcategoryLabel(selectedProduct()!.subcategory!) }} }</p>
+          }
           <div class="detail-header">
             <h2 class="detail-name">{{ selectedProduct()!.name }}</h2>
             <span class="detail-price">
@@ -890,20 +894,29 @@
               </svg>
               {{ 'MENU.INGREDIENTS' | translate }}
             </h4>
-            <p>{{ selectedProduct()!.ingredients }}</p>
+            <div class="dt-chips">
+              @for (ing of ingredientList(selectedProduct()!); track $index) {
+              <span class="dt-chip">{{ ing }}</span>
+              }
+            </div>
           </div>
           }
         </div>
       </div>
 
       <!-- Add to Cart sticky button -->
-      <div class="detail-footer">
+      <div class="detail-footer dt-foot">
+        <div class="dt-qty" role="group" [attr.aria-label]="'MENU.QUANTITY' | translate">
+          <button type="button" (click)="changeDetailQty(-1)" [disabled]="detailQty() <= 1" aria-label="-">−</button>
+          <span aria-live="polite">{{ detailQty() }}</span>
+          <button type="button" (click)="changeDetailQty(1)" [disabled]="detailQty() >= 20" aria-label="+">+</button>
+        </div>
         <button class="detail-add-btn" (click)="addToCartFromDetail()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          {{ 'MENU.ADD_TO_CART' | translate }} · {{ formatPrice(selectedProduct()!.price_cents) }}
+          {{ 'MENU.ADD_TO_CART' | translate }} · {{ formatPrice(selectedProduct()!.price_cents * detailQty()) }}
         </button>
       </div>
     </div>
