@@ -456,10 +456,7 @@
       }
 
       <div class="public-menu-footer-actions">
-        <a href="#" class="public-menu-back-link" data-testid="public-menu-back-home" (click)="$event.preventDefault(); scrollToTop()">{{
-          'PUBLIC_MENU.BACK_HOME' | translate
-        }}</a>
-        <app-legal-links [termsUrl]="tenant()?.terms_of_service_url" [privacyUrl]="tenant()?.privacy_policy_url" />
+<app-legal-links [termsUrl]="tenant()?.terms_of_service_url" [privacyUrl]="tenant()?.privacy_policy_url" />
       </div>
     </main>
 
