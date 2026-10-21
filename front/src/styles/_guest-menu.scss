@@ -772,7 +772,7 @@
 }
 
 // ============================================
-// CATEGORY FILTER v4: ink capsule with champagne-gold active tab
+// CATEGORY FILTER v4: light capsule with brand-orange active tab
 // ============================================
 .menu-page .category-nav {
   padding: 10px 0;
@@ -790,11 +790,10 @@
   padding: 5px;
   gap: 2px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #2a1d17, #170f0c);
+  background: #fff;
   box-shadow:
-    inset 0 0 0 1px rgba(226, 190, 120, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 18px 30px -16px rgba(23, 15, 12, 0.7);
+    inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, var(--gm-line)),
+    0 16px 28px -18px rgba(23, 18, 16, 0.35);
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
   -webkit-mask-image: none;
@@ -822,7 +821,7 @@
     font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: rgba(246, 232, 205, 0.72);
+    color: var(--color-text-muted);
     transition: color 200ms;
   }
 
@@ -837,7 +836,7 @@
     font-size: 0.82rem;
     font-weight: 400;
     letter-spacing: 0;
-    color: #d9b370;
+    color: var(--color-primary);
   }
 
   // gold hairline diamond between tabs
@@ -848,19 +847,19 @@
     top: 50%;
     width: 4px;
     height: 4px;
-    background: rgba(217, 179, 112, 0.45);
+    background: color-mix(in srgb, var(--color-primary) 40%, transparent);
     transform: translate(-50%, -50%) rotate(45deg);
     transition: opacity 200ms;
   }
 
-  &:hover:not(.active) .category-label { color: #fff7e6; }
+  &:hover:not(.active) { background: color-mix(in srgb, var(--color-primary) 7%, #fff); .category-label { color: var(--gm-ink); } }
 
   &.active {
-    background: linear-gradient(135deg, #f7e7c4 0%, #e3bf7c 55%, #c99a4e 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 8px 18px -8px rgba(217, 160, 70, 0.7);
+    background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, #000));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 12px 20px -10px var(--color-primary);
 
-    .category-label { color: #2a1a10; }
-    .category-count { color: #7a4d16; background: none; }
+    .category-label { color: #fff; }
+    .category-count { color: rgba(255, 255, 255, 0.85); background: none; }
   }
   &.active::before, &.active + &::before { opacity: 0; }
   &:active { transform: scale(0.97); }
