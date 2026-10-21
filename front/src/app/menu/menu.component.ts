@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { DomSanitizer, SafeHtml, SafeResourceUrl, SafeStyle } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, SlicePipe } from '@angular/common';
@@ -320,6 +320,36 @@ export class MenuComponent implements OnInit, OnDestroy {
     const next = ranges.find((r) => toMin(r.from) > minutes);
     return { open: false, time: next ? this.fmtTime(next.from) : '' };
   });
+
+  // ---------------------------------------------------------------- featured carousel (arrows + progress)
+  featPos = signal({ w: 100, l: 0, atStart: true, atEnd: true, overflow: false });
+  private featEl: HTMLElement | null = null;
+
+  @ViewChild('fs') set featScroller(ref: ElementRef<HTMLElement> | undefined) {
+    this.featEl = ref?.nativeElement ?? null;
+    if (this.featEl) queueMicrotask(() => this.onFeatScroll(this.featEl!));
+  }
+
+  onFeatScroll(el: HTMLElement): void {
+    const sw = el.scrollWidth || 1;
+    const cw = el.clientWidth;
+    this.featPos.set({
+      w: Math.min(100, (cw / sw) * 100),
+      l: (el.scrollLeft / sw) * 100,
+      atStart: el.scrollLeft <= 2,
+      atEnd: el.scrollLeft + cw >= sw - 2,
+      overflow: sw > cw + 4,
+    });
+  }
+
+  scrollFeat(el: HTMLElement, dir: number): void {
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: 'smooth' });
+  }
+
+  @HostListener('window:resize')
+  onFeatResize(): void {
+    if (this.featEl) this.onFeatScroll(this.featEl);
+  }
 
   featuredProducts = computed(() => {
     return this.products()

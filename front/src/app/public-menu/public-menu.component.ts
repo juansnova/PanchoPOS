@@ -6,6 +6,9 @@ import {
   OnInit,
   DestroyRef,
   afterNextRender,
+  HostListener,
+  ViewChild,
+  ElementRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -267,6 +270,44 @@ export class PublicMenuComponent implements OnInit {
       }))
       .sort((a, b) => this.categoryRank(a.name) - this.categoryRank(b.name) || a.name.localeCompare(b.name));
   });
+
+  // ---------------------------------------------------------------- featured carousel (arrows + progress)
+  featPos = signal({ w: 100, l: 0, atStart: true, atEnd: true, overflow: false });
+  private featEl: HTMLElement | null = null;
+
+  @ViewChild('fs') set featScroller(ref: ElementRef<HTMLElement> | undefined) {
+    this.featEl = ref?.nativeElement ?? null;
+    if (this.featEl) queueMicrotask(() => this.onFeatScroll(this.featEl!));
+  }
+
+  onFeatScroll(el: HTMLElement): void {
+    const sw = el.scrollWidth || 1;
+    const cw = el.clientWidth;
+    this.featPos.set({
+      w: Math.min(100, (cw / sw) * 100),
+      l: (el.scrollLeft / sw) * 100,
+      atStart: el.scrollLeft <= 2,
+      atEnd: el.scrollLeft + cw >= sw - 2,
+      overflow: sw > cw + 4,
+    });
+  }
+
+  scrollFeat(el: HTMLElement, dir: number): void {
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: 'smooth' });
+  }
+
+  @HostListener('window:resize')
+  onFeatResize(): void {
+    if (this.featEl) this.onFeatScroll(this.featEl);
+  }
+
+  /** Up to six available dishes with a photo (first categories first). */
+  featuredProducts = computed(() =>
+    this.sortedCategories()
+      .flatMap((c) => c.products)
+      .filter((p) => p.available && p.image_url)
+      .slice(0, 6),
+  );
 
   categories(): PublicTenantMenuCategory[] {
     return this.sortedCategories();

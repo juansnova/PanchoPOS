@@ -3751,3 +3751,78 @@ $cart-expanded-max: 60vh;
 }
 
 .menu-page .dt-foot .detail-add-btn { flex: 1; min-width: 0; padding: 0 16px; font-size: 0.98rem; white-space: nowrap; }
+
+// ================================================================ featured carousel: arrows, edge fades, progress bar
+.fc { position: relative; }
+
+.fc .featured-scroll {
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 4px;
+  cursor: grab;
+  overscroll-behavior-x: contain;
+}
+
+// soft fades at both ends hint that there is more to scroll
+.fc::before,
+.fc::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 26px;
+  width: 36px;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.fc::before { left: -1px; background: linear-gradient(90deg, var(--color-bg, #fbf7f1), transparent); }
+.fc::after { right: -1px; background: linear-gradient(270deg, var(--color-bg, #fbf7f1), transparent); }
+.fc.fc-overflow:not(.fc-at-start)::before { opacity: 1; }
+.fc.fc-overflow:not(.fc-at-end)::after { opacity: 1; }
+
+.fc-btn {
+  position: absolute;
+  top: calc(50% - 30px);
+  z-index: 3;
+  display: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-primary);
+  background: #fffdfa;
+  box-shadow: 0 14px 24px -10px rgba(23, 18, 16, 0.5), 0 0 0 1px rgba(23, 18, 16, 0.08);
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, color 0.15s, opacity 0.15s;
+
+  &:hover:not(:disabled) { color: #fff; background: var(--color-primary); transform: scale(1.08); }
+  &:disabled { opacity: 0; pointer-events: none; }
+}
+.fc-prev { left: -10px; }
+.fc-next { right: -10px; }
+@media (hover: hover) and (min-width: 700px) { .fc.fc-overflow .fc-btn { display: grid; } }
+
+// custom progress bar replaces the hidden native scrollbar
+.fc-track {
+  position: relative;
+  height: 5px;
+  margin: 2px 6px 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary) 14%, #ece5da);
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.fc.fc-overflow .fc-track { opacity: 1; }
+.fc-thumb {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 28px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000));
+  transition: left 0.08s linear;
+}
+
+@media (prefers-reduced-motion: reduce) { .fc-btn, .fc-thumb, .fc::before, .fc::after { transition: none; } }
