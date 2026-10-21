@@ -204,10 +204,11 @@ const ICON: Record<string, string> = {
       color: #fff;
       overflow: hidden;
       background:
-        radial-gradient(circle at 90% 10%, rgba(253, 224, 71, 0.55) 0, transparent 30%),
-        radial-gradient(circle at 70% 120%, rgba(168, 85, 247, 0.5) 0, transparent 36%),
-        linear-gradient(120deg, #f97316 0%, #f43f5e 62%, #db2777 100%);
-      box-shadow: 0 18px 34px -22px #f43f5e;
+        radial-gradient(circle at 95% 0%, rgba(249, 115, 22, 0.75) 0, transparent 38%),
+        radial-gradient(circle at 72% 125%, rgba(251, 191, 36, 0.4) 0, transparent 34%),
+        linear-gradient(135deg, #0c0a09 0%, #1c1917 55%, #292524 100%);
+      border: 1px solid rgba(249, 115, 22, 0.35);
+      box-shadow: 0 18px 34px -22px #f97316;
     }
     .pr-hero > * { position: relative; z-index: 1; }
     .pr-hero-ico {
@@ -217,8 +218,8 @@ const ICON: Record<string, string> = {
       width: 64px;
       height: 64px;
       border-radius: 20px;
-      background: rgba(255, 255, 255, 0.2);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      background: linear-gradient(145deg, #fb923c, #ea580c);
+      box-shadow: 0 10px 20px -10px #f97316, inset 0 1px 0 rgba(255, 255, 255, 0.4);
     }
     .pr-hero-text { flex: 1; min-width: 200px; }
     .pr-hero h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; }
@@ -240,7 +241,7 @@ const ICON: Record<string, string> = {
     }
     .pr-btn span { display: inline-flex; }
     .pr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .pr-btn-light { background: #fff; color: #e11d48; box-shadow: 0 10px 20px -12px rgba(0, 0, 0, 0.5); }
+    .pr-btn-light { background: var(--color-primary); color: #fff; box-shadow: 0 10px 20px -12px rgba(0, 0, 0, 0.5); }
     .pr-btn-light:hover { filter: brightness(0.96); }
     .pr-btn-clear { background: rgba(255, 255, 255, 0.18); color: #fff; border: 1px solid rgba(255, 255, 255, 0.6); }
     .pr-btn-clear:hover:not(:disabled) { background: #dc2626; border-color: #dc2626; }
