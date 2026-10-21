@@ -770,6 +770,18 @@
   </div>
   }
 
+  @if (confirmDialog(); as cd) {
+  <app-confirmation-modal
+    [title]="cd.title"
+    [message]="cd.message"
+    [confirmText]="cd.confirmText"
+    [cancelText]="cd.cancelText"
+    [confirmBtnClass]="cd.tone"
+    (confirm)="confirmDialog.set(null); cd.run()"
+    (cancel)="confirmDialog.set(null)"
+  ></app-confirmation-modal>
+  }
+
   <!-- Success Toast -->
   @if (showSuccessToast()) {
   <div class="success-toast">

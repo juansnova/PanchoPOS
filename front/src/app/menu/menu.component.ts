@@ -7,6 +7,7 @@ import { ApiService, BankAccount, Product, OrderItemCreate, TableCartResponse, T
 import { AudioService } from '../services/audio.service';
 import { environment } from '../../environments/environment';
 import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
+import { ConfirmationModalComponent } from '../shared/confirmation-modal.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { getSubcategoryLabel as resolveSubcategoryLabel } from '../shared/product-subcategory-label.util';
 import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-category-label.util';
@@ -39,7 +40,7 @@ interface PlacedOrder {
 @Component({
   selector: 'app-menu',
   standalone: true,
-  imports: [CommonModule, FormsModule, FocusFirstInputDirective, TranslateModule, SlicePipe],
+  imports: [CommonModule, FormsModule, FocusFirstInputDirective, TranslateModule, SlicePipe, ConfirmationModalComponent],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.scss'
 })
@@ -1560,16 +1561,32 @@ export class MenuComponent implements OnInit, OnDestroy {
     return !hasNonPendingItems;
   }
 
-  cancelOrder(orderId: number) {
-    if (!confirm('Are you sure you want to cancel this entire order?')) {
-      return;
-    }
+  /** In-app confirmation (replaces the browser confirm dialog). */
+  confirmDialog = signal<{
+    title: string;
+    message: string;
+    confirmText: string;
+    cancelText: string;
+    tone: 'btn-danger' | 'btn-warning';
+    run: () => void;
+  } | null>(null);
 
+  cancelOrder(orderId: number) {
+    this.confirmDialog.set({
+      title: 'MENU.CANCEL_ORDER_TITLE',
+      message: 'MENU.CANCEL_ORDER_CONFIRM',
+      confirmText: 'MENU.CANCEL_ORDER_YES',
+      cancelText: 'MENU.CANCEL_ORDER_KEEP',
+      tone: 'btn-danger',
+      run: () => this.doCancelOrder(orderId),
+    });
+  }
+
+  private doCancelOrder(orderId: number) {
     this.api.cancelOrder(this.tableToken, orderId, this.sessionId).subscribe({
       next: () => {
         this.placedOrders.set([]);
         localStorage.removeItem(`orders_${this.tableToken}`);
-        alert('Order cancelled');
       },
       error: (err) => {
         const errorMsg = err.error?.detail || 'Failed to cancel order';
@@ -1585,10 +1602,17 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   removeItemFromOrder(orderId: number, itemId: number) {
-    if (!confirm('Are you sure you want to remove this item from your order?')) {
-      return;
-    }
+    this.confirmDialog.set({
+      title: 'MENU.REMOVE_ITEM_TITLE',
+      message: 'MENU.REMOVE_ITEM_CONFIRM',
+      confirmText: 'MENU.REMOVE_ITEM_YES',
+      cancelText: 'MENU.CANCEL_ORDER_KEEP',
+      tone: 'btn-warning',
+      run: () => this.doRemoveItem(orderId, itemId),
+    });
+  }
 
+  private doRemoveItem(orderId: number, itemId: number) {
     const currentOrder = this.placedOrders().find(o => o.id === orderId);
     const itemToRemove = currentOrder?.items.find(item => item.itemId === itemId);
     const productId = itemToRemove?.product.id;
