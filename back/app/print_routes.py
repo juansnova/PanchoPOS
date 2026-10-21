@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from fastapi.security.utils import get_authorization_scheme_param
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from . import models
 from . import print_service as print_svc
@@ -88,6 +89,31 @@ def list_print_jobs(
         session, current_user.tenant_id, limit=limit, status=status
     )
     return [print_svc.job_to_dict(j) for j in jobs]
+
+
+@staff_router.delete("/print-jobs")
+@admin_user_limit()
+def clear_print_queue(
+    request: Request,
+    response: Response,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.ORDER_READ))],
+    session: Session = Depends(get_session),
+):
+    """Empty the print queue: removes every job except ones an agent claimed in the last minute."""
+    if current_user.tenant_id is None:
+        raise HTTPException(status_code=403, detail="Tenant required")
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=60)
+    jobs = session.exec(
+        select(models.PrintJob).where(models.PrintJob.tenant_id == current_user.tenant_id)
+    ).all()
+    deleted = 0
+    for job in jobs:
+        if job.status == "claimed" and job.claimed_at and job.claimed_at > cutoff:
+            continue
+        session.delete(job)
+        deleted += 1
+    session.commit()
+    return {"deleted": deleted}
 
 
 @staff_router.post("/print-jobs/{job_id}/retry")

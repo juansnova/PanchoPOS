@@ -105,6 +105,29 @@ class TestPrintJobs(PgClientTestCase):
         self.session.commit()
         self.order_id = order.id
 
+    def test_clear_queue_only_removes_own_finished_and_pending_jobs(self) -> None:
+        from datetime import datetime, timezone
+
+        ha = _bearer_headers(self.owner_a)
+        hb = _bearer_headers(self.owner_b)
+        now = datetime.now(timezone.utc)
+        rows = [
+            models.PrintJob(tenant_id=self.t_a.id, job_type="kitchen", status="pending"),
+            models.PrintJob(tenant_id=self.t_a.id, job_type="receipt", status="failed"),
+            models.PrintJob(tenant_id=self.t_a.id, job_type="kitchen", status="done"),
+            models.PrintJob(tenant_id=self.t_a.id, job_type="kitchen", status="claimed", claimed_at=now),
+            models.PrintJob(tenant_id=self.t_b.id, job_type="kitchen", status="pending"),
+        ]
+        for r in rows:
+            self.session.add(r)
+        self.session.commit()
+        res = self.client.delete("/print-jobs", headers=ha)
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(res.json()["deleted"], 3)
+        left_a = self.client.get("/print-jobs", headers=ha).json()
+        self.assertEqual([j["status"] for j in left_a], ["claimed"])
+        self.assertEqual(len(self.client.get("/print-jobs", headers=hb).json()), 1)
+
     def test_create_agent_and_poll_job(self) -> None:
         h = _bearer_headers(self.owner_a)
         r = self.client.post(
