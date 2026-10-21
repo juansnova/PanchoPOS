@@ -9,6 +9,7 @@ from collections import defaultdict
 from datetime import date, datetime, time, timedelta, timezone
 from io import BytesIO, StringIO
 from typing import Annotated
+from zoneinfo import ZoneInfo
 
 from .export_safety import safe_text
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
@@ -586,11 +587,11 @@ def report_work_sessions(
     response: Response,
     current_user: Annotated[models.User, Depends(require_permission(Permission.REPORT_READ))],
     session: Session = Depends(get_session),
-    from_date: str = Query(..., description="Start date YYYY-MM-DD (UTC day)"),
-    to_date: str = Query(..., description="End date YYYY-MM-DD (UTC day, inclusive)"),
+    from_date: str = Query(..., description="Start date YYYY-MM-DD (restaurant local day)"),
+    to_date: str = Query(..., description="End date YYYY-MM-DD (restaurant local day, inclusive)"),
     user_id: int | None = Query(None, description="Filter by staff user id (optional)"),
 ) -> list[dict]:
-    """All tenant staff clock-in/out rows in range (by started_at, UTC). Owner and admin only."""
+    """All tenant staff clock-in/out rows in range (by started_at, restaurant local days). Owner and admin only."""
     if current_user.tenant_id is None:
         raise HTTPException(status_code=403, detail="Tenant required")
     try:
@@ -600,8 +601,10 @@ def report_work_sessions(
         raise HTTPException(status_code=400, detail="Invalid date format; use YYYY-MM-DD")
     if fd > td:
         raise HTTPException(status_code=400, detail="from_date must be <= to_date")
-    start_utc = datetime.combine(fd, time.min, tzinfo=timezone.utc)
-    end_exclusive = datetime.combine(td + timedelta(days=1), time.min, tzinfo=timezone.utc)
+    tenant = session.get(models.Tenant, current_user.tenant_id)
+    tz = _tenant_zone(getattr(tenant, "timezone", None))
+    start_utc = datetime.combine(fd, time.min, tzinfo=tz).astimezone(timezone.utc)
+    end_exclusive = datetime.combine(td + timedelta(days=1), time.min, tzinfo=tz).astimezone(timezone.utc)
     q = (
         select(models.WorkSession)
         .where(models.WorkSession.tenant_id == current_user.tenant_id)
@@ -611,12 +614,46 @@ def report_work_sessions(
     if user_id is not None:
         q = q.where(models.WorkSession.user_id == user_id)
     rows = session.exec(q.order_by(models.WorkSession.started_at.desc())).all()
+    ids = [ws.id for ws in rows]
+    adjusted: dict[int, int] = defaultdict(int)
+    breaks: dict[int, int] = defaultdict(int)
+    if ids:
+        for wid in session.exec(
+            select(models.WorkSessionAdjustment.work_session_id).where(
+                models.WorkSessionAdjustment.work_session_id.in_(ids)
+            )
+        ).all():
+            adjusted[wid] += 1
+        for wid in session.exec(
+            select(models.WorkSessionBreak.work_session_id).where(models.WorkSessionBreak.work_session_id.in_(ids))
+        ).all():
+            breaks[wid] += 1
+    users = (
+        {
+            u.id: u
+            for u in session.exec(
+                select(models.User).where(models.User.id.in_({ws.user_id for ws in rows}))
+            ).all()
+        }
+        if rows
+        else {}
+    )
     out: list[dict] = []
     for ws in rows:
-        u = session.get(models.User, ws.user_id)
+        u = users.get(ws.user_id)
         name = (u.full_name or u.username or "") if u else ""
-        out.append(serialize_work_session(ws, name, session=session))
+        d = serialize_work_session(ws, name, session=session)
+        d["adjusted_count"] = adjusted.get(ws.id, 0)
+        d["break_count"] = breaks.get(ws.id, 0)
+        out.append(d)
     return out
+
+
+def _tenant_zone(name: str | None) -> ZoneInfo:
+    try:
+        return ZoneInfo((name or "America/Bogota").strip() or "America/Bogota")
+    except Exception:
+        return ZoneInfo("America/Bogota")
 
 
 class WorkSessionAdjustBody(BaseModel):
@@ -625,6 +662,117 @@ class WorkSessionAdjustBody(BaseModel):
     note: str = ""
     started_at: datetime | None = None
     ended_at: datetime | None = None
+
+
+class WorkSessionManualBody(BaseModel):
+    """Owner/admin adds a clock session that was never recorded (forgotten shift)."""
+
+    user_id: int
+    started_at: datetime
+    ended_at: datetime
+    note: str = ""
+
+
+@router.post("/work-sessions", status_code=201)
+@admin_user_limit()
+def create_work_session_manually(
+    request: Request,
+    response: Response,
+    body: WorkSessionManualBody,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.REPORT_READ))],
+    session: Session = Depends(get_session),
+) -> dict:
+    """Add a missing clock-in/out pair for a staff member (audit trail row included)."""
+    if current_user.tenant_id is None:
+        raise HTTPException(status_code=403, detail="Tenant required")
+    target = session.get(models.User, body.user_id)
+    if not target or target.tenant_id != current_user.tenant_id:
+        raise HTTPException(status_code=404, detail="Staff member not found")
+    if body.ended_at <= body.started_at:
+        raise HTTPException(status_code=400, detail="ended_at must be after started_at")
+    if body.ended_at - body.started_at > timedelta(hours=24):
+        raise HTTPException(status_code=400, detail="A session cannot be longer than 24 hours")
+    if body.ended_at > datetime.now(timezone.utc) + timedelta(minutes=5):
+        raise HTTPException(status_code=400, detail="ended_at cannot be in the future")
+    clash = session.exec(
+        select(models.WorkSession)
+        .where(models.WorkSession.tenant_id == current_user.tenant_id)
+        .where(models.WorkSession.user_id == body.user_id)
+        .where(models.WorkSession.started_at < body.ended_at)
+        .where((models.WorkSession.ended_at.is_(None)) | (models.WorkSession.ended_at > body.started_at))
+    ).first()
+    if clash:
+        raise HTTPException(status_code=409, detail="This overlaps another session of the same person")
+    ws = models.WorkSession(
+        tenant_id=current_user.tenant_id,
+        user_id=body.user_id,
+        started_at=body.started_at,
+        ended_at=body.ended_at,
+    )
+    session.add(ws)
+    session.flush()
+    session.add(
+        models.WorkSessionAdjustment(
+            tenant_id=ws.tenant_id,
+            work_session_id=ws.id,
+            actor_user_id=current_user.id,
+            note=(body.note or "").strip() or "Manual entry",
+            previous_started_at=None,
+            previous_ended_at=None,
+            new_started_at=ws.started_at,
+            new_ended_at=ws.ended_at,
+        )
+    )
+    session.commit()
+    session.refresh(ws)
+    name = target.full_name or target.username or ""
+    d = serialize_work_session(ws, name, session=session)
+    d["adjusted_count"] = 1
+    d["break_count"] = 0
+    return d
+
+
+@router.get("/work-sessions/{work_session_id}/adjustments")
+@admin_user_limit()
+def list_work_session_adjustments(
+    request: Request,
+    response: Response,
+    work_session_id: int,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.REPORT_READ))],
+    session: Session = Depends(get_session),
+) -> list[dict]:
+    """Audit trail of manual corrections for one session, newest first."""
+    if current_user.tenant_id is None:
+        raise HTTPException(status_code=403, detail="Tenant required")
+    ws = session.exec(
+        select(models.WorkSession).where(
+            models.WorkSession.id == work_session_id,
+            models.WorkSession.tenant_id == current_user.tenant_id,
+        )
+    ).first()
+    if not ws:
+        raise HTTPException(status_code=404, detail="Work session not found")
+    rows = session.exec(
+        select(models.WorkSessionAdjustment)
+        .where(models.WorkSessionAdjustment.work_session_id == ws.id)
+        .order_by(models.WorkSessionAdjustment.created_at.desc())
+    ).all()
+    out: list[dict] = []
+    for a in rows:
+        actor = session.get(models.User, a.actor_user_id) if a.actor_user_id else None
+        out.append(
+            {
+                "id": a.id,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+                "actor_name": (actor.full_name or actor.username) if actor else "",
+                "note": a.note or "",
+                "previous_started_at": a.previous_started_at.isoformat() if a.previous_started_at else None,
+                "previous_ended_at": a.previous_ended_at.isoformat() if a.previous_ended_at else None,
+                "new_started_at": a.new_started_at.isoformat() if a.new_started_at else None,
+                "new_ended_at": a.new_ended_at.isoformat() if a.new_ended_at else None,
+            }
+        )
+    return out
 
 
 @router.get("/work-sessions/live")

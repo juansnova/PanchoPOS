@@ -190,6 +190,21 @@ export interface WorkSession {
   /** Total break seconds (completed + in-progress), server-computed. */
   break_seconds_total?: number;
   user_role?: string | null;
+  /** Report rows: how many manual corrections this session has (audit trail). */
+  adjusted_count?: number;
+  /** Report rows: number of breaks taken. */
+  break_count?: number;
+}
+
+export interface WorkSessionAdjustment {
+  id: number;
+  created_at: string | null;
+  actor_name: string;
+  note: string;
+  previous_started_at: string | null;
+  previous_ended_at: string | null;
+  new_started_at: string | null;
+  new_ended_at: string | null;
 }
 
 /** Per-employee shift hours + actions performed in a date range (shift supervision). */
@@ -3442,7 +3457,7 @@ export class ApiService {
     return this.http.get<WorkSession[]>(`${this.apiUrl}/users/me/work-sessions`, { params });
   }
 
-  /** Owner/admin: all staff attendance in range (UTC days by started_at). */
+  /** Owner/admin: all staff attendance in range (restaurant local days by started_at). */
   getReportWorkSessions(fromDate: string, toDate: string, userId?: number): Observable<WorkSession[]> {
     let params = new HttpParams().set('from_date', fromDate).set('to_date', toDate);
     if (userId != null) {
@@ -3499,6 +3514,21 @@ export class ApiService {
       clock_qr_active: boolean;
       clock_qr_downloadable?: boolean;
     }>(`${this.apiUrl}/tenant/settings/clock-qr`);
+  }
+
+  /** Owner/admin: audit trail of corrections for one clock session. */
+  getReportWorkSessionAdjustments(sessionId: number): Observable<WorkSessionAdjustment[]> {
+    return this.http.get<WorkSessionAdjustment[]>(`${this.apiUrl}/reports/work-sessions/${sessionId}/adjustments`);
+  }
+
+  /** Owner/admin: add a clock session that was never recorded. */
+  createReportWorkSession(body: {
+    user_id: number;
+    started_at: string;
+    ended_at: string;
+    note?: string;
+  }): Observable<WorkSession> {
+    return this.http.post<WorkSession>(`${this.apiUrl}/reports/work-sessions`, body);
   }
 
   /** Owner/admin: manual payroll correction (audit trail on server). */

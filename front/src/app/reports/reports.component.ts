@@ -19,7 +19,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../shared/sidebar.component';
-import {
+import { WorkSessionAdjustment,
   ApiService,
   SalesReport,
   User,
@@ -33,6 +33,7 @@ import { LanguageService } from '../services/language.service';
 import { intlLocaleFromTranslate } from '../shared/intl-locale';
 import { formatMoneyCents } from '../shared/currency-symbol';
 import { AppDatePickerComponent } from '../shared/app-date-picker.component';
+import { AppSelectComponent, AppSelectOption } from '../shared/app-select.component';
 import { getCategoryLabel } from '../shared/product-category-label.util';
 
 export type ReportsDatePreset =
@@ -45,7 +46,7 @@ export type ReportsDatePreset =
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, FormsModule, SidebarComponent, TranslateModule, AppDatePickerComponent],
+  imports: [CommonModule, FormsModule, SidebarComponent, TranslateModule, AppDatePickerComponent, AppSelectComponent],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.scss',
 })
@@ -453,6 +454,7 @@ export class ReportsComponent implements OnInit {
       if (h > 0) return `${h}h ${m}m`;
       return `${m}m`;
     }
+    if (row.duration_minutes === 0) return '<1 min';
     if (row.duration_minutes != null && row.duration_minutes >= 0) {
       const h = Math.floor(row.duration_minutes / 60);
       const m = row.duration_minutes % 60;
@@ -533,6 +535,263 @@ export class ReportsComponent implements OnInit {
   }
 
   /** `datetime-local` value in the user’s local timezone from an API ISO timestamp. */
+  // ------------------------------------------------------------ clock-in history (pro table)
+  wsPerson = signal<number | null>(null);
+  wsStatus = signal<'all' | 'open' | 'alerts' | 'edited'>('all');
+  wsLimit = signal(40);
+  wsFlash = signal<string | null>(null);
+
+  historyTarget = signal<WorkSession | null>(null);
+  historyItems = signal<WorkSessionAdjustment[]>([]);
+  historyLoading = signal(false);
+
+  manualOpen = signal(false);
+  manualUser = signal<number | null>(null);
+  manualStart = signal('');
+  manualEnd = signal('');
+  manualNote = signal('');
+  manualSaving = signal(false);
+  manualError = signal<string | null>(null);
+
+  wsPersonOptions = computed<AppSelectOption[]>(() => {
+    const seen = new Map<number, string>();
+    for (const r of this.workSessions()) seen.set(r.user_id, r.user_name);
+    return [...seen.entries()]
+      .sort((a, b) => a[1].localeCompare(b[1], undefined, { sensitivity: 'base' }))
+      .map(([value, label]) => ({ value, label }));
+  });
+
+  staffOptions = computed<AppSelectOption[]>(() =>
+    this.attendanceExcelStaffUsers().map((u) => ({ value: u.id as number, label: u.full_name || u.username })),
+  );
+
+  private netMinutes(row: WorkSession): number {
+    if (row.ended_at) return row.duration_minutes ?? 0;
+    return row.open_duration_minutes ?? Math.floor(workSessionNetWorkSeconds(row) / 60);
+  }
+
+  sessionFlags(row: WorkSession) {
+    const open = !row.ended_at;
+    const net = this.netMinutes(row);
+    const stale = open && net > 12 * 60;
+    const long = !open && net > 12 * 60;
+    const short = !open && net < 2;
+    return { open, stale, long, short, edited: (row.adjusted_count ?? 0) > 0, alert: stale || long || short };
+  }
+
+  private wsByPerson = computed(() => {
+    const person = this.wsPerson();
+    const rows = this.workSessions();
+    return person == null ? rows : rows.filter((r) => r.user_id === person);
+  });
+
+  wsCounts = computed(() => {
+    const rows = this.wsByPerson();
+    let open = 0;
+    let alerts = 0;
+    let edited = 0;
+    for (const r of rows) {
+      const f = this.sessionFlags(r);
+      if (f.open) open++;
+      if (f.alert) alerts++;
+      if (f.edited) edited++;
+    }
+    return { all: rows.length, open, alerts, edited };
+  });
+
+  wsFiltered = computed(() => {
+    const status = this.wsStatus();
+    const rows = this.wsByPerson();
+    if (status === 'all') return rows;
+    return rows.filter((r) => {
+      const f = this.sessionFlags(r);
+      return status === 'open' ? f.open : status === 'alerts' ? f.alert : f.edited;
+    });
+  });
+
+  wsStats = computed(() => {
+    const rows = this.wsFiltered();
+    const mins = rows.reduce((sum, r) => sum + (r.ended_at ? (r.duration_minutes ?? 0) : 0), 0);
+    return {
+      count: rows.length,
+      people: new Set(rows.map((r) => r.user_id)).size,
+      time: this.fmtMinutes(mins),
+      alerts: rows.filter((r) => this.sessionFlags(r).alert).length,
+    };
+  });
+
+  /** Visible rows grouped by (browser-local) day with per-day totals. */
+  wsGroups = computed(() => {
+    const rows = this.wsFiltered().slice(0, this.wsLimit());
+    const todayKey = new Date().toDateString();
+    const groups: { key: string; label: string; today: boolean; items: WorkSession[]; people: number; time: string }[] = [];
+    for (const r of rows) {
+      const key = new Date(r.started_at).toDateString();
+      let g = groups[groups.length - 1];
+      if (!g || g.key !== key) {
+        g = { key, label: this.dayOnly(r.started_at), today: key === todayKey, items: [], people: 0, time: '' };
+        groups.push(g);
+      }
+      g.items.push(r);
+    }
+    for (const g of groups) {
+      g.people = new Set(g.items.map((r) => r.user_id)).size;
+      g.time = this.fmtMinutes(g.items.reduce((s, r) => s + (r.ended_at ? (r.duration_minutes ?? 0) : 0), 0));
+    }
+    return groups;
+  });
+
+  wsRemaining = computed(() => Math.max(0, this.wsFiltered().length - this.wsLimit()));
+
+  fmtMinutes(m: number): string {
+    if (m < 1) return '0 min';
+    const h = Math.floor(m / 60);
+    const r = m % 60;
+    return h > 0 ? `${h} h ${String(r).padStart(2, '0')} min` : `${r} min`;
+  }
+
+  breaksLabel(row: WorkSession): string {
+    const n = row.break_count ?? 0;
+    const sec = row.break_seconds_total ?? 0;
+    if (!n && !sec) return '—';
+    return `${n} · ${Math.round(sec / 60)} min`;
+  }
+
+  setWsStatus(s: 'all' | 'open' | 'alerts' | 'edited'): void {
+    this.wsStatus.set(s);
+    this.wsLimit.set(40);
+  }
+
+  setWsPerson(v: unknown): void {
+    this.wsPerson.set(v === '' || v == null ? null : Number(v));
+    this.wsLimit.set(40);
+  }
+
+  clearWsFilters(): void {
+    this.wsPerson.set(null);
+    this.wsStatus.set('all');
+    this.wsLimit.set(40);
+  }
+
+  showMoreSessions(): void {
+    this.wsLimit.update((n) => n + 40);
+  }
+
+  private flash(msg: string): void {
+    this.wsFlash.set(msg);
+    setTimeout(() => this.wsFlash.set(null), 3500);
+  }
+
+  exportSessionsCsv(): void {
+    const rows = this.wsFiltered();
+    if (!rows.length) return;
+    const cell = (v: string | number): string => {
+      let s = String(v ?? '');
+      if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+    const head = ['Empleado', 'Fecha', 'Entrada', 'Salida', 'Descansos (min)', 'Horas netas', 'IP entrada', 'IP salida', 'Editado'];
+    const lines = [head.map(cell).join(',')];
+    for (const r of rows) {
+      const start = new Date(r.started_at);
+      const net = this.netMinutes(r);
+      lines.push(
+        [
+          r.user_name,
+          start.toLocaleDateString(),
+          this.timeOnly(r.started_at),
+          r.ended_at ? this.timeOnly(r.ended_at) : 'En curso',
+          Math.round((r.break_seconds_total ?? 0) / 60),
+          (net / 60).toFixed(2),
+          r.start_ip ?? '',
+          r.end_ip ?? '',
+          (r.adjusted_count ?? 0) > 0 ? 'Sí' : 'No',
+        ]
+          .map(cell)
+          .join(','),
+      );
+    }
+    const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fichajes_${this.fromDate()}_${this.toDate()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  openHistory(row: WorkSession): void {
+    this.historyTarget.set(row);
+    this.historyItems.set([]);
+    this.historyLoading.set(true);
+    this.api.getReportWorkSessionAdjustments(row.id).subscribe({
+      next: (items) => {
+        this.historyItems.set(items);
+        this.historyLoading.set(false);
+      },
+      error: () => this.historyLoading.set(false),
+    });
+  }
+
+  closeHistory(): void {
+    this.historyTarget.set(null);
+  }
+
+  openManual(): void {
+    const y = new Date();
+    y.setDate(y.getDate() - 1);
+    const day = this.fmtDate(y);
+    this.manualUser.set(this.wsPerson());
+    this.manualStart.set(`${day}T08:00`);
+    this.manualEnd.set(`${day}T17:00`);
+    this.manualNote.set('');
+    this.manualError.set(null);
+    this.manualOpen.set(true);
+  }
+
+  closeManual(): void {
+    if (this.manualSaving()) return;
+    this.manualOpen.set(false);
+  }
+
+  submitManual(): void {
+    const uid = this.manualUser();
+    if (uid == null) {
+      this.manualError.set(this.translate.instant('REPORTS.WS_ADD_ERR_PERSON'));
+      return;
+    }
+    const s = this.datetimeLocalToUtcIso(this.manualStart());
+    const e = this.datetimeLocalToUtcIso(this.manualEnd());
+    if (!s || !e || new Date(e).getTime() <= new Date(s).getTime()) {
+      this.manualError.set(this.translate.instant('REPORTS.WS_ADD_ERR_RANGE'));
+      return;
+    }
+    if (new Date(e).getTime() > Date.now() + 5 * 60000) {
+      this.manualError.set(this.translate.instant('REPORTS.WS_ADD_ERR_FUTURE'));
+      return;
+    }
+    this.manualSaving.set(true);
+    this.manualError.set(null);
+    this.api
+      .createReportWorkSession({ user_id: uid, started_at: s, ended_at: e, note: this.manualNote().trim() })
+      .subscribe({
+        next: () => {
+          this.manualSaving.set(false);
+          this.manualOpen.set(false);
+          this.flash(this.translate.instant('REPORTS.WS_ADD_OK'));
+          this.loadWorkSessions();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.manualSaving.set(false);
+          this.manualError.set(
+            err.status === 409
+              ? this.translate.instant('REPORTS.WS_ADD_ERR_OVERLAP')
+              : this.apiErr.fromHttpError(err, 'REPORTS.WS_ADD_ERROR'),
+          );
+        },
+      });
+  }
+
   private nowMs = signal(Date.now());
 
   /** Live shift board: one bar per open session, from clock-in to now, on a shared day axis. */
@@ -621,18 +880,6 @@ export class ReportsComponent implements OnInit {
     const s = d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
-
-  /** Quick totals above the clock-in history. */
-  sessionsSummary = computed(() => {
-    const rows = this.workSessions();
-    if (!rows.length) return null;
-    const mins = rows.reduce((sum, r) => sum + (r.duration_minutes ?? 0), 0);
-    return {
-      count: rows.length,
-      people: new Set(rows.map((r) => r.user_name)).size,
-      hours: `${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, '0')} min`,
-    };
-  });
 
   /** Net length of the session being corrected, from the two pickers. */
   adjustPreview = computed(() => {

@@ -595,64 +595,137 @@
             <h2>{{ 'REPORTS.WORK_SESSIONS_TITLE' | translate }}</h2>
             <p class="muted">{{ 'REPORTS.WORK_SESSIONS_HINT' | translate }}</p>
           </div>
+          <div class="ws-tools">
+            <button type="button" class="ws-btn" (click)="loadWorkSessions()" [disabled]="workSessionsLoading()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" /></svg>
+              {{ 'REPORTS.WS_REFRESH' | translate }}
+            </button>
+            <button type="button" class="ws-btn" (click)="exportSessionsCsv()" [disabled]="wsFiltered().length === 0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 20h16" /></svg>
+              CSV
+            </button>
+            <button type="button" class="ws-btn ws-btn-main" (click)="openManual()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+              {{ 'REPORTS.WS_ADD' | translate }}
+            </button>
+          </div>
         </div>
-        @if (workSessionsLoading()) {
-          <p class="muted">{{ 'REPORTS.WORK_SESSIONS_LOADING' | translate }}</p>
+
+        @if (wsFlash(); as f) {
+          <div class="ws-flash" role="status">{{ f }}</div>
+        }
+
+        @if (workSessionsLoading() && workSessions().length === 0) {
+          <div class="ws-skeleton" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
         } @else if (workSessionsError()) {
-          <div class="error-banner">{{ workSessionsError() }}</div>
+          <div class="error-banner ws-error">
+            {{ workSessionsError() }}
+            <button type="button" class="ws-btn" (click)="loadWorkSessions()">{{ 'REPORTS.WS_RETRY' | translate }}</button>
+          </div>
         } @else if (workSessions().length === 0) {
           <div class="att-empty">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
             <p>{{ 'REPORTS.WORK_SESSIONS_EMPTY' | translate }}</p>
           </div>
         } @else {
-          @if (sessionsSummary(); as sm) {
-            <div class="att-stats">
-              <div><strong>{{ sm.count }}</strong><span>{{ 'REPORTS.ATT_STAT_SESSIONS' | translate }}</span></div>
-              <div><strong>{{ sm.people }}</strong><span>{{ 'REPORTS.ATT_STAT_PEOPLE' | translate }}</span></div>
-              <div><strong>{{ sm.hours }}</strong><span>{{ 'REPORTS.ATT_STAT_HOURS' | translate }}</span></div>
-            </div>
-          }
-          <div class="att-rows">
-            <div class="att-row att-row-head">
-              <span>{{ 'REPORTS.WORK_SESSIONS_COL_STAFF' | translate }}</span>
-              <span>{{ 'REPORTS.WORK_SESSIONS_COL_START' | translate }}</span>
-              <span>{{ 'REPORTS.WORK_SESSIONS_COL_END' | translate }}</span>
-              <span>{{ 'REPORTS.WORK_SESSIONS_COL_DURATION' | translate }}</span>
-              <span>IP</span>
-              <span></span>
-            </div>
-            @for (row of workSessions(); track row.id) {
-              <div class="att-row">
-                <div class="att-who">
-                  <span class="att-avatar sm" [style.--h]="hueOf(row.user_name)">{{ initialsOf(row.user_name) }}</span>
-                  <b>{{ row.user_name }}</b>
-                </div>
-                <div class="att-when">
-                  <em>{{ dayOnly(row.started_at) }}</em>
-                  <span>{{ timeOnly(row.started_at) }}</span>
-                </div>
-                <div class="att-when">
-                  @if (row.ended_at) {
-                    <em>{{ dayOnly(row.ended_at) }}</em>
-                    <span>{{ timeOnly(row.ended_at) }}</span>
-                  } @else {
-                    <span class="att-open">{{ 'REPORTS.WORK_SESSIONS_STATUS_WORKING' | translate }}</span>
-                  }
-                </div>
-                <div><span class="att-dur">{{ formatWorkSessionDuration(row) }}</span></div>
-                <div class="att-ips">
-                  <code title="IP">{{ row.start_ip || '—' }}</code>
-                  @if (row.end_ip && row.end_ip !== row.start_ip) {
-                    <code title="IP">{{ row.end_ip }}</code>
-                  }
-                </div>
-                <button type="button" class="att-fix" (click)="openWorkSessionAdjust(row)">
-                  {{ 'REPORTS.WORK_SESSION_ADJUST' | translate }}
-                </button>
-              </div>
-            }
+          @let st = wsStats();
+          <div class="att-stats">
+            <div><strong>{{ st.count }}</strong><span>{{ 'REPORTS.ATT_STAT_SESSIONS' | translate }}</span></div>
+            <div><strong>{{ st.people }}</strong><span>{{ 'REPORTS.ATT_STAT_PEOPLE' | translate }}</span></div>
+            <div><strong>{{ st.time }}</strong><span>{{ 'REPORTS.ATT_STAT_HOURS' | translate }}</span></div>
+            <div [class.warn]="st.alerts > 0"><strong>{{ st.alerts }}</strong><span>{{ 'REPORTS.WS_STAT_ALERTS' | translate }}</span></div>
           </div>
+
+          <div class="ws-filters">
+            <app-select
+              class="ws-person"
+              [options]="wsPersonOptions()"
+              [clearable]="true"
+              [placeholder]="'REPORTS.WS_PERSON_ALL' | translate"
+              [ngModel]="wsPerson() ?? ''"
+              (ngModelChange)="setWsPerson($event)"
+            />
+            @let cn = wsCounts();
+            <div class="ws-chips" role="group">
+              <button type="button" [class.on]="wsStatus() === 'all'" (click)="setWsStatus('all')">{{ 'REPORTS.WS_FILTER_ALL' | translate }} <i>{{ cn.all }}</i></button>
+              <button type="button" [class.on]="wsStatus() === 'open'" (click)="setWsStatus('open')">{{ 'REPORTS.WS_FILTER_OPEN' | translate }} <i>{{ cn.open }}</i></button>
+              <button type="button" class="warn" [class.on]="wsStatus() === 'alerts'" (click)="setWsStatus('alerts')">{{ 'REPORTS.WS_FILTER_ALERTS' | translate }} <i>{{ cn.alerts }}</i></button>
+              <button type="button" [class.on]="wsStatus() === 'edited'" (click)="setWsStatus('edited')">{{ 'REPORTS.WS_FILTER_EDITED' | translate }} <i>{{ cn.edited }}</i></button>
+            </div>
+          </div>
+
+          @if (wsFiltered().length === 0) {
+            <div class="att-empty">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+              <p>{{ 'REPORTS.WS_EMPTY_FILTER' | translate }}</p>
+              <button type="button" class="ws-btn" (click)="clearWsFilters()">{{ 'REPORTS.WS_CLEAR_FILTERS' | translate }}</button>
+            </div>
+          } @else {
+            <div class="att-rows">
+              <div class="att-row att-row-head">
+                <span>{{ 'REPORTS.WORK_SESSIONS_COL_STAFF' | translate }}</span>
+                <span>{{ 'REPORTS.WORK_SESSIONS_COL_START' | translate }}</span>
+                <span>{{ 'REPORTS.WORK_SESSIONS_COL_END' | translate }}</span>
+                <span>{{ 'REPORTS.WORK_SESSIONS_COL_DURATION' | translate }}</span>
+                <span>{{ 'REPORTS.WS_COL_BREAKS' | translate }}</span>
+                <span>IP</span>
+                <span></span>
+              </div>
+              @for (g of wsGroups(); track g.key) {
+                <div class="ws-day">
+                  <b>{{ g.label }}</b>
+                  @if (g.today) { <em>{{ 'REPORTS.WS_TODAY' | translate }}</em> }
+                  <span>{{ 'REPORTS.WS_DAY_SUMMARY' | translate: { people: g.people, time: g.time } }}</span>
+                </div>
+                @for (row of g.items; track row.id) {
+                  @let f = sessionFlags(row);
+                  <div class="att-row" [class.is-alert]="f.alert">
+                    <div class="att-who">
+                      <span class="att-avatar sm" [style.--h]="hueOf(row.user_name)">{{ initialsOf(row.user_name) }}</span>
+                      <div class="att-who-text">
+                        <b>{{ row.user_name }}</b>
+                        @if (f.edited || f.stale || f.long || f.short) {
+                          <div class="ws-flags">
+                            @if (f.stale) { <span class="fl amber">{{ 'REPORTS.WS_FLAG_STALE' | translate }}</span> }
+                            @if (f.long) { <span class="fl amber">{{ 'REPORTS.WS_FLAG_LONG' | translate }}</span> }
+                            @if (f.short) { <span class="fl grey">{{ 'REPORTS.WS_FLAG_SHORT' | translate }}</span> }
+                            @if (f.edited) {
+                              <button type="button" class="fl blue" (click)="openHistory(row)">{{ 'REPORTS.WS_FLAG_EDITED' | translate }} · {{ row.adjusted_count }}</button>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                    <div class="att-when"><span>{{ timeOnly(row.started_at) }}</span></div>
+                    <div class="att-when">
+                      @if (row.ended_at) {
+                        <span>{{ timeOnly(row.ended_at) }}</span>
+                        @if (dayOnly(row.ended_at) !== g.label) { <em>{{ dayOnly(row.ended_at) }}</em> }
+                      } @else {
+                        <span class="att-open">{{ 'REPORTS.WORK_SESSIONS_STATUS_WORKING' | translate }}</span>
+                      }
+                    </div>
+                    <div><span class="att-dur" [class.warn]="f.alert">{{ formatWorkSessionDuration(row) }}</span></div>
+                    <div class="ws-breaks">{{ breaksLabel(row) }}</div>
+                    <div class="att-ips">
+                      <code title="IP">{{ row.start_ip || '—' }}</code>
+                      @if (row.end_ip && row.end_ip !== row.start_ip) {
+                        <code title="IP">{{ row.end_ip }}</code>
+                      }
+                    </div>
+                    <button type="button" class="att-fix" (click)="openWorkSessionAdjust(row)">
+                      {{ 'REPORTS.WORK_SESSION_ADJUST' | translate }}
+                    </button>
+                  </div>
+                }
+              }
+            </div>
+            @if (wsRemaining() > 0) {
+              <button type="button" class="ws-more" (click)="showMoreSessions()">
+                {{ 'REPORTS.WS_SHOW_MORE' | translate: { n: wsRemaining() } }}
+              </button>
+            }
+          }
         }
       </section>
     }
@@ -719,6 +792,97 @@
         </div>
       </div>
     </div>
+    </div>
+  }
+
+  @if (historyTarget(); as ht) {
+    <div class="reports-modal-overlay" role="presentation" (click)="closeHistory()">
+      <div class="reports-modal-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+        <div class="wsa-head">
+          <span class="wsa-ico" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" /><path d="M12 8v5l3 2" /></svg>
+          </span>
+          <div class="wsa-head-text">
+            <h3 class="reports-modal-title">{{ 'REPORTS.WS_HISTORY_TITLE' | translate }}</h3>
+            <p class="reports-modal-staff"><span class="wsa-avatar">{{ initialsOf(ht.user_name) }}</span>{{ ht.user_name }}</p>
+          </div>
+        </div>
+        <div class="wsa-body">
+          @if (historyLoading()) {
+            <p class="muted">{{ 'REPORTS.WORK_SESSIONS_LOADING' | translate }}</p>
+          } @else if (historyItems().length === 0) {
+            <p class="muted">{{ 'REPORTS.WS_HISTORY_EMPTY' | translate }}</p>
+          } @else {
+            <ol class="ws-timeline">
+              @for (it of historyItems(); track it.id) {
+                <li>
+                  <div class="ws-tl-top">
+                    <b>{{ it.actor_name || '—' }}</b>
+                    <span>{{ formatWorkSessionDt(it.created_at) }}</span>
+                  </div>
+                  @if (!it.previous_started_at && !it.previous_ended_at) {
+                    <p class="ws-tl-chg">{{ 'REPORTS.WS_HISTORY_CREATED' | translate }}: <b>{{ formatWorkSessionDt(it.new_started_at) }}</b> → <b>{{ formatWorkSessionDt(it.new_ended_at) }}</b></p>
+                  } @else {
+                    @if (it.previous_started_at !== it.new_started_at) {
+                      <p class="ws-tl-chg">{{ 'REPORTS.WS_HISTORY_START' | translate }}: <s>{{ formatWorkSessionDt(it.previous_started_at) }}</s> → <b>{{ formatWorkSessionDt(it.new_started_at) }}</b></p>
+                    }
+                    @if (it.previous_ended_at !== it.new_ended_at) {
+                      <p class="ws-tl-chg">{{ 'REPORTS.WS_HISTORY_END' | translate }}: <s>{{ formatWorkSessionDt(it.previous_ended_at) }}</s> → <b>{{ formatWorkSessionDt(it.new_ended_at) }}</b></p>
+                    }
+                  }
+                  @if (it.note) { <p class="ws-tl-note">“{{ it.note }}”</p> }
+                </li>
+              }
+            </ol>
+          }
+          <div class="reports-modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeHistory()">{{ 'COMMON.CLOSE' | translate }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (manualOpen()) {
+    <div class="reports-modal-overlay" role="presentation">
+      <div class="reports-modal-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+        <div class="wsa-head">
+          <span class="wsa-ico" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8" /></svg>
+          </span>
+          <div class="wsa-head-text">
+            <h3 class="reports-modal-title">{{ 'REPORTS.WS_ADD_TITLE' | translate }}</h3>
+            <p class="reports-modal-staff">{{ 'REPORTS.WS_ADD_HINT' | translate }}</p>
+          </div>
+        </div>
+        <div class="wsa-body">
+          @if (manualError()) {
+            <div class="error-banner reports-modal-error">{{ manualError() }}</div>
+          }
+          <div class="reports-modal-field">
+            <label>{{ 'REPORTS.WS_ADD_PERSON' | translate }}</label>
+            <app-select [options]="staffOptions()" [ngModel]="manualUser() ?? ''" (ngModelChange)="manualUser.set($event === '' ? null : +$event)" />
+          </div>
+          <div class="reports-modal-field wsa-in">
+            <label><span class="wsa-dot"></span>{{ 'REPORTS.WORK_SESSION_ADJUST_START' | translate }}</label>
+            <app-date-picker mode="datetime" [clearable]="false" [ngModel]="manualStart()" (ngModelChange)="manualStart.set($event || '')" />
+          </div>
+          <div class="reports-modal-field wsa-out">
+            <label><span class="wsa-dot"></span>{{ 'REPORTS.WORK_SESSION_ADJUST_END' | translate }}</label>
+            <app-date-picker mode="datetime" [clearable]="false" [ngModel]="manualEnd()" (ngModelChange)="manualEnd.set($event || '')" />
+          </div>
+          <div class="reports-modal-field">
+            <label for="ws-manual-note">{{ 'REPORTS.WORK_SESSION_ADJUST_NOTE' | translate }}</label>
+            <textarea id="ws-manual-note" rows="2" [ngModel]="manualNote()" (ngModelChange)="manualNote.set($event)"></textarea>
+          </div>
+          <div class="reports-modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeManual()" [disabled]="manualSaving()">{{ 'COMMON.CANCEL' | translate }}</button>
+            <button type="button" class="btn btn-primary" (click)="submitManual()" [disabled]="manualSaving()">
+              {{ manualSaving() ? ('COMMON.SAVING' | translate) : ('REPORTS.WS_ADD_SAVE' | translate) }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   }
 </app-sidebar>

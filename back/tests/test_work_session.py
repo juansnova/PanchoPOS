@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import unittest
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from pg_client_mixin import PgClientTestCase
 
@@ -92,10 +93,12 @@ class TestWorkSession(PgClientTestCase):
         self.assertEqual(len(rows), 1)
         self.assertIsNotNone(rows[0].get("ended_at"))
 
+        # the report buckets by the restaurant's local day (default America/Bogota)
+        local_today = datetime.now(ZoneInfo("America/Bogota")).date().isoformat()
         ah = _bearer_headers(self.admin)
         rep = self.client.get(
             "/reports/work-sessions",
-            params={"from_date": today, "to_date": today},
+            params={"from_date": local_today, "to_date": local_today},
             headers=ah,
         )
         self.assertEqual(rep.status_code, 200, rep.text)
