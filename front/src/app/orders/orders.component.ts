@@ -1205,7 +1205,7 @@ ModuleRegistry.registerModules([
 
                   @if (dianInvoice(); as di) {
                     <p class="order-summary">
-                      @if (di.document_type === 'credit_note') {
+                      @if (di.document_type === 'credit_note' && di.status !== 'error') {
                         {{ 'ORDERS.DIAN_CREDIT_NOTE_ISSUED' | translate }}
                       } @else {
                         {{ 'ORDERS.DIAN_STATUS' | translate }}: <strong>{{ di.status }}</strong>

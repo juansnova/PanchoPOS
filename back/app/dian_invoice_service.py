@@ -307,6 +307,12 @@ def cancel_dian_invoice(
         )
     ).first()
     if existing_credit:
+        if existing_credit.status == "error":
+            _submit(session, existing_credit, tenant, require_live_success=(mode == "live"))
+            if existing_credit.status == "issued":
+                original.status = "cancelled"
+                session.add(original)
+                session.flush()
         return existing_credit
 
     billing_customer = None
