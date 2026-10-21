@@ -385,14 +385,7 @@
   .book-week-time-select {
     display: block;
     width: 100%;
-    max-width: 12rem;
-    box-sizing: border-box;
-    font: inherit;
-    padding: 6px 10px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    color: var(--color-text);
+    max-width: 16rem;
     margin: 0;
   }
 }

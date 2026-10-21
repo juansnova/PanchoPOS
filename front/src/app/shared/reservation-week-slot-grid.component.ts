@@ -1,3 +1,4 @@
+import { AppSelectComponent, AppSelectOption } from './app-select.component';
 import { Component, inject, input, model, signal, effect, untracked } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -13,7 +14,7 @@ import { resolveBookingServiceLabel } from './booking-meal-split';
 @Component({
   selector: 'app-reservation-week-slot-grid',
   standalone: true,
-  imports: [FormsModule, NgClass, TranslateModule],
+  imports: [FormsModule, NgClass, TranslateModule, AppSelectComponent],
   templateUrl: './reservation-week-slot-grid.component.html',
   styleUrl: './reservation-week-slot-grid.component.scss',
 })
@@ -385,6 +386,11 @@ export class ReservationWeekSlotGridComponent {
       month: 'long',
       year: 'numeric',
     }).format(dt);
+  }
+
+  /** Time slots for the "Franja horaria" dropdown (full slots stay visible but disabled). */
+  timeOptions(): AppSelectOption[] {
+    return this.dayTimes().map((t) => ({ value: t, label: t, disabled: !this.daySlotSelectable(t) }));
   }
 
   onTimeModelChange(value: string): void {

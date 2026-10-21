@@ -86,20 +86,18 @@
           @if (daySlotsLoading()) {
             <span class="book-day-slots-loading">{{ 'BOOK.DAY_SLOTS_LOADING' | translate }}</span>
           } @else {
-            <select
-              id="book-slot-time-select"
-              name="bookSlotTime"
+            <app-select
               class="book-week-time-select"
               [ngModel]="selectedTime()"
-              (ngModelChange)="onTimeModelChange($event)"
+              (changed)="onTimeModelChange($any($event))"
               [ngModelOptions]="{ standalone: true }"
-              [disabled]="monthLoading() || !dayTimes().length"
-            >
-              <option value="">{{ 'BOOK.SELECT_TIME_PLACEHOLDER' | translate }}</option>
-              @for (t of dayTimes(); track t) {
-                <option [value]="t" [disabled]="!daySlotSelectable(t)">{{ t }}</option>
-              }
-            </select>
+              [options]="timeOptions()"
+              [placeholder]="'BOOK.SELECT_TIME_PLACEHOLDER' | translate"
+              [clearable]="true"
+              [emptyValue]="''"
+              [grid]="true"
+              [searchable]="false"
+              [disabled]="monthLoading() || !dayTimes().length" />
             @if (isTodaySelected()) {
               <p class="book-same-day-time-hint">{{ 'BOOK.SAME_DAY_TIME_HINT' | translate }}</p>
             }

@@ -138,9 +138,6 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
                   @if (r.seating_preference) {
                     <span class="rv-tag">{{ seatingLabel(r.seating_preference) }}</span>
                   }
-                  @if (r.guest_birthday_month && r.guest_birthday_day) {
-                    <span class="rv-tag rv-tag-bday"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-8a2 2 0 00-2-2H6a2 2 0 00-2 2v8M4 16s1.5-1 4-1 4 2 8 2 4-1 4-1M12 11V7M12 7a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>{{ formatGuestBirthday(r) }}</span>
-                  }
                   @if (!dietaryNotesLine(r) && r.allergies_has) {
                     <span class="rv-tag rv-tag-warn">{{ 'BOOK.ALLERGIES_HAS' | translate }}</span>
                   }
@@ -367,24 +364,6 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
                   <div class="rf-group">
                     <label class="rf-label" for="res-modal-email">{{ 'RESERVATIONS.CUSTOMER_EMAIL' | translate }}</label>
                     <input id="res-modal-email" type="email" name="customerEmail" [(ngModel)]="formEmail" placeholder="your@email.com" autocomplete="email" />
-                  </div>
-                  <div class="rf-group">
-                    <span class="rf-label">{{ 'RESERVATIONS.BIRTHDAY' | translate }}</span>
-                    <div class="birthday-selects">
-                      <select id="res-modal-bday-month" [(ngModel)]="formBirthdayMonth" name="resBdayMonth">
-                        <option [ngValue]="null">{{ 'BOOK.BIRTHDAY_MONTH' | translate }}</option>
-                        @for (m of birthdayMonths; track m.value) {
-                          <option [ngValue]="m.value">{{ m.labelKey | translate }}</option>
-                        }
-                      </select>
-                      <select id="res-modal-bday-day" [(ngModel)]="formBirthdayDay" name="resBdayDay">
-                        <option [ngValue]="null">{{ 'BOOK.BIRTHDAY_DAY' | translate }}</option>
-                        @for (d of birthdayDays; track d) {
-                          <option [ngValue]="d">{{ d }}</option>
-                        }
-                      </select>
-                    </div>
-                    <small class="field-hint">{{ 'BOOK.BIRTHDAY_HINT' | translate }}</small>
                   </div>
                 </section>
 

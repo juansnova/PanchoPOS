@@ -19,6 +19,8 @@ export interface AppSelectOption {
   label: string;
   /** Small secondary line (e.g. SKU). */
   sub?: string;
+  /** Shown but not selectable (e.g. a time slot that is full). */
+  disabled?: boolean;
 }
 
 /**
@@ -59,15 +61,16 @@ export interface AppSelectOption {
             <input #searchBox type="search" autocomplete="off" [value]="query()" (input)="onQuery($event)" (keydown)="onPanelKey($event)" placeholder="…" />
           </div>
         }
-        <ul class="as-list" role="listbox" tabindex="-1" (keydown)="onPanelKey($event)" #list>
+        <ul class="as-list" [class.as-grid]="grid()" role="listbox" tabindex="-1" (keydown)="onPanelKey($event)" #list>
           @if (clearable() && !query()) {
             <li class="as-opt as-opt-empty" role="option" [class.as-active]="activeIndex() === -1" (mouseenter)="activeIndex.set(-1)" (click)="clear()">
               {{ placeholder() }}
             </li>
           }
           @for (opt of filtered(); track $index; let i = $index) {
-            <li class="as-opt" role="option" [attr.aria-selected]="isSelected(opt)" [class.as-selected]="isSelected(opt)"
-              [class.as-active]="activeIndex() === i" (mouseenter)="activeIndex.set(i)" (click)="choose(opt)">
+            <li class="as-opt" role="option" [attr.aria-selected]="isSelected(opt)" [attr.aria-disabled]="opt.disabled ? true : null"
+              [class.as-selected]="isSelected(opt)" [class.as-disabled]="opt.disabled"
+              [class.as-active]="activeIndex() === i && !opt.disabled" (mouseenter)="!opt.disabled && activeIndex.set(i)" (click)="!opt.disabled && choose(opt)">
               <span class="as-opt-text">
                 <span class="as-opt-label">{{ opt.label }}</span>
                 @if (opt.sub) {
@@ -129,6 +132,14 @@ export interface AppSelectOption {
     .as-selected { color: var(--color-primary); }
     .as-selected .as-opt-label { font-weight: 800; }
     .as-check { flex: none; color: var(--color-primary); }
+    .as-disabled { opacity: .38; cursor: not-allowed; text-decoration: line-through; }
+    .as-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    .as-grid .as-opt { justify-content: center; min-height: 44px; padding: 4px 6px; border: 1px solid var(--color-border); text-align: center; }
+    .as-grid .as-opt-empty { grid-column: 1 / -1; border-style: dashed; }
+    .as-grid .as-check { display: none; }
+    .as-grid .as-selected { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+    .as-grid .as-selected .as-opt-label { font-weight: 800; }
+    .as-grid .as-none { grid-column: 1 / -1; }
     .as-none { padding: 14px; text-align: center; color: var(--color-text-muted); }
     @media (prefers-reduced-motion: reduce) { .as-panel { animation: none; } .as-chevron { transition: none; } }
   `],
@@ -145,6 +156,8 @@ export class AppSelectComponent implements ControlValueAccessor {
   /** Force the search box on/off; by default it appears with more than 7 options. */
   readonly searchable = input<boolean | null>(null);
   readonly disabled = input(false);
+  /** Compact grid of short labels (e.g. times) instead of a vertical list. */
+  readonly grid = input(false);
   readonly changed = output<unknown>();
 
   @ViewChild('trigger') private triggerRef?: ElementRef<HTMLButtonElement>;
@@ -280,7 +293,7 @@ export class AppSelectComponent implements ControlValueAccessor {
       event.preventDefault();
       const i = this.activeIndex();
       if (i === -1 && min === -1) this.clear();
-      else if (this.filtered()[i]) this.choose(this.filtered()[i]);
+      else if (this.filtered()[i] && !this.filtered()[i].disabled) this.choose(this.filtered()[i]);
     } else if (event.key === 'Tab') {
       this.close(false);
     }
