@@ -513,6 +513,10 @@ export class PublicMenuComponent implements OnInit {
     document.body.style.overflow = 'hidden';
   }
 
+  scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   closeDetail(): void {
     this.selectedProduct.set(null);
     document.body.style.overflow = '';
