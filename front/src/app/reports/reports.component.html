@@ -284,7 +284,7 @@
             <tbody>
               @for (c of r.by_category; track c.category) {
                 <tr>
-                  <td [attr.data-label]="'REPORTS.CATEGORY' | translate">{{ c.category }}</td>
+                  <td [attr.data-label]="'REPORTS.CATEGORY' | translate">{{ categoryLabel(c.category) }}</td>
                   <td [attr.data-label]="'REPORTS.QUANTITY' | translate">{{ c.quantity }} ({{ formatPct(c.quantity, totalCategoryQuantity()) }})</td>
                   <td class="num" [attr.data-label]="'REPORTS.REVENUE' | translate">{{ formatCurrency(c.revenue_cents) }}</td>
                   @if ((r.summary.total_cost_cents ?? 0) > 0) {

@@ -438,6 +438,8 @@ def export_report(
     if format.lower() == "xlsx":
         from .report_xlsx import build_sales_workbook
 
+        from .tenant_subcategories import category_label_overrides
+
         tenant = session.get(models.Tenant, current_user.tenant_id)
         rows = _get_revenue_items(session, current_user.tenant_id, from_date, to_date)
         wb = build_sales_workbook(
@@ -446,6 +448,7 @@ def export_report(
             lang,
             tenant_name=(getattr(tenant, "name", "") or ""),
             tz_name=getattr(tenant, "timezone", None),
+            category_labels=category_label_overrides(session, current_user.tenant_id),
         )
         buf = BytesIO()
         wb.save(buf)
@@ -553,6 +556,8 @@ def export_detailed_report(
 
     income_rows = _get_revenue_items(session, current_user.tenant_id, from_date, to_date)
     expense_rows = _get_expense_rows(session, current_user.tenant_id, from_date, to_date)
+    from .tenant_subcategories import category_label_overrides
+
     tenant = session.get(models.Tenant, current_user.tenant_id)
     wb = build_detailed_workbook(
         income_rows,
@@ -562,6 +567,7 @@ def export_detailed_report(
         lang,
         tenant_name=(getattr(tenant, "name", "") or ""),
         tz_name=getattr(tenant, "timezone", None),
+        category_labels=category_label_overrides(session, current_user.tenant_id),
     )
     buf = BytesIO()
     wb.save(buf)

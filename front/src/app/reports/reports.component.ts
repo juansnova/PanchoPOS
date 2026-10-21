@@ -31,6 +31,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LanguageService } from '../services/language.service';
 import { intlLocaleFromTranslate } from '../shared/intl-locale';
 import { formatMoneyCents } from '../shared/currency-symbol';
+import { getCategoryLabel } from '../shared/product-category-label.util';
 
 export type ReportsDatePreset =
   | 'today'
@@ -136,7 +137,19 @@ export class ReportsComponent implements OnInit {
   /** Bumps when UI language changes so currency/date formatting refreshes. */
   private reportIntlRevision = signal(0);
 
+  /** Owner's category renames (e.g. "Main Course" shown as "Platos Fuertes"); empty if not allowed. */
+  private categoryOverrides = signal<Record<string, string>>({});
+
+  categoryLabel(category: string): string {
+    if (category === 'Uncategorized') return this.translate.instant('REPORTS.UNCATEGORIZED');
+    return getCategoryLabel(category, this.translate, this.categoryOverrides());
+  }
+
   ngOnInit() {
+    this.api.getTenantCategoryLabels().subscribe({
+      next: (labels) => this.categoryOverrides.set(labels),
+      error: () => undefined,
+    });
     const today = this.startOfLocalDay(new Date());
     const from = this.addLocalDays(today, -30);
     this.fromDate.set(this.fmtDate(from));

@@ -609,10 +609,16 @@ def _pay_label(raw: str | None, L: dict) -> str:
     }.get(key, key.replace("_", " ").title())
 
 
-def _localize_names(data: dict, rows: list[dict], L: dict):
-    """The API stores English placeholders ("Uncategorized", "Unassigned"); show them in the report language."""
+def _localize_names(data: dict, rows: list[dict], L: dict, category_labels=None, lang: str | None = None):
+    """Show categories as the app does (owner's rename > built-in translation) and translate placeholders."""
+    from .category_codes import get_public_category_display_label
+
+    overrides = category_labels or {}
+
     def cat(v):
-        return L["uncategorized"] if (not v or v == "Uncategorized") else v
+        if not v or v == "Uncategorized":
+            return L["uncategorized"]
+        return overrides.get(v) or get_public_category_display_label(v, lang or "es")
 
     def wtr(v):
         return L["unassigned"] if (not v or v == "Unassigned") else v
@@ -651,11 +657,12 @@ def build_sales_workbook(
     lang: str | None,
     tenant_name: str = "",
     tz_name: str | None = None,
+    category_labels: dict[str, str] | None = None,
 ) -> Workbook:
     """Multi-sheet analytical workbook for the report range described by ``data``."""
     L = labels(lang)
     tz = _tz(tz_name)
-    data, rows = _localize_names(data, rows, L)
+    data, rows = _localize_names(data, rows, L, category_labels, lang)
     s = data["summary"]
     from_date = date.fromisoformat(data["from_date"])
     to_date = date.fromisoformat(data["to_date"])
@@ -1004,11 +1011,12 @@ def build_detailed_workbook(
     lang: str | None,
     tenant_name: str = "",
     tz_name: str | None = None,
+    category_labels: dict[str, str] | None = None,
 ) -> Workbook:
     """Line-by-line income and expenses with a net analysis."""
     L = labels(lang)
     tz = _tz(tz_name)
-    _, income_rows = _localize_names({}, income_rows, L)
+    _, income_rows = _localize_names({}, income_rows, L, category_labels, lang)
     sub = _subtitle(L, tenant_name, from_date, to_date, tz)
     income_total = sum(r["revenue_cents"] for r in income_rows)
     cost_total = sum(r["cost_cents"] for r in income_rows)
