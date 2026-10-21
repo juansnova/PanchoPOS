@@ -87,6 +87,20 @@ export interface Shift {
   updated_at?: string;
 }
 
+/** Reusable shift (optionally split in two blocks the same day). Times are "HH:MM". */
+export interface ShiftTemplateBody {
+  name: string;
+  start_time: string;
+  end_time: string;
+  start_time2?: string | null;
+  end_time2?: string | null;
+}
+
+export interface ShiftTemplate extends ShiftTemplateBody {
+  id: number;
+  sort_order: number;
+}
+
 export interface ShiftCreate {
   user_id: number;
   date: string;
@@ -3292,6 +3306,22 @@ export class ApiService {
 
   getShift(shiftId: number): Observable<Shift> {
     return this.http.get<Shift>(`${this.apiUrl}/schedule/${shiftId}`);
+  }
+
+  getShiftTemplates(): Observable<ShiftTemplate[]> {
+    return this.http.get<ShiftTemplate[]>(`${this.apiUrl}/schedule/templates`);
+  }
+
+  createShiftTemplate(body: ShiftTemplateBody): Observable<ShiftTemplate> {
+    return this.http.post<ShiftTemplate>(`${this.apiUrl}/schedule/templates`, body);
+  }
+
+  updateShiftTemplate(id: number, body: ShiftTemplateBody): Observable<ShiftTemplate> {
+    return this.http.put<ShiftTemplate>(`${this.apiUrl}/schedule/templates/${id}`, body);
+  }
+
+  deleteShiftTemplate(id: number): Observable<{ deleted: boolean; id: number }> {
+    return this.http.delete<{ deleted: boolean; id: number }>(`${this.apiUrl}/schedule/templates/${id}`);
   }
 
   createShift(data: ShiftCreate): Observable<Shift> {

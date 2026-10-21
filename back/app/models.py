@@ -564,6 +564,27 @@ class Shift(TenantMixin, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class ShiftTemplate(TenantMixin, table=True):
+    """Reusable shift (e.g. Apertura 08:00-16:00, or a split shift with a second block)."""
+
+    __tablename__ = "shift_template"
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(max_length=40)
+    start_time: str = Field(max_length=5)
+    end_time: str = Field(max_length=5)
+    start_time2: str | None = Field(default=None, max_length=5)
+    end_time2: str | None = Field(default=None, max_length=5)
+    sort_order: int = Field(default=0)
+
+
+class ShiftTemplateBody(SQLModel):
+    name: str
+    start_time: str
+    end_time: str
+    start_time2: str | None = None
+    end_time2: str | None = None
+
+
 class WorkSession(TenantMixin, table=True):
     """Recorded clock-in/out times for tenant staff (payroll / attendance); not the planned working plan."""
 

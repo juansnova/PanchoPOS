@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin, Observable } from 'rxjs';
 import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -8,6 +9,7 @@ import {
   ShiftCreate,
   ShiftUpdate,
   ShiftBulkCreate,
+  ShiftTemplate,
   PlannedVsActualRow,
   ScheduleComplianceWarning,
   User,
@@ -20,6 +22,17 @@ import { LanguageService } from '../services/language.service';
 import { PermissionService } from '../services/permission.service';
 import { hueFromUserId, weekShiftCardBorderLeft } from './working-plan-shift-colors';
 import { ApiErrorMessageService } from '../services/api-error-message.service';
+
+interface TemplateDraft {
+  key: number;
+  id?: number;
+  name: string;
+  start_time: string;
+  end_time: string;
+  split: boolean;
+  start_time2: string;
+  end_time2: string;
+}
 
 /** One row in a calendar day cell: a real shift or the “+N more” overflow line. */
 type CalendarShiftLineRow =
@@ -415,6 +428,29 @@ function isValidView(v: string | null): v is ViewMode {
             <button class="btn btn-primary" (click)="openCreate()">{{ 'WORKING_PLAN.ADD_SHIFT' | translate }}</button>
           </div>
         } @else if (weekLayout() === 'grid') {
+          <!-- Shift templates: pick one, then click cells to apply it -->
+          @if (canWriteSchedule() && templates().length) {
+            <div class="wp-templates" data-testid="working-plan-templates">
+              <span class="wp-templates-title">{{ 'WORKING_PLAN.TEMPLATES_TITLE' | translate }}</span>
+              @for (t of templates(); track t.id; let i = $index) {
+                <button type="button" class="wp-tpl" [class.on]="armedTemplateId() === t.id" [style.--wp-h]="templateHue(i)"
+                  (click)="toggleTemplate(t)" [attr.aria-pressed]="armedTemplateId() === t.id">
+                  <span class="wp-tpl-dot"></span>
+                  <span class="wp-tpl-name">{{ t.name }}</span>
+                  <small>{{ templateRangeLabel(t) }}</small>
+                </button>
+              }
+              @if (canManageAllSchedules()) {
+                <button type="button" class="wp-tpl-manage" (click)="openTemplates()">{{ 'WORKING_PLAN.TEMPLATES_MANAGE' | translate }}</button>
+              }
+              @if (armedTemplate(); as at) {
+                <span class="wp-tpl-hint">{{ 'WORKING_PLAN.TEMPLATES_ARMED_HINT' | translate: { name: at.name } }}</span>
+              } @else {
+                <span class="wp-tpl-hint wp-muted">{{ 'WORKING_PLAN.TEMPLATES_PICK_HINT' | translate }}</span>
+              }
+            </div>
+          }
+
           <!-- Week summary -->
           <div class="wp-kpis" data-testid="working-plan-kpis">
             <div class="wp-kpi">
@@ -477,7 +513,8 @@ function isValidView(v: string | null): v is ViewMode {
                         }
                       }
                       @if (canAddFor(row.id) && !c.closed) {
-                        <button type="button" class="wp-add" (click)="openCreateFor(row.id, c.date)" [attr.aria-label]="'WORKING_PLAN.ADD_SHIFT' | translate" [title]="'WORKING_PLAN.ADD_SHIFT' | translate">+</button>
+                        <button type="button" class="wp-add" [class.wp-add-armed]="armedTemplate()" (click)="onCellAdd(row.id, c.date)"
+                          [attr.aria-label]="'WORKING_PLAN.ADD_SHIFT' | translate" [title]="(armedTemplate() ? armedTemplate()!.name : ('WORKING_PLAN.ADD_SHIFT' | translate))">{{ armedTemplate() ? '✓' : '+' }}</button>
                       }
                     </div>
                   }
@@ -715,6 +752,57 @@ function isValidView(v: string | null): v is ViewMode {
             <div class="modal-footer">
               <button type="button" class="btn btn-ghost" (click)="closeModal()">{{ 'COMMON.CANCEL' | translate }}</button>
               <button type="button" class="btn btn-primary" (click)="saveShift()">{{ 'COMMON.SAVE' | translate }}</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (showTemplates()) {
+        <div class="modal-overlay">
+          <div class="modal-content wp-tpl-modal" (click)="$event.stopPropagation()" appFocusFirstInput>
+            <div class="modal-header">
+              <h3>{{ 'WORKING_PLAN.TEMPLATES_MANAGE_TITLE' | translate }}</h3>
+              <button type="button" class="close-btn" (click)="closeTemplates()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p class="wp-tpl-help">{{ 'WORKING_PLAN.TEMPLATES_MANAGE_HELP' | translate }}</p>
+              @for (d of templateDrafts(); track d.key; let i = $index) {
+                <div class="wp-tpl-row" [style.--wp-h]="templateHue(i)">
+                  <input type="text" class="wp-tpl-name-input" maxlength="40" [ngModel]="d.name" (ngModelChange)="patchDraft(d.key, { name: $event })"
+                    [placeholder]="'WORKING_PLAN.TEMPLATE_NAME' | translate" />
+                  <div class="wp-tpl-times">
+                    <input type="time" [ngModel]="d.start_time" (ngModelChange)="patchDraft(d.key, { start_time: $event })" />
+                    <span>–</span>
+                    <input type="time" [ngModel]="d.end_time" (ngModelChange)="patchDraft(d.key, { end_time: $event })" />
+                  </div>
+                  @if (d.split) {
+                    <div class="wp-tpl-times">
+                      <input type="time" [ngModel]="d.start_time2" (ngModelChange)="patchDraft(d.key, { start_time2: $event })" />
+                      <span>–</span>
+                      <input type="time" [ngModel]="d.end_time2" (ngModelChange)="patchDraft(d.key, { end_time2: $event })" />
+                    </div>
+                  }
+                  <label class="wp-tpl-split">
+                    <input type="checkbox" [ngModel]="d.split" (ngModelChange)="patchDraft(d.key, { split: $event })" />
+                    {{ 'WORKING_PLAN.TEMPLATE_SPLIT' | translate }}
+                  </label>
+                  <button type="button" class="wp-tpl-del" (click)="removeDraft(d.key)" [attr.aria-label]="'COMMON.DELETE' | translate">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  </button>
+                </div>
+              }
+              <button type="button" class="wp-tpl-new" (click)="addDraft()">+ {{ 'WORKING_PLAN.TEMPLATE_NEW' | translate }}</button>
+              @if (templatesError()) {
+                <div class="form-error">{{ templatesError() }}</div>
+              }
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-ghost" (click)="closeTemplates()">{{ 'COMMON.CANCEL' | translate }}</button>
+              <button type="button" class="btn btn-primary" (click)="saveTemplates()" [disabled]="templatesSaving()">
+                {{ templatesSaving() ? ('COMMON.LOADING' | translate) : ('COMMON.SAVE' | translate) }}
+              </button>
             </div>
           </div>
         </div>
@@ -1007,6 +1095,40 @@ function isValidView(v: string | null): v is ViewMode {
     .wp-muted { color: var(--color-text-muted); }
 
     .shift-card { border-radius: 14px; }
+
+    /* ===== Plantillas de turno ===== */
+    .wp-templates { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 0; padding: 10px 12px; border-radius: 18px; background: var(--color-surface); border: 1px solid var(--color-border); }
+    .wp-templates-title { font-size: .72rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--color-text-muted); margin-right: 4px; }
+    .wp-tpl {
+      display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 16px 0 12px; border-radius: 999px; cursor: pointer;
+      border: 1.5px solid hsl(var(--wp-h) 45% 80%); background: hsl(var(--wp-h) 80% 96%); color: hsl(var(--wp-h) 55% 24%); font: inherit; font-weight: 700;
+      touch-action: manipulation; transition: background .15s, border-color .15s, transform .12s;
+    }
+    .wp-tpl small { font-size: .72rem; font-weight: 600; opacity: .75; font-variant-numeric: tabular-nums; }
+    .wp-tpl-dot { width: 10px; height: 10px; border-radius: 50%; background: hsl(var(--wp-h) 60% 48%); }
+    .wp-tpl:hover { border-color: hsl(var(--wp-h) 55% 55%); }
+    .wp-tpl:active { transform: scale(.97); }
+    .wp-tpl.on { background: hsl(var(--wp-h) 60% 44%); border-color: hsl(var(--wp-h) 60% 44%); color: #fff; box-shadow: 0 8px 16px -10px hsl(var(--wp-h) 60% 30%); }
+    .wp-tpl.on .wp-tpl-dot { background: #fff; }
+    .wp-tpl-manage { min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px dashed var(--color-border); background: transparent; color: var(--color-text-muted); font: inherit; font-size: .82rem; font-weight: 700; cursor: pointer; }
+    .wp-tpl-manage:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .wp-tpl-hint { margin-left: auto; font-size: .82rem; font-weight: 600; color: var(--color-primary); }
+    .wp-add-armed { opacity: 1 !important; border-style: solid; border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-light); }
+    .wp-tpl-modal { max-width: 640px; }
+    .wp-tpl-help { margin: 0 0 12px; font-size: .85rem; color: var(--color-text-muted); }
+    .wp-tpl-row {
+      display: grid; grid-template-columns: minmax(120px, 1.2fr) auto auto auto auto; align-items: center; gap: 8px 12px; padding: 10px 12px; margin-bottom: 8px;
+      border-radius: 16px; border: 1px solid var(--color-border); border-left: 5px solid hsl(var(--wp-h) 55% 50%); background: var(--color-bg);
+    }
+    .wp-tpl-row input[type='text'], .wp-tpl-row input[type='time'] { padding: 0.45rem 0.6rem; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); width: auto; }
+    .wp-tpl-name-input { width: 100% !important; font-weight: 700; }
+    .wp-tpl-times { display: inline-flex; align-items: center; gap: 6px; }
+    .wp-tpl-split { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+    .wp-tpl-split input { width: auto; }
+    .wp-tpl-del { width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--color-text-muted); cursor: pointer; }
+    .wp-tpl-del:hover { background: rgba(220,38,38,.1); color: #dc2626; }
+    .wp-tpl-new { width: 100%; min-height: 44px; border-radius: 14px; border: 1.5px dashed var(--color-primary); background: var(--color-primary-light); color: var(--color-primary); font: inherit; font-weight: 800; cursor: pointer; }
+    @media (max-width: 640px) { .wp-tpl-row { grid-template-columns: 1fr auto; } .wp-tpl-hint { margin-left: 0; width: 100%; } }
   `],
 })
 export class WorkingPlanComponent implements OnInit, OnDestroy {
@@ -1110,6 +1232,142 @@ export class WorkingPlanComponent implements OnInit, OnDestroy {
     let d = toMin(s.end_time) - toMin(s.start_time);
     if (d < 0) d += 24 * 60; // overnight
     return d;
+  }
+
+  // ----- Shift templates -----
+  templates = signal<ShiftTemplate[]>([]);
+  armedTemplateId = signal<number | null>(null);
+  armedTemplate = computed(() => this.templates().find((t) => t.id === this.armedTemplateId()) ?? null);
+  showTemplates = signal(false);
+  templatesSaving = signal(false);
+  templatesError = signal<string | null>(null);
+  templateDrafts = signal<TemplateDraft[]>([]);
+  private draftSeq = 0;
+
+  private loadTemplates(): void {
+    this.api.getShiftTemplates().subscribe({
+      next: (list) => this.templates.set(list),
+      error: () => this.templates.set([]),
+    });
+  }
+
+  templateHue(index: number): number {
+    return [28, 205, 150, 280, 345, 60][index % 6];
+  }
+
+  templateRangeLabel(t: ShiftTemplate): string {
+    const first = `${t.start_time}–${t.end_time}`;
+    return t.start_time2 && t.end_time2 ? `${first} · ${t.start_time2}–${t.end_time2}` : first;
+  }
+
+  toggleTemplate(t: ShiftTemplate): void {
+    this.armedTemplateId.set(this.armedTemplateId() === t.id ? null : t.id);
+  }
+
+  /** Click on a grid cell: apply the armed template, or open the normal form. */
+  onCellAdd(userId: number, date: string): void {
+    const t = this.armedTemplate();
+    if (!t) {
+      this.openCreateFor(userId, date);
+      return;
+    }
+    const blocks: [string, string][] = [[t.start_time, t.end_time]];
+    if (t.start_time2 && t.end_time2) blocks.push([t.start_time2, t.end_time2]);
+    forkJoin(
+      blocks.map(([start, end]) =>
+        this.api.createShift({ user_id: userId, date, start_time: start, end_time: end, label: t.name })
+      )
+    ).subscribe({
+      next: () => {
+        this.showToast(this.translate.instant('WORKING_PLAN.TEMPLATE_APPLIED', { name: t.name }), 'success');
+        this.load();
+      },
+      error: (err) => {
+        this.showToast(this.getApiErrorMessage(err), 'error');
+        this.load();
+      },
+    });
+  }
+
+  openTemplates(): void {
+    this.templatesError.set(null);
+    this.templateDrafts.set(
+      this.templates().map((t) => ({
+        key: ++this.draftSeq,
+        id: t.id,
+        name: t.name,
+        start_time: t.start_time,
+        end_time: t.end_time,
+        split: !!(t.start_time2 && t.end_time2),
+        start_time2: t.start_time2 || '16:00',
+        end_time2: t.end_time2 || '20:00',
+      }))
+    );
+    this.showTemplates.set(true);
+  }
+
+  closeTemplates(): void {
+    this.showTemplates.set(false);
+  }
+
+  addDraft(): void {
+    this.templateDrafts.update((list) => [
+      ...list,
+      { key: ++this.draftSeq, name: '', start_time: '09:00', end_time: '17:00', split: false, start_time2: '16:00', end_time2: '20:00' },
+    ]);
+  }
+
+  patchDraft(key: number, patch: Partial<TemplateDraft>): void {
+    this.templateDrafts.update((list) => list.map((d) => (d.key === key ? { ...d, ...patch } : d)));
+  }
+
+  removeDraft(key: number): void {
+    this.templateDrafts.update((list) => list.filter((d) => d.key !== key));
+  }
+
+  saveTemplates(): void {
+    const drafts = this.templateDrafts();
+    for (const d of drafts) {
+      const bad = !d.name.trim() || !d.start_time || !d.end_time || d.start_time >= d.end_time ||
+        (d.split && (!d.start_time2 || !d.end_time2 || d.start_time2 >= d.end_time2 || d.start_time2 <= d.end_time));
+      if (bad) {
+        this.templatesError.set(this.translate.instant('WORKING_PLAN.TEMPLATE_INVALID', { name: d.name || '…' }));
+        return;
+      }
+    }
+    this.templatesError.set(null);
+    this.templatesSaving.set(true);
+    const keepIds = new Set(drafts.filter((d) => d.id != null).map((d) => d.id as number));
+    const calls = [
+      ...this.templates().filter((t) => !keepIds.has(t.id)).map((t) => this.api.deleteShiftTemplate(t.id)),
+      ...drafts.map((d) => {
+        const body = {
+          name: d.name.trim(),
+          start_time: d.start_time,
+          end_time: d.end_time,
+          start_time2: d.split ? d.start_time2 : null,
+          end_time2: d.split ? d.end_time2 : null,
+        };
+        return d.id != null ? this.api.updateShiftTemplate(d.id, body) : this.api.createShiftTemplate(body);
+      }),
+    ];
+    const onDone = () => {
+      this.templatesSaving.set(false);
+      this.showTemplates.set(false);
+      if (this.armedTemplateId() != null && !keepIds.has(this.armedTemplateId() as number)) this.armedTemplateId.set(null);
+      this.loadTemplates();
+    };
+    if (!calls.length) {
+      onDone();
+      return;
+    }
+    forkJoin(calls as Observable<unknown>[]).subscribe({
+      next: onDone,
+      error: (err: unknown) => {
+        this.templatesSaving.set(false);
+        this.templatesError.set(this.getApiErrorMessage(err));
+      },
+    });
   }
 
   /** Seven days of the visible week with today / closed flags and per-role coverage. */
@@ -1455,6 +1713,7 @@ export class WorkingPlanComponent implements OnInit, OnDestroy {
       next: (settings) => this.parseOpeningHours(settings.opening_hours),
       error: () => {},
     });
+    this.loadTemplates();
   }
 
   ngOnDestroy(): void {

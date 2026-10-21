@@ -7053,6 +7053,152 @@ def schedule_compliance_summary(
     }
 
 
+_DEFAULT_SHIFT_TEMPLATES = [
+    ("Apertura", "08:00", "16:00", None, None),
+    ("Cierre", "14:00", "22:00", None, None),
+    ("Partido", "08:00", "12:00", "16:00", "20:00"),
+]
+
+
+def _clean_hhmm(value: str | None, field: str) -> str | None:
+    if value is None or str(value).strip() == "":
+        return None
+    from datetime import datetime as dt_parse
+
+    try:
+        return dt_parse.strptime(str(value).strip()[:5], "%H:%M").strftime("%H:%M")
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"{field} must be HH:MM")
+
+
+def _validated_template_fields(body: models.ShiftTemplateBody) -> dict:
+    name = (body.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="name is required")
+    start = _clean_hhmm(body.start_time, "start_time")
+    end = _clean_hhmm(body.end_time, "end_time")
+    start2 = _clean_hhmm(body.start_time2, "start_time2")
+    end2 = _clean_hhmm(body.end_time2, "end_time2")
+    if not start or not end or start >= end:
+        raise HTTPException(status_code=400, detail="start_time must be before end_time")
+    if bool(start2) != bool(end2):
+        raise HTTPException(status_code=400, detail="Second block needs both start and end")
+    if start2 and (start2 >= end2 or start2 <= end):
+        raise HTTPException(status_code=400, detail="Second block must start after the first one ends")
+    return {"name": name[:40], "start_time": start, "end_time": end, "start_time2": start2, "end_time2": end2}
+
+
+def _template_to_dict(t: models.ShiftTemplate) -> dict:
+    return {
+        "id": t.id,
+        "name": t.name,
+        "start_time": t.start_time,
+        "end_time": t.end_time,
+        "start_time2": t.start_time2,
+        "end_time2": t.end_time2,
+        "sort_order": t.sort_order,
+    }
+
+
+def _require_template_manager(user: models.User) -> None:
+    if user.role != models.UserRole.owner:
+        raise HTTPException(status_code=403, detail="Only the owner can manage shift templates")
+
+
+@app.get("/schedule/templates")
+def list_shift_templates(
+    current_user: Annotated[models.User, Depends(require_permission(Permission.SCHEDULE_READ))],
+    session: Session = Depends(get_session),
+) -> list[dict]:
+    """Shift templates for the tenant. The three default ones are created the first time."""
+    if current_user.tenant_id is None:
+        raise HTTPException(status_code=403, detail="Tenant required")
+    rows = session.exec(
+        select(models.ShiftTemplate)
+        .where(models.ShiftTemplate.tenant_id == current_user.tenant_id)
+        .order_by(models.ShiftTemplate.sort_order, models.ShiftTemplate.id)
+    ).all()
+    if not rows:
+        for i, (name, a, b, c, d) in enumerate(_DEFAULT_SHIFT_TEMPLATES):
+            session.add(
+                models.ShiftTemplate(
+                    tenant_id=current_user.tenant_id, name=name, start_time=a, end_time=b,
+                    start_time2=c, end_time2=d, sort_order=i,
+                )
+            )
+        session.commit()
+        rows = session.exec(
+            select(models.ShiftTemplate)
+            .where(models.ShiftTemplate.tenant_id == current_user.tenant_id)
+            .order_by(models.ShiftTemplate.sort_order, models.ShiftTemplate.id)
+        ).all()
+    return [_template_to_dict(t) for t in rows]
+
+
+@app.post("/schedule/templates")
+def create_shift_template(
+    body: models.ShiftTemplateBody,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.SCHEDULE_WRITE))],
+    session: Session = Depends(get_session),
+) -> dict:
+    _require_template_manager(current_user)
+    fields = _validated_template_fields(body)
+    last = session.exec(
+        select(models.ShiftTemplate.sort_order)
+        .where(models.ShiftTemplate.tenant_id == current_user.tenant_id)
+        .order_by(models.ShiftTemplate.sort_order.desc())
+    ).first()
+    t = models.ShiftTemplate(tenant_id=current_user.tenant_id, sort_order=(last or 0) + 1, **fields)
+    session.add(t)
+    session.commit()
+    session.refresh(t)
+    return _template_to_dict(t)
+
+
+@app.put("/schedule/templates/{template_id}")
+def update_shift_template(
+    template_id: int,
+    body: models.ShiftTemplateBody,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.SCHEDULE_WRITE))],
+    session: Session = Depends(get_session),
+) -> dict:
+    _require_template_manager(current_user)
+    t = session.exec(
+        select(models.ShiftTemplate).where(
+            models.ShiftTemplate.id == template_id,
+            models.ShiftTemplate.tenant_id == current_user.tenant_id,
+        )
+    ).first()
+    if not t:
+        raise HTTPException(status_code=404, detail="Template not found")
+    for key, value in _validated_template_fields(body).items():
+        setattr(t, key, value)
+    session.add(t)
+    session.commit()
+    session.refresh(t)
+    return _template_to_dict(t)
+
+
+@app.delete("/schedule/templates/{template_id}")
+def delete_shift_template(
+    template_id: int,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.SCHEDULE_WRITE))],
+    session: Session = Depends(get_session),
+) -> dict:
+    _require_template_manager(current_user)
+    t = session.exec(
+        select(models.ShiftTemplate).where(
+            models.ShiftTemplate.id == template_id,
+            models.ShiftTemplate.tenant_id == current_user.tenant_id,
+        )
+    ).first()
+    if not t:
+        raise HTTPException(status_code=404, detail="Template not found")
+    session.delete(t)
+    session.commit()
+    return {"deleted": True, "id": template_id}
+
+
 @app.get("/schedule/{shift_id}")
 def get_shift(
     shift_id: int,
