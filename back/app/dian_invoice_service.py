@@ -233,6 +233,11 @@ def issue_or_get_dian_invoice(
         raise HTTPException(status_code=404, detail="Order not found")
     if order.status == models.OrderStatus.cancelled:
         raise HTTPException(status_code=400, detail="Cannot issue DIAN invoice for a cancelled order")
+    if order.billing_customer_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Choose the customer to invoice before issuing the electronic invoice",
+        )
     if order.status not in _ISSUABLE_STATUSES:
         raise HTTPException(
             status_code=400,
