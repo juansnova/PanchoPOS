@@ -21,6 +21,10 @@ export interface AppSelectOption {
   sub?: string;
   /** Shown but not selectable (e.g. a time slot that is full). */
   disabled?: boolean;
+  /** Emoji / short glyph shown in a tinted square before the label. */
+  icon?: string;
+  /** Options with the same group are listed under a heading (list must already be ordered by group). */
+  group?: string;
 }
 
 /**
@@ -46,6 +50,9 @@ export interface AppSelectOption {
       (click)="toggle()"
       (keydown)="onTriggerKey($event)"
     >
+      @if (selectedIcon(); as ic) {
+        <span class="as-trigger-icon" aria-hidden="true">{{ ic }}</span>
+      }
       <span class="as-label">{{ selectedLabel() }}</span>
       <svg class="as-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="6 9 12 15 18 9" />
@@ -68,9 +75,15 @@ export interface AppSelectOption {
             </li>
           }
           @for (opt of filtered(); track $index; let i = $index) {
+            @if (opt.group && (i === 0 || filtered()[i - 1].group !== opt.group)) {
+              <li class="as-group" role="presentation">{{ opt.group }}</li>
+            }
             <li class="as-opt" role="option" [attr.aria-selected]="isSelected(opt)" [attr.aria-disabled]="opt.disabled ? true : null"
               [class.as-selected]="isSelected(opt)" [class.as-disabled]="opt.disabled"
               [class.as-active]="activeIndex() === i && !opt.disabled" (mouseenter)="!opt.disabled && activeIndex.set(i)" (click)="!opt.disabled && choose(opt)">
+              @if (opt.icon) {
+                <span class="as-opt-icon" aria-hidden="true">{{ opt.icon }}</span>
+              }
               <span class="as-opt-text">
                 <span class="as-opt-label">{{ opt.label }}</span>
                 @if (opt.sub) {
@@ -102,6 +115,7 @@ export interface AppSelectOption {
     }
     .as-trigger:disabled { opacity: .55; cursor: not-allowed; background: var(--color-bg); }
     .as-placeholder .as-label { color: var(--color-text-muted); }
+    .as-trigger-icon { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: var(--color-primary-light); font-size: 1.05rem; }
     .as-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
     .as-chevron { flex: none; color: var(--color-text-muted); transition: transform .18s; }
     .as-open .as-chevron { transform: rotate(180deg); color: var(--color-primary); }
@@ -132,6 +146,12 @@ export interface AppSelectOption {
     .as-selected { color: var(--color-primary); }
     .as-selected .as-opt-label { font-weight: 800; }
     .as-check { flex: none; color: var(--color-primary); }
+    .as-group { padding: 10px 12px 4px; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); }
+    .as-opt-icon { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: var(--color-bg); font-size: 1.15rem; }
+    .as-selected .as-opt-icon { background: var(--color-primary-light); }
+    .as-opt:has(.as-opt-icon) { justify-content: flex-start; gap: 12px; }
+    .as-opt:has(.as-opt-icon) .as-opt-text { flex: 1; }
+    .as-grid .as-group { grid-column: 1 / -1; }
     .as-disabled { opacity: .38; cursor: not-allowed; text-decoration: line-through; }
     .as-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
     .as-grid .as-opt { justify-content: center; min-height: 44px; padding: 4px 6px; border: 1px solid var(--color-border); text-align: center; }
@@ -188,6 +208,10 @@ export class AppSelectComponent implements ControlValueAccessor {
   hasValue = computed(() => {
     const v = this.value();
     return v !== null && v !== undefined && v !== '' && this.options().some((o) => o.value === v);
+  });
+  selectedIcon = computed(() => {
+    const v = this.value();
+    return this.hasValue() ? (this.options().find((o) => o.value === v)?.icon ?? '') : '';
   });
   selectedLabel = computed(() => {
     const v = this.value();

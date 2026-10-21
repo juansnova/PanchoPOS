@@ -237,61 +237,80 @@ import {
       <!-- Create/Edit Modal -->
       @if (showItemModal()) {
         <div class="modal-overlay">
-          <div class="modal" (click)="$event.stopPropagation()" appFocusFirstInput>
-            <div class="form-header">
-              <h3>{{ editingItem() ? ('INVENTORY.ITEMS.EDIT_ITEM' | translate) : ('INVENTORY.ITEMS.NEW_ITEM' | translate) }}</h3>
-              <button class="icon-btn" (click)="closeModals()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-              </button>
+          <div class="modal im" (click)="$event.stopPropagation()" appFocusFirstInput>
+            <div class="im-head">
+              <span class="im-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></span>
+              <div class="im-head-text">
+                <h3>{{ editingItem() ? ('INVENTORY.ITEMS.EDIT_ITEM' | translate) : ('INVENTORY.ITEMS.NEW_ITEM' | translate) }}</h3>
+                <p>{{ itemPreview() }}</p>
+              </div>
+              <button type="button" class="im-close" (click)="closeModals()" [attr.aria-label]="'INVENTORY.COMMON.CANCEL' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             </div>
-            <form [formGroup]="itemForm" (ngSubmit)="saveItem()">
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="sku">{{ 'INVENTORY.ITEMS.SKU' | translate }}</label>
-                  <input type="text" id="sku" formControlName="sku" placeholder="ART-0001" />
-                </div>
-                <div class="form-group">
-                  <label for="name">{{ 'INVENTORY.ITEMS.NAME' | translate }}</label>
-                  <input type="text" id="name" formControlName="name" placeholder="e.g., All-Purpose Flour" />
-                </div>
+            <form [formGroup]="itemForm" (ngSubmit)="saveItem()" class="im-form">
+              <div class="im-body">
+                <section class="im-sec">
+                  <h4><i>1</i>{{ 'INVENTORY.ITEMS.FORM_IDENTITY' | translate }}</h4>
+                  <div class="im-two">
+                    <div class="im-field im-field-sku">
+                      <label for="sku">{{ 'INVENTORY.ITEMS.SKU' | translate }}</label>
+                      <input type="text" id="sku" formControlName="sku" placeholder="ART-0001" />
+                    </div>
+                    <div class="im-field">
+                      <label for="name">{{ 'INVENTORY.ITEMS.NAME' | translate }}</label>
+                      <input type="text" id="name" formControlName="name" placeholder="e.g., All-Purpose Flour" />
+                    </div>
+                  </div>
+                  <div class="im-field">
+                    <label for="description">{{ 'INVENTORY.ITEMS.DESCRIPTION' | translate }}</label>
+                    <input type="text" id="description" formControlName="description" />
+                  </div>
+                </section>
+
+                <section class="im-sec">
+                  <h4><i>2</i>{{ 'INVENTORY.ITEMS.FORM_MEASURE' | translate }}</h4>
+                  <div class="im-two">
+                    <div class="im-field">
+                      <label for="category">{{ 'INVENTORY.ITEMS.CATEGORY' | translate }}</label>
+                      <app-select id="category" formControlName="category" [options]="categoryRichOptions()" [searchable]="false" />
+                    </div>
+                    <div class="im-field">
+                      <label for="unit">{{ 'INVENTORY.ITEMS.UNIT' | translate }}</label>
+                      <app-select id="unit" formControlName="unit" [options]="unitRichOptions()" [searchable]="false" />
+                    </div>
+                  </div>
+                </section>
+
+                <section class="im-sec">
+                  <h4><i>3</i>{{ 'INVENTORY.ITEMS.FORM_ALERTS' | translate }}</h4>
+                  <p class="im-hint">{{ 'INVENTORY.ITEMS.FORM_ALERTS_HINT' | translate }}</p>
+                  <div class="im-two">
+                    <div class="im-field">
+                      <label for="reorder_level">{{ 'INVENTORY.ITEMS.REORDER_LEVEL' | translate }}</label>
+                      <div class="im-unit-input">
+                        <input type="number" id="reorder_level" formControlName="reorder_level" [step]="stepFor(itemForm.value['unit'])" min="0" />
+                        <span>{{ unitShort(itemForm.value['unit']) }}</span>
+                      </div>
+                    </div>
+                    <div class="im-field">
+                      <label for="reorder_quantity">{{ 'INVENTORY.ITEMS.REORDER_QTY' | translate }}</label>
+                      <div class="im-unit-input">
+                        <input type="number" id="reorder_quantity" formControlName="reorder_quantity" [step]="stepFor(itemForm.value['unit'])" min="0" />
+                        <span>{{ unitShort(itemForm.value['unit']) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  @if (editingItem()) {
+                    <label class="im-active">
+                      <input type="checkbox" formControlName="is_active" />
+                      <span class="im-switch" aria-hidden="true"></span>
+                      <span>{{ 'INVENTORY.ITEMS.ITEM_IS_ACTIVE' | translate }}</span>
+                    </label>
+                  }
+                </section>
               </div>
-              <div class="form-group">
-                <label for="description">{{ 'INVENTORY.ITEMS.DESCRIPTION' | translate }}</label>
-                <input type="text" id="description" formControlName="description" />
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="unit">{{ 'INVENTORY.ITEMS.UNIT' | translate }}</label>
-                  <app-select id="unit" formControlName="unit" [options]="unitOptions()" [searchable]="false" />
-                </div>
-                <div class="form-group">
-                  <label for="category">{{ 'INVENTORY.ITEMS.CATEGORY' | translate }}</label>
-                  <app-select id="category" formControlName="category" [options]="categoryOptions()" [searchable]="false" />
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="reorder_level">{{ 'INVENTORY.ITEMS.REORDER_LEVEL' | translate }}</label>
-                  <input type="number" id="reorder_level" formControlName="reorder_level" [step]="stepFor(itemForm.value['unit'])" min="0" />
-                </div>
-                <div class="form-group">
-                  <label for="reorder_quantity">{{ 'INVENTORY.ITEMS.REORDER_QTY' | translate }}</label>
-                  <input type="number" id="reorder_quantity" formControlName="reorder_quantity" [step]="stepFor(itemForm.value['unit'])" min="0" />
-                </div>
-              </div>
-              @if (editingItem()) {
-                <div class="form-group">
-                  <label class="checkbox-label">
-                    <input type="checkbox" formControlName="is_active" />
-                    <span>{{ 'INVENTORY.ITEMS.ITEM_IS_ACTIVE' | translate }}</span>
-                  </label>
-                </div>
-              }
-              <div class="form-actions">
-                <button type="button" class="btn btn-secondary" (click)="closeModals()">{{ 'INVENTORY.COMMON.CANCEL' | translate }}</button>
-                <button type="submit" class="btn btn-primary" [disabled]="!itemForm.valid || saving()">
+              <div class="im-foot">
+                <button type="button" class="im-btn im-btn-ghost" (click)="closeModals()">{{ 'INVENTORY.COMMON.CANCEL' | translate }}</button>
+                <button type="submit" class="im-btn im-btn-main" [disabled]="!itemForm.valid || saving()">
                   {{ saving() ? ('INVENTORY.COMMON.SAVING' | translate) : (editingItem() ? ('INVENTORY.COMMON.UPDATE' | translate) : ('INVENTORY.COMMON.CREATE' | translate)) }}
                 </button>
               </div>
@@ -532,6 +551,54 @@ export class InventoryItemsComponent implements OnInit {
 
   reorderMarkPercent(_item: InventoryItem): number {
     return 50; // the minimum is always drawn at half of the gauge
+  }
+
+  /** Short symbol shown next to numeric inputs and in the unit list. */
+  unitShort(unit: string | null | undefined): string {
+    const m: Record<string, string> = {
+      piece: 'pza', gram: 'g', kilogram: 'kg', ounce: 'oz', pound: 'lb', milliliter: 'ml',
+      centiliter: 'cl', liter: 'L', fluid_ounce: 'fl oz', cup: 'taza', gallon: 'gal',
+    };
+    return m[unit ?? ''] ?? '';
+  }
+
+  private unitGroup(unit: string): string {
+    if (unit === 'piece') return this.translate.instant('INVENTORY.ITEMS.UNIT_GROUP_COUNT');
+    if (['gram', 'kilogram', 'ounce', 'pound'].includes(unit)) return this.translate.instant('INVENTORY.ITEMS.UNIT_GROUP_WEIGHT');
+    return this.translate.instant('INVENTORY.ITEMS.UNIT_GROUP_VOLUME');
+  }
+
+  /** Units grouped as Units / Weight / Volume, each with its symbol. */
+  unitRichOptions(): AppSelectOption[] {
+    const order = ['piece', 'gram', 'kilogram', 'ounce', 'pound', 'milliliter', 'centiliter', 'liter', 'fluid_ounce', 'cup', 'gallon'];
+    const icon = (u: string) => (u === 'piece' ? '🔢' : ['gram', 'kilogram', 'ounce', 'pound'].includes(u) ? '⚖️' : '🧪');
+    return order
+      .filter((u) => this.units.includes(u as UnitOfMeasure))
+      .map((u) => ({
+        value: u,
+        label: this.translate.instant(this.unitKey(u)),
+        sub: this.unitShort(u),
+        icon: icon(u),
+        group: this.unitGroup(u),
+      }));
+  }
+
+  categoryRichOptions(): AppSelectOption[] {
+    return this.categories.map((c) => ({
+      value: c,
+      label: this.translate.instant(this.categoryKey(c)),
+      sub: this.translate.instant('INVENTORY.ITEMS.CATEGORY_DESC_' + c.toUpperCase()),
+      icon: this.categoryIcon(c),
+    }));
+  }
+
+  /** Header line of the form: "🥬 Harina · kg" once something is typed. */
+  itemPreview(): string {
+    const v = this.itemForm.value;
+    const parts: string[] = [];
+    if (v['category']) parts.push(this.categoryIcon(v['category']) + ' ' + this.translate.instant(this.categoryKey(v['category'])));
+    if (v['unit']) parts.push(this.unitShort(v['unit']));
+    return parts.join(' · ');
   }
 
   unitOptions(): AppSelectOption[] {
