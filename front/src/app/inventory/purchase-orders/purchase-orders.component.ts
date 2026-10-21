@@ -162,86 +162,93 @@ import {
       <!-- Create PO Modal -->
       @if (showCreateModal()) {
         <div class="modal-overlay">
-          <div class="modal modal-lg" (click)="$event.stopPropagation()" appFocusFirstInput>
-            <div class="form-header">
-              <h3>{{ 'INVENTORY.PURCHASE_ORDERS.CREATE_TITLE' | translate }}</h3>
-              <button class="icon-btn" (click)="closeModal()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-              </button>
+          <div class="modal pm" (click)="$event.stopPropagation()" appFocusFirstInput>
+            <div class="pm-head">
+              <span class="pm-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 002 1.6h9.7a2 2 0 002-1.6L23 6H6"/></svg></span>
+              <div class="pm-head-text">
+                <h3>{{ 'INVENTORY.PURCHASE_ORDERS.CREATE_TITLE' | translate }}</h3>
+                <p>{{ itemsArray.length }} {{ 'INVENTORY.PURCHASE_ORDERS.ARTICLES_SHORT' | translate }} · {{ formatCurrency(orderTotal()) }}</p>
+              </div>
+              <button type="button" class="pm-close" (click)="closeModal()" [attr.aria-label]="'INVENTORY.COMMON.CANCEL' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             </div>
-            <form [formGroup]="createForm" (ngSubmit)="submitCreateForm()">
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="expected_date">{{ 'INVENTORY.PURCHASE_ORDERS.EXPECTED_DELIVERY' | translate }}</label>
-                  <input type="date" id="expected_date" formControlName="expected_date" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="notes">{{ 'INVENTORY.ITEMS.NOTES' | translate }}</label>
-                <textarea id="notes" formControlName="notes" rows="2" [placeholder]="'INVENTORY.PURCHASE_ORDERS.NOTES_PLACEHOLDER' | translate"></textarea>
-              </div>
 
-              <!-- Items Section -->
-              <div class="items-section">
-                <div class="section-header">
-                  <h4>{{ 'INVENTORY.PURCHASE_ORDERS.ORDER_ITEMS' | translate }}</h4>
-                  <button type="button" class="btn btn-secondary btn-sm" (click)="addItem()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    {{ 'INVENTORY.ITEMS.ADD_ITEM' | translate }}
-                  </button>
-                </div>
-
-                @if (itemsArray.length === 0) {
-                  <div class="empty-items">
-                    <p>{{ 'INVENTORY.PURCHASE_ORDERS.NO_ITEMS' | translate }}</p>
+            <form [formGroup]="createForm" (ngSubmit)="submitCreateForm()" class="pm-form">
+              <div class="pm-body">
+                <section class="pm-sec">
+                  <h4><i>1</i>{{ 'INVENTORY.PURCHASE_ORDERS.FORM_DETAILS' | translate }}</h4>
+                  <div class="pm-two">
+                    <div class="pm-field">
+                      <label for="expected_date">{{ 'INVENTORY.PURCHASE_ORDERS.EXPECTED_DELIVERY' | translate }}</label>
+                      <div class="pm-date"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><input type="date" id="expected_date" formControlName="expected_date" /></div>
+                    </div>
+                    <div class="pm-field">
+                      <label for="notes">{{ 'INVENTORY.ITEMS.NOTES' | translate }}</label>
+                      <input type="text" id="notes" formControlName="notes" [placeholder]="'INVENTORY.PURCHASE_ORDERS.NOTES_PLACEHOLDER' | translate" />
+                    </div>
                   </div>
-                } @else {
-                  <div class="items-list" formArrayName="items">
-                    @for (item of itemsArray.controls; track $index; let i = $index) {
-                      <div class="item-row" [formGroupName]="i">
-                        <div class="item-select">
-                          <label>{{ 'INVENTORY.ITEMS.NAME' | translate }}</label>
-                          <app-select formControlName="inventory_item_id" [options]="inventoryOptions()" [placeholder]="'COMMON.SELECT' | translate" [searchable]="true" [emptyValue]="''" (changed)="onItemSelected(i)" />
-                        </div>
-                        <div class="item-qty">
-                          <label>{{ 'INVENTORY.ITEMS.QUANTITY' | translate }}</label>
-                          <input type="number" formControlName="quantity_ordered" min="1" step="1" />
-                        </div>
-                        <div class="item-unit">
-                          <label>{{ 'INVENTORY.ITEMS.UNIT' | translate }}</label>
-                          <app-select formControlName="unit" [options]="unitOptions()" [searchable]="false" />
-                        </div>
-                        <div class="item-cost">
-                          <label>{{ 'INVENTORY.PURCHASE_ORDERS.UNIT_COST' | translate }}</label>
-                          <input type="text" inputmode="numeric" [value]="formatThousands(item.get('unit_cost_dollars')?.value)" (input)="onUnitCostInput(i, $event)" placeholder="0" />
-                        </div>
-                        <div class="item-total">
-                          <label>{{ 'INVENTORY.COMMON.TOTAL' | translate }}</label>
-                          <span>{{ formatCurrency(getItemTotal(i)) }}</span>
-                        </div>
-                        <button type="button" class="icon-btn icon-btn-danger" (click)="removeItem(i)">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 6L6 18M6 6l12 12"/>
-                          </svg>
-                        </button>
-                      </div>
-                    }
-                  </div>
-                }
+                </section>
 
-                <div class="order-total">
-                  <span>{{ 'INVENTORY.PURCHASE_ORDERS.ORDER_TOTAL' | translate }}</span>
+                <section class="pm-sec">
+                  <h4>
+                    <i>2</i>{{ 'INVENTORY.PURCHASE_ORDERS.ORDER_ITEMS' | translate }}
+                    <button type="button" class="pm-add" (click)="addItem()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{{ 'INVENTORY.ITEMS.ADD_ITEM' | translate }}</button>
+                  </h4>
+
+                  @if (itemsArray.length === 0) {
+                    <button type="button" class="pm-empty" (click)="addItem()">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                      <b>{{ 'INVENTORY.PURCHASE_ORDERS.NO_ITEMS' | translate }}</b>
+                      <span>{{ 'INVENTORY.PURCHASE_ORDERS.NO_ITEMS_CTA' | translate }}</span>
+                    </button>
+                  } @else {
+                    <div class="pm-lines" formArrayName="items">
+                      @for (item of itemsArray.controls; track $index; let i = $index) {
+                        <div class="pm-line" [formGroupName]="i">
+                          <div class="pm-line-top">
+                            <span class="pm-line-n">{{ i + 1 }}</span>
+                            <div class="pm-line-item">
+                              <app-select formControlName="inventory_item_id" [options]="inventoryOptions()" [placeholder]="'COMMON.SELECT' | translate" [searchable]="true" [emptyValue]="''" (changed)="onItemSelected(i)" />
+                            </div>
+                            <button type="button" class="pm-del" (click)="removeItem(i)" [attr.aria-label]="'INVENTORY.COMMON.DELETE' | translate" [title]="'INVENTORY.COMMON.DELETE' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>
+                          </div>
+                          <div class="pm-line-grid">
+                            <div class="pm-field">
+                              <label>{{ 'INVENTORY.ITEMS.QUANTITY' | translate }}</label>
+                              <div class="pm-qty">
+                                <button type="button" (click)="stepQty(i, -1)" aria-label="-">−</button>
+                                <input type="number" formControlName="quantity_ordered" min="1" step="1" />
+                                <button type="button" class="pm-qty-plus" (click)="stepQty(i, 1)" aria-label="+">+</button>
+                              </div>
+                            </div>
+                            <div class="pm-field">
+                              <label>{{ 'INVENTORY.ITEMS.UNIT' | translate }}</label>
+                              <app-select formControlName="unit" [options]="unitOptions()" [searchable]="false" />
+                            </div>
+                            <div class="pm-field">
+                              <label>{{ 'INVENTORY.PURCHASE_ORDERS.UNIT_COST' | translate }}</label>
+                              <div class="pm-money"><span>$</span>
+                                <input type="text" inputmode="numeric" [value]="formatThousands(item.get('unit_cost_dollars')?.value)" (input)="onUnitCostInput(i, $event)" placeholder="0" />
+                              </div>
+                            </div>
+                            <div class="pm-line-total">
+                              <small>{{ 'INVENTORY.COMMON.TOTAL' | translate }}</small>
+                              <strong>{{ formatCurrency(getItemTotal(i)) }}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </section>
+              </div>
+
+              <div class="pm-foot">
+                <div class="pm-sum">
+                  <small>{{ 'INVENTORY.PURCHASE_ORDERS.ORDER_TOTAL' | translate }}</small>
                   <strong>{{ formatCurrency(orderTotal()) }}</strong>
                 </div>
-              </div>
-
-              <div class="form-actions">
-                <button type="button" class="btn btn-secondary" (click)="closeModal()">{{ 'INVENTORY.COMMON.CANCEL' | translate }}</button>
-                <button type="submit" class="btn btn-primary" [disabled]="!createForm.valid || itemsArray.length === 0 || saving()">
+                <button type="button" class="pm-btn pm-btn-ghost" (click)="closeModal()">{{ 'INVENTORY.COMMON.CANCEL' | translate }}</button>
+                <button type="submit" class="pm-btn pm-btn-main" [disabled]="!createForm.valid || itemsArray.length === 0 || saving()">
                   {{ saving() ? ('INVENTORY.COMMON.SAVING' | translate) : ('INVENTORY.PURCHASE_ORDERS.CREATE_TITLE' | translate) }}
                 </button>
               </div>
@@ -407,6 +414,13 @@ export class PurchaseOrdersComponent implements OnInit {
       unit_cost_dollars: [0, [Validators.required, Validators.min(0)]],
     });
     this.itemsArray.push(itemGroup);
+  }
+
+  /** Quantity +/- on a line (whole units, minimum 1). */
+  stepQty(index: number, dir: 1 | -1): void {
+    const ctrl = this.itemsArray.at(index).get('quantity_ordered');
+    const cur = Math.round(Number(ctrl?.value) || 0);
+    ctrl?.setValue(Math.max(1, cur + dir));
   }
 
   removeItem(index: number) {

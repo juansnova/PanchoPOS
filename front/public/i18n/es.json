@@ -2178,6 +2178,9 @@
     "PURCHASE_ORDERS": {
       "TITLE": "Pedidos de Compra",
       "SUBTITLE": "Pide a tus proveedores y sigue cada pedido hasta que llega",
+      "FORM_DETAILS": "Datos del pedido",
+      "ARTICLES_SHORT": "artículos",
+      "NO_ITEMS_CTA": "Toca aquí para agregar el primero",
       "KPI_TOTAL": "Órdenes",
       "KPI_OPEN": "En curso",
       "KPI_TO_RECEIVE": "Por recibir",
