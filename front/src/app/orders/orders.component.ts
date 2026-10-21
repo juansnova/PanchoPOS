@@ -934,13 +934,10 @@ ModuleRegistry.registerModules([
                         <span class="eo-item-price">{{ formatPrice(item.price_cents * item.quantity) }}</span>
                       </div>
                       <div class="eo-item-tools">
-                        <select class="eo-status-select" [class]="'status-' + item.status" [ngModel]="item.status"
+                        <app-select class="eo-status-select" [compact]="true" [searchable]="false"
+                          [options]="itemStatusOptions()" [ngModel]="item.status"
                           (ngModelChange)="updateEditItemStatus(order.id, item.id!, $event)"
-                          [name]="'edit-status-' + item.id">
-                          @for (st of ['pending','preparing','delivered','cancelled']; track st) {
-                            <option [value]="st">{{ getItemStatusLabel(st) }}</option>
-                          }
-                        </select>
+                          [ngModelOptions]="{ standalone: true }"></app-select>
                         <button type="button" class="eo-link" (click)="toggleModifierEdit(item)">
                           {{ modifierEditItemId === item.id ? ('COMMON.CLOSE' | translate) : ('ORDERS.EDIT_CUSTOMIZE' | translate) }}
                         </button>
@@ -2321,8 +2318,7 @@ ModuleRegistry.registerModules([
       background: var(--color-primary); color: #fff; font-size: 1.125rem; line-height: 1; touch-action: manipulation; }
     .eo-stepper button:disabled { opacity: 0.35; cursor: default; }
     .eo-stepper span { min-width: 24px; text-align: center; font-weight: 700; }
-    .eo-status-select { height: 34px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--color-border);
-      background: var(--color-surface); color: var(--color-text); font-size: 0.8125rem; font-weight: 600; }
+    .eo-status-select { display: block; width: 11.5rem; max-width: 100%; }
     .eo-link { border: none; background: none; color: var(--color-primary); font-weight: 600; font-size: 0.8125rem;
       cursor: pointer; padding: 6px 4px; }
     .eo-trash { margin-left: auto; width: 36px; height: 36px; border: none; border-radius: 50%; cursor: pointer;
@@ -3947,6 +3943,23 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   getStatusLabel(status: string): string {
     return this.translate.instant(`ORDER_STATUS.${status}`) || status;
+  }
+
+  /** Per-item status list for the order editor: tinted icon per state. */
+  itemStatusOptions(): AppSelectOption[] {
+    const svg: Record<string, string> = {
+      pending: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+      preparing: '<path d="M12 3c1 3 4 4.5 4 8a4 4 0 0 1-8 0c0-1.6.7-2.6 1.5-3.5C10.5 6.5 11.5 5 12 3z"/><path d="M12 21a5 5 0 0 0 5-5"/>',
+      delivered: '<path d="M20 6 9 17l-5-5"/>',
+      cancelled: '<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>',
+    };
+    const tone: Record<string, AppSelectOption['tone']> = { pending: 'a', preparing: 'e', delivered: 'c', cancelled: 'd' };
+    return ['pending', 'preparing', 'delivered', 'cancelled'].map((st) => ({
+      value: st,
+      label: this.getItemStatusLabel(st),
+      svg: svg[st],
+      tone: tone[st],
+    }));
   }
 
   getItemStatusLabel(status: string): string {

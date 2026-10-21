@@ -27,7 +27,7 @@ export interface AppSelectOption {
   /** Inner markup of a 24x24 stroke SVG (our own static strings); drawn instead of `icon` when set. */
   svg?: string;
   /** Colour family for the icon square (a = amber, b = blue, c = green). */
-  tone?: 'a' | 'b' | 'c';
+  tone?: 'a' | 'b' | 'c' | 'd' | 'e';
   /** Options with the same group are listed under a heading (list must already be ordered by group). */
   group?: string;
 }
@@ -47,6 +47,7 @@ export interface AppSelectOption {
       type="button"
       class="as-trigger"
       [class.as-open]="open()"
+      [class.as-compact]="compact()"
       [class.as-placeholder]="!hasValue()"
       [disabled]="isDisabled()"
       role="combobox"
@@ -132,7 +133,7 @@ export interface AppSelectOption {
     .as-panel {
       position: fixed; z-index: 4000; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
       border-radius: 16px; background: var(--color-surface); border: 1px solid var(--color-border);
-      box-shadow: 0 24px 50px -18px rgba(0, 0, 0, .45); animation: as-in .14s ease-out;
+      box-shadow: 0 30px 60px -20px rgba(23, 18, 16, .5), 0 0 0 4px color-mix(in srgb, var(--color-primary) 6%, transparent); animation: as-in .14s ease-out;
     }
     @keyframes as-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
     .as-search { position: relative; display: flex; align-items: center; padding: 10px 10px 6px; flex: none; }
@@ -159,6 +160,12 @@ export interface AppSelectOption {
     [data-tone='a'] { --ic: #b7791f; }
     [data-tone='b'] { --ic: #2b6cb0; }
     [data-tone='c'] { --ic: #2f855a; }
+    [data-tone='d'] { --ic: #b91c1c; }
+    [data-tone='e'] { --ic: var(--color-primary); }
+    .as-trigger.as-compact { min-height: 40px; padding: 0 10px 0 6px; gap: 8px; border-radius: 999px; box-shadow: inset 0 0 0 1px transparent; }
+    .as-compact .as-trigger-icon { width: 28px; height: 28px; border-radius: 50%; }
+    .as-compact .as-label { font-size: .86rem; }
+    .as-compact .as-chevron { width: 16px; height: 16px; }
     .as-opt-icon-sym { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 700; font-size: .78rem !important; letter-spacing: 0; }
     .as-opt-icon svg, .as-trigger-icon svg { display: block; }
     .as-group { padding: 10px 12px 4px; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); }
@@ -202,6 +209,8 @@ export class AppSelectComponent implements ControlValueAccessor {
   readonly disabled = input(false);
   /** Compact grid of short labels (e.g. times) instead of a vertical list. */
   readonly grid = input(false);
+  /** Smaller pill trigger for dense rows (e.g. per-item status in the order editor). */
+  readonly compact = input(false);
   readonly changed = output<unknown>();
 
   @ViewChild('trigger') private triggerRef?: ElementRef<HTMLButtonElement>;
