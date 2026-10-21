@@ -1414,6 +1414,23 @@
     "occupied": "Ocupada",
     "reserved": "Reservada"
   },
+  "RES_VIEW": {
+    "EYEBROW": "Tu reserva",
+    "HEAD_A_ACTIVE": "Tu mesa te espera,",
+    "HEAD_B_ACTIVE": "{{name}}.",
+    "SUB_ACTIVE": "Todo está listo. Guarda este enlace para consultar tu reserva, avisarnos si llegas tarde o cancelarla.",
+    "HEAD_A_CANCELLED": "Esta reserva",
+    "HEAD_B_CANCELLED": "fue cancelada.",
+    "SUB_CANCELLED": "Cuando quieras volver, reserva otra mesa. Nos encantará recibirte.",
+    "HEAD_A_DONE": "Gracias por",
+    "HEAD_B_DONE": "visitarnos, {{name}}.",
+    "SUB_DONE": "Esta reserva ya terminó. Esperamos verte pronto de nuevo.",
+    "CALL_US": "Escríbenos o llámanos",
+    "WHEN_TODAY": "Es hoy",
+    "WHEN_TOMORROW": "Es mañana",
+    "WHEN_IN": "Faltan {{n}} días",
+    "BOOK_AGAIN": "Reservar otra mesa"
+  },
   "BOOK": {
     "EYEBROW": "Reservas",
     "HEADLINE_A": "Reserva tu mesa",

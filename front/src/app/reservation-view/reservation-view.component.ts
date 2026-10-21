@@ -9,6 +9,7 @@ import { ConfirmationModalComponent } from '../shared/confirmation-modal.compone
 import { reservationDietaryNotesDisplay } from '../shared/reservation-dietary-notes';
 import { PublicGuestHeaderComponent } from '../shared/public-guest-header.component';
 import { resolvePublicPrimaryColor } from '../shared/public-brand-colors';
+import { publicBookRouterLink } from '../shared/public-book-path';
 
 @Component({
   selector: 'app-reservation-view',
@@ -37,6 +38,63 @@ export class ReservationViewComponent implements OnInit {
 
   googleMapsUrl = computed(() => this.tenant()?.public_google_maps_url?.trim() || null);
   openstreetmapUrl = computed(() => this.tenant()?.public_openstreetmap_url?.trim() || null);
+
+  /** Drives the headline and tone: active (booked/seated), cancelled, or done (finished/no-show). */
+  mood = computed<'active' | 'cancelled' | 'done'>(() => {
+    const s = this.reservation()?.status;
+    if (s === 'cancelled') return 'cancelled';
+    if (s === 'finished' || s === 'no_show') return 'done';
+    return 'active';
+  });
+
+  firstName = computed(() => (this.reservation()?.customer_name ?? '').trim().split(/\s+/)[0] ?? '');
+
+  private dateObj = computed(() => {
+    const r = this.reservation();
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(r?.reservation_date ?? '');
+    return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+  });
+
+  dateParts = computed(() => {
+    const d = this.dateObj();
+    if (!d) return { weekday: '', day: '', month: '', year: '' };
+    const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+    return {
+      weekday: cap(d.toLocaleDateString(undefined, { weekday: 'long' })),
+      day: String(d.getDate()),
+      month: cap(d.toLocaleDateString(undefined, { month: 'long' })),
+      year: String(d.getFullYear()),
+    };
+  });
+
+  timeLabel = computed(() => {
+    const m = /^(\d{2}):(\d{2})/.exec(this.reservation()?.reservation_time ?? '');
+    if (!m) return '';
+    const d = new Date(2000, 0, 1, +m[1], +m[2]);
+    return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  });
+
+  /** "Hoy" / "Mañana" / "En N días" for upcoming active reservations. */
+  whenLabel = computed<{ key: string; params?: { n: number } } | null>(() => {
+    const d = this.dateObj();
+    if (!d || this.mood() !== 'active') return null;
+    const now = new Date();
+    const days = Math.round((d.getTime() - new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) / 86400000);
+    if (days < 0) return null;
+    if (days === 0) return { key: 'RES_VIEW.WHEN_TODAY' };
+    if (days === 1) return { key: 'RES_VIEW.WHEN_TOMORROW' };
+    return { key: 'RES_VIEW.WHEN_IN', params: { n: days } };
+  });
+
+  partyDots(): number[] {
+    const n = Math.max(0, Math.min(8, this.reservation()?.party_size ?? 0));
+    return Array.from({ length: n }, (_, i) => i);
+  }
+
+  bookRouterLink(): (string | number)[] {
+    const t = this.tenant();
+    return t ? publicBookRouterLink(t) : ['/'];
+  }
 
   getStatusKey(): string {
     const s = this.reservation()?.status;

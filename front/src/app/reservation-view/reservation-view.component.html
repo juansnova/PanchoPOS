@@ -1,4 +1,4 @@
-<div class="view-page" [style.--hero-header-bg]="tenant()?.public_background_color ?? null" [style.--color-primary]="resolvePublicPrimaryColor(tenant()?.public_primary_color)">
+<div class="rv-page" [style.--color-primary]="resolvePublicPrimaryColor(tenant()?.public_primary_color)">
   @if (tenant(); as t) {
     <app-public-guest-header
       [tenantId]="t.id"
@@ -30,153 +30,178 @@
       <p class="error">{{ error() }}</p>
       <a routerLink="/" class="btn btn-ghost">{{ 'COMMON.BACK' | translate }}</a>
     </div>
-  } @else if (reservation()) {
-    @if (tenant()) {
-      <header class="hero-header" [class.has-bg-image]="tenant()?.header_background_filename" [style.background-image]="headerBackgroundStyle()">
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-          <div class="hero-top-row">
+  } @else if (reservation(); as r) {
+    <main class="rv-main" [attr.data-state]="mood()">
+      <!-- left: the restaurant -->
+      <aside class="rv-story">
+        @if (tenant(); as t) {
+          <div class="rv-brand">
             @if (logoUrl()) {
-              <div class="logo-container">
-                <img [src]="getLogoSafeUrl(logoUrl())" [alt]="tenant()?.name" class="tenant-logo" />
-              </div>
+              <span class="rv-plaque"><img [src]="getLogoSafeUrl(logoUrl())" [alt]="t.name" /></span>
             }
+            <span class="rv-brand-name">{{ t.name }}</span>
           </div>
-          <div class="hero-info">
-            <h1 class="restaurant-name">{{ tenant()!.name }}</h1>
-            @if (tenant()?.description) {
-              <p class="restaurant-tagline">{{ tenant()!.description }}</p>
+        }
+        <p class="rv-eyebrow"><i></i>{{ 'RES_VIEW.EYEBROW' | translate }}</p>
+        <h1 class="rv-title">
+          {{ 'RES_VIEW.HEAD_A_' + mood().toUpperCase() | translate }}
+          <em>{{ 'RES_VIEW.HEAD_B_' + mood().toUpperCase() | translate: { name: firstName() } }}</em>
+        </h1>
+        <p class="rv-intro">{{ 'RES_VIEW.SUB_' + mood().toUpperCase() | translate }}</p>
+
+        @if (tenant(); as t) {
+          <ul class="rv-facts">
+            @if (t.address?.trim()) {
+              <li>
+                <span class="rv-ico" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                </span>
+                <div>
+                  <small>{{ 'BOOK.ADDRESS' | translate }}</small>
+                  <b>{{ t.address }}</b>
+                  @if (googleMapsUrl() || openstreetmapUrl()) {
+                    <div class="rv-links">
+                      @if (googleMapsUrl()) {
+                        <a [href]="googleMapsUrl()!" target="_blank" rel="noopener noreferrer">{{ 'BOOK.OPEN_IN_GOOGLE_MAPS' | translate }}<i>↗</i></a>
+                      }
+                      @if (openstreetmapUrl()) {
+                        <a [href]="openstreetmapUrl()!" target="_blank" rel="noopener noreferrer">{{ 'BOOK.OPEN_IN_OPENSTREETMAP' | translate }}<i>↗</i></a>
+                      }
+                    </div>
+                  }
+                </div>
+              </li>
             }
-            <div class="table-pill view-pill">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              <span>{{ 'BOOK.VIEW_TITLE' | translate }}</span>
-            </div>
-            @if (tenant()?.phone || tenant()?.email) {
-              <div class="restaurant-contact">
-                @if (tenant()?.phone) {
-                  <a [href]="'tel:' + tenant()!.phone" class="contact-link">{{ tenant()!.phone }}</a>
-                }
-                @if (tenant()?.phone && tenant()?.email) {
-                  <span class="contact-sep">·</span>
-                }
-                @if (tenant()?.email) {
-                  <a [href]="'mailto:' + tenant()!.email" class="contact-link">{{ tenant()!.email }}</a>
-                }
-              </div>
+            @if (t.phone || t.email) {
+              <li>
+                <span class="rv-ico" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>
+                </span>
+                <div>
+                  <small>{{ 'RES_VIEW.CALL_US' | translate }}</small>
+                  @if (t.phone) { <a class="rv-line" [href]="'tel:' + t.phone">{{ t.phone }}</a> }
+                  @if (t.email) { <a class="rv-line" [href]="'mailto:' + t.email">{{ t.email }}</a> }
+                </div>
+              </li>
             }
-            @if (tenant()?.address?.trim() || googleMapsUrl() || openstreetmapUrl()) {
-              <div class="restaurant-location">
-                @if (tenant()?.address?.trim()) {
-                  <p class="restaurant-address">
-                    <span class="oh-label">{{ 'BOOK.ADDRESS' | translate }}:</span>
-                    {{ tenant()!.address }}
-                  </p>
-                }
-                @if (googleMapsUrl() || openstreetmapUrl()) {
-                  <div class="book-maps-actions">
-                    @if (googleMapsUrl()) {
-                      <a
-                        [href]="googleMapsUrl()!"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="btn btn-secondary book-maps-btn"
-                      >
-                        {{ 'BOOK.OPEN_IN_GOOGLE_MAPS' | translate }}
-                      </a>
-                    }
-                    @if (openstreetmapUrl()) {
-                      <a
-                        [href]="openstreetmapUrl()!"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="btn btn-secondary book-maps-btn"
-                      >
-                        {{ 'BOOK.OPEN_IN_OPENSTREETMAP' | translate }}
-                      </a>
-                    }
-                  </div>
-                }
-              </div>
-            }
-          </div>
-        </div>
-      </header>
-    }
-    <main class="view-content">
-      @if (tenant() && (tenant()?.reservation_cancellation_policy || tenant()?.reservation_arrival_tolerance_minutes != null || tenant()?.reservation_dress_code)) {
-        <div class="view-card view-guidelines">
-          <h3 class="guidelines-title">{{ 'RESERVATIONS.RESTAURANT_GUIDELINES' | translate }}</h3>
-          @if (tenant()?.reservation_cancellation_policy) {
-            <p class="guideline-item"><strong>{{ 'RESERVATIONS.CANCELLATION_POLICY' | translate }}:</strong> {{ tenant()?.reservation_cancellation_policy }}</p>
-          }
-          @if (tenant()?.reservation_arrival_tolerance_minutes != null && (tenant()?.reservation_arrival_tolerance_minutes ?? 0) > 0) {
-            <p class="guideline-item"><strong>{{ 'RESERVATIONS.ARRIVAL_TOLERANCE' | translate }}:</strong> {{ 'RESERVATIONS.ARRIVAL_TOLERANCE_MINUTES' | translate: { minutes: tenant()?.reservation_arrival_tolerance_minutes } }}</p>
-          }
-          @if (tenant()?.reservation_dress_code) {
-            <p class="guideline-item"><strong>{{ 'RESERVATIONS.DRESS_CODE' | translate }}:</strong> {{ tenant()?.reservation_dress_code }}</p>
-          }
-        </div>
-      }
-      <div class="view-card">
-        @if (reservation()?.status === 'cancelled') {
-          <p class="status-cancelled">{{ 'RESERVATIONS.STATUS_CANCELLED' | translate }}</p>
-        } @else {
-          <div class="reservation-details">
-            <p><strong>{{ 'RESERVATIONS.RESERVATION_NUMBER' | translate }}:</strong> #{{ reservation()?.id }}</p>
-            <p><strong>{{ 'RESERVATIONS.DATE' | translate }}:</strong> {{ reservation()?.reservation_date }} {{ reservation()?.reservation_time }}</p>
-            <p><strong>{{ 'RESERVATIONS.PARTY_SIZE' | translate }}:</strong> {{ reservation()?.party_size }}</p>
-            <p><strong>{{ 'RESERVATIONS.CUSTOMER_NAME' | translate }}:</strong> {{ reservation()?.customer_name }}</p>
-            <p><strong>{{ 'RESERVATIONS.CUSTOMER_PHONE' | translate }}:</strong> {{ reservation()?.customer_phone }}</p>
-            @if (reservation()?.customer_email) {
-              <p><strong>{{ 'RESERVATIONS.CUSTOMER_EMAIL' | translate }}:</strong> {{ reservation()?.customer_email }}</p>
-            }
-            @if (reservation()?.client_notes) {
-              <p><strong>{{ 'RESERVATIONS.RESERVATION_NOTES' | translate }}:</strong> {{ reservation()?.client_notes }}</p>
-            }
-            @if (dietaryNotesDisplay(); as dn) {
-              <p><strong>{{ 'RESERVATIONS.CUSTOMER_NOTES' | translate }}:</strong> {{ dn }}</p>
-            } @else if (reservation()?.allergies_has) {
-              <p><strong>{{ 'BOOK.ALLERGIES_HAS' | translate }}</strong></p>
-            }
-            @if (reservation()?.delay_notice) {
-              <p class="delay-notice"><strong>{{ 'RESERVATIONS.DELAY_NOTICE' | translate }}:</strong> {{ reservation()?.delay_notice }}</p>
-            }
-            <p><strong>{{ 'RESERVATIONS.STATUS' | translate }}:</strong> {{ getStatusKey() | translate }}</p>
-          </div>
-          @if ((reservation()?.status === 'booked' || reservation()?.status === 'seated') && tenant()) {
-            <div class="delay-form">
-              <label for="delay-notice">{{ 'RESERVATIONS.NOTIFY_DELAY' | translate }}</label>
-              <div class="delay-form-row">
-                <input id="delay-notice" type="text" [(ngModel)]="delayNotice" name="delayNotice" maxlength="500" [placeholder]="'RESERVATIONS.NOTIFY_DELAY_PLACEHOLDER' | translate" />
-                <button type="button" class="btn btn-secondary" [disabled]="updatingDelay()" (click)="submitDelayNotice()">
-                  {{ updatingDelay() ? ('RESERVATIONS.SENDING' | translate) : ('RESERVATIONS.SEND_DELAY' | translate) }}
-                </button>
-              </div>
-              @if (delaySuccess()) {
-                <p class="delay-success">{{ 'RESERVATIONS.DELAY_SENT' | translate }}</p>
+          </ul>
+          @if (t.reservation_cancellation_policy || (t.reservation_arrival_tolerance_minutes ?? 0) > 0 || t.reservation_dress_code) {
+            <div class="rv-rules">
+              <h3>{{ 'RESERVATIONS.RESTAURANT_GUIDELINES' | translate }}</h3>
+              @if (t.reservation_cancellation_policy) {
+                <p><b>{{ 'RESERVATIONS.CANCELLATION_POLICY' | translate }}</b> {{ t.reservation_cancellation_policy }}</p>
               }
-              @if (delayRateLimited()) {
-                <p class="form-error delay-rate-msg">{{ 'RESERVATIONS.DELAY_RATE_LIMITED' | translate }}</p>
+              @if ((t.reservation_arrival_tolerance_minutes ?? 0) > 0) {
+                <p><b>{{ 'RESERVATIONS.ARRIVAL_TOLERANCE' | translate }}</b> {{ 'RESERVATIONS.ARRIVAL_TOLERANCE_MINUTES' | translate: { minutes: t.reservation_arrival_tolerance_minutes } }}</p>
+              }
+              @if (t.reservation_dress_code) {
+                <p><b>{{ 'RESERVATIONS.DRESS_CODE' | translate }}</b> {{ t.reservation_dress_code }}</p>
               }
             </div>
-            <button type="button" class="btn btn-danger" (click)="showCancelConfirm.set(true)">{{ 'RESERVATIONS.CANCEL' | translate }}</button>
           }
         }
-      </div>
-      @if (reservation() && tenant() && reservation()!.token) {
-        <div class="view-card view-feedback-prompt">
-          <a
-            [routerLink]="['/feedback', tenant()!.id]"
-            [queryParams]="{ token: reservation()!.token }"
-            class="btn btn-secondary"
-          >
-            {{ 'FEEDBACK.LINK_FROM_RESERVATION' | translate }}
-          </a>
+      </aside>
+
+      <!-- right: the ticket -->
+      <section class="rv-ticket">
+        <div class="rv-top">
+          <div>
+            <small>{{ 'RESERVATIONS.RESERVATION_NUMBER' | translate }}</small>
+            <b>#{{ r.id }}</b>
+          </div>
+          <span class="rv-status" [attr.data-status]="r.status">{{ getStatusKey() | translate }}</span>
         </div>
-      }
+
+        <div class="rv-when">
+          <div class="rv-date">
+            <span class="rv-dow">{{ dateParts().weekday }}</span>
+            <span class="rv-day">{{ dateParts().day }}</span>
+            <span class="rv-mon">{{ dateParts().month }} {{ dateParts().year }}</span>
+          </div>
+          <div class="rv-clock">
+            <span class="rv-time">{{ timeLabel() }}</span>
+            @if (whenLabel(); as w) { <span class="rv-rel">{{ w.key | translate: w.params }}</span> }
+            <span class="rv-party">
+              <span class="rv-dots" aria-hidden="true">
+                @for (i of partyDots(); track i) { <i></i> }
+                @if (r.party_size > 8) { <em>+{{ r.party_size - 8 }}</em> }
+              </span>
+              {{ 'BOOK.SUMMARY_GUESTS' | translate: { n: r.party_size } }}
+            </span>
+          </div>
+        </div>
+
+        <div class="rv-perf" aria-hidden="true"><i></i><i></i></div>
+
+        <dl class="rv-details">
+          <div>
+            <dt>{{ 'RESERVATIONS.CUSTOMER_NAME' | translate }}</dt>
+            <dd>{{ r.customer_name }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'RESERVATIONS.CUSTOMER_PHONE' | translate }}</dt>
+            <dd>{{ r.customer_phone }}</dd>
+          </div>
+          @if (r.customer_email) {
+            <div class="rv-wide">
+              <dt>{{ 'RESERVATIONS.CUSTOMER_EMAIL' | translate }}</dt>
+              <dd>{{ r.customer_email }}</dd>
+            </div>
+          }
+          @if (r.client_notes) {
+            <div class="rv-wide">
+              <dt>{{ 'RESERVATIONS.RESERVATION_NOTES' | translate }}</dt>
+              <dd>{{ r.client_notes }}</dd>
+            </div>
+          }
+          @if (dietaryNotesDisplay(); as dn) {
+            <div class="rv-wide">
+              <dt>{{ 'RESERVATIONS.CUSTOMER_NOTES' | translate }}</dt>
+              <dd>{{ dn }}</dd>
+            </div>
+          } @else if (r.allergies_has) {
+            <div class="rv-wide">
+              <dt>{{ 'RESERVATIONS.CUSTOMER_NOTES' | translate }}</dt>
+              <dd>{{ 'BOOK.ALLERGIES_HAS' | translate }}</dd>
+            </div>
+          }
+        </dl>
+
+        @if (r.delay_notice) {
+          <p class="rv-delay"><b>{{ 'RESERVATIONS.DELAY_NOTICE' | translate }}</b> {{ r.delay_notice }}</p>
+        }
+
+        @if ((r.status === 'booked' || r.status === 'seated') && tenant()) {
+          <div class="rv-actions">
+            <label for="delay-notice">{{ 'RESERVATIONS.NOTIFY_DELAY' | translate }}</label>
+            <div class="rv-delay-row">
+              <input id="delay-notice" type="text" [(ngModel)]="delayNotice" name="delayNotice" maxlength="500" [placeholder]="'RESERVATIONS.NOTIFY_DELAY_PLACEHOLDER' | translate" />
+              <button type="button" class="rv-send" [disabled]="updatingDelay()" (click)="submitDelayNotice()">
+                {{ updatingDelay() ? ('RESERVATIONS.SENDING' | translate) : ('RESERVATIONS.SEND_DELAY' | translate) }}
+              </button>
+            </div>
+            @if (delaySuccess()) {
+              <p class="rv-ok">{{ 'RESERVATIONS.DELAY_SENT' | translate }}</p>
+            }
+            @if (delayRateLimited()) {
+              <p class="rv-warn">{{ 'RESERVATIONS.DELAY_RATE_LIMITED' | translate }}</p>
+            }
+            <button type="button" class="rv-cancel" (click)="showCancelConfirm.set(true)">{{ 'RESERVATIONS.CANCEL' | translate }}</button>
+          </div>
+        }
+
+        @if (r.status === 'cancelled' && tenant()) {
+          <div class="rv-actions">
+            <a class="rv-again" [routerLink]="bookRouterLink()">{{ 'RES_VIEW.BOOK_AGAIN' | translate }}<i>→</i></a>
+          </div>
+        }
+
+        @if (r.token && tenant()) {
+          <a class="rv-feedback" [routerLink]="['/feedback', tenant()!.id]" [queryParams]="{ token: r.token }">
+            {{ 'FEEDBACK.LINK_FROM_RESERVATION' | translate }}<i>→</i>
+          </a>
+        }
+      </section>
     </main>
     @if (showCancelConfirm() && reservation()) {
       <app-confirmation-modal
