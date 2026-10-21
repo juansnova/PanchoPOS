@@ -554,7 +554,7 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     .filter-input, .filter-select { padding: 0.35rem 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
     .reservation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
     .reservation-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; background: #fff; }
-    .reservation-card.status-booked { border-left: 4px solid #3b82f6; }
+    .reservation-card.status-booked { border-left: 4px solid #1c1917; }
     .reservation-card.status-seated { border-left: 4px solid #16a34a; }
     .reservation-card.status-finished { border-left: 4px solid #6b7280; }
     .reservation-card.status-cancelled { border-left: 4px solid #dc2626; opacity: 0.85; }
@@ -563,13 +563,13 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     .res-id { font-weight: 600; color: #6b7280; }
     .res-name { font-weight: 600; }
     .status-badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; }
-    .status-badge.booked { background: #dbeafe; color: #1d4ed8; }
+    .status-badge.booked { background: #e7e5e4; color: #1c1917; }
     .status-badge.seated { background: #dcfce7; color: #15803d; }
     .status-badge.finished { background: #f3f4f6; color: #4b5563; }
     .status-badge.cancelled { background: #fee2e2; color: #b91c1c; }
     .status-badge.no_show { background: #ffedd5; color: #c2410c; }
     .status-badge.waiting { background: #fef3c7; color: #b45309; }
-    .status-badge.notified { background: #dbeafe; color: #1d4ed8; }
+    .status-badge.notified { background: #e7e5e4; color: #1c1917; }
     .view-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
     .view-tab { padding: 0.5rem 1rem; border: none; background: transparent; cursor: pointer; font-weight: 500; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -1px; }
     .view-tab.active { color: var(--color-primary, #2563eb); border-bottom-color: var(--color-primary, #2563eb); }
@@ -642,7 +642,7 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     .rs-kpi { display: flex; flex-direction: column; gap: 2px; padding: 14px 18px; border-radius: 18px; background: var(--color-surface); border: 1px solid var(--color-border); }
     .rs-kpi span { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); }
     .rs-kpi strong { font-size: 1.8rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
-    .rs-kpi-info strong { color: #1d4ed8; }
+    .rs-kpi-info strong { color: #1c1917; }
     .rs-kpi-ok strong { color: #15803d; }
 
     .rs-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
@@ -664,10 +664,10 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     .rs-empty p { margin: 0; }
 
     .reservation-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
-    .rv-card { --rc: #3b82f6; position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 22px; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 28px -20px rgba(0,0,0,.35); border-left-width: 1px !important; transition: transform .18s, box-shadow .18s; }
+    .rv-card { --rc: #1c1917; position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 22px; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 28px -20px rgba(0,0,0,.35); border-left-width: 1px !important; transition: transform .18s, box-shadow .18s; }
     .rv-card:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(0,0,0,.05), 0 20px 34px -20px rgba(0,0,0,.4); }
     .rv-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--rc); }
-    .rv-card.status-booked, .rv-card.status-notified { --rc: #3b82f6; }
+    .rv-card.status-booked, .rv-card.status-notified { --rc: #1c1917; }
     .rv-card.status-waiting { --rc: #d4a017; }
     .rv-card.status-seated { --rc: #22a05a; }
     .rv-card.status-finished { --rc: #9ca3af; }
@@ -747,11 +747,11 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     .rs-stats > div:first-child { border-left: 0; padding-left: 0; }
     .rs-stats dt { font-size: .64rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); }
     .rs-stats dd { margin: 2px 0 0; font-family: Georgia, 'Times New Roman', serif; font-size: 2.3rem; line-height: 1; font-variant-numeric: tabular-nums; }
-    .rs-stat-info dd { color: #1d4ed8; }
+    .rs-stat-info dd { color: #1c1917; }
     .rs-stat-ok dd { color: #15803d; }
     .rs-flow { display: flex; gap: 3px; height: 6px; margin: 18px 0 16px; border-radius: 999px; overflow: hidden; background: var(--color-border); }
     .rs-flow span { flex: 0 1 0; min-width: 0; transition: flex-grow .4s; }
-    .rs-flow-b { background: #3b82f6; }
+    .rs-flow-b { background: #1c1917; }
     .rs-flow-s { background: #22a05a; }
     .rs-flow-f { background: #a8a29e; }
 
@@ -774,9 +774,9 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
 
     /* ticket card */
     .reservation-grid { grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); }
-    .tk { --rc: #3b82f6; position: relative; display: flex; min-width: 0; border-radius: 24px; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 18px 32px -24px rgba(60, 30, 10, .5); transition: transform .18s, box-shadow .18s; }
+    .tk { --rc: #1c1917; position: relative; display: flex; min-width: 0; border-radius: 24px; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 18px 32px -24px rgba(60, 30, 10, .5); transition: transform .18s, box-shadow .18s; }
     .tk:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(0,0,0,.05), 0 26px 38px -24px rgba(60, 30, 10, .55); }
-    .tk.status-booked { --rc: #3b82f6; }
+    .tk.status-booked { --rc: #1c1917; }
     .tk.status-seated { --rc: #22a05a; }
     .tk.status-finished { --rc: #9ca3af; }
     .tk.status-cancelled { --rc: #dc2626; opacity: .78; }
