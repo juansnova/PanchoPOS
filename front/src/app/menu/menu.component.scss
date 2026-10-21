@@ -3524,3 +3524,89 @@ $cart-expanded-max: 60vh;
 .about-foot { margin: var(--space-5) 0 0; text-align: center; font-family: Georgia, 'Times New Roman', serif; font-size: 0.95rem; font-style: italic; color: var(--color-text-muted); }
 
 @media (prefers-reduced-motion: reduce) { .mt-social-btn, .about-btn i { transition: none; } }
+
+// ================================================================ hero ticket v2: status, today's hours, pills, perforation
+.menu-page .hero-meta-bar {
+  position: relative;
+  flex-direction: row;
+  max-width: 600px;
+  padding: 18px 20px 18px 24px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 30px 50px -30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+// side notches like a torn ticket
+.menu-page .hero-meta-bar::before,
+.menu-page .hero-meta-bar::after {
+  content: '';
+  position: absolute;
+  top: 78px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #1f1510;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+.menu-page .hero-meta-bar::before { left: -9px; }
+.menu-page .hero-meta-bar::after { right: -9px; }
+
+.mt-info {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.24);
+}
+
+.mt-today { display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 8px 12px; }
+
+.mt-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #fecaca;
+  background: rgba(220, 38, 38, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.4);
+
+  i { width: 8px; height: 8px; border-radius: 50%; background: #f87171; }
+  &.open { color: #bbf7d0; background: rgba(34, 197, 94, 0.2); box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.4); i { background: #4ade80; box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.25); } }
+}
+
+.mt-hours { display: inline-flex; align-items: center; gap: 7px; font-size: 0.86rem; font-weight: 600; color: rgba(251, 246, 238, 0.85); b { font-weight: 800; color: var(--gm-ember, #f08a3c); } }
+
+.mt-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+
+.mt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 38px;
+  padding: 0 15px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: #fbf6ee;
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+
+  svg { flex: none; color: var(--gm-ember, #f08a3c); }
+  span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  &:hover { color: #171210; background: var(--gm-ember, #f08a3c); transform: translateY(-1px); svg { color: #171210; } }
+}
+
+.mt-pill-addr { flex: 1 1 100%; justify-content: center; }
+.mt-pill-wa svg { color: #4ade80; }
+.mt-pill-go { color: #171210; background: var(--gm-ember, #f08a3c); box-shadow: 0 12px 20px -10px var(--gm-ember, #f08a3c); i { font-style: normal; font-weight: 800; } svg { color: #171210; } }
+
+.menu-page .hero-meta-bar .restaurant-contact,
+.menu-page .hero-meta-bar .mt-social { display: none; }

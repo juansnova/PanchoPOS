@@ -296,6 +296,12 @@ export class MenuComponent implements OnInit, OnDestroy {
     });
   });
 
+  /** Today's opening text for the hero (e.g. "9:00 – 22:00"), or null when unknown. */
+  todayHours = computed(() => {
+    const d = this.weekHours().find((x) => x.today);
+    return d ? (d.closed ? null : d.text) : null;
+  });
+
   /** Open / closed right now, with the next change. */
   openStatus = computed<{ open: boolean; time: string } | null>(() => {
     const hours = this.parsedHours();
