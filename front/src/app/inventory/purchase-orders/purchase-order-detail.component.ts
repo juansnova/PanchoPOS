@@ -11,7 +11,6 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../shared/sidebar.component';
 import { FocusFirstInputDirective } from '../../shared/focus-first-input.directive';
-import { AppSelectComponent, AppSelectOption } from '../../shared/app-select.component';
 import { InventoryService } from '../inventory.service';
 import {
   PurchaseOrder,
@@ -34,7 +33,7 @@ import {
 @Component({
   selector: 'app-purchase-order-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, SidebarComponent, FocusFirstInputDirective, TranslateModule, AppSelectComponent],
+  imports: [CommonModule, RouterModule, FormsModule, SidebarComponent, FocusFirstInputDirective, TranslateModule],
   template: `
     <app-sidebar>
       @if (loading()) {
@@ -172,11 +171,6 @@ import {
               </div>
               <div class="pr-body">
                 <p class="pr-hint">{{ 'INVENTORY.PURCHASE_ORDERS.RECEIVE_PARTIAL_HINT' | translate }}</p>
-                <div class="pr-field">
-                  <label for="receive_warehouse">{{ 'INVENTORY.WAREHOUSES.WAREHOUSE' | translate }}</label>
-                  <app-select id="receive_warehouse" name="receive_warehouse" [(ngModel)]="receiveWarehouseId" [options]="warehouseOptions()" [searchable]="false" [emptyValue]="null" />
-                </div>
-
                 <div class="pr-head-line">
                   <h4>{{ 'INVENTORY.PURCHASE_ORDERS.RECEIVE_NOW' | translate }}</h4>
                   <button type="button" class="pr-all" (click)="receiveAll()">{{ 'INVENTORY.PURCHASE_ORDERS.RECEIVE_ALL' | translate }}</button>
@@ -283,14 +277,6 @@ export class PurchaseOrderDetailComponent implements OnInit {
     if (days < 0) return { text: this.translate.instant('INVENTORY.PURCHASE_ORDERS.DUE_LATE_SHORT', { n: -days }), tone: 'late' };
     if (days === 0) return { text: this.translate.instant('INVENTORY.PURCHASE_ORDERS.DUE_TODAY'), tone: 'soon' };
     return { text: this.translate.instant('INVENTORY.PURCHASE_ORDERS.DUE_IN_SHORT', { n: days }), tone: days <= 2 ? 'soon' : 'ok' };
-  }
-
-  warehouseOptions(): AppSelectOption[] {
-    return this.warehouses().map((w) => ({
-      value: w.id,
-      label: w.name,
-      sub: w.is_default ? this.translate.instant('INVENTORY.WAREHOUSES.DEFAULT_BADGE') : undefined,
-    }));
   }
 
   /** Fill every line with what is still missing. */

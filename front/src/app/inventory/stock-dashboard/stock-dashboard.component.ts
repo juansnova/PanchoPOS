@@ -12,13 +12,12 @@ import { RouterModule } from '@angular/router';
 import { SidebarComponent } from '../../shared/sidebar.component';
 import { InventoryService } from '../inventory.service';
 import { StockLevel, LowStockItem, InventoryCategory, Warehouse, inventoryUnitKey, inventoryCategoryKey } from '../inventory.types';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { AppSelectComponent, AppSelectOption } from '../../shared/app-select.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-stock-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, SidebarComponent, TranslateModule, AppSelectComponent],
+  imports: [CommonModule, FormsModule, RouterModule, SidebarComponent, TranslateModule],
   template: `
     <app-sidebar>
       <div class="sk-hero">
@@ -65,9 +64,6 @@ import { AppSelectComponent, AppSelectOption } from '../../shared/app-select.com
         <section class="sk-section">
           <div class="sk-bar">
             <h2><span class="sk-dot sk-dot-ok"></span>{{ 'INVENTORY.DASHBOARD.STOCK_LEVELS' | translate }}</h2>
-            <div class="sk-wh">
-              <app-select [ngModel]="warehouseFilter" (ngModelChange)="warehouseFilter = $event; loadData()" [options]="warehouseOptions()" [searchable]="false" [emptyValue]="''" />
-            </div>
           </div>
           <div class="sk-chips" role="tablist">
             <button type="button" class="sk-chip" [class.on]="!categoryFilter" (click)="setCategory('')">{{ 'INVENTORY.ITEMS.ALL_CATEGORIES' | translate }} <i>{{ stockLevels().length }}</i></button>
@@ -115,7 +111,6 @@ import { AppSelectComponent, AppSelectOption } from '../../shared/app-select.com
 })
 export class StockDashboardComponent implements OnInit {
   private inventoryService = inject(InventoryService);
-  private translate = inject(TranslateService);
 
   stockLevels = signal<StockLevel[]>([]);
   lowStockItems = signal<LowStockItem[]>([]);
@@ -160,13 +155,6 @@ export class StockDashboardComponent implements OnInit {
       next: items => this.lowStockItems.set(items),
       error: () => { }
     });
-  }
-
-  warehouseOptions(): AppSelectOption[] {
-    return [
-      { value: '', label: this.translate.instant('INVENTORY.WAREHOUSES.ALL_WAREHOUSES') },
-      ...this.warehouses().map((w) => ({ value: String(w.id), label: w.name })),
-    ];
   }
 
   setCategory(cat: string) {

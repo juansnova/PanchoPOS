@@ -356,10 +356,6 @@ import {
                       <label for="adjust_unit">{{ 'INVENTORY.ITEMS.UNIT' | translate }}</label>
                       <app-select id="adjust_unit" formControlName="unit" [options]="unitRichOptions()" [searchable]="false" />
                     </div>
-                    <div class="im-field">
-                      <label for="adjust_warehouse">{{ 'INVENTORY.WAREHOUSES.WAREHOUSE' | translate }}</label>
-                      <app-select id="adjust_warehouse" formControlName="warehouse_id" [options]="warehouseOptions()" [searchable]="false" />
-                    </div>
                   </div>
                   @if (adjustResult(); as r) {
                     <div class="ad-result" [attr.data-type]="adjustType()">
@@ -577,14 +573,6 @@ export class InventoryItemsComponent implements OnInit {
 
   categoryOptions(): AppSelectOption[] {
     return this.categories.map((c) => ({ value: c, label: this.categoryIcon(c) + ' ' + this.translate.instant(this.categoryKey(c)) }));
-  }
-
-  warehouseOptions(): AppSelectOption[] {
-    return this.warehouses().map((w) => ({
-      value: w.id,
-      label: w.name,
-      sub: w.is_default ? this.translate.instant('INVENTORY.WAREHOUSES.DEFAULT_BADGE') : undefined,
-    }));
   }
 
   /** Arrow step: whole numbers for countable/small units, decimals for large ones. */

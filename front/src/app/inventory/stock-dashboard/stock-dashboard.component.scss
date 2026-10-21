@@ -245,11 +245,6 @@
     h2 { margin: 0; }
 }
 
-.sk-wh {
-    width: 240px;
-    max-width: 100%;
-}
-
 .sk-chips {
     display: flex;
     flex-wrap: wrap;
@@ -380,5 +375,4 @@
 
 @include for-phone-only {
     .sk-hero { padding: 18px; }
-    .sk-wh { width: 100%; }
 }
