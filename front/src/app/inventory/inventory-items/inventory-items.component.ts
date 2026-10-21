@@ -182,69 +182,56 @@ const UNIT_ICONS: Record<string, string> = {
             }
           </div>
         } @else {
-          <div class="table-card ii-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>{{ 'INVENTORY.ITEMS.SKU' | translate }}</th>
-                  <th>{{ 'INVENTORY.ITEMS.NAME' | translate }}</th>
-                  <th>{{ 'INVENTORY.ITEMS.CATEGORY' | translate }}</th>
-                  <th>{{ 'INVENTORY.ITEMS.STOCK' | translate }}</th>
-                  <th>{{ 'INVENTORY.ITEMS.REORDER' | translate }}</th>
-                  <th>{{ 'INVENTORY.ITEMS.AVG_COST' | translate }}</th>
-                  <th>{{ 'INVENTORY.ITEMS.VALUE' | translate }}</th>
-                  <th>{{ 'INVENTORY.ITEMS.STATUS' | translate }}</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of filteredItems(); track item.id) {
-                  <tr [class.low-stock-row]="item.is_low_stock">
-                    <td class="sku-cell">{{ item.sku || '-' }}</td>
-                    <td>
-                      <div>{{ item.name || '-' }}</div>
-                      @if (item.description) {
-                        <small class="text-muted">{{ item.description }}</small>
-                      }
-                    </td>
-                    <td>{{ item.category ? (categoryKey(item.category) | translate) : '-' }}</td>
-                    <td [class.negative]="(item.current_quantity || 0) < 0">
-                      {{ (item.current_quantity || 0).toFixed(2) }} {{ item.unit ? (unitKey(item.unit) | translate) : '' }}
-                    </td>
-                    <td>{{ (item.reorder_level || 0).toFixed(2) }}</td>
-                    <td>{{ formatCurrency(item.average_cost_cents || 0) }}</td>
-                    <td>{{ formatCurrency((item.current_quantity || 0) * (item.average_cost_cents || 0)) }}</td>
-                    <td>
-                      @if (item.is_low_stock) {
-                        <span class="status-badge warning">{{ 'INVENTORY.ITEMS.STATUS_LOW_STOCK' | translate }}</span>
-                      } @else if (!item.is_active) {
-                        <span class="status-badge">{{ 'INVENTORY.ITEMS.STATUS_INACTIVE' | translate }}</span>
-                      } @else {
-                        <span class="status-badge success">{{ 'INVENTORY.ITEMS.STATUS_OK' | translate }}</span>
-                      }
-                    </td>
-                    <td class="actions">
-                      <button class="icon-btn" [title]="'INVENTORY.ITEMS.ADJUST_STOCK' | translate" (click)="openAdjustModal(item)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M12 20V10M18 20V4M6 20v-4"/>
-                        </svg>
-                      </button>
-                      <button class="icon-btn" [title]="'INVENTORY.COMMON.EDIT' | translate" (click)="openEditModal(item)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </button>
-                      <button class="icon-btn icon-btn-danger" [title]="'INVENTORY.COMMON.DELETE' | translate" (click)="confirmDelete(item)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                        </svg>
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          <div class="ii-list" data-testid="inventory-list">
+            <div class="ii-list-head" role="row">
+              <span>{{ 'INVENTORY.ITEMS.NAME' | translate }}</span>
+              <span>{{ 'INVENTORY.ITEMS.CATEGORY' | translate }}</span>
+              <span>{{ 'INVENTORY.ITEMS.STOCK' | translate }}</span>
+              <span class="ii-col-num">{{ 'INVENTORY.ITEMS.AVG_COST' | translate }}</span>
+              <span class="ii-col-num">{{ 'INVENTORY.ITEMS.VALUE' | translate }}</span>
+              <span>{{ 'INVENTORY.ITEMS.STATUS' | translate }}</span>
+              <span></span>
+            </div>
+            @for (item of filteredItems(); track item.id) {
+              <div class="ii-row" role="row" [attr.data-tone]="stockTone(item)" [class.ii-row-off]="!item.is_active">
+                <div class="ii-cell ii-cell-name">
+                  <span class="ii-avatar ii-avatar-sm" aria-hidden="true">{{ categoryIcon(item.category) }}</span>
+                  <div class="ii-name-text">
+                    <b>{{ item.name || '-' }}</b>
+                    <small>{{ item.sku || '-' }}@if (item.description) { · {{ item.description }} }</small>
+                  </div>
+                </div>
+                <div class="ii-cell ii-cell-cat" [attr.data-label]="'INVENTORY.ITEMS.CATEGORY' | translate">
+                  @if (item.category) {
+                    <span class="ii-cat-pill">{{ categoryKey(item.category) | translate }}</span>
+                  } @else { - }
+                </div>
+                <div class="ii-cell ii-cell-stock" [attr.data-label]="'INVENTORY.ITEMS.STOCK' | translate">
+                  <div class="ii-stock-line" [class.negative]="(item.current_quantity || 0) < 0">
+                    <b>{{ (item.current_quantity || 0).toFixed(2) }}</b>
+                    <span>{{ item.unit ? (unitKey(item.unit) | translate) : '' }}</span>
+                  </div>
+                  <div class="ii-gauge ii-gauge-sm"><div class="ii-gauge-fill" [style.width.%]="stockPercent(item)"></div></div>
+                  <small>{{ 'INVENTORY.ITEMS.REORDER' | translate }}: {{ (item.reorder_level || 0).toFixed(2) }}</small>
+                </div>
+                <div class="ii-cell ii-col-num" [attr.data-label]="'INVENTORY.ITEMS.AVG_COST' | translate">{{ formatCurrency(item.average_cost_cents || 0) }}</div>
+                <div class="ii-cell ii-col-num ii-value" [attr.data-label]="'INVENTORY.ITEMS.VALUE' | translate">{{ formatCurrency((item.current_quantity || 0) * (item.average_cost_cents || 0)) }}</div>
+                <div class="ii-cell">
+                  @if (item.is_low_stock) {
+                    <span class="ii-badge ii-badge-warn">{{ 'INVENTORY.ITEMS.STATUS_LOW_STOCK' | translate }}</span>
+                  } @else if (!item.is_active) {
+                    <span class="ii-badge">{{ 'INVENTORY.ITEMS.STATUS_INACTIVE' | translate }}</span>
+                  } @else {
+                    <span class="ii-badge ii-badge-ok">{{ 'INVENTORY.ITEMS.STATUS_OK' | translate }}</span>
+                  }
+                </div>
+                <div class="ii-cell ii-cell-actions">
+                  <button class="ii-act-ico ii-act-ico-main" [title]="'INVENTORY.ITEMS.ADJUST_STOCK' | translate" [attr.aria-label]="'INVENTORY.ITEMS.ADJUST_STOCK' | translate" (click)="openAdjustModal(item)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V10M18 20V4M6 20v-4"/></svg></button>
+                  <button class="ii-act-ico" [title]="'INVENTORY.COMMON.EDIT' | translate" [attr.aria-label]="'INVENTORY.COMMON.EDIT' | translate" (click)="openEditModal(item)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="ii-act-ico ii-act-danger" [title]="'INVENTORY.COMMON.DELETE' | translate" [attr.aria-label]="'INVENTORY.COMMON.DELETE' | translate" (click)="confirmDelete(item)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                </div>
+              </div>
+            }
           </div>
         }
       </div>
