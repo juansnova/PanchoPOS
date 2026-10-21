@@ -13,6 +13,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { SidebarComponent } from '../../shared/sidebar.component';
 import { FocusFirstInputDirective } from '../../shared/focus-first-input.directive';
+import { AppSelectComponent, AppSelectOption } from '../../shared/app-select.component';
 import { InventoryService } from '../inventory.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
@@ -42,149 +43,118 @@ import {
     SidebarComponent,
     FocusFirstInputDirective,
     TranslateModule,
+    AppSelectComponent,
   ],
   template: `
     <app-sidebar>
-      <div class="page-header">
-        <h1>{{ 'INVENTORY.PURCHASE_ORDERS.TITLE' | translate }}</h1>
-        <div class="header-actions">
-          <button class="btn btn-primary" (click)="openCreateModal()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            {{ 'INVENTORY.PURCHASE_ORDERS.CREATE_PO' | translate }}
-          </button>
+      <div class="page-header po-header">
+        <div class="po-title">
+          <h1>{{ 'INVENTORY.PURCHASE_ORDERS.TITLE' | translate }}</h1>
+          <p>{{ 'INVENTORY.PURCHASE_ORDERS.SUBTITLE' | translate }}</p>
         </div>
+        <button class="po-new" (click)="openCreateModal()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{{ 'INVENTORY.PURCHASE_ORDERS.CREATE_PO' | translate }}</button>
       </div>
 
       <div class="content">
-        <!-- Filters -->
-        <div class="filters-bar">
-          <select [(ngModel)]="statusFilter" (change)="loadOrders()">
-            <option value="">{{ 'INVENTORY.PURCHASE_ORDERS.ALL_STATUSES' | translate }}</option>
-            @for (status of statuses; track status) {
-              <option [value]="status">{{ 'INVENTORY.PURCHASE_ORDERS.STATUS_' + status.toUpperCase() | translate }}</option>
-            }
-          </select>
+        <div class="po-kpis">
+          <div class="po-kpi"><span class="po-kpi-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6"/></svg></span><div><strong>{{ poStats().total }}</strong><small>{{ 'INVENTORY.PURCHASE_ORDERS.KPI_TOTAL' | translate }}</small></div></div>
+          <div class="po-kpi"><span class="po-kpi-ico po-ico-blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><strong>{{ poStats().open }}</strong><small>{{ 'INVENTORY.PURCHASE_ORDERS.KPI_OPEN' | translate }}</small></div></div>
+          <div class="po-kpi"><span class="po-kpi-ico po-ico-amber"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="6" width="15" height="11" rx="1"/><path d="M16 9h4l3 3v5h-7"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span><div><strong>{{ formatCurrency(poStats().toReceiveCents) }}</strong><small>{{ 'INVENTORY.PURCHASE_ORDERS.KPI_TO_RECEIVE' | translate }}</small></div></div>
+          <div class="po-kpi po-kpi-main"><span class="po-kpi-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg></span><div><strong>{{ formatCurrency(poStats().receivedCents) }}</strong><small>{{ 'INVENTORY.PURCHASE_ORDERS.KPI_RECEIVED' | translate }}</small></div></div>
         </div>
 
-        <div class="status-help-bar">
-          <button
-            type="button"
-            class="icon-btn status-help-toggle"
-            [attr.aria-expanded]="showStatusHelp()"
-            [attr.aria-controls]="'po-status-help-panel'"
-            [attr.aria-label]="'INVENTORY.PURCHASE_ORDERS.STATUS_HELP_TOGGLE' | translate"
-            (click)="toggleStatusHelp()"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 16v-4M12 8h.01"/>
-            </svg>
+        <div class="po-filters">
+          <div class="po-chips" role="group" [attr.aria-label]="'INVENTORY.ITEMS.STATUS' | translate">
+            <button type="button" class="po-chip" [class.on]="statusSel() === ''" (click)="setStatus('')">
+              {{ 'INVENTORY.PURCHASE_ORDERS.ALL_STATUSES' | translate }} <span>{{ orders().length }}</span>
+            </button>
+            @for (status of statuses; track status) {
+              <button type="button" class="po-chip" [attr.data-status]="status" [class.on]="statusSel() === status" (click)="setStatus(status)">
+                <i></i>{{ 'INVENTORY.PURCHASE_ORDERS.STATUS_' + status.toUpperCase() | translate }} <span>{{ countByStatus(status) }}</span>
+              </button>
+            }
+          </div>
+          <button type="button" class="po-help-btn" [attr.aria-expanded]="showStatusHelp()" [attr.aria-controls]="'po-status-help-panel'"
+            [attr.aria-label]="'INVENTORY.PURCHASE_ORDERS.STATUS_HELP_TOGGLE' | translate" [title]="'INVENTORY.PURCHASE_ORDERS.STATUS_HELP_TOGGLE' | translate" (click)="toggleStatusHelp()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
           </button>
-          @if (showStatusHelp()) {
-            <div id="po-status-help-panel" class="status-help-panel" role="region" [attr.aria-label]="'INVENTORY.PURCHASE_ORDERS.STATUS_HELP_TITLE' | translate">
-              @for (status of statuses; track status) {
-                <div class="status-help-item">
-                  <span class="status-badge" [class]="status">
-                    {{ 'INVENTORY.PURCHASE_ORDERS.STATUS_' + status.toUpperCase() | translate }}
-                  </span>
-                  <p>{{ 'INVENTORY.PURCHASE_ORDERS.STATUS_HELP_' + status.toUpperCase() | translate }}</p>
-                </div>
-              }
-            </div>
-          }
         </div>
+
+        @if (showStatusHelp()) {
+          <div id="po-status-help-panel" class="po-help-panel" role="region" [attr.aria-label]="'INVENTORY.PURCHASE_ORDERS.STATUS_HELP_TITLE' | translate">
+            @for (status of statuses; track status) {
+              <div class="po-help-item">
+                <span class="status-badge" [class]="status">{{ 'INVENTORY.PURCHASE_ORDERS.STATUS_' + status.toUpperCase() | translate }}</span>
+                <p>{{ 'INVENTORY.PURCHASE_ORDERS.STATUS_HELP_' + status.toUpperCase() | translate }}</p>
+              </div>
+            }
+          </div>
+        }
 
         @if (loading()) {
           <div class="empty-state"><p>{{ 'INVENTORY.PURCHASE_ORDERS.LOADING' | translate }}</p></div>
         } @else if (orders().length === 0) {
-          <div class="empty-state">
-            <div class="empty-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                <polyline points="14,2 14,8 20,8"/>
-              </svg>
-            </div>
+          <div class="po-empty">
+            <div class="po-empty-ico"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6"/></svg></div>
             <h3>{{ 'INVENTORY.PURCHASE_ORDERS.NO_ORDERS' | translate }}</h3>
             <p>{{ 'INVENTORY.PURCHASE_ORDERS.NO_ORDERS_DESC' | translate }}</p>
-            <button class="btn btn-primary" (click)="openCreateModal()">{{ 'INVENTORY.PURCHASE_ORDERS.CREATE_PO' | translate }}</button>
+            <button class="po-new" (click)="openCreateModal()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{{ 'INVENTORY.PURCHASE_ORDERS.CREATE_PO' | translate }}</button>
           </div>
+        } @else if (visibleOrders().length === 0) {
+          <div class="po-empty"><p>{{ 'INVENTORY.PURCHASE_ORDERS.NO_MATCH' | translate }}</p></div>
         } @else {
-          <div class="table-card">
-            <table>
-              <thead>
-                <tr>
-                  <th>{{ 'INVENTORY.PURCHASE_ORDERS.ORDER_NUMBER' | translate }}</th>
-                  <th>{{ 'INVENTORY.REPORTS.DATE' | translate }}</th>
-                  <th>{{ 'INVENTORY.PURCHASE_ORDERS.EXPECTED_DELIVERY' | translate }}</th>
-                  <th>{{ 'INVENTORY.COMMON.TOTAL' | translate }}</th>
-                  <th>{{ 'INVENTORY.ITEMS.STATUS' | translate }}</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (po of orders(); track po.id) {
-                  <tr>
-                    <td><strong>{{ po.order_number }}</strong></td>
-                    <td>{{ formatDate(po.order_date) }}</td>
-                    <td>{{ po.expected_date ? formatDate(po.expected_date) : '-' }}</td>
-                    <td class="price">{{ formatCurrency(po.total_cents) }}</td>
-                    <td>
-                      <span class="status-badge" [class]="po.status">
-                        {{ 'INVENTORY.PURCHASE_ORDERS.STATUS_' + po.status.toUpperCase() | translate }}
-                      </span>
-                    </td>
-                    <td class="actions">
-                      @for (target of transitionTargets(po.status); track target) {
-                        <button
-                          type="button"
-                          class="btn btn-secondary btn-sm po-row-action"
-                          [disabled]="statusUpdatingId() === po.id"
-                          (click)="transitionOrder(po, target)"
-                        >
-                          {{ purchaseOrderActionLabelKey(target) | translate }}
-                        </button>
-                      }
-                      @if (canReceive(po.status)) {
-                        <a
-                          [routerLink]="['/inventory/purchase-orders', po.id]"
-                          [queryParams]="{ receive: '1' }"
-                          class="btn btn-primary btn-sm po-row-action"
-                        >
-                          {{ 'INVENTORY.PURCHASE_ORDERS.RECEIVE_GOODS' | translate }}
-                        </a>
-                      }
-                      <button class="icon-btn" [title]="'INVENTORY.PURCHASE_ORDERS.PRINT_PDF' | translate" (click)="downloadPdf(po)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <polyline points="6 9 6 2 18 2 18 9"/>
-                          <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
-                          <rect x="6" y="14" width="12" height="8"/>
-                        </svg>
-                      </button>
-                      <a [routerLink]="['/inventory/purchase-orders', po.id]" class="icon-btn" [title]="'INVENTORY.COMMON.VIEW' | translate">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                          <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                      </a>
-                      @if (canCancel(po.status)) {
-                        <button
-                          class="icon-btn icon-btn-danger"
-                          [title]="'INVENTORY.COMMON.CANCEL' | translate"
-                          [disabled]="statusUpdatingId() === po.id"
-                          (click)="cancelOrder(po)"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 6L6 18M6 6l12 12"/>
-                          </svg>
-                        </button>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          <div class="po-grid">
+            @for (po of visibleOrders(); track po.id) {
+              <article class="po-card" [attr.data-status]="po.status">
+                <header class="po-card-head">
+                  <div class="po-card-title">
+                    <h3>{{ po.order_number }}</h3>
+                    <span class="po-meta"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>{{ formatDate(po.order_date) }}</span>
+                  </div>
+                  <span class="status-badge po-pill" [class]="po.status">
+                    {{ 'INVENTORY.PURCHASE_ORDERS.STATUS_' + po.status.toUpperCase() | translate }}
+                  </span>
+                </header>
+
+                <ol class="po-steps" [attr.data-cancelled]="po.status === 'cancelled'" aria-hidden="true">
+                  @for (st of pipeline; track st; let i = $index) {
+                    <li [class.done]="stepIndex(po.status) >= i" [class.current]="stepIndex(po.status) > i - 1 && stepIndex(po.status) < i + 1 && po.status !== 'cancelled'">
+                      <i></i><span>{{ 'INVENTORY.PURCHASE_ORDERS.STATUS_' + st.toUpperCase() | translate }}</span>
+                    </li>
+                  }
+                </ol>
+
+                <div class="po-info">
+                  <div class="po-total">
+                    <small>{{ 'INVENTORY.COMMON.TOTAL' | translate }}</small>
+                    <strong>{{ formatCurrency(po.total_cents) }}</strong>
+                  </div>
+                  <div class="po-due" [attr.data-tone]="dueInfo(po).tone">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    <span>{{ dueInfo(po).text }}</span>
+                  </div>
+                </div>
+
+                <footer class="po-actions">
+                  @for (target of transitionTargets(po.status); track target) {
+                    <button type="button" class="po-act po-act-main" [disabled]="statusUpdatingId() === po.id" (click)="transitionOrder(po, target)">
+                      {{ purchaseOrderActionLabelKey(target) | translate }}
+                    </button>
+                  }
+                  @if (canReceive(po.status)) {
+                    <a [routerLink]="['/inventory/purchase-orders', po.id]" [queryParams]="{ receive: '1' }" class="po-act po-act-main">
+                      {{ 'INVENTORY.PURCHASE_ORDERS.RECEIVE_GOODS' | translate }}
+                    </a>
+                  }
+                  <span class="po-spacer"></span>
+                  <button class="po-ico" [title]="'INVENTORY.PURCHASE_ORDERS.PRINT_PDF' | translate" [attr.aria-label]="'INVENTORY.PURCHASE_ORDERS.PRINT_PDF' | translate" (click)="downloadPdf(po)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                  <a [routerLink]="['/inventory/purchase-orders', po.id]" class="po-ico" [title]="'INVENTORY.COMMON.VIEW' | translate" [attr.aria-label]="'INVENTORY.COMMON.VIEW' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
+                  @if (canCancel(po.status)) {
+                    <button class="po-ico po-ico-danger" [title]="'INVENTORY.COMMON.CANCEL' | translate" [attr.aria-label]="'INVENTORY.COMMON.CANCEL' | translate" [disabled]="statusUpdatingId() === po.id" (click)="cancelOrder(po)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                  }
+                </footer>
+              </article>
+            }
           </div>
         }
       </div>
@@ -235,12 +205,7 @@ import {
                       <div class="item-row" [formGroupName]="i">
                         <div class="item-select">
                           <label>{{ 'INVENTORY.ITEMS.NAME' | translate }}</label>
-                          <select formControlName="inventory_item_id" (change)="onItemSelected(i)">
-                            <option value="">-- {{ 'COMMON.SELECT' | translate }} --</option>
-                            @for (invItem of filteredInventoryItems(); track invItem.id) {
-                              <option [value]="invItem.id">{{ invItem.name }} ({{ invItem.sku }})</option>
-                            }
-                          </select>
+                          <app-select formControlName="inventory_item_id" [options]="inventoryOptions()" [placeholder]="'COMMON.SELECT' | translate" [searchable]="true" [emptyValue]="''" (changed)="onItemSelected(i)" />
                         </div>
                         <div class="item-qty">
                           <label>{{ 'INVENTORY.ITEMS.QUANTITY' | translate }}</label>
@@ -248,11 +213,7 @@ import {
                         </div>
                         <div class="item-unit">
                           <label>{{ 'INVENTORY.ITEMS.UNIT' | translate }}</label>
-                          <select formControlName="unit">
-                            @for (unit of units; track unit) {
-                              <option [value]="unit">{{ unitKey(unit) | translate }}</option>
-                            }
-                          </select>
+                          <app-select formControlName="unit" [options]="unitOptions()" [searchable]="false" />
                         </div>
                         <div class="item-cost">
                           <label>{{ 'INVENTORY.PURCHASE_ORDERS.UNIT_COST' | translate }}</label>
@@ -310,12 +271,70 @@ export class PurchaseOrdersComponent implements OnInit {
   readonly canReceive = canReceivePurchaseOrder;
   readonly canCancel = canCancelPurchaseOrder;
 
-  statusFilter = '';
-
   statuses: PurchaseOrderStatus[] = ['draft', 'submitted', 'approved', 'partially_received', 'received', 'cancelled'];
   units: UnitOfMeasure[] = ['piece', 'gram', 'kilogram', 'ounce', 'pound', 'milliliter', 'centiliter', 'liter', 'fluid_ounce', 'cup', 'gallon'];
 
   readonly unitKey = inventoryUnitKey;
+
+  /** Steps of the happy path drawn on each card. */
+  readonly pipeline: PurchaseOrderStatus[] = ['draft', 'submitted', 'approved', 'received'];
+  statusSel = signal('');
+
+  visibleOrders = computed(() => {
+    const st = this.statusSel();
+    return st ? this.orders().filter((o) => o.status === st) : this.orders();
+  });
+
+  poStats = computed(() => {
+    const list = this.orders();
+    const open = list.filter((o) => ['submitted', 'approved', 'partially_received'].includes(o.status));
+    return {
+      total: list.length,
+      open: open.length,
+      toReceiveCents: list
+        .filter((o) => o.status === 'approved' || o.status === 'partially_received')
+        .reduce((sum, o) => sum + (o.total_cents || 0), 0),
+      receivedCents: list.filter((o) => o.status === 'received').reduce((sum, o) => sum + (o.total_cents || 0), 0),
+    };
+  });
+
+  setStatus(value: string): void {
+    this.statusSel.set(value);
+  }
+
+  countByStatus(status: string): number {
+    return this.orders().filter((o) => o.status === status).length;
+  }
+
+  /** Position on the pipeline (draft 0 .. received 3); partially received sits between approved and received. */
+  stepIndex(status: PurchaseOrderStatus): number {
+    const map: Record<string, number> = { draft: 0, submitted: 1, approved: 2, partially_received: 2.5, received: 3 };
+    return map[status] ?? -1;
+  }
+
+  /** "Llega en 3 d" / "Atrasada 2 d" for orders that are still waiting for goods. */
+  dueInfo(po: PurchaseOrder): { text: string; tone: 'ok' | 'soon' | 'late' | 'none' } {
+    if (!po.expected_date) return { text: this.translate.instant('INVENTORY.PURCHASE_ORDERS.NO_DUE'), tone: 'none' };
+    const dateText = this.formatDate(po.expected_date);
+    if (po.status === 'received' || po.status === 'cancelled') return { text: dateText, tone: 'none' };
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(po.expected_date);
+    if (!m) return { text: dateText, tone: 'none' };
+    const due = new Date(+m[1], +m[2] - 1, +m[3]).getTime();
+    const today = new Date();
+    const t0 = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const days = Math.round((due - t0) / 86400000);
+    if (days < 0) return { text: this.translate.instant('INVENTORY.PURCHASE_ORDERS.DUE_LATE', { n: -days, date: dateText }), tone: 'late' };
+    if (days === 0) return { text: this.translate.instant('INVENTORY.PURCHASE_ORDERS.DUE_TODAY'), tone: 'soon' };
+    return { text: this.translate.instant('INVENTORY.PURCHASE_ORDERS.DUE_IN', { n: days, date: dateText }), tone: days <= 2 ? 'soon' : 'ok' };
+  }
+
+  inventoryOptions(): AppSelectOption[] {
+    return this.inventoryItems().map((i) => ({ value: i.id, label: i.name, sub: i.sku }));
+  }
+
+  unitOptions(): AppSelectOption[] {
+    return this.units.map((u) => ({ value: u, label: this.translate.instant(this.unitKey(u)) }));
+  }
 
   createForm: FormGroup = this.fb.group({
     expected_date: [''],
@@ -351,10 +370,7 @@ export class PurchaseOrdersComponent implements OnInit {
 
   loadOrders() {
     this.loading.set(true);
-    const options: { status?: PurchaseOrderStatus } = {};
-    if (this.statusFilter) options.status = this.statusFilter as PurchaseOrderStatus;
-
-    this.inventoryService.getPurchaseOrders(options).subscribe({
+    this.inventoryService.getPurchaseOrders({}).subscribe({
       next: orders => { this.orders.set(orders); this.loading.set(false); },
       error: () => this.loading.set(false)
     });
