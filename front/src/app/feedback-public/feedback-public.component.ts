@@ -63,6 +63,15 @@ export class FeedbackPublicComponent implements OnInit, OnDestroy {
 
   stars = [1, 2, 3, 4, 5];
 
+  /** Star under the pointer / keyboard focus (preview); 0 when none. */
+  hoverRating = signal(0);
+  /** Stars shown as filled: the preview while hovering, otherwise the chosen rating. */
+  shownRating = computed(() => this.hoverRating() || this.rating());
+  moodTone = computed(() => {
+    const r = this.shownRating();
+    return r >= 4 ? 'good' : r === 3 ? 'mid' : r >= 1 ? 'low' : 'none';
+  });
+
   googleReviewUrl = computed(() => this.tenant()?.public_google_review_url?.trim() || null);
   googleMapsUrl = computed(() => this.tenant()?.public_google_maps_url?.trim() || null);
   openstreetmapUrl = computed(() => this.tenant()?.public_openstreetmap_url?.trim() || null);

@@ -1364,6 +1364,12 @@
   "FEEDBACK": {
     "TITLE": "¿Cómo fue tu visita?",
     "INTRO": "Nos encantaría saber tu opinión. Tu valoración y comentarios nos ayudan a mejorar.",
+    "MOOD_NONE": "Toca una estrella para calificar",
+    "MOOD_1": "Muy mala",
+    "MOOD_2": "Mala",
+    "MOOD_3": "Regular",
+    "MOOD_4": "Buena",
+    "MOOD_5": "¡Excelente!",
     "RATING_LABEL": "Experiencia general",
     "FIELD_REQUIRED_MARK": " *",
     "COMMENT_LABEL": "Comentarios (opcional)",

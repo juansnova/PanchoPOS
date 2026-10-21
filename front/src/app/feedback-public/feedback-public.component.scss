@@ -87,3 +87,234 @@
 .btn-submit-feedback {
   margin-top: 1rem;
 }
+
+// ===== Rediseño del formulario público =====
+.fb-card {
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 28px;
+  box-shadow: 0 30px 60px -36px rgba(0, 0, 0, 0.45);
+}
+
+.fb-intro {
+  margin: 0 0 1.25rem;
+  text-align: center;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.fb-rating {
+  padding: 1.25rem 1rem 1rem;
+  margin-bottom: 1.25rem;
+  text-align: center;
+  border-radius: 22px;
+  background: linear-gradient(160deg, var(--color-primary-light, rgba(194, 103, 44, 0.12)), transparent 80%);
+  border: 1px solid var(--color-border);
+}
+
+.fb-rating .feedback-rating-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.star-row {
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.star-btn {
+  font-size: 3rem;
+  padding: 0.1rem 0.2rem;
+  color: #ddd6cc;
+  transition: transform 0.15s ease, color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+
+  &:hover {
+    transform: scale(1.18);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 12px;
+  }
+
+  &.active {
+    color: #f5b301;
+    text-shadow: 0 4px 14px rgba(245, 179, 1, 0.35);
+  }
+
+  &.picked {
+    transform: scale(1.12);
+  }
+}
+
+@media (max-width: 420px) {
+  .star-btn {
+    font-size: 2.45rem;
+  }
+}
+
+.fb-mood {
+  min-height: 1.6em;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  transition: color 0.15s;
+
+  &[data-tone='good'] { color: #2f7a4c; }
+  &[data-tone='mid'] { color: #a16207; }
+  &[data-tone='low'] { color: #b91c1c; }
+}
+
+.fb-comment textarea {
+  min-height: 7rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  resize: vertical;
+  font: inherit;
+}
+
+.fb-counter {
+  display: block;
+  margin-top: 0.25rem;
+  text-align: right;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fb-contact {
+  border-radius: 20px;
+  border-style: dashed;
+  background: var(--color-bg, transparent);
+  padding: 1rem 1.1rem 0.5rem;
+
+  legend {
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  input {
+    border-radius: 12px;
+    min-height: 46px;
+  }
+}
+
+.fb-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 520px) {
+  .fb-two {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fb-submit {
+  width: 100%;
+  min-height: 56px;
+  margin-top: 1rem;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  box-shadow: 0 16px 28px -16px var(--color-primary);
+  transition: transform 0.12s, filter 0.15s;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.07);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    box-shadow: none;
+  }
+}
+
+// ----- Thank you -----
+.fb-thanks {
+  text-align: center;
+  padding: 2.25rem 1.5rem 2rem;
+}
+
+.fb-thanks-badge {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #34c075, #1f8a4f);
+  color: #fff;
+  box-shadow: 0 18px 30px -14px #1f8a4f;
+  animation: fb-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes fb-pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+
+.fb-thanks-stars {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 0.5rem;
+  font-size: 1.6rem;
+
+  i {
+    font-style: normal;
+    color: #ddd6cc;
+
+    &.on {
+      color: #f5b301;
+    }
+  }
+}
+
+.fb-thanks .success-title {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.fb-thanks .feedback-thankyou-actions {
+  .btn {
+    min-height: 50px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fb-thanks-badge {
+    animation: none;
+  }
+
+  .star-btn,
+  .fb-submit {
+    transition: none;
+  }
+}

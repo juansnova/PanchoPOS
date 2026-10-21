@@ -96,7 +96,15 @@
       }
     </header>
     <main class="book-content">
-      <div class="book-card book-success-card">
+      <div class="book-card book-success-card fb-card fb-thanks">
+        <div class="fb-thanks-badge" aria-hidden="true">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+        </div>
+        <div class="fb-thanks-stars" aria-hidden="true">
+          @for (s of stars; track s) {
+            <i [class.on]="rating() >= s">★</i>
+          }
+        </div>
         <h2 class="success-title">{{ 'FEEDBACK.THANK_YOU' | translate }}</h2>
         <p class="success-message">{{ 'FEEDBACK.THANK_YOU_DETAIL' | translate }}</p>
         <div class="feedback-thankyou-actions">
@@ -178,32 +186,45 @@
       </div>
     </header>
     <main class="book-content">
-      <div class="book-card">
+      <div class="book-card fb-card">
         <div class="book-form">
-          <p class="feedback-intro">{{ 'FEEDBACK.INTRO' | translate }}</p>
+          <p class="feedback-intro fb-intro">{{ 'FEEDBACK.INTRO' | translate }}</p>
 
-          <div class="form-group feedback-rating-group">
+          <div class="form-group feedback-rating-group fb-rating">
             <span class="feedback-rating-label">{{ 'FEEDBACK.RATING_LABEL' | translate }}{{ 'FEEDBACK.FIELD_REQUIRED_MARK' | translate }}</span>
             <div
               class="star-row"
               role="group"
+              (mouseleave)="hoverRating.set(0)"
               [attr.aria-label]="('FEEDBACK.RATING_LABEL' | translate) + ('FEEDBACK.FIELD_REQUIRED_MARK' | translate)"
             >
               @for (s of stars; track s) {
                 <button
                   type="button"
                   class="star-btn"
-                  [class.active]="rating() >= s"
+                  [class.active]="shownRating() >= s"
+                  [class.picked]="rating() === s"
                   (click)="setRating(s)"
+                  (mouseenter)="hoverRating.set(s)"
+                  (focus)="hoverRating.set(s)"
+                  (blur)="hoverRating.set(0)"
                   [attr.aria-pressed]="rating() >= s"
+                  [attr.aria-label]="s + ' / 5'"
                 >
                   ★
                 </button>
               }
             </div>
+            <p class="fb-mood" [attr.data-tone]="moodTone()" aria-live="polite">
+              @if (shownRating() > 0) {
+                {{ ('FEEDBACK.MOOD_' + shownRating()) | translate }}
+              } @else {
+                {{ 'FEEDBACK.MOOD_NONE' | translate }}
+              }
+            </p>
           </div>
 
-          <div class="form-group">
+          <div class="form-group fb-comment">
             <label for="fb-comment">{{ 'FEEDBACK.COMMENT_LABEL' | translate }}</label>
             <textarea
               id="fb-comment"
@@ -213,22 +234,25 @@
               [(ngModel)]="comment"
               [placeholder]="'FEEDBACK.COMMENT_PLACEHOLDER' | translate"
             ></textarea>
+            <small class="fb-counter">{{ comment.length }} / 4000</small>
           </div>
 
-          <fieldset class="feedback-contact-fieldset">
+          <fieldset class="feedback-contact-fieldset fb-contact">
             <legend>{{ 'FEEDBACK.CONTACT_OPTIONAL' | translate }}</legend>
             <p class="field-hint">{{ 'FEEDBACK.CONTACT_HINT' | translate }}</p>
             <div class="form-group">
               <label for="fb-name">{{ 'FEEDBACK.CONTACT_NAME' | translate }}</label>
-              <input id="fb-name" type="text" name="contactName" maxlength="200" [(ngModel)]="contactName" />
+              <input id="fb-name" type="text" name="contactName" maxlength="200" [(ngModel)]="contactName" autocomplete="name" />
             </div>
-            <div class="form-group">
-              <label for="fb-email">{{ 'FEEDBACK.CONTACT_EMAIL' | translate }}</label>
-              <input id="fb-email" type="email" name="contactEmail" [(ngModel)]="contactEmail" />
-            </div>
-            <div class="form-group">
-              <label for="fb-phone">{{ 'FEEDBACK.CONTACT_PHONE' | translate }}</label>
-              <input id="fb-phone" type="tel" name="contactPhone" [(ngModel)]="contactPhone" />
+            <div class="fb-two">
+              <div class="form-group">
+                <label for="fb-email">{{ 'FEEDBACK.CONTACT_EMAIL' | translate }}</label>
+                <input id="fb-email" type="email" name="contactEmail" [(ngModel)]="contactEmail" autocomplete="email" />
+              </div>
+              <div class="form-group">
+                <label for="fb-phone">{{ 'FEEDBACK.CONTACT_PHONE' | translate }}</label>
+                <input id="fb-phone" type="tel" name="contactPhone" [(ngModel)]="contactPhone" autocomplete="tel" />
+              </div>
             </div>
           </fieldset>
 
@@ -240,7 +264,7 @@
 
           <button
             type="button"
-            class="btn btn-primary btn-submit-feedback"
+            class="btn btn-primary btn-submit-feedback fb-submit"
             [disabled]="!canSubmit() || !optionalContactOk() || submitting()"
             (click)="submit()"
           >
