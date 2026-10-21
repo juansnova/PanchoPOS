@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from pg_client_mixin import PgClientTestCase
 
@@ -83,7 +84,7 @@ class TestCashClose(PgClientTestCase):
         self._paid_order(1000, "cash")
         self._paid_order(2000, "terminal", tip=200)
         self._paid_order(500, "transfer")
-        today = datetime.now(timezone.utc).date().isoformat()
+        today = datetime.now(ZoneInfo("America/Bogota")).date().isoformat()
         r = self.client.get(f"/cash-close/summary?business_date={today}", headers=_bearer_headers(self.owner))
         self.assertEqual(r.status_code, 200, r.text)
         j = r.json()
@@ -95,7 +96,7 @@ class TestCashClose(PgClientTestCase):
 
     def test_close_computes_difference(self) -> None:
         self._paid_order(1000, "cash")
-        today = datetime.now(timezone.utc).date().isoformat()
+        today = datetime.now(ZoneInfo("America/Bogota")).date().isoformat()
         r = self.client.post(
             "/cash-close",
             json={"business_date": today, "counted_cash_cents": 5800, "opening_float_cents": 5000},
@@ -116,6 +117,6 @@ class TestCashClose(PgClientTestCase):
         self.assertEqual(r.status_code, 400)
 
     def test_waiter_forbidden(self) -> None:
-        today = datetime.now(timezone.utc).date().isoformat()
+        today = datetime.now(ZoneInfo("America/Bogota")).date().isoformat()
         r = self.client.get(f"/cash-close/summary?business_date={today}", headers=_bearer_headers(self.waiter))
         self.assertEqual(r.status_code, 403)

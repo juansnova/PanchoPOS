@@ -40,9 +40,23 @@ REVENUE_STATUSES = {models.OrderStatus.paid, models.OrderStatus.completed}
 EXCLUDED_ITEM_STATUSES = {models.OrderItemStatus.cancelled}
 
 
-def _revenue_date(order: models.Order) -> datetime | None:
-    """Date used for attributing revenue (paid_at if set, else created_at)."""
-    return order.paid_at or order.created_at
+def _revenue_date(order: models.Order, tz: ZoneInfo | None = None) -> datetime | None:
+    """Date used for attributing revenue (paid_at if set, else created_at).
+
+    With ``tz`` the moment is converted to the restaurant's local wall clock (naive), so a sale at
+    9 pm in Bogotá counts for that day and not for the next UTC day.
+    """
+    dt = order.paid_at or order.created_at
+    if dt is None or tz is None:
+        return dt
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(tz).replace(tzinfo=None)
+
+
+def tenant_zone_for(session: Session, tenant_id: int) -> ZoneInfo:
+    tenant = session.get(models.Tenant, tenant_id)
+    return _tenant_zone(getattr(tenant, "timezone", None))
 
 
 def _in_range(d: datetime | None, from_date: date, to_date: date) -> bool:
@@ -78,7 +92,8 @@ def _get_revenue_items(
     from_date: date,
     to_date: date,
 ):
-    """Load orders and items that count toward revenue in the date range."""
+    """Load orders and items that count toward revenue in the date range (restaurant local days)."""
+    tz = tenant_zone_for(session, tenant_id)
     orders = session.exec(
         select(models.Order)
         .where(models.Order.tenant_id == tenant_id)
@@ -89,7 +104,7 @@ def _get_revenue_items(
 
     result = []
     for order in orders:
-        rev_date = _revenue_date(order)
+        rev_date = _revenue_date(order, tz)
         if not _in_range(rev_date, from_date, to_date):
             continue
         items = session.exec(
@@ -156,6 +171,7 @@ def _build_report_payload(tenant_id: int, session: Session, from_date: date, to_
     tips_by_day: dict[str, int] = defaultdict(int)
     tips_by_waiter: dict[str, int] = defaultdict(int)
     total_tips_cents = 0
+    tz = tenant_zone_for(session, tenant_id)
     orders_for_tips = session.exec(
         select(models.Order)
         .where(models.Order.tenant_id == tenant_id)
@@ -163,7 +179,7 @@ def _build_report_payload(tenant_id: int, session: Session, from_date: date, to_
         .where(models.Order.status.in_([s.value for s in REVENUE_STATUSES]))
     ).all()
     for order in orders_for_tips:
-        rev_date = _revenue_date(order)
+        rev_date = _revenue_date(order, tz)
         if not _in_range(rev_date, from_date, to_date):
             continue
         tip = int(order.tip_amount_cents or 0)

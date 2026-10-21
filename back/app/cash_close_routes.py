@@ -10,7 +10,7 @@ from . import models
 from .db import get_session
 from .order_payment_service import list_active_payments, order_due_cents
 from .permissions import Permission, require_permission
-from .reports_routes import REVENUE_STATUSES, _in_range, _revenue_date
+from .reports_routes import REVENUE_STATUSES, _in_range, _revenue_date, tenant_zone_for
 
 router = APIRouter()
 
@@ -35,11 +35,12 @@ def _day_summary(session: Session, tenant_id: int, day: date) -> dict:
         .where(models.Order.deleted_at.is_(None))
         .where(models.Order.status.in_([s.value for s in REVENUE_STATUSES]))
     ).all()
+    tz = tenant_zone_for(session, tenant_id)
     totals = {"cash": 0, "card": 0, "transfer": 0, "other": 0}
     tips = 0
     count = 0
     for order in orders:
-        if not _in_range(_revenue_date(order), day, day):
+        if not _in_range(_revenue_date(order, tz), day, day):
             continue
         count += 1
         tips += int(order.tip_amount_cents or 0)

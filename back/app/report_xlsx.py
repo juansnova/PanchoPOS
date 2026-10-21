@@ -867,7 +867,7 @@ def build_sales_workbook(
     wd: dict[int, dict] = defaultdict(lambda: {"rev": 0, "orders": set(), "days": set()})
     hr: dict[int, dict] = defaultdict(lambda: {"rev": 0, "orders": set()})
     for r in rows:
-        loc = _local(r["date"], tz)
+        loc = r["date"]  # already restaurant-local wall clock
         if loc is None:
             continue
         wd[loc.weekday()]["rev"] += r["revenue_cents"]
@@ -1042,7 +1042,7 @@ def build_detailed_workbook(
     _banner(ws_i, f"{L['sheet_income']} · {L['detailed_title']}", sub, len(head))
     irows = []
     for r in sorted(income_rows, key=lambda x: (x["date"] is None, x["date"])):
-        row = [_local(r["date"], tz), r["order_id"], r["table_name"], r["waiter_name"], r["customer_name"],
+        row = [r["date"], r["order_id"], r["table_name"], r["waiter_name"], r["customer_name"],
                _pay_label(r.get("payment_method"), L), r["product_name"], r["category"], r["quantity"],
                _money(r["price_cents"]), _money(r["revenue_cents"])]
         if has_cost:
@@ -1080,10 +1080,10 @@ def build_detailed_workbook(
     exp_day: dict[date, int] = defaultdict(int)
     for r in income_rows:
         if r["date"]:
-            inc_day[r["date"].date()] += r["revenue_cents"]
+            inc_day[r["date"].date()] += r["revenue_cents"]  # local naive
     for r in expense_rows:
         if r["date"]:
-            exp_day[r["date"].date()] += r["line_total_cents"]
+            exp_day[_local(r["date"], tz).date()] += r["line_total_cents"]
     days = sorted(set(inc_day) | set(exp_day))
     ws_d = wb.create_sheet(L["sheet_by_day"])
     head = [L["date"], L["weekday"], L["revenue"], L["expenses"], L["net"], L["net_cum"]]
