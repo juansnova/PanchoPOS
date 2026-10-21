@@ -166,12 +166,7 @@ class Tenant(SQLModel, table=True):
     working_plan_updated_at: datetime | None = Field(default=None)
     working_plan_owner_seen_at: datetime | None = Field(default=None)
 
-    # Reservation options: pre-payment (discounted on meal), policies, reminders
-    reservation_prepayment_cents: int | None = Field(default=None)
-    reservation_prepayment_text: str | None = Field(
-        default=None
-    )  # Shown inside {{prepayment_notice}}; use {{prepayment_text}} alone only without {{prepayment_notice}} (see reservation_email_template.py)
-    reservation_cancellation_policy: str | None = Field(default=None)
+    # Reservation options: policies, reminders
     reservation_arrival_tolerance_minutes: int | None = Field(default=None)  # e.g. 15
     # Planning: average seated session length; used to free tables for later reservation slots (null = legacy same-day block)
     reservation_average_table_turn_minutes: int | None = Field(default=None)
@@ -184,11 +179,6 @@ class Tenant(SQLModel, table=True):
     reservation_dress_code: str | None = Field(default=None)
     reservation_reminder_24h_enabled: bool = Field(default=False)
     reservation_reminder_2h_enabled: bool = Field(default=False)
-
-    # Guest birthday capture (reservations): default capture-only, no marketing outbound
-    guest_birthday_capture_enabled: bool = Field(default=True)
-    guest_birthday_marketing_enabled: bool = Field(default=False)
-    guest_birthday_consent_text: str | None = Field(default=None)  # GDPR copy when marketing enabled
 
     # Satisfecho Delivery: flat fee + coverage (postal list and/or radius from lat/lng)
     delivery_fee_cents: int = Field(default=0)
@@ -711,11 +701,6 @@ class Reservation(TenantMixin, table=True):
     preferred_floor_id: int | None = Field(default=None, foreign_key="floor.id")
     # BCP 47-ish tag from booking request (?lang= / Accept-Language); overrides the default Spanish for emails
     locale: str | None = Field(default=None, max_length=16)
-    # Guest birthday: month/day only (no year) for privacy; optional marketing consent
-    guest_birthday_month: int | None = Field(default=None)  # 1–12
-    guest_birthday_day: int | None = Field(default=None)  # 1–31
-    guest_birthday_marketing_consent: bool = Field(default=False)
-
 
 class WaitingListStatus(str, Enum):
     waiting = "waiting"
@@ -1092,9 +1077,6 @@ class ReservationCreate(SQLModel):
     allergies_has: bool | None = None
     allergies_detail: str | None = Field(default=None, max_length=500)
     preferred_floor_id: int | None = None
-    guest_birthday_month: int | None = None  # 1–12; pair with day or both omit
-    guest_birthday_day: int | None = None  # 1–31
-    guest_birthday_marketing_consent: bool | None = None
 
 
 class ReservationUpdate(SQLModel):
@@ -1113,9 +1095,6 @@ class ReservationUpdate(SQLModel):
     allergies_has: bool | None = None
     allergies_detail: str | None = None
     preferred_floor_id: int | None = None
-    guest_birthday_month: int | None = None
-    guest_birthday_day: int | None = None
-    guest_birthday_marketing_consent: bool | None = None
 
 
 class ReservationStatusUpdate(SQLModel):
@@ -1200,9 +1179,6 @@ class PublicReservationCreate(SQLModel):
     allergies_has: bool | None = None
     allergies_detail: str | None = None
     preferred_floor_id: int | None = None
-    guest_birthday_month: int | None = None
-    guest_birthday_day: int | None = None
-    guest_birthday_marketing_consent: bool | None = None
 
 
 class PublicReservationUpdate(SQLModel):
@@ -1505,9 +1481,6 @@ class TenantUpdate(SQLModel):
     public_primary_color: str | None = None
 
     # Reservation options (pre-payment, policies, reminders)
-    reservation_prepayment_cents: int | None = None
-    reservation_prepayment_text: str | None = None
-    reservation_cancellation_policy: str | None = None
     reservation_arrival_tolerance_minutes: int | None = None
     reservation_average_table_turn_minutes: int | None = None
     reservation_slot_minutes: int | None = None
@@ -1517,9 +1490,6 @@ class TenantUpdate(SQLModel):
     reservation_reminder_24h_enabled: bool | None = None
     reservation_reminder_2h_enabled: bool | None = None
 
-    guest_birthday_capture_enabled: bool | None = None
-    guest_birthday_marketing_enabled: bool | None = None
-    guest_birthday_consent_text: str | None = None
 
     # Satisfecho Delivery fee + coverage
     delivery_fee_cents: int | None = None

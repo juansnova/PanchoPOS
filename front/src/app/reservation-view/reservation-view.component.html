@@ -85,12 +85,9 @@
               </li>
             }
           </ul>
-          @if (t.reservation_cancellation_policy || (t.reservation_arrival_tolerance_minutes ?? 0) > 0 || t.reservation_dress_code) {
+          @if ((t.reservation_arrival_tolerance_minutes ?? 0) > 0 || t.reservation_dress_code) {
             <div class="rv-rules">
               <h3>{{ 'RESERVATIONS.RESTAURANT_GUIDELINES' | translate }}</h3>
-              @if (t.reservation_cancellation_policy) {
-                <p><b>{{ 'RESERVATIONS.CANCELLATION_POLICY' | translate }}</b> {{ t.reservation_cancellation_policy }}</p>
-              }
               @if ((t.reservation_arrival_tolerance_minutes ?? 0) > 0) {
                 <p><b>{{ 'RESERVATIONS.ARRIVAL_TOLERANCE' | translate }}</b> {{ 'RESERVATIONS.ARRIVAL_TOLERANCE_MINUTES' | translate: { minutes: t.reservation_arrival_tolerance_minutes } }}</p>
               }

@@ -615,8 +615,6 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     .prefill-message { display: block; margin-top: 0.25rem; font-size: 0.8rem; color: #6b7280; }
     .prefill-message.prefill-success { color: #15803d; }
     .res-meta { font-size: 0.85rem; color: #4b5563; }
-    .birthday-selects { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .birthday-selects select { flex: 1; min-width: 7rem; }
     .field-hint { display: block; margin-top: 0.25rem; font-size: 0.8rem; color: #6b7280; }
     .res-booking-controls { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; }
     .res-seating-group .label-block { display: block; font-weight: 500; margin-bottom: 0.35rem; }
@@ -697,7 +695,6 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     .rv-tags { display: flex; flex-wrap: wrap; gap: 6px; }
     .rv-tag { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 8px; background: var(--color-bg); color: var(--color-text-muted); font-size: .78rem; font-weight: 700; }
     .rv-tag-table { background: var(--color-primary-light); color: var(--color-primary); }
-    .rv-tag-bday { background: #fdf0f6; color: #be185d; }
     .rv-tag-warn { background: #fef3c7; color: #a16207; }
     .rv-late-badge { padding: 3px 9px; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #92400e; background: #fde68a; animation: rv-late-pulse 2s ease-in-out infinite; }
     .rv-delay { display: flex; gap: 12px; align-items: flex-start; margin: 0 14px 6px; padding: 12px 14px; border-radius: 16px; background: linear-gradient(135deg, #fef3c7, #fde68a); color: #78350f; box-shadow: inset 0 0 0 1px rgba(180, 83, 9, .18); }
@@ -1139,23 +1136,6 @@ export class ReservationsComponent implements OnInit, OnDestroy {
   formName = '';
   formPhone = '';
   formEmail = '';
-  formBirthdayMonth: number | null = null;
-  formBirthdayDay: number | null = null;
-  readonly birthdayMonths = [
-    { value: 1, labelKey: 'BOOK.MONTH_01' },
-    { value: 2, labelKey: 'BOOK.MONTH_02' },
-    { value: 3, labelKey: 'BOOK.MONTH_03' },
-    { value: 4, labelKey: 'BOOK.MONTH_04' },
-    { value: 5, labelKey: 'BOOK.MONTH_05' },
-    { value: 6, labelKey: 'BOOK.MONTH_06' },
-    { value: 7, labelKey: 'BOOK.MONTH_07' },
-    { value: 8, labelKey: 'BOOK.MONTH_08' },
-    { value: 9, labelKey: 'BOOK.MONTH_09' },
-    { value: 10, labelKey: 'BOOK.MONTH_10' },
-    { value: 11, labelKey: 'BOOK.MONTH_11' },
-    { value: 12, labelKey: 'BOOK.MONTH_12' },
-  ];
-  readonly birthdayDays = Array.from({ length: 31 }, (_, i) => i + 1);
   formClientNotes = '';
   formOwnerNotes = '';
   formDate = '';
@@ -1373,13 +1353,6 @@ export class ReservationsComponent implements OnInit, OnDestroy {
     return this.translate.instant(k[s] || s);
   }
 
-  formatGuestBirthday(r: Reservation): string {
-    const m = r.guest_birthday_month;
-    const d = r.guest_birthday_day;
-    if (!m || !d) return '';
-    const monthKey = `BOOK.MONTH_${String(m).padStart(2, '0')}`;
-    return `${this.translate.instant(monthKey)} ${d}`;
-  }
 
   getTableName(tableId: number): string {
     return this.tablesWithStatus().find(t => t.id === tableId)?.name ?? String(tableId);
@@ -1456,8 +1429,6 @@ export class ReservationsComponent implements OnInit, OnDestroy {
     this.formName = '';
     this.formPhone = '';
     this.formEmail = '';
-    this.formBirthdayMonth = null;
-    this.formBirthdayDay = null;
     this.formClientNotes = '';
     this.formOwnerNotes = '';
     this.formDate = this.tenantTodayForForm();
@@ -1528,8 +1499,6 @@ export class ReservationsComponent implements OnInit, OnDestroy {
     this.formName = r.customer_name;
     this.formPhone = r.customer_phone;
     this.formEmail = r.customer_email ?? '';
-    this.formBirthdayMonth = r.guest_birthday_month ?? null;
-    this.formBirthdayDay = r.guest_birthday_day ?? null;
     this.formClientNotes = r.client_notes ?? '';
     this.formOwnerNotes = r.owner_notes ?? '';
     this.formDate = r.reservation_date.slice(0, 10);
@@ -1617,14 +1586,6 @@ export class ReservationsComponent implements OnInit, OnDestroy {
     const dietary = this.formDietaryNotes.trim();
     const preferredFloorId =
       this.formFloorId != null && !Number.isNaN(this.formFloorId) ? this.formFloorId : undefined;
-    const hasBirthday = this.formBirthdayMonth != null && this.formBirthdayDay != null;
-    if (
-      (this.formBirthdayMonth != null && this.formBirthdayDay == null) ||
-      (this.formBirthdayMonth == null && this.formBirthdayDay != null)
-    ) {
-      this.formError.set(this.translate.instant('BOOK.BIRTHDAY_INCOMPLETE'));
-      return;
-    }
     const payload: ReservationCreate = {
       customer_name: this.formName.trim(),
       customer_phone: this.formPhone.trim(),
@@ -1639,8 +1600,6 @@ export class ReservationsComponent implements OnInit, OnDestroy {
       allergies_has: dietary.length > 0,
       allergies_detail: dietary || undefined,
       preferred_floor_id: preferredFloorId,
-      guest_birthday_month: hasBirthday ? this.formBirthdayMonth : undefined,
-      guest_birthday_day: hasBirthday ? this.formBirthdayDay : undefined,
     };
     if (!this.editingReservation() && tenantId) (payload as ReservationCreate).tenant_id = tenantId;
     if (this.editingReservation()) {
@@ -1659,8 +1618,6 @@ export class ReservationsComponent implements OnInit, OnDestroy {
         allergies_has: dietary.length > 0,
         allergies_detail: dietary.length > 0 ? dietary : null,
         preferred_floor_id: preferredFloorId ?? null,
-        guest_birthday_month: hasBirthday ? this.formBirthdayMonth : null,
-        guest_birthday_day: hasBirthday ? this.formBirthdayDay : null,
       };
       this.api.updateReservation(this.editingReservation()!.id, update).subscribe({
         next: () => { this.closeForm(); this.load(); this.loadTables(); },

@@ -4,12 +4,6 @@ Reservation confirmation emails: simple {{placeholder}} substitution only.
 Security: no Jinja/format eval — only an allowlist of placeholder names is replaced.
 Dynamic values are HTML-escaped in the HTML part; static template text is escaped too,
 except for reservation_link_block_html (server-generated <a> only).
-
-Prepayment placeholders (avoid duplicate wording in custom bodies):
-- {{prepayment_notice}} — localized prepayment amount line (if any) plus tenant
-  reservation_prepayment_text. Prefer this in templates.
-- {{prepayment_text}} — tenant reservation_prepayment_text only. Use when you build a
-  custom layout without {{prepayment_notice}}; do not use both for the same text.
 """
 
 from __future__ import annotations
@@ -39,9 +33,6 @@ ALLOWED_PLACEHOLDERS: frozenset[str] = frozenset(
         "reservation_link_block_html",
         "google_maps_link_block_html",
         "openstreetmap_link_block_html",
-        "cancellation_policy",
-        "prepayment_text",
-        "prepayment_notice",
         "dress_code",
         "arrival_note",
         "restaurant_phone",
@@ -80,10 +71,6 @@ def default_confirmation_body_template(lang: str = "en") -> str:
 {lt}: {{{{time}}}}
 {lp}: {{{{party_size}}}}
 
-{{{{cancellation_policy}}}}
-
-{{{{prepayment_notice}}}}
-
 {{{{dress_code}}}}
 
 {{{{arrival_note}}}}
@@ -100,25 +87,6 @@ def default_confirmation_body_template(lang: str = "en") -> str:
 ---
 {{{{restaurant_name}}}}
 """
-
-
-def _format_money_line(cents: int | None, lang: str = "en") -> str:
-    if cents is None or cents <= 0:
-        return ""
-    amount = cents / 100.0
-    amount_s = f"{amount:.2f}"
-    return get_message("email_reservation_prepayment_amount", lang, amount=amount_s, currency="COP")
-
-
-def _prepayment_notice(tenant: Tenant, lang: str = "en") -> str:
-    parts: list[str] = []
-    line = _format_money_line(tenant.reservation_prepayment_cents, lang)
-    if line:
-        parts.append(line)
-    pt = (tenant.reservation_prepayment_text or "").strip()
-    if pt:
-        parts.append(pt)
-    return "\n".join(parts)
 
 
 def _arrival_note(tenant: Tenant, lang: str = "en") -> str:
@@ -255,9 +223,6 @@ def build_value_maps(
         "reservation_link_block_html": _link_block_plain(view_url, lang),
         "google_maps_link_block_html": google_maps_link_block_plain(tenant, lang),
         "openstreetmap_link_block_html": openstreetmap_link_block_plain(tenant, lang),
-        "cancellation_policy": (tenant.reservation_cancellation_policy or "").strip(),
-        "prepayment_text": (tenant.reservation_prepayment_text or "").strip(),
-        "prepayment_notice": _prepayment_notice(tenant, lang),
         "dress_code": (tenant.reservation_dress_code or "").strip(),
         "arrival_note": _arrival_note(tenant, lang),
         "restaurant_phone": (tenant.phone or "").strip(),
@@ -355,10 +320,6 @@ def render_confirmation_email(
     plain, html_map = build_value_maps(
         tenant, customer_name, reservation_date, reservation_time, party_size, view_url, lang
     )
-    # {{prepayment_notice}} already includes tenant prepayment text; omit duplicate {{prepayment_text}}.
-    if "{{prepayment_notice}}" in body_t and "{{prepayment_text}}" in body_t:
-        plain["prepayment_text"] = ""
-        html_map["prepayment_text"] = ""
     subject = normalize_subject(render_plain_body(sub_t, plain))
     text_body = _collapse_blank_lines(render_plain_body(body_t, plain))
     html_inner = render_html_body(body_t, html_map)

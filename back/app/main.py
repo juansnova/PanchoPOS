@@ -720,9 +720,6 @@ class TenantSummary(_BaseModel):
     public_primary_color: str | None = None
     take_away_table_token: str | None = None  # Token for take-away/home ordering if a table is configured
     # Reservation rules (for book page and reservation view)
-    reservation_prepayment_cents: int | None = None
-    reservation_prepayment_text: str | None = None
-    reservation_cancellation_policy: str | None = None
     reservation_arrival_tolerance_minutes: int | None = None
     reservation_dress_code: str | None = None
     public_google_review_url: str | None = None
@@ -739,10 +736,6 @@ class TenantSummary(_BaseModel):
     timezone: str | None = None
     # Optional cap on guests per slot (for UI max party hint)
     reservation_max_guests_per_slot: int | None = None
-    # Guest birthday capture (public book): show optional month/day + marketing consent when enabled
-    guest_birthday_capture_enabled: bool = True
-    guest_birthday_marketing_enabled: bool = False
-    guest_birthday_consent_text: str | None = None
 
 
 TAKE_AWAY_TABLE_NAMES = ("take away", "home ordering", "takeaway", "take-away")
@@ -930,9 +923,6 @@ def _tenant_to_summary(t: models.Tenant, session: Session) -> TenantSummary:
         public_background_color=t.public_background_color,
         public_primary_color=getattr(t, "public_primary_color", None),
         take_away_table_token=take_away_token,
-        reservation_prepayment_cents=t.reservation_prepayment_cents,
-        reservation_prepayment_text=t.reservation_prepayment_text,
-        reservation_cancellation_policy=t.reservation_cancellation_policy,
         reservation_arrival_tolerance_minutes=t.reservation_arrival_tolerance_minutes,
         reservation_dress_code=t.reservation_dress_code,
         public_google_review_url=t.public_google_review_url,
@@ -945,13 +935,6 @@ def _tenant_to_summary(t: models.Tenant, session: Session) -> TenantSummary:
         privacy_policy_url=priv,
         timezone=t.timezone,
         reservation_max_guests_per_slot=t.reservation_max_guests_per_slot,
-        guest_birthday_capture_enabled=bool(
-            getattr(t, "guest_birthday_capture_enabled", True)
-        ),
-        guest_birthday_marketing_enabled=bool(
-            getattr(t, "guest_birthday_marketing_enabled", False)
-        ),
-        guest_birthday_consent_text=getattr(t, "guest_birthday_consent_text", None),
     )
 
 
@@ -1037,9 +1020,6 @@ def get_public_tenant(
         "public_background_color": summary.public_background_color,
         "public_primary_color": summary.public_primary_color,
         "take_away_table_token": summary.take_away_table_token,
-        "reservation_prepayment_cents": summary.reservation_prepayment_cents,
-        "reservation_prepayment_text": summary.reservation_prepayment_text,
-        "reservation_cancellation_policy": summary.reservation_cancellation_policy,
         "reservation_arrival_tolerance_minutes": summary.reservation_arrival_tolerance_minutes,
         "reservation_dress_code": summary.reservation_dress_code,
         "public_google_review_url": summary.public_google_review_url,
@@ -1052,9 +1032,6 @@ def get_public_tenant(
         "privacy_policy_url": summary.privacy_policy_url,
         "timezone": summary.timezone,
         "reservation_max_guests_per_slot": summary.reservation_max_guests_per_slot,
-        "guest_birthday_capture_enabled": summary.guest_birthday_capture_enabled,
-        "guest_birthday_marketing_enabled": summary.guest_birthday_marketing_enabled,
-        "guest_birthday_consent_text": summary.guest_birthday_consent_text,
     }
     return JSONResponse(content=body)
 
@@ -3307,23 +3284,6 @@ def update_tenant_settings(
         )
 
     # Reservation options (pre-payment, policies, reminders)
-    if tenant_update.reservation_prepayment_cents is not None:
-        v = tenant_update.reservation_prepayment_cents
-        tenant.reservation_prepayment_cents = v if v >= 0 else None
-    if tenant_update.reservation_prepayment_text is not None:
-        tenant.reservation_prepayment_text = (
-            tenant_update.reservation_prepayment_text.strip()
-            if isinstance(tenant_update.reservation_prepayment_text, str)
-            and tenant_update.reservation_prepayment_text.strip()
-            else None
-        )
-    if tenant_update.reservation_cancellation_policy is not None:
-        tenant.reservation_cancellation_policy = (
-            tenant_update.reservation_cancellation_policy.strip()
-            if isinstance(tenant_update.reservation_cancellation_policy, str)
-            and tenant_update.reservation_cancellation_policy.strip()
-            else None
-        )
     if tenant_update.reservation_arrival_tolerance_minutes is not None:
         v = tenant_update.reservation_arrival_tolerance_minutes
         tenant.reservation_arrival_tolerance_minutes = v if v >= 0 else None
@@ -3374,21 +3334,6 @@ def update_tenant_settings(
         tenant.reservation_reminder_24h_enabled = tenant_update.reservation_reminder_24h_enabled
     if tenant_update.reservation_reminder_2h_enabled is not None:
         tenant.reservation_reminder_2h_enabled = tenant_update.reservation_reminder_2h_enabled
-    if tenant_update.guest_birthday_capture_enabled is not None:
-        tenant.guest_birthday_capture_enabled = bool(
-            tenant_update.guest_birthday_capture_enabled
-        )
-    if tenant_update.guest_birthday_marketing_enabled is not None:
-        tenant.guest_birthday_marketing_enabled = bool(
-            tenant_update.guest_birthday_marketing_enabled
-        )
-    if tenant_update.guest_birthday_consent_text is not None:
-        raw_consent = tenant_update.guest_birthday_consent_text
-        if isinstance(raw_consent, str):
-            stripped = raw_consent.strip()
-            tenant.guest_birthday_consent_text = stripped or None
-        else:
-            tenant.guest_birthday_consent_text = None
 
     # Satisfecho Delivery fee + coverage
     if tenant_update.delivery_fee_cents is not None:
@@ -8199,11 +8144,6 @@ def _reservation_to_dict(
         "allergies_detail": getattr(r, "allergies_detail", None),
         "preferred_floor_id": getattr(r, "preferred_floor_id", None),
         "locale": getattr(r, "locale", None),
-        "guest_birthday_month": getattr(r, "guest_birthday_month", None),
-        "guest_birthday_day": getattr(r, "guest_birthday_day", None),
-        "guest_birthday_marketing_consent": bool(
-            getattr(r, "guest_birthday_marketing_consent", False)
-        ),
     }
     pfid = getattr(r, "preferred_floor_id", None)
     if pfid is not None and session:
@@ -8673,44 +8613,6 @@ def _normalize_allergies_for_booking(
     return (True, detail)
 
 
-def _normalize_guest_birthday(
-    month: int | None,
-    day: int | None,
-    *,
-    lang: str,
-) -> tuple[int | None, int | None]:
-    """Validate optional month/day pair (no year). Empty = clear. Both required when either set."""
-    if month is None and day is None:
-        return None, None
-    if month is None or day is None:
-        raise HTTPException(
-            status_code=400,
-            detail=api_error_payload("invalid_guest_birthday", lang),
-        )
-    try:
-        m = int(month)
-        d = int(day)
-    except (TypeError, ValueError):
-        raise HTTPException(
-            status_code=400,
-            detail=api_error_payload("invalid_guest_birthday", lang),
-        )
-    if m < 1 or m > 12 or d < 1 or d > 31:
-        raise HTTPException(
-            status_code=400,
-            detail=api_error_payload("invalid_guest_birthday", lang),
-        )
-    try:
-        # Leap year so 29 Feb is allowed without collecting year of birth.
-        date(2000, m, d)
-    except ValueError:
-        raise HTTPException(
-            status_code=400,
-            detail=api_error_payload("invalid_guest_birthday", lang),
-        )
-    return m, d
-
-
 @app.get("/reservations/slot-capacity")
 def get_slot_capacity(
     current_user: Annotated[models.User, Depends(require_permission(Permission.RESERVATION_READ))],
@@ -8989,20 +8891,6 @@ def create_reservation(
     ah_raw = getattr(data, "allergies_has", None)
     ad_raw = getattr(data, "allergies_detail", None)
     allergies_has, allergies_detail = _normalize_allergies_for_booking(ah_raw, ad_raw)
-    bday_month: int | None = None
-    bday_day: int | None = None
-    bday_consent = False
-    allow_public_birthday = current_user is not None or bool(
-        getattr(tenant, "guest_birthday_capture_enabled", True)
-    )
-    if allow_public_birthday:
-        raw_bm = getattr(data, "guest_birthday_month", None)
-        raw_bd = getattr(data, "guest_birthday_day", None)
-        if raw_bm is not None or raw_bd is not None:
-            bday_month, bday_day = _normalize_guest_birthday(raw_bm, raw_bd, lang=lang)
-        raw_consent = getattr(data, "guest_birthday_marketing_consent", None)
-        marketing_on = bool(getattr(tenant, "guest_birthday_marketing_enabled", False))
-        bday_consent = bool(raw_consent) if marketing_on and bday_month is not None else False
     _raise_if_reservation_time_invalid_for_opening_hours(
         session, tenant, res_date, res_time, service_type
     )
@@ -9089,9 +8977,6 @@ def create_reservation(
         allergies_detail=allergies_detail,
         preferred_floor_id=eff_floor,
         locale=lang,
-        guest_birthday_month=bday_month,
-        guest_birthday_day=bday_day,
-        guest_birthday_marketing_consent=bday_consent,
     )
     session.add(reservation)
     session.commit()
@@ -9785,44 +9670,6 @@ def update_reservation(
                 raise HTTPException(status_code=400, detail=api_error_payload("floor_not_found", lang))
             _validate_floor_seating_pair_or_raise(fl, reservation.seating_preference, lang)
             reservation.preferred_floor_id = body.preferred_floor_id
-    if (
-        "guest_birthday_month" in upd
-        or "guest_birthday_day" in upd
-        or "guest_birthday_marketing_consent" in upd
-    ):
-        bm = (
-            body.guest_birthday_month
-            if "guest_birthday_month" in upd
-            else reservation.guest_birthday_month
-        )
-        bd = (
-            body.guest_birthday_day
-            if "guest_birthday_day" in upd
-            else reservation.guest_birthday_day
-        )
-        if "guest_birthday_month" in upd and "guest_birthday_day" in upd:
-            bm, bd = body.guest_birthday_month, body.guest_birthday_day
-        elif "guest_birthday_month" in upd and body.guest_birthday_month is None:
-            bm, bd = None, None
-        elif "guest_birthday_day" in upd and body.guest_birthday_day is None:
-            bm, bd = None, None
-        nm, nd = _normalize_guest_birthday(bm, bd, lang=lang)
-        reservation.guest_birthday_month = nm
-        reservation.guest_birthday_day = nd
-        tenant_for_bday = session.get(models.Tenant, reservation.tenant_id)
-        marketing_on = bool(
-            getattr(tenant_for_bday, "guest_birthday_marketing_enabled", False)
-            if tenant_for_bday
-            else False
-        )
-        if "guest_birthday_marketing_consent" in upd:
-            reservation.guest_birthday_marketing_consent = (
-                bool(body.guest_birthday_marketing_consent)
-                if marketing_on and nm is not None
-                else False
-            )
-        elif not marketing_on or nm is None:
-            reservation.guest_birthday_marketing_consent = False
     ah_ok, ad_ok = _normalize_allergies_for_booking(
         reservation.allergies_has, reservation.allergies_detail
     )

@@ -60,25 +60,6 @@ export class BookComponent implements OnInit {
   formPhone = '';
   formEmail = '';
   formClientNotes = '';
-  /** Optional guest birthday (month/day only; no year). */
-  formBirthdayMonth: number | null = null;
-  formBirthdayDay: number | null = null;
-  formBirthdayMarketingConsent = false;
-  readonly birthdayMonths = [
-    { value: 1, labelKey: 'BOOK.MONTH_01' },
-    { value: 2, labelKey: 'BOOK.MONTH_02' },
-    { value: 3, labelKey: 'BOOK.MONTH_03' },
-    { value: 4, labelKey: 'BOOK.MONTH_04' },
-    { value: 5, labelKey: 'BOOK.MONTH_05' },
-    { value: 6, labelKey: 'BOOK.MONTH_06' },
-    { value: 7, labelKey: 'BOOK.MONTH_07' },
-    { value: 8, labelKey: 'BOOK.MONTH_08' },
-    { value: 9, labelKey: 'BOOK.MONTH_09' },
-    { value: 10, labelKey: 'BOOK.MONTH_10' },
-    { value: 11, labelKey: 'BOOK.MONTH_11' },
-    { value: 12, labelKey: 'BOOK.MONTH_12' },
-  ];
-  readonly birthdayDays = Array.from({ length: 31 }, (_, i) => i + 1);
   /** Public book zones (2+ → show selector; 1 → set automatically; 0 → venue-wide). */
   bookZones = signal<ReservationBookZone[]>([]);
   formFloorId: number | null = null;
@@ -386,17 +367,6 @@ export class BookComponent implements OnInit {
       preferred_floor_id:
         this.formFloorId != null && !Number.isNaN(this.formFloorId) ? this.formFloorId : undefined,
     };
-    if (
-      this.tenant()?.guest_birthday_capture_enabled !== false &&
-      this.formBirthdayMonth != null &&
-      this.formBirthdayDay != null
-    ) {
-      body.guest_birthday_month = this.formBirthdayMonth;
-      body.guest_birthday_day = this.formBirthdayDay;
-      if (this.tenant()?.guest_birthday_marketing_enabled) {
-        body.guest_birthday_marketing_consent = this.formBirthdayMarketingConsent;
-      }
-    }
     this.api.createReservationPublic(body).subscribe({
       next: (res) => {
         this.successReservation.set(res);

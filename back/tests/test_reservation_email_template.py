@@ -41,9 +41,6 @@ def _tenant(**kwargs) -> models.Tenant:
         name="Café Demo",
         phone="+1 555",
         email="info@demo.test",
-        reservation_cancellation_policy="Cancel 24h before.",
-        reservation_prepayment_cents=None,
-        reservation_prepayment_text=None,
         reservation_dress_code="Smart casual",
         reservation_arrival_tolerance_minutes=15,
         reservation_confirmation_email_subject=None,
@@ -88,7 +85,6 @@ class TestReservationEmailTemplate(unittest.TestCase):
         self.assertIn("Reservation confirmed", sub)
         self.assertIn("Café Demo", sub)
         self.assertIn("Ann", text)
-        self.assertIn("Cancel 24h", text)
         self.assertIn("https://app.test/r?t=1", text)
         self.assertIn("View or change", text)
         self.assertIn("View or change", inner)
@@ -135,22 +131,13 @@ class TestReservationEmailTemplate(unittest.TestCase):
         self.assertIn("Le esperamos", text)
         self.assertIn("Ver o cambiar", inner)
 
-    def test_confirmation_spanish_prepayment_and_arrival(self):
-        tenant = _tenant(
-            reservation_prepayment_cents=500,
-            reservation_prepayment_text="Pague al llegar.",
-            reservation_arrival_tolerance_minutes=10,
-        )
-        _sub, text, inner = render_confirmation_email(
+    def test_confirmation_spanish_arrival_note(self):
+        tenant = _tenant(reservation_arrival_tolerance_minutes=10)
+        _sub, text, _inner = render_confirmation_email(
             tenant, "Ana", "2026-03-22", "19:00", 2, None, lang="es"
         )
-        self.assertIn("Importe del prepago:", text)
-        self.assertIn("5.00 COP", text)
-        self.assertIn("Pague al llegar.", text)
         self.assertIn("10", text)
         self.assertIn("minutos", text.lower())
-        self.assertIn("Importe del prepago", inner)
-        self.assertIn("Pague al llegar.", inner)
 
     def test_confirmation_german_default_body_and_labels(self):
         tenant = _tenant(
@@ -175,18 +162,6 @@ class TestReservationEmailTemplate(unittest.TestCase):
         raw = "a\n\n\n\nb"
         html = normalize_confirmation_html_fragment(raw)
         self.assertNotRegex(html, r"(?i)(<br\s*/?>\s*){3,}")
-
-    def test_duplicate_prepayment_notice_and_text_suppresses_second(self):
-        tenant = _tenant(
-            reservation_prepayment_text="Pay at door.",
-            reservation_confirmation_email_body=(
-                "Hi\n{{prepayment_notice}}\n---\n{{prepayment_text}}\n"
-            ),
-        )
-        _sub, text, _inner = render_confirmation_email(
-            tenant, "Ann", "2026-03-22", "19:00", 2, None, lang="en"
-        )
-        self.assertEqual(text.count("Pay at door."), 1)
 
     def test_reservation_transactional_lang_prefers_booking_locale_when_set(self):
         tenant = SimpleNamespace()

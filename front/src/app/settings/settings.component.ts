@@ -776,68 +776,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <h2>{{ 'SETTINGS.RESERVATIONS' | translate }}</h2>
                     <p>{{ 'SETTINGS.RESERVATIONS_SUBTITLE' | translate }}</p>
                   </div>
-                  <div class="st-card">
-                  <h3 class="st-card-title">{{ 'SETTINGS.CARD_PREPAY' | translate }}</h3>
-                  <div class="form-group">
-                    <label>{{ 'SETTINGS.RESERVATION_PREPAYMENT' | translate }}</label>
-                    <div class="form-row prepayment-amount-row">
-                      @if (getPrepaymentMinorDigits() === 0) {
-                        <div class="form-group">
-                          <label for="reservation_prepayment_major">{{ 'SETTINGS.PREPAYMENT_WHOLE_AMOUNT_LABEL' | translate }}</label>
-                          <input
-                            type="number"
-                            id="reservation_prepayment_major"
-                            min="0"
-                            step="1"
-                            [(ngModel)]="prepaymentMajorUnits"
-                            name="reservation_prepayment_major"
-                            (ngModelChange)="applyPrepaymentPartsToCents()"
-                          />
-                          <span class="prepayment-currency-hint">{{ getPrepaymentCurrencyLabel() }}</span>
-                        </div>
-                      } @else {
-                        <div class="form-group">
-                          <label for="reservation_prepayment_major">{{ 'SETTINGS.PREPAYMENT_MAJOR_LABEL' | translate }}</label>
-                          <input
-                            type="number"
-                            id="reservation_prepayment_major"
-                            min="0"
-                            step="1"
-                            [(ngModel)]="prepaymentMajorUnits"
-                            name="reservation_prepayment_major"
-                            (ngModelChange)="applyPrepaymentPartsToCents()"
-                          />
-                          <span class="prepayment-currency-hint">{{ getPrepaymentCurrencyLabel() }}</span>
-                        </div>
-                        <div class="form-group">
-                          <label for="reservation_prepayment_minor">{{
-                            'SETTINGS.PREPAYMENT_MINOR_LABEL' | translate: { max: prepaymentMinorMax() }
-                          }}</label>
-                          <input
-                            type="number"
-                            id="reservation_prepayment_minor"
-                            min="0"
-                            [max]="prepaymentMinorMax()"
-                            step="1"
-                            [(ngModel)]="prepaymentMinorUnits"
-                            name="reservation_prepayment_minor"
-                            (ngModelChange)="applyPrepaymentPartsToCents()"
-                          />
-                        </div>
-                      }
-                    </div>
-                    <small class="field-hint">{{ 'SETTINGS.RESERVATION_PREPAYMENT_HINT' | translate }}</small>
-                  </div>
-                  <div class="form-group">
-                    <label for="reservation_prepayment_text">{{ 'SETTINGS.RESERVATION_PREPAYMENT_TEXT' | translate }}</label>
-                    <textarea id="reservation_prepayment_text" [(ngModel)]="formData.reservation_prepayment_text" name="reservation_prepayment_text" rows="3" [placeholder]="'SETTINGS.RESERVATION_PREPAYMENT_TEXT_PLACEHOLDER' | translate"></textarea>
-                    <small class="field-hint">{{ 'SETTINGS.RESERVATION_PREPAYMENT_TEXT_HINT' | translate }}</small>
-                  </div>
-                  <div class="form-group">
-                    <label for="reservation_cancellation_policy">{{ 'SETTINGS.RESERVATION_CANCELLATION_POLICY' | translate }}</label>
-                    <textarea id="reservation_cancellation_policy" [(ngModel)]="formData.reservation_cancellation_policy" name="reservation_cancellation_policy" rows="2" [placeholder]="'SETTINGS.RESERVATION_CANCELLATION_POLICY_PLACEHOLDER' | translate"></textarea>
-                  </div>
-                  </div>
                   <div class="st-card st-grid">
                   <h3 class="st-card-title">{{ 'SETTINGS.CARD_CAPACITY' | translate }}</h3>
                   <div class="form-group">
@@ -893,43 +831,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                       <p class="hint">{{ 'SETTINGS.RESERVATION_REMINDER_2H_HINT' | translate }}</p>
                     </div>
                   </div>
-                  </div>
-                  <div class="st-card st-card-list">
-                  <h3 class="st-card-title">{{ 'SETTINGS.GUEST_BIRTHDAY' | translate }}</h3>
-                  <p class="st-card-desc">{{ 'SETTINGS.GUEST_BIRTHDAY_DESC' | translate }}</p>
-                  <div class="form-group checkbox-row">
-                    <label class="switch">
-                      <input type="checkbox" [(ngModel)]="formData.guest_birthday_capture_enabled" name="guest_birthday_capture_enabled">
-                      <span class="slider round"></span>
-                    </label>
-                    <div>
-                      <label class="check-label">{{ 'SETTINGS.GUEST_BIRTHDAY_CAPTURE' | translate }}</label>
-                      <p class="hint">{{ 'SETTINGS.GUEST_BIRTHDAY_CAPTURE_HINT' | translate }}</p>
-                    </div>
-                  </div>
-                  <div class="form-group checkbox-row">
-                    <label class="switch">
-                      <input type="checkbox" [(ngModel)]="formData.guest_birthday_marketing_enabled" name="guest_birthday_marketing_enabled">
-                      <span class="slider round"></span>
-                    </label>
-                    <div>
-                      <label class="check-label">{{ 'SETTINGS.GUEST_BIRTHDAY_MARKETING' | translate }}</label>
-                      <p class="hint">{{ 'SETTINGS.GUEST_BIRTHDAY_MARKETING_HINT' | translate }}</p>
-                    </div>
-                  </div>
-                  @if (formData.guest_birthday_marketing_enabled) {
-                    <div class="form-group">
-                      <label for="guest_birthday_consent_text">{{ 'SETTINGS.GUEST_BIRTHDAY_CONSENT_TEXT' | translate }}</label>
-                      <textarea
-                        id="guest_birthday_consent_text"
-                        [(ngModel)]="formData.guest_birthday_consent_text"
-                        name="guest_birthday_consent_text"
-                        rows="2"
-                        [placeholder]="'SETTINGS.GUEST_BIRTHDAY_CONSENT_PLACEHOLDER' | translate"
-                      ></textarea>
-                      <small class="field-hint">{{ 'SETTINGS.GUEST_BIRTHDAY_CONSENT_HINT' | translate }}</small>
-                    </div>
-                  }
                   </div>
                 </div>
               }
@@ -1157,15 +1058,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
       .form-row .form-group {
         flex: 1;
       }
-    }
-
-    .prepayment-amount-row .form-group {
-      margin-bottom: 0;
-    }
-
-    .prepayment-currency-hint {
-      font-size: 0.8125rem;
-      color: var(--color-text-muted);
     }
 
     .form-group {
@@ -2259,77 +2151,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private sanitizer = inject(DomSanitizer);
   private permissions = inject(PermissionService);
 
-  /** Split UI for `reservation_prepayment_cents` (major + minor units per ISO 4217 / Intl). */
-  prepaymentMajorUnits = 0;
-  prepaymentMinorUnits = 0;
-
-  getPrepaymentMinorDigits(): number {
-    try {
-      const opts = new Intl.NumberFormat(undefined, {
-        style: 'currency',
-        currency: 'COP',
-      }).resolvedOptions();
-      const n = opts.maximumFractionDigits ?? 2;
-      return Math.min(6, Math.max(0, n));
-    } catch {
-      return 2;
-    }
-  }
-
-  prepaymentMinorMax(): number {
-    const d = this.getPrepaymentMinorDigits();
-    if (d <= 0) {
-      return 0;
-    }
-    return 10 ** d - 1;
-  }
-
-  getPrepaymentCurrencySymbol(): string {
-    try {
-      const parts = new Intl.NumberFormat(undefined, {
-        style: 'currency',
-        currency: 'COP',
-      }).formatToParts(0);
-      return parts.find((p) => p.type === 'currency')?.value || 'COP';
-    } catch {
-      return 'COP';
-    }
-  }
-
-  getPrepaymentCurrencyLabel(): string {
-    const sym = this.getPrepaymentCurrencySymbol();
-    return sym && sym !== 'COP' ? `COP (${sym})` : 'COP';
-  }
-
   /** Colombia DIAN electronic invoicing prep: always shown (this deployment is Colombia-only). */
   showDianInvoicingPrep(): boolean {
     return true;
-  }
-
-  syncPrepaymentFieldsFromCents(): void {
-    const rawTotal = this.formData.reservation_prepayment_cents;
-    const total =
-      rawTotal == null || rawTotal === 0 || Number.isNaN(Number(rawTotal))
-        ? 0
-        : Math.max(0, Math.floor(Number(rawTotal)));
-    const d = this.getPrepaymentMinorDigits();
-    const mod = 10 ** d;
-    this.prepaymentMajorUnits = Math.floor(total / mod);
-    this.prepaymentMinorUnits = d > 0 ? total % mod : 0;
-  }
-
-  applyPrepaymentPartsToCents(): void {
-    const d = this.getPrepaymentMinorDigits();
-    const mod = 10 ** d;
-    let maj = Math.max(0, Math.floor(Number(this.prepaymentMajorUnits) || 0));
-    let min = d === 0 ? 0 : Math.max(0, Math.floor(Number(this.prepaymentMinorUnits) || 0));
-    if (d > 0 && min >= mod) {
-      maj += Math.floor(min / mod);
-      min = min % mod;
-    }
-    this.prepaymentMajorUnits = maj;
-    this.prepaymentMinorUnits = min;
-    this.formData.reservation_prepayment_cents = maj * mod + min;
   }
 
   settings = signal<TenantSettings | null>(null);
@@ -2595,9 +2419,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
     reservation_confirmation_email_body: null,
     public_background_color: null,
     public_primary_color: null,
-    reservation_prepayment_cents: null,
-    reservation_prepayment_text: null,
-    reservation_cancellation_policy: null,
     reservation_arrival_tolerance_minutes: null,
     reservation_average_table_turn_minutes: null,
     reservation_slot_minutes: null,
@@ -2606,9 +2427,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
     reservation_dress_code: null,
     reservation_reminder_24h_enabled: false,
     reservation_reminder_2h_enabled: false,
-    guest_birthday_capture_enabled: true,
-    guest_birthday_marketing_enabled: false,
-    guest_birthday_consent_text: null,
     delivery_fee_cents: 0,
     delivery_radius_meters: null,
     delivery_postal_codes: null,
@@ -2833,9 +2651,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
           reservation_confirmation_email_body: settings.reservation_confirmation_email_body ?? null,
           public_background_color: settings.public_background_color ?? null,
           public_primary_color: settings.public_primary_color ?? null,
-          reservation_prepayment_cents: settings.reservation_prepayment_cents ?? null,
-          reservation_prepayment_text: settings.reservation_prepayment_text ?? null,
-          reservation_cancellation_policy: settings.reservation_cancellation_policy ?? null,
           reservation_arrival_tolerance_minutes: settings.reservation_arrival_tolerance_minutes ?? null,
           reservation_average_table_turn_minutes: settings.reservation_average_table_turn_minutes ?? null,
           reservation_slot_minutes: settings.reservation_slot_minutes ?? null,
@@ -2844,9 +2659,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
           reservation_dress_code: settings.reservation_dress_code ?? null,
           reservation_reminder_24h_enabled: settings.reservation_reminder_24h_enabled ?? false,
           reservation_reminder_2h_enabled: settings.reservation_reminder_2h_enabled ?? false,
-          guest_birthday_capture_enabled: settings.guest_birthday_capture_enabled ?? true,
-          guest_birthday_marketing_enabled: settings.guest_birthday_marketing_enabled ?? false,
-          guest_birthday_consent_text: settings.guest_birthday_consent_text ?? null,
           delivery_fee_cents: settings.delivery_fee_cents ?? 0,
           delivery_radius_meters: settings.delivery_radius_meters ?? null,
           delivery_postal_codes: this.formatDeliveryPostalCodesForForm(settings.delivery_postal_codes),
@@ -2899,7 +2711,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.timezoneSearch = settings.timezone || '';
         this.parseOpeningHours(settings.opening_hours);
         this.loadOpeningHoursSchedule();
-        this.syncPrepaymentFieldsFromCents();
         this.loadTaxes();
         this.loading.set(false);
       },
@@ -3990,9 +3801,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
     // Always send reminder options so they are persisted (default false if unset)
     updateData.reservation_reminder_24h_enabled = this.formData.reservation_reminder_24h_enabled ?? false;
     updateData.reservation_reminder_2h_enabled = this.formData.reservation_reminder_2h_enabled ?? false;
-    updateData.guest_birthday_capture_enabled = this.formData.guest_birthday_capture_enabled ?? true;
-    updateData.guest_birthday_marketing_enabled = this.formData.guest_birthday_marketing_enabled ?? false;
-    updateData.guest_birthday_consent_text = (this.formData.guest_birthday_consent_text || '').trim() || null;
 
     const seen = new Set<number>();
     const tipPresets: number[] = [];

@@ -78,16 +78,10 @@
           }
         </div>
 
-        @if (tenant()?.reservation_cancellation_policy || tenant()?.reservation_prepayment_text || tenant()?.reservation_arrival_tolerance_minutes != null || tenant()?.reservation_dress_code || (tenant()?.reservation_prepayment_cents ?? 0) > 0) {
+        @if (tenant()?.reservation_arrival_tolerance_minutes != null || tenant()?.reservation_dress_code) {
           <section class="bk-rules">
             <h3>{{ 'BOOK.RESTAURANT_GUIDELINES' | translate }}</h3>
             <ul>
-              @if ((tenant()?.reservation_prepayment_cents ?? 0) > 0) {
-                <li><b>{{ 'BOOK.PREPAYMENT' | translate }}</b> {{ tenant()?.reservation_prepayment_text || ('BOOK.PREPAYMENT_DEFAULT' | translate) }}</li>
-              }
-              @if (tenant()?.reservation_cancellation_policy) {
-                <li><b>{{ 'BOOK.CANCELLATION_POLICY' | translate }}</b> {{ tenant()?.reservation_cancellation_policy }}</li>
-              }
               @if ((tenant()?.reservation_arrival_tolerance_minutes ?? 0) > 0) {
                 <li><b>{{ 'BOOK.ARRIVAL_TOLERANCE' | translate }}</b> {{ 'BOOK.ARRIVAL_TOLERANCE_MINUTES' | translate: { minutes: tenant()?.reservation_arrival_tolerance_minutes } }}</li>
               }
@@ -245,28 +239,6 @@
                 <label for="book-notes">{{ 'RESERVATIONS.RESERVATION_NOTES' | translate }}</label>
                 <textarea id="book-notes" class="bk-area" [(ngModel)]="formClientNotes" name="clientNotes" rows="2" [placeholder]="'RESERVATIONS.RESERVATION_NOTES_PLACEHOLDER' | translate"></textarea>
               </div>
-              @if (tenant()?.guest_birthday_capture_enabled !== false) {
-                <div class="bk-field">
-                  <span class="bk-label">{{ 'BOOK.BIRTHDAY_OPTIONAL' | translate }}</span>
-                  <div class="bk-two bk-bday">
-                    <select id="book-bday-month" class="bk-select" [(ngModel)]="formBirthdayMonth" name="bdayMonth" [attr.aria-label]="'BOOK.BIRTHDAY_MONTH' | translate">
-                      <option [ngValue]="null">{{ 'BOOK.BIRTHDAY_MONTH' | translate }}</option>
-                      @for (m of birthdayMonths; track m.value) { <option [ngValue]="m.value">{{ m.labelKey | translate }}</option> }
-                    </select>
-                    <select id="book-bday-day" class="bk-select" [(ngModel)]="formBirthdayDay" name="bdayDay" [attr.aria-label]="'BOOK.BIRTHDAY_DAY' | translate">
-                      <option [ngValue]="null">{{ 'BOOK.BIRTHDAY_DAY' | translate }}</option>
-                      @for (d of birthdayDays; track d) { <option [ngValue]="d">{{ d }}</option> }
-                    </select>
-                  </div>
-                  <p class="bk-hint">{{ 'BOOK.BIRTHDAY_HINT' | translate }}</p>
-                </div>
-                @if (tenant()?.guest_birthday_marketing_enabled) {
-                  <label class="bk-check">
-                    <input type="checkbox" [(ngModel)]="formBirthdayMarketingConsent" name="bdayConsent" />
-                    <span>{{ tenant()?.guest_birthday_consent_text || ('BOOK.BIRTHDAY_CONSENT_DEFAULT' | translate) }}</span>
-                  </label>
-                }
-              }
             </fieldset>
 
             @if (error()) {

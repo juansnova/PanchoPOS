@@ -412,10 +412,6 @@ export interface TenantSummary {
   public_google_maps_url?: string | null;
   /** Token for take-away/home ordering when a table is configured (e.g. named "Take away"). */
   take_away_table_token?: string | null;
-  /** Reservation rules (public book and reservation view; mirrors backend TenantSummary). */
-  reservation_prepayment_cents?: number | null;
-  reservation_prepayment_text?: string | null;
-  reservation_cancellation_policy?: string | null;
   reservation_arrival_tolerance_minutes?: number | null;
   reservation_dress_code?: string | null;
   /** OpenStreetMap share URL (openstreetmap.org). */
@@ -433,10 +429,6 @@ export interface TenantSummary {
   timezone?: string | null;
   /** Optional max guests per time slot (tenant cap); for book UI limits */
   reservation_max_guests_per_slot?: number | null;
-  /** Guest birthday capture on public book (month/day only). */
-  guest_birthday_capture_enabled?: boolean;
-  guest_birthday_marketing_enabled?: boolean;
-  guest_birthday_consent_text?: string | null;
 }
 
 /** Planned opening-hours baselines and date overrides (issue #194). */
@@ -921,10 +913,6 @@ export interface Reservation {
   allergies_detail?: string | null;
   preferred_floor_id?: number | null;
   preferred_floor_name?: string | null;
-  /** Month 1–12 (no year); optional guest birthday */
-  guest_birthday_month?: number | null;
-  guest_birthday_day?: number | null;
-  guest_birthday_marketing_consent?: boolean;
   /** Present only for staff responses */
   client_ip?: string | null;
   client_user_agent?: string | null;
@@ -951,9 +939,6 @@ export interface ReservationCreate {
   allergies_has?: boolean | null;
   allergies_detail?: string | null;
   preferred_floor_id?: number | null;
-  guest_birthday_month?: number | null;
-  guest_birthday_day?: number | null;
-  guest_birthday_marketing_consent?: boolean | null;
 }
 
 export interface ReservationUpdate {
@@ -972,9 +957,6 @@ export interface ReservationUpdate {
   allergies_has?: boolean | null;
   allergies_detail?: string | null;
   preferred_floor_id?: number | null;
-  guest_birthday_month?: number | null;
-  guest_birthday_day?: number | null;
-  guest_birthday_marketing_consent?: boolean | null;
 }
 
 /** Public update by token: delay notice, reservation notes, customer notes. */
@@ -1369,10 +1351,6 @@ export interface TenantSettings {
   public_background_color?: string | null;
   /** Primary CTA / button colour on public pages (hex). */
   public_primary_color?: string | null;
-  /** Reservation options (pre-payment, policies, reminders) */
-  reservation_prepayment_cents?: number | null;
-  reservation_prepayment_text?: string | null;
-  reservation_cancellation_policy?: string | null;
   reservation_arrival_tolerance_minutes?: number | null;
   /** Average seated session length (minutes); null = same-day block without turn window */
   reservation_average_table_turn_minutes?: number | null;
@@ -1385,12 +1363,6 @@ export interface TenantSettings {
   reservation_dress_code?: string | null;
   reservation_reminder_24h_enabled?: boolean | null;
   reservation_reminder_2h_enabled?: boolean | null;
-  /** Guest birthday on reservations: show field on public book (default true). */
-  guest_birthday_capture_enabled?: boolean | null;
-  /** Allow marketing use of birthday data (default false = capture-only). */
-  guest_birthday_marketing_enabled?: boolean | null;
-  /** GDPR consent copy shown when marketing is enabled. */
-  guest_birthday_consent_text?: string | null;
   public_google_maps_url?: string | null;
   public_openstreetmap_url?: string | null;
   public_terms_of_service_url?: string | null;
