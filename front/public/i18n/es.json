@@ -2573,6 +2573,11 @@
   "PRINTING": {
     "TITLE": "Impresión",
     "SUBTITLE": "Estado de la impresora, cola de comandas y errores",
+    "CLEAR_QUEUE": "Limpiar cola",
+    "CLEAR_CONFIRM_TITLE": "¿Limpiar la cola de impresión?",
+    "CLEAR_CONFIRM_MESSAGE": "Se borrarán los trabajos en cola, con error e impresos. Lo que esté en cola no se imprimirá. Esta acción no se puede deshacer.",
+    "CLEARED": "Cola limpiada: {{n}} trabajos borrados",
+    "FILTER_ALL": "Todos",
     "AGENT_ONLINE": "Impresora conectada",
     "AGENT_OFFLINE": "Sin conexión con la impresora",
     "AGENT_OFFLINE_HELP": "El programa de impresión no responde. Revisa que el PC del local esté encendido, la impresora conectada por USB y que el agente esté en marcha.",

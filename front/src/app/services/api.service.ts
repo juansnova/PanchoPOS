@@ -3002,6 +3002,10 @@ export class ApiService {
     return this.http.get<PrintJob[]>(`${this.apiUrl}/print-jobs`, { params });
   }
 
+  clearPrintQueue(): Observable<{ deleted: number }> {
+    return this.http.delete<{ deleted: number }>(`${this.apiUrl}/print-jobs`);
+  }
+
   retryPrintJob(jobId: number): Observable<PrintJob> {
     return this.http.post<PrintJob>(`${this.apiUrl}/print-jobs/${jobId}/retry`, {});
   }
