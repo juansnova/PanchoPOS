@@ -203,11 +203,8 @@ const ICON: Record<string, string> = {
       border-radius: 24px;
       color: #fff;
       overflow: hidden;
-      background:
-        radial-gradient(circle at 100% 0%, rgba(12, 10, 9, 0.85) 0, transparent 42%),
-        radial-gradient(circle at 78% 130%, rgba(12, 10, 9, 0.55) 0, transparent 36%),
-        linear-gradient(135deg, #fb923c 0%, #f97316 45%, #ea580c 100%);
-      box-shadow: 0 18px 34px -22px #f97316;
+      background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 70%, #000));
+      box-shadow: 0 18px 34px -22px var(--color-primary);
     }
     .pr-hero > * { position: relative; z-index: 1; }
     .pr-hero-ico {
@@ -217,8 +214,8 @@ const ICON: Record<string, string> = {
       width: 64px;
       height: 64px;
       border-radius: 20px;
-      background: #1c1917;
-      box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
     }
     .pr-hero-text { flex: 1; min-width: 200px; }
     .pr-hero h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; }
@@ -240,7 +237,7 @@ const ICON: Record<string, string> = {
     }
     .pr-btn span { display: inline-flex; }
     .pr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .pr-btn-light { background: #1c1917; color: #fff; box-shadow: 0 10px 20px -12px rgba(0, 0, 0, 0.5); }
+    .pr-btn-light { background: #fff; color: var(--color-primary); box-shadow: 0 10px 20px -12px rgba(0, 0, 0, 0.5); }
     .pr-btn-light:hover { filter: brightness(0.96); }
     .pr-btn-clear { background: rgba(255, 255, 255, 0.18); color: #fff; border: 1px solid rgba(255, 255, 255, 0.6); }
     .pr-btn-clear:hover:not(:disabled) { background: #dc2626; border-color: #dc2626; }
