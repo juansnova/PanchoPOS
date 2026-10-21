@@ -731,11 +731,12 @@ export class ProductsComponent implements OnInit {
     return m.length ? Math.round(m.reduce((a, b) => a + b, 0) / m.length) : null;
   });
 
-  /** Hue (0-359) of a category: tints cards and list groups so categories read at a glance. */
+  /** Warm hue (12-49) of a category: tints cards and list groups so categories read at a glance. */
   catHue(category: string | null | undefined): number {
     let h = 0;
     for (const ch of category || '') h = (h * 31 + ch.charCodeAt(0)) % 360;
-    return h;
+    // Warm range only (orange to amber), never purple or blue.
+    return 12 + (h % 38);
   }
 
   /** Visible products grouped by category, for the "carta" list view. */

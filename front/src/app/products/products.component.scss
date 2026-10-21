@@ -1801,10 +1801,18 @@
   border-top: 1px dashed hsl(var(--h) 30% 80%);
 }
 
+.pz-edit svg { flex: none; }
+
 .pz-edit {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
   width: auto;
-  padding: 0 16px;
+  height: 38px;
+  padding: 0 18px;
   gap: 8px;
+  white-space: nowrap;
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 800;
