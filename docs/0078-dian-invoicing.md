@@ -28,10 +28,11 @@ pattern.
   `username`, `password`) → bearer token. Invoice create: `POST {base}/v2/bills/validate`;
   credit note: `POST {base}/v2/credit-notes/validate`. Sandbox base
   `https://api-sandbox.factus.com.co`, live `https://api.factus.com.co`.
-- **Field mapping in `_submit_factus` is a best-effort draft from Factus's public docs and has
-  not been verified against a real sandbox account.** Before going live, create a Factus sandbox
-  account, issue a real test invoice, and correct the payload shape against actual
-  accepted/rejected responses. Do not assume the current mapping is production-correct.
+- Field mapping (`_factus_bill_payload`) was verified on 2026-10-21 against the Factus V2 sandbox
+  (account of the tenant owner): invoices are accepted and validated (`is_validated`), CUFE, QR and
+  public PDF link are read from `data.links`. Still open: credit notes (not implemented), payment
+  method (always cash `10`), tips (excluded from the invoice), IVA/consumo tax codes for
+  `responsable_iva` (only IVA `01` is mapped), RUT-name validation warnings (FAJ43b/FAJ44b) in sandbox.
 - `app/dian_invoice_service.py` owns: eligibility (order must be `paid`/`completed`),
   idempotency (one active invoice per order), credit-note cancellation, and persistence to the
   `dian_invoice` table.
@@ -59,7 +60,7 @@ pattern.
 
 ## Ops blockers (honest status)
 
-- No Factus account exists yet for Pancho Panza. Real `live` submission is **not possible**
+- Factus account active since 2026-10-20 (sandbox verified). Previously: no account. Real `live` submission is **not possible**
   until: (1) the restaurant signs up with Factus (or chosen provider) with real NIT/tax data,
   (2) the owner's accountant confirms `dian_tax_regime`, (3) sandbox credentials are set in
   `config.env` and a real test invoice is issued and inspected.

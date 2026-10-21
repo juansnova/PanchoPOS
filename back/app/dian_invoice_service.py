@@ -178,6 +178,7 @@ def _submit(
         di.status = "issued"
         di.provider_invoice_number = result.get("provider_invoice_number") or di.provider_invoice_number
         di.cufe = result.get("cufe") or di.cufe
+        di.pdf_url = result.get("pdf_url") or di.pdf_url
     else:
         di.status = "error"
         di.error_message = str(result.get("error") or result.get("body") or status)[:2000]

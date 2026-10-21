@@ -148,9 +148,16 @@ def _submit_factus(
         }
 
     document_type = str(payload.get("document_type") or "invoice")
-    content = payload.get("request_payload") if isinstance(payload.get("request_payload"), dict) else {}
-    endpoint = "bills/validate" if document_type == "invoice" else "credit-notes/validate"
-    url = f"{base}/{endpoint}"
+    if document_type != "invoice":
+        return {
+            "status": "provider_error",
+            "channel": "factus",
+            "provider": PROVIDER_FACTUS,
+            "error": "Factus credit notes are not implemented yet",
+        }
+    pos_payload = payload.get("request_payload") if isinstance(payload.get("request_payload"), dict) else {}
+    content = _factus_bill_payload(pos_payload)
+    url = f"{base}/bills/validate"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -168,19 +175,18 @@ def _submit_factus(
                 "provider": PROVIDER_FACTUS,
                 "body": body,
             }
-        data = body.get("data") if isinstance(body.get("data"), dict) else body
-        bill = data.get("bill") if isinstance(data, dict) and isinstance(data.get("bill"), dict) else data
+        bill = body.get("data") if isinstance(body.get("data"), dict) else {}
+        links = bill.get("links") if isinstance(bill.get("links"), dict) else {}
         return {
-            "status": "provider_accepted",
+            "status": "provider_accepted" if bill.get("is_validated") else "provider_error",
             "http_status": resp.status_code,
             "channel": "factus",
             "provider": PROVIDER_FACTUS,
             "body": body,
-            "provider_invoice_number": (bill or {}).get("number") or (bill or {}).get("reference_code"),
-            "cufe": (bill or {}).get("cufe"),
-            # Factus returns the PDF as base64 content, not a URL; storing a URL needs an
-            # upload step (e.g. write to uploads/ and serve statically) — not done here yet.
-            "qr_image": (bill or {}).get("qr"),
+            "provider_invoice_number": bill.get("number") or bill.get("reference_code"),
+            "cufe": bill.get("cufe"),
+            "qr_url": links.get("qr"),
+            "pdf_url": links.get("public_url"),
         }
     except requests.RequestException as exc:
         logger.warning("factus request failed: %s", exc)
@@ -190,6 +196,83 @@ def _submit_factus(
             "provider": PROVIDER_FACTUS,
             "error": str(exc)[:200],
         }
+
+
+def _money(cents: float) -> str:
+    return f"{cents / 100:.2f}"
+
+
+def _factus_customer(customer: dict[str, Any] | None) -> dict[str, Any]:
+    tax_id = str((customer or {}).get("identification") or "").strip()
+    if not customer or not tax_id:
+        # DIAN "consumidor final" generic buyer
+        return {
+            "identification_document_code": "13",
+            "identification": "222222222222",
+            "legal_organization_code": "2",
+            "names": "Consumidor Final",
+        }
+    company = str(customer.get("company_name") or "").strip()
+    digits = "".join(ch for ch in tax_id.split("-")[0] if ch.isdigit())
+    out: dict[str, Any] = {
+        "identification_document_code": "31" if company else "13",
+        "identification": digits or tax_id,
+        "legal_organization_code": "1" if company else "2",
+    }
+    if company:
+        out["company"] = company
+    else:
+        out["names"] = str(customer.get("name") or "Cliente").strip()
+    for src, dst in (("address", "address"), ("email", "email"), ("phone", "phone")):
+        if customer.get(src):
+            out[dst] = str(customer[src]).strip()
+    return out
+
+
+def _factus_bill_payload(pos: dict[str, Any]) -> dict[str, Any]:
+    """Translate the provider-agnostic POS payload into Factus `POST /v2/bills/validate`.
+
+    Item prices are tax-inclusive in the POS. Under `responsable_iva` the net price is
+    sent with IVA (code 01); otherwise items go out as excluded (0%).
+    Tips are not part of the invoice; the payment amount is the items total.
+    """
+    iva_regime = pos.get("tenant_tax_regime") == "responsable_iva"
+    items = []
+    total_cents = 0
+    for idx, it in enumerate(pos.get("items") or [], start=1):
+        qty = int(it.get("quantity") or 1)
+        gross = int(it.get("unit_price_cents") or 0)
+        rate = float(it.get("tax_rate_percent") or 0)
+        total_cents += gross * qty
+        if iva_regime and rate > 0:
+            net = gross / (1 + rate / 100)
+            tax = {"code": "01", "rate": f"{rate:.2f}"}
+        else:
+            net = gross
+            tax = {"code": "01", "rate": "0.00", "is_excluded": True}
+        items.append(
+            {
+                "code_reference": f"P{idx}",
+                "name": str(it.get("name") or "Producto")[:250],
+                "quantity": f"{qty:.2f}",
+                "price": _money(net),
+                "unit_measure_code": "94",
+                "standard_code": "999",
+                "taxes": [tax],
+            }
+        )
+    content: dict[str, Any] = {
+        "reference_code": f"POS-{pos.get('tenant_id')}-{pos.get('order_id')}",
+        "payment_details": [
+            {"payment_form": "1", "payment_method_code": "10", "amount": _money(total_cents)}
+        ],
+        "send_email": bool(pos.get("send_email")),
+        "customer": _factus_customer(pos.get("customer")),
+        "items": items,
+    }
+    if pos.get("numbering_range_id"):
+        content["numbering_range_id"] = int(pos["numbering_range_id"])
+    return content
 
 
 def _factus_auth(base: str, *, mode: str) -> str | None:
