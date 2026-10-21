@@ -630,7 +630,7 @@
         <div class="cart-thumbs" aria-hidden="true">
           @for (it of cart().slice(0, 3); track getCartLineKey(it)) {
           <span class="cart-thumb">
-            @if (getProductImageUrl(it.product); as img) { <img [src]="img" alt="" /> } @else { <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h0A2.5 2.5 0 0 0 9 9V3M6.5 3v18"/><path d="M20 21V3c-2.8 1.2-4.5 4-4.5 7.5 0 1.4 1 2.5 2.3 2.5H20"/></svg> }
+            @if (cartImage(it.product); as img) { <img [src]="img" alt="" /> } @else { <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h0A2.5 2.5 0 0 0 9 9V3M6.5 3v18"/><path d="M20 21V3c-2.8 1.2-4.5 4-4.5 7.5 0 1.4 1 2.5 2.3 2.5H20"/></svg> }
           </span>
           }
           <span class="cart-count-badge">{{ getTotalItems() }}</span>
@@ -671,7 +671,7 @@
         <div class="cart-item-card" [class.just-added]="isCartLineJustAdded(item)" [class.cart-item-other]="!isMyCartItem(item)">
           <div class="cart-item-main">
           <span class="cart-item-thumb" aria-hidden="true">
-            @if (getProductImageUrl(item.product); as img) { <img [src]="img" alt="" /> } @else { <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h0A2.5 2.5 0 0 0 9 9V3M6.5 3v18"/><path d="M20 21V3c-2.8 1.2-4.5 4-4.5 7.5 0 1.4 1 2.5 2.3 2.5H20"/></svg> }
+            @if (cartImage(item.product); as img) { <img [src]="img" alt="" /> } @else { <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h0A2.5 2.5 0 0 0 9 9V3M6.5 3v18"/><path d="M20 21V3c-2.8 1.2-4.5 4-4.5 7.5 0 1.4 1 2.5 2.3 2.5H20"/></svg> }
           </span>
           <div class="cart-item-info">
             <span class="cart-item-name">{{ item.product.name }}</span>

@@ -855,6 +855,12 @@ export class MenuComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Cart lines from the shared cart only carry id/name/price: resolve the photo from the loaded menu. */
+  cartImage(product: Product): string | null {
+    const full = this.products().find(p => p.id === product.id && (!product._source || p._source === product._source));
+    return full ? this.getProductImageUrl(full) : this.getProductImageUrl(product);
+  }
+
   getProductKey(product: Product): string {
     if (!product) return 'null-product';
     const source = product._source || 'unknown';
