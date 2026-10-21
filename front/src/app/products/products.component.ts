@@ -104,17 +104,39 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
           } @else {
             @if (showAddForm() || editingProduct()) {
               <div class="form-card">
-                 <div class="form-header pf-header">
-                   <div class="pf-head-text">
-                     <span class="pf-badge" aria-hidden="true">
-                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
-                     </span>
-                     <h3>{{ editingProduct() ? ('PRODUCTS.EDIT_PRODUCT' | translate) : ('PRODUCTS.NEW_PRODUCT' | translate) }}</h3>
+                 <div class="pf-hero">
+                   <div class="pf-plate-wrap">
+                     <div class="pf-plate" [class.empty]="!pendingImagePreview() && !editingProduct()?.image_filename">
+                       @if (pendingImagePreview()) {
+                         <img [src]="pendingImagePreview()" alt="">
+                       } @else if (editingProduct()?.image_filename) {
+                         <img [src]="getImageUrl(editingProduct()!)" alt="" (error)="handleImageError($event)">
+                       } @else {
+                         <span class="pf-plate-initial" aria-hidden="true">{{ (formData.name || '?').trim().charAt(0).toUpperCase() || '?' }}</span>
+                       }
+                     </div>
+                     @if (canEditProducts()) {
+                       <input type="file" #fileInput accept="image/jpeg,image/png,image/webp,image/avif" (change)="handleImageSelect($event)" style="display:none" data-testid="product-image-input">
+                       <button type="button" class="pf-photo-btn" (click)="fileInput.click()" [disabled]="uploading()">
+                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                         {{ uploading() ? ('PRODUCTS.UPLOADING' | translate) : ((pendingImageFile() || editingProduct()?.image_filename) ? ('PRODUCTS.CHANGE_IMAGE' | translate) : ('PRODUCTS.UPLOAD_IMAGE' | translate)) }}
+                       </button>
+                     }
                    </div>
-                   <button class="icon-btn" (click)="cancelForm()">
-                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                       <path d="M18 6L6 18M6 6l12 12"/>
-                     </svg>
+                   <div class="pf-hero-text">
+                     <p class="pf-eyebrow"><i></i>{{ editingProduct() ? ('PRODUCTS.EDIT_PRODUCT' | translate) : ('PRODUCTS.NEW_PRODUCT' | translate) }}</p>
+                     <h3 class="pf-live-name">{{ formData.name.trim() || ('PRODUCTS.NAME_PLACEHOLDER' | translate) }}</h3>
+                     <div class="pf-live-meta">
+                       <span class="pf-live-price">{{ formPriceLabel() }}</span>
+                       @if (formData.category) { <span class="pf-live-chip">{{ getCategoryLabel(formData.category) }}</span> }
+                       @if (formMargin(); as fm) { <span class="pf-live-chip pf-live-margin" [class.low]="fm < 30">{{ fm }}% {{ 'PRODUCTS.MARGIN' | translate }}</span> }
+                       @if (formData.out_of_stock) { <span class="pf-live-chip pf-live-oos">{{ 'PRODUCTS.OUT_OF_STOCK_SHORT' | translate }}</span> }
+                     </div>
+                     @if (pendingImageFile()) { <small class="pf-pending">{{ pendingImageFile()?.name }}</small> }
+                     <small class="pf-img-hint">{{ 'PRODUCTS.IMAGE_UPLOAD_HINT' | translate:{ maxMb: maxImageUploadMb } }}</small>
+                   </div>
+                   <button type="button" class="pf-close" (click)="cancelForm()" [attr.aria-label]="'PRODUCTS.CANCEL' | translate">
+                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                    </button>
                  </div>
                  @if (error()) {
@@ -160,6 +182,12 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                        <small class="field-hint">{{ 'PRODUCTS.COST_HINT' | translate }}</small>
                      </div>
                    </div>
+                   @if (formMargin(); as fm) {
+                     <div class="pf-profit">
+                       <div class="pf-gauge"><span class="pf-gauge-cost" [style.width.%]="100 - fm"></span><span class="pf-gauge-margin" [class.low]="fm < 30" [style.width.%]="fm"></span></div>
+                       <p><b [class.low]="fm < 30">{{ formProfitLabel() }}</b> · {{ 'PRODUCTS.PROFIT_PER_PLATE' | translate }}</p>
+                     </div>
+                   }
                    <div class="form-group">
                      <label for="description">{{ 'PRODUCTS.DESCRIPTION_LABEL' | translate }}</label>
                      <textarea id="description" [(ngModel)]="formData.description" name="description" [placeholder]="'PRODUCTS.DESCRIPTION_PLACEHOLDER' | translate" rows="3" [readonly]="!canEditProducts()"></textarea>
@@ -246,41 +274,6 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                      }
                    </div>
                   </section>
-                  <section class="pf-sec">
-                   <h4 class="pf-sec-title">{{ 'PRODUCTS.FORM_IMAGE' | translate }}</h4>
-                   <div class="form-group">
-                     <label>{{ 'PRODUCTS.PRODUCT_IMAGE' | translate }}</label>
-                     <div class="image-upload-row">
-                       @if (editingProduct()?.image_filename) {
-                         <div class="image-preview-wrapper">
-                           <img [src]="getImageUrl(editingProduct()!)" class="product-thumb" alt="">
-                           @if (editingProduct()?.image_size_formatted) {
-                             <div class="file-size">{{ editingProduct()!.image_size_formatted }}</div>
-                           }
-                         </div>
-                       } @else if (pendingImagePreview()) {
-                         <div class="image-preview-wrapper">
-                           <img [src]="pendingImagePreview()" class="product-thumb" alt="">
-                           @if (pendingImageFile()?.size) {
-                             <div class="file-size">{{ formatFileSize(pendingImageFile()!.size) }}</div>
-                           }
-                         </div>
-                       }
-                       @if (canEditProducts()) {
-                         <input type="file" #fileInput accept="image/jpeg,image/png,image/webp,image/avif" (change)="handleImageSelect($event)" style="display:none">
-                         <button type="button" class="btn btn-secondary" (click)="fileInput.click()" [disabled]="uploading()">
-                           {{ uploading() ? ('PRODUCTS.UPLOADING' | translate) : (pendingImageFile() ? ('PRODUCTS.CHANGE_IMAGE' | translate) : ('PRODUCTS.UPLOAD_IMAGE' | translate)) }}
-                         </button>
-                         @if (pendingImageFile()) {
-                           <span class="pending-file-name">{{ pendingImageFile()?.name }}</span>
-                         }
-                       }
-                     </div>
-                     <small class="field-hint">{{ 'PRODUCTS.IMAGE_UPLOAD_HINT' | translate:{ maxMb: maxImageUploadMb } }}</small>
-                   </div>
-
-                  </section>
-
                    @if (canEditProducts() && showAddForm() && !editingProduct()?.id) {
                      <p class="pf-recipe-note">{{ 'PRODUCTS.RECIPE_AFTER_SAVE' | translate }}</p>
                    }
@@ -365,9 +358,9 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
                      </section>
                    }
 
-                   <div class="form-actions">
-                     <button type="button" class="btn btn-secondary" (click)="cancelForm()">{{ 'PRODUCTS.CANCEL' | translate }}</button>
-                     <button type="submit" class="btn btn-primary" [disabled]="saving() || !canEditProducts()">
+                   <div class="form-actions pf-actions">
+                     <button type="button" class="pf-cancel" (click)="cancelForm()">{{ 'PRODUCTS.CANCEL' | translate }}</button>
+                     <button type="submit" class="pf-save" [disabled]="saving() || !canEditProducts()">
                        {{ saving() ? ('PRODUCTS.SAVING' | translate) : (editingProduct() ? ('PRODUCTS.UPDATE' | translate) : ('PRODUCTS.ADD_PRODUCT_BUTTON' | translate)) }}
                      </button>
                    </div>
@@ -748,6 +741,26 @@ export class ProductsComponent implements OnInit {
     }
     return [...map.entries()].map(([key, items]) => ({ key, items }));
   });
+
+  /** Price typed in the form, as a formatted amount. */
+  formPriceLabel(): string {
+    return formatMoneyCents(Math.round((Number(this.formData.price) || 0) * 100));
+  }
+
+  /** Live margin % from the price and cost typed in the form (null until both are valid). */
+  formMargin(): number | null {
+    const price = Number(this.formData.price) || 0;
+    const cost = Number(this.formData.cost);
+    if (price <= 0 || !(cost > 0) || cost >= price * 10) return null;
+    return Math.max(0, Math.round(((price - cost) / price) * 100));
+  }
+
+  /** "Ganas $X" per plate. */
+  formProfitLabel(): string {
+    const price = Number(this.formData.price) || 0;
+    const cost = Number(this.formData.cost) || 0;
+    return formatMoneyCents(Math.round((price - cost) * 100));
+  }
 
   categoryCount(category: string): number {
     return this.products().filter((p) => p.category === category).length;
