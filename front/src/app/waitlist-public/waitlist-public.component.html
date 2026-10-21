@@ -1,4 +1,4 @@
-<div class="book-page" [style.--color-bg]="tenant()?.public_background_color ?? null" [style.--hero-header-bg]="tenant()?.public_background_color ?? null" [style.--color-primary]="resolvePublicPrimaryColor(tenant()?.public_primary_color)">
+<div class="wl-page" [style.--color-primary]="resolvePublicPrimaryColor(tenant()?.public_primary_color)">
   <app-public-guest-header
     [tenantId]="tenantId()"
     [publicMenuRef]="tenant()?.public_slug?.trim() || tenantId()"
@@ -8,88 +8,148 @@
     [headerBackgroundColor]="tenant()?.public_background_color ?? null"
     activePage="waitlist"
   />
+
   @if (loading()) {
-    <div class="loading-screen">
-      <div class="loading-content">
-        <div class="skeleton-header">
-          <div class="skeleton-logo"></div>
-          <div class="skeleton-text skeleton-title"></div>
-        </div>
-      </div>
-    </div>
-  } @else if (success()) {
-    <header class="hero-header" [class.has-bg-image]="tenant()?.header_background_filename">
-      @if (headerBackgroundImgUrl(); as bannerUrl) {
-        <img [src]="bannerUrl" alt="" class="hero-banner-img" />
-      } @else {
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-          <div class="hero-info">
-            <h1 class="restaurant-name">{{ tenant()?.name }}</h1>
-          </div>
-        </div>
-      }
-    </header>
-    <main class="book-content">
-      <div class="book-card book-success-card">
-        <h2 class="success-title">{{ 'WAITLIST.SUCCESS_TITLE' | translate }}</h2>
-        <p class="success-message">{{ 'WAITLIST.SUCCESS_MESSAGE' | translate }}</p>
-        <p class="waitlist-alt-link">
-          <a [routerLink]="bookRouterLink()">{{ 'WAITLIST.LINK_BOOK_TABLE' | translate }}</a>
-        </p>
+    <div class="wl-loading" aria-hidden="true"><i></i><i></i></div>
+  } @else if (!tenant()) {
+    <main class="wl-main wl-main-single">
+      <div class="wl-ticket wl-ticket-error">
+        <p class="wl-error-big">{{ error() }}</p>
       </div>
     </main>
   } @else {
-    <header class="hero-header" [class.has-bg-image]="tenant()?.header_background_filename">
-      @if (headerBackgroundImgUrl(); as bannerUrl) {
-        <img [src]="bannerUrl" alt="" class="hero-banner-img" />
-      } @else {
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-          <div class="hero-top-row">
-            @if (logoUrl()) {
-              <div class="logo-container">
-                <img [src]="getLogoSafeUrl(logoUrl())" [alt]="tenant()?.name || ''" class="tenant-logo" />
+    <main class="wl-main">
+      <!-- ============ story ============ -->
+      <section class="wl-story">
+        <div class="wl-brand">
+          @if (logoUrl()) {
+            <span class="wl-brand-logo"><img [src]="getLogoSafeUrl(logoUrl())" [alt]="tenant()?.name || ''" /></span>
+          }
+          <span class="wl-brand-name">{{ tenant()?.name }}</span>
+        </div>
+
+        <span class="wl-eyebrow">{{ 'WAITLIST.TITLE' | translate }}</span>
+        <h1>{{ 'WAITLIST.HEADLINE_A' | translate }} <em>{{ 'WAITLIST.HEADLINE_B' | translate }}</em></h1>
+        <p class="wl-intro">{{ 'WAITLIST.INTRO' | translate }}</p>
+
+        <ol class="wl-steps">
+          <li>
+            <span>1</span>
+            <div><b>{{ 'WAITLIST.STEP1_TITLE' | translate }}</b><small>{{ 'WAITLIST.STEP1_TEXT' | translate }}</small></div>
+          </li>
+          <li>
+            <span>2</span>
+            <div><b>{{ 'WAITLIST.STEP2_TITLE' | translate }}</b><small>{{ 'WAITLIST.STEP2_TEXT' | translate }}</small></div>
+          </li>
+          <li>
+            <span>3</span>
+            <div><b>{{ 'WAITLIST.STEP3_TITLE' | translate }}</b><small>{{ 'WAITLIST.STEP3_TEXT' | translate }}</small></div>
+          </li>
+        </ol>
+
+        <svg class="wl-art" viewBox="0 0 320 320" fill="none" aria-hidden="true">
+          <g stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="170" cy="170" r="130" stroke-opacity=".16" stroke-width="1.5" />
+            <circle cx="170" cy="170" r="104" fill="currentColor" fill-opacity=".05" stroke-opacity=".3" stroke-width="1.5" />
+            <circle cx="170" cy="170" r="70" stroke-opacity=".2" stroke-width="1.2" stroke-dasharray="3 7" />
+            <circle cx="170" cy="170" r="36" fill="currentColor" fill-opacity=".06" stroke-opacity=".3" stroke-width="1.2" />
+            <g transform="translate(26 120) rotate(-8)" stroke-opacity=".4" stroke-width="2"><path d="M0 0v34M12 0v34M24 0v34M0 34c0 16 24 16 24 0M12 50v86" /></g>
+            <g transform="translate(300 128) rotate(7)" stroke-opacity=".4" stroke-width="2"><path d="M0 0c20 16 20 92 0 116h-8V0zM-4 116v20" /></g>
+          </g>
+        </svg>
+      </section>
+
+      <!-- ============ ticket ============ -->
+      <section class="wl-ticket" [class.done]="success()">
+        <header class="wl-ticket-top">
+          <div>
+            <small>{{ 'WAITLIST.TICKET_LABEL' | translate }}</small>
+            <b>{{ tenant()?.name }}</b>
+          </div>
+          <time>{{ stamp() }}</time>
+        </header>
+        <div class="wl-perf" aria-hidden="true"><i></i><i></i></div>
+
+        @if (success()) {
+          <div class="wl-done">
+            <span class="wl-check" aria-hidden="true">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+            </span>
+            <h2>{{ 'WAITLIST.SUCCESS_TITLE' | translate }}</h2>
+            <p>{{ 'WAITLIST.SUCCESS_MESSAGE' | translate }}</p>
+
+            <dl class="wl-summary">
+              <div><dt>{{ 'RESERVATIONS.CUSTOMER_NAME' | translate }}</dt><dd>{{ formName }}</dd></div>
+              <div><dt>{{ 'WAITLIST.GUESTS' | translate }}</dt><dd>{{ formPartySize }}</dd></div>
+              <div><dt>{{ 'RESERVATIONS.CUSTOMER_PHONE' | translate }}</dt><dd>{{ formPhone }}</dd></div>
+            </dl>
+
+            <a class="wl-link-btn" [routerLink]="bookRouterLink()">{{ 'WAITLIST.LINK_BOOK_TABLE' | translate }}</a>
+          </div>
+        } @else {
+          <form class="wl-form" (ngSubmit)="submit()" novalidate>
+            <!-- guests -->
+            <div class="wl-field">
+              <label for="wl-party">{{ 'WAITLIST.GUESTS' | translate }}</label>
+              <div class="wl-guests">
+                <button type="button" class="wl-step" (click)="changeParty(-1)" [disabled]="formPartySize <= 1" aria-label="-">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14" /></svg>
+                </button>
+                <div class="wl-count">
+                  <input id="wl-party" type="number" name="partySize" min="1" max="20" inputmode="numeric" [(ngModel)]="formPartySize" />
+                  <div class="wl-dots" aria-hidden="true">
+                    @for (d of partyDots(); track $index) { <i></i> }
+                    @if (formPartySize > 8) { <small>+{{ formPartySize - 8 }}</small> }
+                  </div>
+                </div>
+                <button type="button" class="wl-step" (click)="changeParty(1)" [disabled]="formPartySize >= 20" aria-label="+">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- name -->
+            <div class="wl-field">
+              <label for="wl-name">{{ 'RESERVATIONS.CUSTOMER_NAME' | translate }}</label>
+              <div class="wl-input">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6" /><path d="M5 20c.7-3.7 3.5-5.6 7-5.6s6.3 1.9 7 5.6" /></svg>
+                <input id="wl-name" type="text" name="name" required maxlength="200" autocomplete="name" [placeholder]="'WAITLIST.NAME_PLACEHOLDER' | translate" [(ngModel)]="formName" />
+              </div>
+            </div>
+
+            <!-- phone -->
+            <div class="wl-field">
+              <label for="wl-phone">{{ 'RESERVATIONS.CUSTOMER_PHONE' | translate }}</label>
+              <div class="wl-input">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /></svg>
+                <input id="wl-phone" type="tel" name="phone" required autocomplete="tel" inputmode="tel" [placeholder]="'WAITLIST.PHONE_PLACEHOLDER' | translate" [(ngModel)]="formPhone" />
+              </div>
+              <p class="wl-hint">{{ 'WAITLIST.PHONE_HINT' | translate }}</p>
+            </div>
+
+            @if (error()) {
+              <div class="wl-error" role="alert">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5h.01" /></svg>
+                {{ error() }}
               </div>
             }
-          </div>
-          <div class="hero-info">
-            <h1 class="restaurant-name">{{ tenant()?.name || ('WAITLIST.TITLE' | translate) }}</h1>
-          </div>
-        </div>
-      }
-      <div class="hero-meta-bar">
-        <span class="table-pill">{{ 'WAITLIST.TITLE' | translate }}</span>
-      </div>
-    </header>
-    <main class="book-content">
-      <div class="book-card">
-        <div class="book-form">
-          <p class="waitlist-intro">{{ 'WAITLIST.INTRO' | translate }}</p>
-          <div class="form-group">
-            <label for="wl-name">{{ 'RESERVATIONS.CUSTOMER_NAME' | translate }}</label>
-            <input id="wl-name" type="text" name="name" required maxlength="200" [(ngModel)]="formName" />
-          </div>
-          <div class="form-group">
-            <label for="wl-party">{{ 'RESERVATIONS.PARTY_SIZE' | translate }}</label>
-            <input id="wl-party" type="number" name="partySize" min="1" max="20" required [(ngModel)]="formPartySize" />
-          </div>
-          <div class="form-group">
-            <label for="wl-phone">{{ 'RESERVATIONS.CUSTOMER_PHONE' | translate }}</label>
-            <input id="wl-phone" type="tel" name="phone" required [(ngModel)]="formPhone" />
-          </div>
-          @if (error()) {
-            <p class="form-error">{{ error() }}</p>
-          }
-          <app-legal-links [termsUrl]="termsOfServiceUrl()" [privacyUrl]="privacyPolicyUrl()" />
-          <button type="button" class="btn btn-primary" [disabled]="submitting()" (click)="submit()">
-            {{ submitting() ? ('WAITLIST.SUBMITTING' | translate) : ('WAITLIST.SUBMIT' | translate) }}
-          </button>
-          <p class="waitlist-alt-link">
-            <a [routerLink]="bookRouterLink()">{{ 'WAITLIST.LINK_BOOK_TABLE' | translate }}</a>
-          </p>
-        </div>
-      </div>
+
+            <button type="submit" class="wl-submit" [disabled]="submitting()">
+              @if (submitting()) { <i class="wl-spin"></i> }
+              {{ submitting() ? ('WAITLIST.SUBMITTING' | translate) : ('WAITLIST.SUBMIT' | translate) }}
+              @if (!submitting()) {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              }
+            </button>
+
+            <a class="wl-alt" [routerLink]="bookRouterLink()">{{ 'WAITLIST.LINK_BOOK_TABLE' | translate }}</a>
+
+            <div class="wl-legal">
+              <app-legal-links [termsUrl]="termsOfServiceUrl()" [privacyUrl]="privacyPolicyUrl()" />
+            </div>
+          </form>
+        }
+      </section>
     </main>
   }
 </div>

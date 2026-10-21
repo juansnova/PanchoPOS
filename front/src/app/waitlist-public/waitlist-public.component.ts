@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -16,9 +16,9 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
   standalone: true,
   imports: [FormsModule, TranslateModule, PublicGuestHeaderComponent, LegalLinksComponent, RouterLink],
   templateUrl: './waitlist-public.component.html',
-  styleUrls: ['../book/book.component.scss', './waitlist-public.component.scss'],
+  styleUrl: './waitlist-public.component.scss',
 })
-export class WaitlistPublicComponent implements OnInit {
+export class WaitlistPublicComponent implements OnInit, OnDestroy {
   readonly resolvePublicPrimaryColor = resolvePublicPrimaryColor;
   private route = inject(ActivatedRoute);
   private api = inject(ApiService);
@@ -38,10 +38,32 @@ export class WaitlistPublicComponent implements OnInit {
   formPartySize = 2;
   formPhone = '';
 
+  /** Live "ticket" stamp: today's date and time, refreshed every 30 s. */
+  private now = signal(new Date());
+  private clock: ReturnType<typeof setInterval> | null = null;
+
+  stamp(): string {
+    const d = this.now();
+    const day = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+    return `${day.charAt(0).toUpperCase()}${day.slice(1)} · ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+  }
+
+  /** One dot per guest on the ticket (up to 8; the rest shown as +N). */
+  partyDots(): number[] {
+    const n = Math.max(0, Math.min(8, Math.floor(Number(this.formPartySize) || 0)));
+    return Array.from({ length: n }, (_, i) => i);
+  }
+
+  changeParty(delta: number): void {
+    const cur = Math.floor(Number(this.formPartySize) || 1);
+    this.formPartySize = Math.min(20, Math.max(1, cur + delta));
+  }
+
   termsOfServiceUrl = signal<string | null>(null);
   privacyPolicyUrl = signal<string | null>(null);
 
   ngOnInit(): void {
+    this.clock = setInterval(() => this.now.set(new Date()), 30000);
     const idParam = this.route.snapshot.paramMap.get('tenantId');
     const n = idParam ? parseInt(idParam, 10) : 0;
     if (!n || Number.isNaN(n)) {
@@ -63,6 +85,10 @@ export class WaitlistPublicComponent implements OnInit {
         this.error.set(this.translate.instant('WAITLIST.ERROR_INVALID_LINK'));
       },
     });
+  }
+
+  ngOnDestroy(): void {
+    if (this.clock != null) clearInterval(this.clock);
   }
 
   getLogoSafeUrl(url: string | null): SafeResourceUrl | null {
