@@ -5,6 +5,7 @@
  */
 
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { SidebarComponent } from '../../shared/sidebar.component';
 import { InventoryService } from '../inventory.service';
@@ -110,9 +111,7 @@ const MOVE_ICON: Record<string, string> = {
             <div class="ir-moves">
               @for (txn of visibleMoves(); track txn.id) {
                 <article class="ir-move" [attr.data-kind]="kindOf(txn.transaction_type)">
-                  <span class="ir-move-ico">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [innerHTML]="icon(txn.transaction_type)" aria-hidden="true"></svg>
-                  </span>
+                  <span class="ir-move-ico" [innerHTML]="iconHtml(txn.transaction_type)" aria-hidden="true"></span>
                   <div class="ir-move-main">
                     <b>{{ txn.inventory_item_name }}</b>
                     <small>{{ 'INVENTORY.TRANSACTION_TYPES.' + txn.transaction_type | translate }} · {{ formatDateTime(txn.created_at) }}</small>
@@ -143,6 +142,7 @@ const MOVE_ICON: Record<string, string> = {
 })
 export class InventoryReportsComponent implements OnInit {
   private inventoryService = inject(InventoryService);
+  private sanitizer = inject(DomSanitizer);
 
   valuation = signal<InventoryValuation | null>(null);
   transactions = signal<InventoryTransaction[]>([]);
@@ -202,8 +202,11 @@ export class InventoryReportsComponent implements OnInit {
     return type === 'waste' ? 'waste' : IN_TYPES.includes(type) ? 'in' : 'out';
   }
 
-  icon(type: string): string {
-    return MOVE_ICON[type] ?? MOVE_ICON['adjustment_add'];
+  iconHtml(type: string): SafeHtml {
+    const d = MOVE_ICON[type] ?? MOVE_ICON['adjustment_add'];
+    return this.sanitizer.bypassSecurityTrustHtml(
+      `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`
+    );
   }
 
   barWidth(cents: number): number {

@@ -209,13 +209,24 @@
 }
 
 .ir-move-ico {
+    position: relative;
     display: grid;
     place-items: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--k) 14%, transparent);
-    color: var(--k);
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    color: #fff;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--k) 78%, #fff), var(--k));
+    box-shadow: 0 10px 18px -10px var(--k), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+
+    // soft ring so the tile feels like a badge, not a flat square
+    &::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: 20px;
+        border: 2px solid color-mix(in srgb, var(--k) 25%, transparent);
+    }
 }
 
 .ir-move-main {

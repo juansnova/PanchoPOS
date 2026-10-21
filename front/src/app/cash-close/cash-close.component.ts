@@ -3,6 +3,7 @@
  */
 
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -78,7 +79,7 @@ const ICON: Record<string, string> = {
           <div class="cc-methods">
             @for (m of methods(); track m.key) {
               <div class="cc-method" [attr.data-k]="m.key">
-                <span class="cc-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [innerHTML]="m.svg" aria-hidden="true"></svg></span>
+                <span class="cc-ico" [innerHTML]="m.svg" aria-hidden="true"></span>
                 <div>
                   <small>{{ m.label | translate }}</small>
                   <strong>{{ money(m.cents) }}</strong>
@@ -159,6 +160,13 @@ const ICON: Record<string, string> = {
 export class CashCloseComponent implements OnInit {
   private api = inject(ApiService);
   private translate = inject(TranslateService);
+  private sanitizer = inject(DomSanitizer);
+
+  private icon(key: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(
+      `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[key]}</svg>`
+    );
+  }
 
   date = signal(this.today());
   summary = signal<CashSummary | null>(null);
@@ -175,11 +183,11 @@ export class CashCloseComponent implements OnInit {
     const s = this.summary();
     if (!s) return [];
     return [
-      { key: 'cash', label: 'CASH_CLOSE.CASH', cents: s.expected_cash_cents, svg: ICON['cash'] },
-      { key: 'card', label: 'CASH_CLOSE.CARD', cents: s.expected_card_cents, svg: ICON['card'] },
-      { key: 'transfer', label: 'CASH_CLOSE.TRANSFER', cents: s.expected_transfer_cents, svg: ICON['transfer'] },
+      { key: 'cash', label: 'CASH_CLOSE.CASH', cents: s.expected_cash_cents, svg: this.icon('cash') },
+      { key: 'card', label: 'CASH_CLOSE.CARD', cents: s.expected_card_cents, svg: this.icon('card') },
+      { key: 'transfer', label: 'CASH_CLOSE.TRANSFER', cents: s.expected_transfer_cents, svg: this.icon('transfer') },
       ...(s.expected_other_cents > 0
-        ? [{ key: 'other', label: 'CASH_CLOSE.OTHER', cents: s.expected_other_cents, svg: ICON['other'] }]
+        ? [{ key: 'other', label: 'CASH_CLOSE.OTHER', cents: s.expected_other_cents, svg: this.icon('other') }]
         : []),
     ];
   });
