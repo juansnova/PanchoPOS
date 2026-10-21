@@ -3521,6 +3521,12 @@ export class ApiService {
     return this.http.get<WorkSessionAdjustment[]>(`${this.apiUrl}/reports/work-sessions/${sessionId}/adjustments`);
   }
 
+  /** Owner/admin: delete a clock session (a deletion record is kept on the server). */
+  deleteReportWorkSession(sessionId: number, note?: string): Observable<{ deleted: boolean; id: number }> {
+    const params = note ? new HttpParams().set('note', note) : undefined;
+    return this.http.delete<{ deleted: boolean; id: number }>(`${this.apiUrl}/reports/work-sessions/${sessionId}`, { params });
+  }
+
   /** Owner/admin: add a clock session that was never recorded. */
   createReportWorkSession(body: {
     user_id: number;

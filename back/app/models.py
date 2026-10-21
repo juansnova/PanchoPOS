@@ -651,6 +651,20 @@ class WorkSessionAdjustment(TenantMixin, table=True):
     new_ended_at: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True), nullable=True))
 
 
+class WorkSessionDeletion(TenantMixin, table=True):
+    """Kept when a clock session is deleted by an owner/admin (the session row itself is removed)."""
+
+    __tablename__ = "work_session_deletion"
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int
+    user_name: str = Field(default="", max_length=200)
+    started_at: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False))
+    ended_at: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True), nullable=True))
+    deleted_by_user_id: int | None = Field(default=None, foreign_key="user.id")
+    note: str = Field(default="", max_length=500)
+    deleted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 class ReservationStatus(str, Enum):
     booked = "booked"
     seated = "seated"

@@ -34,6 +34,7 @@ import { intlLocaleFromTranslate } from '../shared/intl-locale';
 import { formatMoneyCents } from '../shared/currency-symbol';
 import { AppDatePickerComponent } from '../shared/app-date-picker.component';
 import { AppSelectComponent, AppSelectOption } from '../shared/app-select.component';
+import { ConfirmationModalComponent } from '../shared/confirmation-modal.component';
 import { getCategoryLabel } from '../shared/product-category-label.util';
 
 export type ReportsDatePreset =
@@ -46,7 +47,7 @@ export type ReportsDatePreset =
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, FormsModule, SidebarComponent, TranslateModule, AppDatePickerComponent, AppSelectComponent],
+  imports: [CommonModule, FormsModule, SidebarComponent, TranslateModule, AppDatePickerComponent, AppSelectComponent, ConfirmationModalComponent],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.scss',
 })
@@ -486,6 +487,28 @@ export class ReportsComponent implements OnInit {
     this.workSessionAdjustOpen.set(false);
     this.workSessionAdjustTarget.set(null);
     this.workSessionAdjustError.set(null);
+  }
+
+  workSessionDeleteConfirm = signal(false);
+
+  confirmDeleteWorkSession(): void {
+    const row = this.workSessionAdjustTarget();
+    if (!row) return;
+    this.workSessionDeleteConfirm.set(false);
+    this.workSessionAdjustSaving.set(true);
+    this.workSessionAdjustError.set(null);
+    this.api.deleteReportWorkSession(row.id, (this.workSessionAdjustNote() || '').trim() || undefined).subscribe({
+      next: () => {
+        this.workSessionAdjustSaving.set(false);
+        this.closeWorkSessionAdjust();
+        this.flash(this.translate.instant('REPORTS.WORK_SESSION_DELETE_OK'));
+        this.loadWorkSessions();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.workSessionAdjustSaving.set(false);
+        this.workSessionAdjustError.set(this.apiErr.fromHttpError(err, 'REPORTS.WORK_SESSION_DELETE_ERROR'));
+      },
+    });
   }
 
   submitWorkSessionAdjust(): void {

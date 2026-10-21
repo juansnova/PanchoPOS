@@ -105,3 +105,29 @@ class TestWorkSessionReports(PgClientTestCase):
             headers=_bearer_headers(self.admin),
         )
         self.assertEqual(r.status_code, 404)
+
+    def test_delete_session_keeps_audit_record_and_is_tenant_scoped(self) -> None:
+        from sqlmodel import select
+
+        start = datetime(2026, 10, 10, 13, 0, tzinfo=timezone.utc)
+        ws = models.WorkSession(
+            tenant_id=self.tenant_id, user_id=self.staff.id,
+            started_at=start, ended_at=start + timedelta(hours=2),
+        )
+        self.session.add(ws)
+        self.session.commit()
+        self.session.refresh(ws)
+        self.session.add(models.WorkSessionBreak(tenant_id=self.tenant_id, work_session_id=ws.id, started_at=start, ended_at=start))
+        self.session.commit()
+        h = _bearer_headers(self.admin)
+        r = self.client.delete(f"/reports/work-sessions/{ws.id}", params={"note": "Fichaje de prueba"}, headers=h)
+        self.assertEqual(r.status_code, 200, r.text)
+        self.session.expire_all()
+        self.assertIsNone(self.session.get(models.WorkSession, ws.id))
+        rec = self.session.exec(
+            select(models.WorkSessionDeletion).where(models.WorkSessionDeletion.tenant_id == self.tenant_id)
+        ).first()
+        self.assertEqual(rec.user_name, "Staff Uno")
+        self.assertEqual(rec.note, "Fichaje de prueba")
+        self.assertEqual(rec.deleted_by_user_id, self.admin.id)
+        self.assertEqual(self.client.delete(f"/reports/work-sessions/{ws.id}", headers=h).status_code, 404)

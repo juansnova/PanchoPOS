@@ -783,6 +783,10 @@
           <textarea id="ws-adjust-note" rows="3" [ngModel]="workSessionAdjustNote()" (ngModelChange)="workSessionAdjustNote.set($event)"></textarea>
         </div>
         <div class="reports-modal-actions">
+          <button type="button" class="btn wsa-delete" (click)="workSessionDeleteConfirm.set(true)" [disabled]="workSessionAdjustSaving()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
+            {{ 'REPORTS.WORK_SESSION_DELETE' | translate }}
+          </button>
           <button type="button" class="btn btn-secondary" (click)="closeWorkSessionAdjust()" [disabled]="workSessionAdjustSaving()">
             {{ 'COMMON.CANCEL' | translate }}
           </button>
@@ -793,6 +797,18 @@
       </div>
     </div>
     </div>
+  }
+
+  @if (workSessionDeleteConfirm()) {
+    <app-confirmation-modal
+      [title]="'REPORTS.WORK_SESSION_DELETE_TITLE' | translate"
+      [message]="'REPORTS.WORK_SESSION_DELETE_MESSAGE' | translate"
+      [confirmText]="'REPORTS.WORK_SESSION_DELETE' | translate"
+      [cancelText]="'COMMON.CANCEL' | translate"
+      [confirmBtnClass]="'btn-danger'"
+      (confirm)="confirmDeleteWorkSession()"
+      (cancel)="workSessionDeleteConfirm.set(false)"
+    ></app-confirmation-modal>
   }
 
   @if (historyTarget(); as ht) {

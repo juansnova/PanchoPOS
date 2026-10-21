@@ -732,6 +732,53 @@ def create_work_session_manually(
     return d
 
 
+@router.delete("/work-sessions/{work_session_id}")
+@admin_user_limit()
+def delete_work_session(
+    request: Request,
+    response: Response,
+    work_session_id: int,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.REPORT_READ))],
+    session: Session = Depends(get_session),
+    note: str = Query("", max_length=500, description="Why it was deleted (kept in the audit record)"),
+) -> dict:
+    """Delete a clock session (and its breaks / corrections). A deletion record keeps who, when and what."""
+    if current_user.tenant_id is None:
+        raise HTTPException(status_code=403, detail="Tenant required")
+    ws = session.exec(
+        select(models.WorkSession).where(
+            models.WorkSession.id == work_session_id,
+            models.WorkSession.tenant_id == current_user.tenant_id,
+        )
+    ).first()
+    if not ws:
+        raise HTTPException(status_code=404, detail="Work session not found")
+    owner = session.get(models.User, ws.user_id)
+    session.add(
+        models.WorkSessionDeletion(
+            tenant_id=ws.tenant_id,
+            user_id=ws.user_id,
+            user_name=((owner.full_name or owner.username) if owner else "")[:200],
+            started_at=ws.started_at,
+            ended_at=ws.ended_at,
+            deleted_by_user_id=current_user.id,
+            note=(note or "").strip(),
+        )
+    )
+    for br in session.exec(
+        select(models.WorkSessionBreak).where(models.WorkSessionBreak.work_session_id == ws.id)
+    ).all():
+        session.delete(br)
+    for adj in session.exec(
+        select(models.WorkSessionAdjustment).where(models.WorkSessionAdjustment.work_session_id == ws.id)
+    ).all():
+        session.delete(adj)
+    session.flush()
+    session.delete(ws)
+    session.commit()
+    return {"deleted": True, "id": work_session_id}
+
+
 @router.get("/work-sessions/{work_session_id}/adjustments")
 @admin_user_limit()
 def list_work_session_adjustments(
