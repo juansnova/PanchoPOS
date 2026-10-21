@@ -234,8 +234,15 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                   <h3 class="st-card-title">{{ 'SETTINGS.CARD_BUSINESS_DATA' | translate }}</h3>
                   <!-- Basic Info -->
                   <div class="form-group">
-                    <label for="name">{{ 'SETTINGS.BUSINESS_NAME' | translate }} *</label>
-                    <input type="text" id="name" [(ngModel)]="formData.name" name="name" required readonly tabindex="-1" class="st-locked" />
+                    <label>{{ 'SETTINGS.BUSINESS_NAME' | translate }}</label>
+                    <div class="st-fixed" data-testid="settings-business-name-fixed">
+                      <span class="st-fixed-ico" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                      </span>
+                      <span class="st-fixed-name">{{ formData.name }}</span>
+                      <span class="st-fixed-chip">{{ 'SETTINGS.NAME_FIXED' | translate }}</span>
+                    </div>
+                    <small class="field-hint">{{ 'SETTINGS.NAME_FIXED_HINT' | translate }}</small>
                   </div>
 
                   <div class="form-group">
@@ -2224,8 +2231,10 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     @media (prefers-reduced-motion: reduce) { .st-savebar.dirty .st-save-state i { animation: none; } }
     @media (max-width: 560px) { .st-savebar { border-radius: 26px; padding: 12px; } .st-save-actions { width: 100%; } .st-save-actions .btn { flex: 1; } }
 
-    .form-group input.st-locked { color: #8a817a; background: #efeae3; border-color: #e0d9cf; cursor: not-allowed; font-weight: 700; }
-    .form-group input.st-locked:focus { box-shadow: none; border-color: #e0d9cf; }
+    .st-fixed { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 20px; border: 1px dashed color-mix(in srgb, var(--color-primary) 40%, var(--color-border)); background: color-mix(in srgb, var(--color-primary) 6%, #fff); }
+    .st-fixed-ico { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 14%, #fff); }
+    .st-fixed-name { flex: 1; min-width: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 1.35rem; font-style: italic; font-weight: 500; letter-spacing: -.01em; overflow-wrap: anywhere; }
+    .st-fixed-chip { flex: none; padding: 4px 12px; border-radius: 999px; font-size: .66rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, #fff); }
     .toast { top: auto; bottom: 90px; border-radius: 999px; padding: 12px 18px 12px 22px; background: #1c1917; font-weight: 700; box-shadow: 0 24px 40px -18px rgba(0,0,0,.6); }
     .toast.success { background: #166534; }
     .toast.error { background: #991b1b; }
