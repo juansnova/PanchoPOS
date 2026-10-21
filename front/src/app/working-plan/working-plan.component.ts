@@ -15,6 +15,7 @@ import {
   User,
 } from '../services/api.service';
 import { SidebarComponent } from '../shared/sidebar.component';
+import { AppSelectComponent, AppSelectOption } from '../shared/app-select.component';
 import { ConfirmationModalComponent } from '../shared/confirmation-modal.component';
 import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -165,7 +166,7 @@ function isValidView(v: string | null): v is ViewMode {
 @Component({
   selector: 'app-working-plan',
   standalone: true,
-  imports: [FormsModule, SidebarComponent, TranslateModule, ConfirmationModalComponent, FocusFirstInputDirective],
+  imports: [FormsModule, SidebarComponent, TranslateModule, ConfirmationModalComponent, FocusFirstInputDirective, AppSelectComponent],
   template: `
     <app-sidebar>
       <div class="working-plan-page" data-testid="working-plan-page">
@@ -652,106 +653,152 @@ function isValidView(v: string | null): v is ViewMode {
 
       @if (showModal()) {
         <div class="modal-overlay">
-          <div
-            class="modal-content"
-            [class.modal-content-wide]="formSplitShift && !editingShift()"
-            (click)="$event.stopPropagation()"
-            appFocusFirstInput
-          >
-            <div class="modal-header">
-              <h3>{{ editingShift() ? ('WORKING_PLAN.EDIT_SHIFT' | translate) : ('WORKING_PLAN.ADD_SHIFT' | translate) }}</h3>
-              <button type="button" class="close-btn" (click)="closeModal()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          <div class="modal-content wpm" (click)="$event.stopPropagation()" appFocusFirstInput>
+            <div class="wpm-head">
+              <span class="wpm-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v3l2 1"/></svg></span>
+              <div class="wpm-head-text">
+                <h3>{{ editingShift() ? ('WORKING_PLAN.EDIT_SHIFT' | translate) : ('WORKING_PLAN.ADD_SHIFT' | translate) }}</h3>
+                <p>{{ formDateLabel() }}</p>
+              </div>
+              <button type="button" class="wpm-close" (click)="closeModal()" [attr.aria-label]="'COMMON.CANCEL' | translate">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
-            <div class="modal-body">
-              <div class="form-group">
-                <label>{{ 'WORKING_PLAN.USER' | translate }}</label>
-                <select [(ngModel)]="formUserId" [disabled]="!assignableScheduleUsers().length || !canManageAllSchedules()">
-                  <option [ngValue]="null">{{ 'WORKING_PLAN.SELECT_USER' | translate }}</option>
-                  @for (u of assignableScheduleUsers(); track u.id) {
-                    <option [ngValue]="u.id">{{ u.full_name || u.username }} ({{ getRoleLabel(u.role) }})</option>
-                  }
-                </select>
-              </div>
-              <div class="form-group">
-                <label>{{ 'WORKING_PLAN.DATE' | translate }}</label>
-                <input type="date" [(ngModel)]="formDate" (ngModelChange)="onFormDateChange($event)" />
-              </div>
-              <div class="form-group">
-                <label>{{ 'WORKING_PLAN.TIME_STEP' | translate }}</label>
-                <select [(ngModel)]="formTimeStep" (ngModelChange)="onTimeOptionsChange()">
-                  <option [ngValue]="30">{{ 'WORKING_PLAN.TIME_STEP_30' | translate }}</option>
-                  <option [ngValue]="60">{{ 'WORKING_PLAN.TIME_STEP_1H' | translate }}</option>
-                </select>
-              </div>
-              <div class="form-group form-group-checkbox">
-                <label>
-                  <input type="checkbox" [(ngModel)]="formUseAnyHour" (ngModelChange)="onTimeOptionsChange()" />
-                  {{ 'WORKING_PLAN.USE_ANY_HOUR' | translate }}
-                </label>
-                <span class="form-hint">{{ 'WORKING_PLAN.USE_ANY_HOUR_HINT' | translate }}</span>
-              </div>
-              @if (!editingShift()) {
-                <div class="form-group form-group-checkbox">
-                  <label>
+
+            <div class="wpm-body">
+              @if (!editingShift() && templates().length) {
+                <section class="wpm-sec">
+                  <h4>{{ 'WORKING_PLAN.FORM_QUICK' | translate }}</h4>
+                  <div class="wpm-quick">
+                    @for (t of templates(); track t.id; let i = $index) {
+                      <button type="button" class="wp-tpl" [style.--wp-h]="templateHue(i)" (click)="applyTemplateToForm(t)">
+                        <span class="wp-tpl-dot"></span>
+                        <span class="wp-tpl-name">{{ t.name }}</span>
+                        <small>{{ templateRangeLabel(t) }}</small>
+                      </button>
+                    }
+                  </div>
+                </section>
+              }
+
+              <section class="wpm-sec">
+                <h4>{{ 'WORKING_PLAN.FORM_WHO_WHEN' | translate }}</h4>
+                <div class="wpm-grid">
+                  <div class="wpm-field">
+                    <label>{{ 'WORKING_PLAN.USER' | translate }}</label>
+                    <app-select
+                      name="shift-user"
+                      [(ngModel)]="formUserId"
+                      [options]="userOptions()"
+                      [placeholder]="'WORKING_PLAN.SELECT_USER' | translate"
+                      [searchable]="false"
+                      [emptyValue]="null"
+                      [disabled]="!assignableScheduleUsers().length || !canManageAllSchedules()" />
+                  </div>
+                  <div class="wpm-field">
+                    <label>{{ 'WORKING_PLAN.DATE' | translate }}</label>
+                    <input type="date" [(ngModel)]="formDate" (ngModelChange)="onFormDateChange($event)" />
+                  </div>
+                </div>
+              </section>
+
+              <section class="wpm-sec">
+                <h4>
+                  {{ formSplitShift && !editingShift() ? ('WORKING_PLAN.SHIFT_BLOCK_A' | translate) : ('WORKING_PLAN.FORM_HOURS' | translate) }}
+                  <span class="wpm-duration">{{ blockDurationLabel(formStartTime, formEndTime) }}</span>
+                </h4>
+                <div class="wpm-grid">
+                  <div class="wpm-field">
+                    <label>{{ 'WORKING_PLAN.START_TIME' | translate }}</label>
+                    <select [(ngModel)]="formStartTime" (ngModelChange)="onFormBlock1TimesChange()">
+                      @for (t of timeOptsForSelectedDay(); track t) {
+                        <option [value]="t">{{ t }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="wpm-field">
+                    <label>{{ 'WORKING_PLAN.END_TIME' | translate }}</label>
+                    <select [(ngModel)]="formEndTime" (ngModelChange)="onFormBlock1TimesChange()">
+                      @for (t of timeOptsForSelectedDay(); track t) {
+                        <option [value]="t">{{ t }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+
+                @if (!editingShift()) {
+                  <label class="wpm-switch-card" [class.on]="formSplitShift">
                     <input type="checkbox" [(ngModel)]="formSplitShift" (ngModelChange)="onSplitShiftChange($event)" />
-                    {{ 'WORKING_PLAN.SPLIT_SHIFT' | translate }}
+                    <span class="wpm-switch" aria-hidden="true"></span>
+                    <span class="wpm-switch-text">
+                      <b>{{ 'WORKING_PLAN.SPLIT_SHIFT' | translate }}</b>
+                      <small>{{ 'WORKING_PLAN.SPLIT_SHIFT_HINT' | translate }}</small>
+                    </span>
                   </label>
-                </div>
-              }
-              @if (formSplitShift && !editingShift()) {
-                <span class="bulk-section-label">{{ 'WORKING_PLAN.SHIFT_BLOCK_A' | translate }}</span>
-              }
-              <div class="form-group">
-                <label>{{ 'WORKING_PLAN.START_TIME' | translate }}</label>
-                <select [(ngModel)]="formStartTime" (ngModelChange)="onFormBlock1TimesChange()">
-                  @for (t of timeOptsForSelectedDay(); track t) {
-                    <option [value]="t">{{ t }}</option>
-                  }
-                </select>
-              </div>
-              <div class="form-group">
-                <label>{{ 'WORKING_PLAN.END_TIME' | translate }}</label>
-                <select [(ngModel)]="formEndTime" (ngModelChange)="onFormBlock1TimesChange()">
-                  @for (t of timeOptsForSelectedDay(); track t) {
-                    <option [value]="t">{{ t }}</option>
-                  }
-                </select>
-              </div>
-              @if (formSplitShift && !editingShift()) {
-                <span class="bulk-section-label">{{ 'WORKING_PLAN.SHIFT_BLOCK_B' | translate }}</span>
-                @if (!timeOptsForBlock2Start().length) {
-                  <p class="form-error">{{ 'WORKING_PLAN.SPLIT_ERR_NO_ROOM' | translate }}</p>
                 }
-                <div class="form-group">
-                  <label>{{ 'WORKING_PLAN.START_TIME' | translate }}</label>
-                  <select [(ngModel)]="formStartTime2" (ngModelChange)="onFormBlock2TimesChange()">
-                    @for (t of timeOptsForBlock2Start(); track t) {
-                      <option [value]="t">{{ t }}</option>
-                    }
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>{{ 'WORKING_PLAN.END_TIME' | translate }}</label>
-                  <select [(ngModel)]="formEndTime2" (ngModelChange)="onFormBlock2TimesChange()">
-                    @for (t of timeOptsForBlock2End(); track t) {
-                      <option [value]="t">{{ t }}</option>
-                    }
-                  </select>
-                </div>
-              }
-              <div class="form-group">
-                <label>{{ 'WORKING_PLAN.LABEL' | translate }}</label>
-                <input type="text" [(ngModel)]="formLabel" placeholder="{{ 'WORKING_PLAN.LABEL_PLACEHOLDER' | translate }}" />
-              </div>
+
+                @if (formSplitShift && !editingShift()) {
+                  <h4 class="wpm-sub">
+                    {{ 'WORKING_PLAN.SHIFT_BLOCK_B' | translate }}
+                    <span class="wpm-duration">{{ blockDurationLabel(formStartTime2, formEndTime2) }}</span>
+                  </h4>
+                  @if (!timeOptsForBlock2Start().length) {
+                    <p class="form-error">{{ 'WORKING_PLAN.SPLIT_ERR_NO_ROOM' | translate }}</p>
+                  }
+                  <div class="wpm-grid">
+                    <div class="wpm-field">
+                      <label>{{ 'WORKING_PLAN.START_TIME' | translate }}</label>
+                      <select [(ngModel)]="formStartTime2" (ngModelChange)="onFormBlock2TimesChange()">
+                        @for (t of timeOptsForBlock2Start(); track t) {
+                          <option [value]="t">{{ t }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="wpm-field">
+                      <label>{{ 'WORKING_PLAN.END_TIME' | translate }}</label>
+                      <select [(ngModel)]="formEndTime2" (ngModelChange)="onFormBlock2TimesChange()">
+                        @for (t of timeOptsForBlock2End(); track t) {
+                          <option [value]="t">{{ t }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+                }
+
+                <details class="wpm-more">
+                  <summary>{{ 'WORKING_PLAN.FORM_TIME_OPTIONS' | translate }}</summary>
+                  <div class="wpm-grid">
+                    <div class="wpm-field">
+                      <label>{{ 'WORKING_PLAN.TIME_STEP' | translate }}</label>
+                      <select [(ngModel)]="formTimeStep" (ngModelChange)="onTimeOptionsChange()">
+                        <option [ngValue]="30">{{ 'WORKING_PLAN.TIME_STEP_30' | translate }}</option>
+                        <option [ngValue]="60">{{ 'WORKING_PLAN.TIME_STEP_1H' | translate }}</option>
+                      </select>
+                    </div>
+                    <label class="wpm-check">
+                      <input type="checkbox" [(ngModel)]="formUseAnyHour" (ngModelChange)="onTimeOptionsChange()" />
+                      <span>
+                        {{ 'WORKING_PLAN.USE_ANY_HOUR' | translate }}
+                        <small>{{ 'WORKING_PLAN.USE_ANY_HOUR_HINT' | translate }}</small>
+                      </span>
+                    </label>
+                  </div>
+                </details>
+              </section>
+
+              <section class="wpm-sec">
+                <h4>{{ 'WORKING_PLAN.LABEL' | translate }}</h4>
+                <input type="text" class="wpm-input" [(ngModel)]="formLabel" placeholder="{{ 'WORKING_PLAN.LABEL_PLACEHOLDER' | translate }}" />
+              </section>
+
               @if (formError()) {
-                <div class="form-error">{{ formError() }}</div>
+                <div class="form-error wpm-error">{{ formError() }}</div>
               }
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-ghost" (click)="closeModal()">{{ 'COMMON.CANCEL' | translate }}</button>
-              <button type="button" class="btn btn-primary" (click)="saveShift()">{{ 'COMMON.SAVE' | translate }}</button>
+
+            <div class="wpm-foot">
+              <button type="button" class="wpm-btn wpm-btn-ghost" (click)="closeModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+              <button type="button" class="wpm-btn wpm-btn-main" (click)="saveShift()">{{ 'COMMON.SAVE' | translate }}</button>
             </div>
           </div>
         </div>
@@ -1129,6 +1176,58 @@ function isValidView(v: string | null): v is ViewMode {
     .wp-tpl-del:hover { background: rgba(220,38,38,.1); color: #dc2626; }
     .wp-tpl-new { width: 100%; min-height: 44px; border-radius: 14px; border: 1.5px dashed var(--color-primary); background: var(--color-primary-light); color: var(--color-primary); font: inherit; font-weight: 800; cursor: pointer; }
     @media (max-width: 640px) { .wp-tpl-row { grid-template-columns: 1fr auto; } .wp-tpl-hint { margin-left: 0; width: 100%; } }
+
+    /* ===== Añadir / editar turno ===== */
+    .wpm { max-width: 560px; border-radius: 24px; padding: 0; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 70px -18px rgba(0,0,0,.45); }
+    .modal-overlay { backdrop-filter: blur(3px); }
+    .wpm-head {
+      display: flex; align-items: center; gap: 14px; padding: 18px 20px 16px;
+      background: linear-gradient(135deg, var(--color-primary-light), transparent 80%);
+    }
+    .wpm-icon { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 16px; background: var(--color-primary); color: #fff; box-shadow: 0 10px 18px -10px var(--color-primary); }
+    .wpm-head-text { flex: 1; min-width: 0; }
+    .wpm-head-text h3 { margin: 0; font-size: 1.25rem; font-weight: 800; }
+    .wpm-head-text p { margin: 2px 0 0; font-size: .85rem; font-weight: 600; color: var(--color-text-muted); }
+    .wpm-close { flex: none; width: 38px; height: 38px; border: 0; border-radius: 50%; background: transparent; color: var(--color-text-muted); cursor: pointer; display: grid; place-items: center; }
+    .wpm-close:hover { background: var(--color-bg); color: var(--color-text); }
+    .wpm-body { padding: 4px 20px 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+    .wpm-sec { padding: 14px 16px; border-radius: 18px; background: var(--color-bg); border: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 12px; }
+    .wpm-sec h4 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: .78rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--color-text-muted); }
+    .wpm-sec h4::before { content: ''; width: 5px; height: 16px; border-radius: 4px; background: var(--color-primary); }
+    .wpm-sub { margin-top: 4px !important; }
+    .wpm-duration { margin-left: auto; padding: 2px 10px; border-radius: 999px; background: var(--color-primary-light); color: var(--color-primary); font-size: .75rem; letter-spacing: 0; text-transform: none; }
+    .wpm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 520px) { .wpm-grid { grid-template-columns: 1fr; } }
+    .wpm-field { min-width: 0; }
+    .wpm-field label, .wpm-check { margin: 0 0 4px; font-size: .78rem; font-weight: 700; color: var(--color-text-muted); }
+    .wpm-field label { display: block; }
+    .wpm select, .wpm input[type='date'], .wpm .wpm-input {
+      width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); color: var(--color-text); font: inherit; font-weight: 600; box-sizing: border-box;
+    }
+    .wpm select:focus, .wpm input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+    .wpm-quick { display: flex; flex-wrap: wrap; gap: 8px; }
+    .wpm-quick .wp-tpl { min-height: 40px; }
+    .wpm-switch-card { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--color-border); background: var(--color-surface); cursor: pointer; transition: border-color .15s, background .15s; }
+    .wpm-switch-card input { position: absolute; opacity: 0; pointer-events: none; }
+    .wpm-switch-card.on { border-color: var(--color-primary); background: var(--color-primary-light); }
+    .wpm-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 999px; background: var(--color-border); transition: background .15s; }
+    .wpm-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .15s; }
+    .wpm-switch-card.on .wpm-switch { background: var(--color-primary); }
+    .wpm-switch-card.on .wpm-switch::after { transform: translateX(18px); }
+    .wpm-switch-text { display: flex; flex-direction: column; gap: 1px; }
+    .wpm-switch-text b { font-size: .92rem; }
+    .wpm-switch-text small, .wpm-check small { color: var(--color-text-muted); font-size: .75rem; font-weight: 500; display: block; }
+    .wpm-more { margin-top: 2px; }
+    .wpm-more summary { cursor: pointer; font-size: .82rem; font-weight: 700; color: var(--color-text-muted); padding: 4px 0; }
+    .wpm-more[open] summary { margin-bottom: 10px; color: var(--color-primary); }
+    .wpm-check { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; align-self: end; }
+    .wpm-check input { width: auto; min-height: 0; margin-top: 3px; }
+    .wpm-error { padding: 10px 12px; border-radius: 12px; background: rgba(220,38,38,.08); }
+    .wpm-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px 18px; border-top: 1px solid var(--color-border); }
+    .wpm-btn { min-height: 46px; padding: 0 26px; border-radius: 999px; font: inherit; font-weight: 800; cursor: pointer; touch-action: manipulation; }
+    .wpm-btn-ghost { background: transparent; border: 1px solid var(--color-border); color: var(--color-text); }
+    .wpm-btn-main { border: 0; background: var(--color-primary); color: #fff; box-shadow: 0 10px 20px -10px var(--color-primary); }
+    .wpm-btn-main:hover { filter: brightness(1.07); }
   `],
 })
 export class WorkingPlanComponent implements OnInit, OnDestroy {
@@ -1368,6 +1467,55 @@ export class WorkingPlanComponent implements OnInit, OnDestroy {
         this.templatesError.set(this.getApiErrorMessage(err));
       },
     });
+  }
+
+  userOptions(): AppSelectOption[] {
+    return this.assignableScheduleUsers()
+      .filter((u) => u.id != null)
+      .map((u) => ({ value: u.id, label: u.full_name || u.username || '', sub: this.getRoleLabel(u.role) }));
+  }
+
+  /** "martes, 21 de octubre" style label for the shift form header. */
+  formDateLabel(): string {
+    if (!this.formDate) return '';
+    const d = new Date(this.formDate + 'T12:00:00');
+    if (Number.isNaN(d.getTime())) return '';
+    const label = d.toLocaleDateString(this.languageService.getLocale(), {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  /** "8 h" / "4 h 30 min" for a start-end pair; empty when invalid. */
+  blockDurationLabel(start: string, end: string): string {
+    const toMin = (t: string) => {
+      const [h, m] = (t || '').split(':').map((x) => parseInt(x, 10));
+      return Number.isFinite(h) ? h * 60 + (m || 0) : NaN;
+    };
+    const d = toMin(end) - toMin(start);
+    if (!Number.isFinite(d) || d <= 0) return '';
+    const h = Math.floor(d / 60);
+    const m = d % 60;
+    return m ? `${h} h ${m} min` : `${h} h`;
+  }
+
+  /** Fill the shift form from a template (times, optional second block and label). */
+  applyTemplateToForm(t: ShiftTemplate): void {
+    const needed = [t.start_time, t.end_time, t.start_time2, t.end_time2].filter((x): x is string => !!x);
+    if (!this.formUseAnyHour && !needed.every((x) => this.timeOptsForSelectedDay().includes(x))) {
+      this.formUseAnyHour = true; // template hours outside the opening hours stay selectable
+    }
+    this.formStartTime = t.start_time;
+    this.formEndTime = t.end_time;
+    this.formSplitShift = !!(t.start_time2 && t.end_time2);
+    if (this.formSplitShift) {
+      this.formStartTime2 = t.start_time2 as string;
+      this.formEndTime2 = t.end_time2 as string;
+    }
+    this.formLabel = t.name;
+    this.formError.set(null);
   }
 
   /** Seven days of the visible week with today / closed flags and per-role coverage. */
