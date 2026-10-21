@@ -2159,3 +2159,239 @@
 
 .form-card:has(.pf-hero) .pf-form input:not([type='checkbox']):not([type='radio']),
 .form-card:has(.pf-hero) .pf-form textarea { border-radius: 16px; }
+
+// ================================================================ fields, availability, recipe, modals (second pass)
+.form-card:has(.pf-hero) {
+  // labels: tiny caps, quiet
+  .pf-form label:not(.pf-oos):not(.checkbox-label) {
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .pf-form input:not([type='checkbox']):not([type='radio']):not([type='file']),
+  .pf-form textarea {
+    background: #fffdfa;
+    border: 1px solid var(--color-border);
+    font-weight: 600;
+
+    &:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); outline: none; }
+  }
+
+  // price and cost: big serif numerals with a currency tab
+  .price-input {
+    display: flex;
+    align-items: stretch;
+    border-radius: 18px;
+    border: 1px solid var(--color-border);
+    background: #fffdfa;
+    overflow: hidden;
+
+    &:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+
+    .currency {
+      display: grid;
+      place-items: center;
+      padding: 0 14px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.3rem;
+      font-style: italic;
+      color: var(--color-primary);
+      background: color-mix(in srgb, var(--color-primary) 9%, #fff);
+      border-right: 1px dashed var(--color-border);
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.4rem;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  // out of stock tile
+  .pf-oos {
+    padding: 16px 18px;
+    border-radius: 22px;
+    border: 1.5px dashed var(--color-border);
+    background: #fffdfa;
+
+    &.on { border-style: solid; border-color: #dc2626; background: linear-gradient(135deg, #fef2f2, #fffdfa); }
+  }
+
+  .pf-switch { width: 52px; height: 30px; }
+  .pf-switch::after { width: 24px; height: 24px; }
+  .pf-oos.on .pf-switch::after { transform: translateX(22px); }
+
+  // stock alert: same tile language, native checkbox restyled as a switch
+  .stock-alert-section {
+    margin-top: 12px;
+    padding: 16px 18px;
+    border-radius: 22px;
+    border: 1.5px dashed var(--color-border);
+    background: #fffdfa;
+
+    &:has(input:checked) { border-style: solid; border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border)); background: color-mix(in srgb, var(--color-primary) 6%, #fff); }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 0.98rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    input[type='checkbox'] {
+      appearance: none;
+      -webkit-appearance: none;
+      position: relative;
+      flex: none;
+      width: 52px;
+      height: 30px;
+      margin: 0;
+      border-radius: 999px;
+      background: var(--color-border);
+      cursor: pointer;
+      transition: background 0.15s;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        transition: transform 0.15s;
+      }
+
+      &:checked { background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); }
+      &:checked::after { transform: translateX(22px); }
+      &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    }
+  }
+}
+
+// recipe: a ledger with dotted leaders
+.pf-ing-name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.05rem;
+
+  &::after { content: ''; flex: 1; min-width: 16px; border-bottom: 2px dotted #cbbfae; transform: translateY(-4px); }
+}
+
+.pf-ing-qty { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 1.05rem; }
+
+.pf-recipe-add {
+  padding: 16px;
+  border-radius: 22px;
+  border: 1.5px dashed color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary) 4%, #fffdfa);
+}
+
+.pf-recipe-btn {
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000));
+  color: #fff;
+  box-shadow: 0 14px 20px -14px var(--color-primary);
+}
+
+// delete confirmations
+.pd-overlay { background: rgba(28, 25, 23, 0.45); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+
+.pd {
+  width: 100%;
+  max-width: 420px;
+  padding: 28px 24px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-radius: 30px;
+  background: #fffdfa;
+  box-shadow: 0 40px 90px -24px rgba(40, 20, 5, 0.6);
+
+  h3 { margin: 0 0 14px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.55rem; font-weight: 500; letter-spacing: -0.02em; }
+  p { margin: 14px 0 20px; font-size: 0.9rem; line-height: 1.5; color: var(--color-text-muted); }
+}
+
+.pd-ico {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin-bottom: 12px;
+  border-radius: 50%;
+  color: #dc2626;
+  background: #fee2e2;
+  box-shadow: 0 0 0 8px #fef2f2;
+}
+
+.pd-prod {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: 1px dashed var(--color-border);
+  background: #faf6f0;
+  text-align: left;
+
+  b { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 1.1rem; font-weight: 500; overflow-wrap: anywhere; }
+  small { font-family: Georgia, 'Times New Roman', serif; font-size: 0.95rem; font-style: italic; color: var(--color-text-muted); }
+}
+
+.pd-thumb {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-primary) 14%, #fff);
+  box-shadow: 0 0 0 3px #fffdfa, 0 0 0 4px var(--color-border);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  b { font-size: 1.3rem; font-style: italic; color: var(--color-primary); }
+}
+
+.pd-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  b { font-family: Georgia, 'Times New Roman', serif; font-size: 3.4rem; font-weight: 500; line-height: 1; color: #dc2626; }
+  small { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-text-muted); }
+}
+
+.pd-actions { display: flex; gap: 10px; width: 100%; }
+
+.pd-cancel,
+.pd-danger {
+  flex: 1;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pd-cancel { border: 1.5px solid var(--color-border); background: #fff; color: var(--color-text); &:hover { background: var(--color-bg); } }
+.pd-danger { border: 0; color: #fff; background: #dc2626; box-shadow: 0 14px 22px -12px #dc2626; &:hover:not(:disabled) { filter: brightness(1.07); } &:disabled { opacity: 0.6; } }

@@ -623,26 +623,35 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
             }
           }
 
-           @if (productToDelete()) {
-             <div class="modal-overlay" (click)="productToDelete.set(null)">
-               <div class="modal" (click)="$event.stopPropagation()">
+           @if (productToDelete(); as pd) {
+             <div class="modal-overlay pd-overlay" (click)="productToDelete.set(null)">
+               <div class="pd" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+                 <span class="pd-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></span>
                  <h3>{{ 'PRODUCTS.DELETE_PRODUCT_TITLE' | translate }}</h3>
-                 <p>{{ 'PRODUCTS.DELETE_PRODUCT_CONFIRM' | translate:{name: productToDelete()?.name} }}</p>
-                 <div class="modal-actions">
-                   <button class="btn btn-secondary" (click)="productToDelete.set(null)">{{ 'PRODUCTS.CANCEL' | translate }}</button>
-                   <button class="btn btn-danger" (click)="deleteProduct()">{{ 'PRODUCTS.DELETE_PRODUCT' | translate }}</button>
+                 <div class="pd-prod">
+                   <span class="pd-thumb">
+                     @if (pd.image_filename) { <img [src]="getImageUrl(pd)" alt="" (error)="handleImageError($event)"> } @else { <b>{{ pd.name.charAt(0).toUpperCase() }}</b> }
+                   </span>
+                   <div><b>{{ pd.name }}</b><small>{{ formatPrice(pd.price_cents) }}</small></div>
+                 </div>
+                 <p>{{ 'PRODUCTS.DELETE_PRODUCT_CONFIRM' | translate:{name: pd.name} }}</p>
+                 <div class="pd-actions">
+                   <button class="pd-cancel" (click)="productToDelete.set(null)">{{ 'PRODUCTS.CANCEL' | translate }}</button>
+                   <button class="pd-danger" (click)="deleteProduct()">{{ 'PRODUCTS.DELETE_PRODUCT' | translate }}</button>
                  </div>
                </div>
              </div>
            }
            @if (showDeleteAllModal()) {
-             <div class="modal-overlay" (click)="showDeleteAllModal.set(false)">
-               <div class="modal" (click)="$event.stopPropagation()">
+             <div class="modal-overlay pd-overlay" (click)="showDeleteAllModal.set(false)">
+               <div class="pd" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+                 <span class="pd-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></span>
                  <h3>{{ 'PRODUCTS.DELETE_ALL_TITLE' | translate }}</h3>
+                 <div class="pd-count"><b>{{ products().length }}</b><small>{{ 'PRODUCTS.STATS_PRODUCTS' | translate }}</small></div>
                  <p>{{ 'PRODUCTS.DELETE_ALL_CONFIRM' | translate:{count: products().length} }}</p>
-                 <div class="modal-actions">
-                   <button class="btn btn-secondary" (click)="showDeleteAllModal.set(false)" [disabled]="deletingAll()">{{ 'PRODUCTS.CANCEL' | translate }}</button>
-                   <button class="btn btn-danger" (click)="deleteAllProducts()" [disabled]="deletingAll()">{{ 'PRODUCTS.DELETE_ALL_BUTTON' | translate }}</button>
+                 <div class="pd-actions">
+                   <button class="pd-cancel" (click)="showDeleteAllModal.set(false)" [disabled]="deletingAll()">{{ 'PRODUCTS.CANCEL' | translate }}</button>
+                   <button class="pd-danger" (click)="deleteAllProducts()" [disabled]="deletingAll()">{{ 'PRODUCTS.DELETE_ALL_BUTTON' | translate }}</button>
                  </div>
                </div>
              </div>
