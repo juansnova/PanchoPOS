@@ -10160,9 +10160,20 @@ def _close_table_session(
                 if not it.removed_by_customer and it.removed_by_user_id is None and it.status != models.OrderItemStatus.cancelled
             )
             if active_count == 0:
-                for it in all_items:
-                    session.delete(it)
-                session.delete(order)
+                # Stock movements keep a FK to the order (audit log): when any exist the
+                # order cannot be deleted, so keep it as cancelled instead.
+                has_stock_log = session.exec(
+                    select(inventory_models.InventoryTransaction.id).where(
+                        inventory_models.InventoryTransaction.order_id == order.id
+                    )
+                ).first() is not None
+                if has_stock_log:
+                    order.status = models.OrderStatus.cancelled
+                    session.add(order)
+                else:
+                    for it in all_items:
+                        session.delete(it)
+                    session.delete(order)
 
     # Clear session data, including the waiter auto-assigned on activation so the
     # next activation starts fresh (picks/assigns a waiter again from scratch)
