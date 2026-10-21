@@ -564,6 +564,33 @@ class Shift(TenantMixin, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class CashClose(TenantMixin, table=True):
+    """End-of-day cash register close: expected amounts per method vs cash actually counted."""
+
+    __tablename__ = "cash_close"
+    id: int | None = Field(default=None, primary_key=True)
+    business_date: date = Field(index=True)
+    orders_count: int = Field(default=0)
+    expected_cash_cents: int = Field(default=0)
+    expected_card_cents: int = Field(default=0)
+    expected_transfer_cents: int = Field(default=0)
+    expected_other_cents: int = Field(default=0)
+    tips_cents: int = Field(default=0)
+    opening_float_cents: int = Field(default=0)
+    counted_cash_cents: int = Field(default=0)
+    difference_cents: int = Field(default=0)
+    note: str | None = Field(default=None, max_length=500)
+    closed_by_user_id: int | None = Field(default=None, foreign_key="user.id")
+    closed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CashCloseBody(SQLModel):
+    business_date: date
+    counted_cash_cents: int = Field(ge=0, le=1_000_000_000)
+    opening_float_cents: int = Field(default=0, ge=0, le=1_000_000_000)
+    note: str | None = Field(default=None, max_length=500)
+
+
 class ShiftTemplate(TenantMixin, table=True):
     """Reusable shift (e.g. Apertura 08:00-16:00, or a split shift with a second block)."""
 

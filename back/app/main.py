@@ -48,6 +48,7 @@ from .pricing_routes import router as pricing_router
 from .product_bulk_import_routes import router as product_bulk_import_router
 from .tenant_subcategory_routes import router as tenant_subcategory_router
 from .reports_routes import router as reports_router
+from .cash_close_routes import router as cash_close_router
 from .attendance_routes import router as attendance_router
 from .tenant_lifecycle_routes import router as tenant_lifecycle_router
 from .delivery_integration_routes import (
@@ -483,6 +484,7 @@ app.include_router(
 )
 # Reports (sales / revenue analysis)
 app.include_router(reports_router, prefix="/reports", tags=["Reports"])
+app.include_router(cash_close_router, prefix="/cash-close", tags=["Cash close"])
 app.include_router(attendance_router, prefix="/reports", tags=["Reports"])
 # Owner-only data export & tenant purge (GitHub #96)
 app.include_router(tenant_lifecycle_router, prefix="/tenant", tags=["Tenant lifecycle"])
