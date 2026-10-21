@@ -1,9 +1,9 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { DomSanitizer, SafeResourceUrl, SafeStyle } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml, SafeResourceUrl, SafeStyle } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, SlicePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService, BankAccount, Product, OrderItemCreate, TableCartResponse } from '../services/api.service';
+import { ApiService, BankAccount, Product, OrderItemCreate, TableCartResponse, TenantSummary } from '../services/api.service';
 import { AudioService } from '../services/audio.service';
 import { environment } from '../../environments/environment';
 import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
@@ -204,6 +204,115 @@ export class MenuComponent implements OnInit, OnDestroy {
       .map((k) => ({ category: k as string | null, label: k ? this.getCategoryLabel(k) : '', items: byCat.get(k)! }));
   });
 
+  // ---------------------------------------------------------------- restaurant info (social, hours, address)
+  info = signal<TenantSummary | null>(null);
+
+  private hostIs(url: string | null | undefined, hosts: string[]): boolean {
+    try {
+      const h = new URL(url || '').hostname.replace(/^www\./, '').toLowerCase();
+      return hosts.some((x) => h === x || h.endsWith('.' + x));
+    } catch {
+      return false;
+    }
+  }
+
+  /** Social / web links that really point where they claim to (a Maps link in the Instagram field is skipped). */
+  socials = computed(() => {
+    const t = this.info();
+    const out: { key: string; url: string; label: string; icon: SafeHtml }[] = [];
+    if (!t) return out;
+    if (this.hostIs(t.public_instagram_url, ['instagram.com']))
+      out.push({ key: 'instagram', url: t.public_instagram_url!, label: 'Instagram', icon: this.sanitizer.bypassSecurityTrustHtml('<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.8" fill="currentColor"/>') });
+    if (this.hostIs(t.public_facebook_url, ['facebook.com', 'fb.com', 'fb.me']))
+      out.push({ key: 'facebook', url: t.public_facebook_url!, label: 'Facebook', icon: this.sanitizer.bypassSecurityTrustHtml('<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>') });
+    if (t.website && /^https?:\/\//i.test(t.website))
+      out.push({ key: 'web', url: t.website, label: 'Web', icon: this.sanitizer.bypassSecurityTrustHtml('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>') });
+    if (t.email && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t.email))
+      out.push({ key: 'email', url: 'mailto:' + t.email, label: 'Email', icon: this.sanitizer.bypassSecurityTrustHtml('<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/>') });
+    return out;
+  });
+
+  mapsUrl = computed(() => {
+    const t = this.info();
+    return t?.public_google_maps_url?.trim() || t?.public_openstreetmap_url?.trim() || null;
+  });
+
+  private static readonly DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+  private fmtTime(hhmm: string): string {
+    const m = /^(\d{1,2}):(\d{2})/.exec(hhmm || '');
+    if (!m) return hhmm || '';
+    return new Date(2000, 0, 1, +m[1], +m[2]).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+
+  /** Opening ranges of a day as "open–close" strings ([] = closed). */
+  private dayRanges(d: Record<string, unknown> | undefined): { from: string; to: string }[] {
+    if (!d || d['closed']) return [];
+    if (d['hasBreak']) {
+      const r: { from: string; to: string }[] = [];
+      if (d['morningOpen'] && d['morningClose']) r.push({ from: String(d['morningOpen']), to: String(d['morningClose']) });
+      if (d['eveningOpen'] && d['eveningClose']) r.push({ from: String(d['eveningOpen']), to: String(d['eveningClose']) });
+      return r;
+    }
+    return d['open'] && d['close'] ? [{ from: String(d['open']), to: String(d['close']) }] : [];
+  }
+
+  private parsedHours(): Record<string, Record<string, unknown>> | null {
+    const raw = this.info()?.opening_hours;
+    if (!raw) return null;
+    try {
+      const o = JSON.parse(raw);
+      return o && typeof o === 'object' ? o : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private nowInTenant(): { dayKey: string; minutes: number } {
+    const tz = this.info()?.timezone?.trim();
+    let d = new Date();
+    if (tz) {
+      try {
+        d = new Date(d.toLocaleString('en-US', { timeZone: tz }));
+      } catch { /* keep local time */ }
+    }
+    return { dayKey: MenuComponent.DAY_KEYS[d.getDay()], minutes: d.getHours() * 60 + d.getMinutes() };
+  }
+
+  /** Week table for the "about" section; the current day is flagged. */
+  weekHours = computed(() => {
+    const hours = this.parsedHours();
+    if (!hours) return [];
+    const today = this.nowInTenant().dayKey;
+    return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((k) => {
+      const ranges = this.dayRanges(hours[k]);
+      return {
+        key: k,
+        labelKey: 'SETTINGS.DAY_' + k.toUpperCase(),
+        today: k === today,
+        closed: ranges.length === 0,
+        text: ranges.map((r) => `${this.fmtTime(r.from)} – ${this.fmtTime(r.to)}`).join('  ·  '),
+      };
+    });
+  });
+
+  /** Open / closed right now, with the next change. */
+  openStatus = computed<{ open: boolean; time: string } | null>(() => {
+    const hours = this.parsedHours();
+    if (!hours) return null;
+    const { dayKey, minutes } = this.nowInTenant();
+    const toMin = (t: string) => {
+      const m = /^(\d{1,2}):(\d{2})/.exec(t);
+      return m ? +m[1] * 60 + +m[2] : 0;
+    };
+    const ranges = this.dayRanges(hours[dayKey]);
+    for (const r of ranges) {
+      if (minutes >= toMin(r.from) && minutes < toMin(r.to)) return { open: true, time: this.fmtTime(r.to) };
+    }
+    const next = ranges.find((r) => toMin(r.from) > minutes);
+    return { open: false, time: next ? this.fmtTime(next.from) : '' };
+  });
+
   featuredProducts = computed(() => {
     return this.products()
       .filter(p => p.image_filename)
@@ -291,6 +400,12 @@ export class MenuComponent implements OnInit, OnDestroy {
         this.tenantName.set(data.tenant_name);
         this.tableName.set(data.table_name);
         this.tenantId = data.tenant_id;
+        if (data.tenant_id) {
+          this.api.getPublicTenant(data.tenant_id).subscribe({
+            next: (t) => this.info.set(t),
+            error: () => this.info.set(null),
+          });
+        }
 
         this.connectWebSocket();
 
