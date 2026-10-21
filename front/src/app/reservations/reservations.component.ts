@@ -120,11 +120,25 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
                 </div>
                 <div class="rv-badges">
                   <span class="status-badge" [class]="r.status">{{ getStatusLabel(r.status) | translate }}</span>
+                  @if (r.delay_notice && (r.status === 'booked' || r.status === 'seated')) {
+                    <span class="rv-late-badge">{{ 'RESERVATIONS.LATE_BADGE' | translate }}</span>
+                  }
                   @if (isSlotOverbooked(r)) {
                     <span class="overbooked-badge">{{ 'RESERVATIONS.OVERBOOKED' | translate }}</span>
                   }
                 </div>
               </header>
+              @if (r.delay_notice && (r.status === 'booked' || r.status === 'seated')) {
+                <div class="rv-delay" role="status">
+                  <span class="rv-delay-bell" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+                  </span>
+                  <div>
+                    <b>{{ 'RESERVATIONS.DELAY_NOTICE' | translate }}</b>
+                    <p>{{ r.delay_notice }}</p>
+                  </div>
+                </div>
+              }
               <div class="rv-body">
                 <div class="rv-line"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.9.34 1.78.65 2.62a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.46-1.27a2 2 0 012.11-.45c.84.31 1.72.53 2.62.65A2 2 0 0122 16.92z"/></svg><span>{{ r.customer_phone }}</span></div>
                 @if (r.customer_email) {
@@ -608,6 +622,15 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     .rv-tag-table { background: var(--color-primary-light); color: var(--color-primary); }
     .rv-tag-bday { background: #fdf0f6; color: #be185d; }
     .rv-tag-warn { background: #fef3c7; color: #a16207; }
+    .rv-late-badge { padding: 3px 9px; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #92400e; background: #fde68a; animation: rv-late-pulse 2s ease-in-out infinite; }
+    .rv-delay { display: flex; gap: 12px; align-items: flex-start; margin: 0 14px 6px; padding: 12px 14px; border-radius: 16px; background: linear-gradient(135deg, #fef3c7, #fde68a); color: #78350f; box-shadow: inset 0 0 0 1px rgba(180, 83, 9, .18); }
+    .rv-delay b { display: block; font-size: .66rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #92400e; }
+    .rv-delay p { margin: 2px 0 0; font-size: .92rem; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+    .rv-delay div { min-width: 0; }
+    .rv-delay-bell { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: #fff; background: #d97706; box-shadow: 0 0 0 0 rgba(217, 119, 6, .5); animation: rv-bell-ring 2s ease-out infinite; }
+    @keyframes rv-bell-ring { 0% { box-shadow: 0 0 0 0 rgba(217, 119, 6, .5); } 70%, 100% { box-shadow: 0 0 0 10px rgba(217, 119, 6, 0); } }
+    @keyframes rv-late-pulse { 50% { opacity: .7; } }
+    @media (prefers-reduced-motion: reduce) { .rv-delay-bell, .rv-late-badge { animation: none; } }
     .rv-note { padding: 8px 12px; border-radius: 12px; background: var(--color-bg); font-size: .85rem; line-height: 1.35; }
     .rv-note b { display: block; font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 1px; }
     .rv-note-warn { background: #fef3c7; color: #6f5106; border-left: 3px solid #d4a017; }

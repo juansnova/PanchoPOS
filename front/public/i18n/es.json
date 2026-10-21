@@ -1688,6 +1688,7 @@
     "ERROR_MISSING_TOKEN": "Falta el token de reservación. Usa el enlace de tu confirmación.",
     "ERROR_NOT_FOUND": "Reservación no encontrada o enlace expirado.",
     "OVERBOOKED": "Sobrereservado",
+    "LATE_BADGE": "Llega tarde",
     "SEATS_LEFT": "Asientos libres",
     "TABLES_LEFT": "Mesas libres",
     "UPCOMING_NO_TABLE": "Tienes {{count}} reserva(s) hoy sin mesa asignada.",
