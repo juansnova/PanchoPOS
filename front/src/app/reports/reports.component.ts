@@ -529,6 +529,35 @@ export class ReportsComponent implements OnInit {
   }
 
   /** `datetime-local` value in the user’s local timezone from an API ISO timestamp. */
+  /** Month shown on the Excel preview card ("octubre" / "2026"). */
+  attendanceMonthParts = computed(() => {
+    void this.reportIntlRevision();
+    const m = /^(\d{4})-(\d{2})$/.exec(this.attendanceExcelMonth());
+    if (!m) return { month: '—', year: '' };
+    const d = new Date(+m[1], +m[2] - 1, 1);
+    return {
+      month: d.toLocaleDateString(intlLocaleFromTranslate(this.translate), { month: 'long' }),
+      year: m[1],
+    };
+  });
+
+  /** Decorative mini spreadsheet (6 columns): header, then rows of name + day cells with hours tint. */
+  readonly previewCells: string[] = (() => {
+    const out: string[] = [];
+    const tints = ['', 't1', 't2', 't3'];
+    for (let c = 0; c < 6; c++) out.push(c === 0 ? 'head name' : `head${c === 5 ? ' sun' : ''}`);
+    for (let r = 0; r < 5; r++) {
+      out.push('name');
+      for (let c = 1; c < 6; c++) {
+        const t = tints[(r * 7 + c * 3 + (r % 2)) % 4];
+        out.push(`${t}${c === 5 ? ' sun' : ''}`.trim());
+      }
+    }
+    return out;
+  })();
+
+  readonly previewTabs = ['Resumen', 'Por empleado', 'Calendario', 'Sesiones', 'Semanas', 'Alertas'];
+
   hueOf(name: string): number {
     let hash = 0;
     for (const ch of name || '?') hash = (hash * 31 + ch.charCodeAt(0)) % 360;

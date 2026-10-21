@@ -389,22 +389,26 @@
 
     @if (canViewAttendance()) {
       <section class="report-section att-sec att-excel" data-testid="reports-attendance-excel">
-        <div class="att-head">
-          <span class="att-badge att-badge-green" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="m9.5 12.5 4 5m0-5-4 5" /></svg>
-          </span>
-          <div class="att-head-text">
+        <div class="xl-grid">
+          <aside class="xl-sheet" aria-hidden="true">
+            <div class="xl-sheet-top">
+              <b>{{ attendanceMonthParts().month }}</b>
+              <i>{{ attendanceMonthParts().year }}</i>
+            </div>
+            <div class="xl-cells">
+              @for (c of previewCells; track $index) {
+                <span [class]="'xl-c ' + c"></span>
+              }
+            </div>
+            <div class="xl-tabs">
+              @for (t of previewTabs; track t; let i = $index) {
+                <span [class.on]="i === 0">{{ t }}</span>
+              }
+            </div>
+          </aside>
+          <div class="xl-side">
             <h2>{{ 'REPORTS.ATTENDANCE_EXCEL_TITLE' | translate }}</h2>
             <p class="muted">{{ 'REPORTS.ATTENDANCE_EXCEL_HINT' | translate }}</p>
-          </div>
-        </div>
-        <div class="att-chips" aria-hidden="true">
-          <span>☀️ {{ 'REPORTS.ATT_CHIP_DAY_NIGHT' | translate }}</span>
-          <span>🎉 {{ 'REPORTS.ATT_CHIP_HOLIDAYS' | translate }}</span>
-          <span>⏱️ {{ 'REPORTS.ATT_CHIP_OVERTIME' | translate }}</span>
-          <span>📅 {{ 'REPORTS.ATT_CHIP_CALENDAR' | translate }}</span>
-          <span>🚨 {{ 'REPORTS.ATT_CHIP_ALERTS' | translate }}</span>
-        </div>
         <div class="attendance-excel-toolbar">
           <div class="attendance-excel-month">
             <label>{{ 'REPORTS.ATTENDANCE_EXCEL_MONTH' | translate }}</label>
@@ -509,6 +513,8 @@
         @if (attendanceExcelError()) {
           <div class="error-banner">{{ attendanceExcelError() }}</div>
         }
+          </div>
+        </div>
       </section>
     }
 
@@ -530,7 +536,7 @@
           <div class="error-banner">{{ workSessionsLiveError() }}</div>
         } @else if (workSessionsLive().length === 0) {
           <div class="att-empty">
-            <span aria-hidden="true">😴</span>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5" /></svg>
             <p>{{ 'REPORTS.WORK_SESSIONS_LIVE_EMPTY' | translate }}</p>
           </div>
         } @else {
@@ -573,7 +579,7 @@
           <div class="error-banner">{{ workSessionsError() }}</div>
         } @else if (workSessions().length === 0) {
           <div class="att-empty">
-            <span aria-hidden="true">🗓️</span>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
             <p>{{ 'REPORTS.WORK_SESSIONS_EMPTY' | translate }}</p>
           </div>
         } @else {
