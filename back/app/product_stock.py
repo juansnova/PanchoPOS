@@ -17,3 +17,36 @@ def product_stock_alert_payload(product: models.Product | None) -> dict:
         "stock_qty": int(product.stock_qty or 0),
         "stock_alert_level": int(product.stock_alert_level or 0),
     }
+
+
+def products_blocked_by_recipe(session, tenant_id: int) -> set[int]:
+    """Product ids that cannot be sold now: some recipe ingredient has less stock than one portion needs.
+
+    Products without a recipe are never blocked (stock is not tracked for them).
+    """
+    from decimal import Decimal
+
+    from sqlmodel import select
+
+    from .inventory_models import InventoryItem, ProductRecipe
+    from .inventory_service import convert_to_base_unit
+
+    rows = session.exec(
+        select(ProductRecipe, InventoryItem)
+        .join(InventoryItem, InventoryItem.id == ProductRecipe.inventory_item_id)
+        .where(ProductRecipe.tenant_id == tenant_id)
+        .where(InventoryItem.is_deleted == False)  # noqa: E712
+    ).all()
+    blocked: set[int] = set()
+    for recipe, item in rows:
+        if recipe.product_id in blocked:
+            continue
+        try:
+            per_portion = convert_to_base_unit(recipe.quantity_required, recipe.unit, item)
+        except Exception:
+            continue
+        waste = Decimal(recipe.waste_percentage or 0) / Decimal(100)
+        needed = per_portion * (Decimal(1) + waste)
+        if Decimal(item.current_quantity or 0) < needed:
+            blocked.add(recipe.product_id)
+    return blocked

@@ -102,6 +102,34 @@ class TestPublicTenantMenu(PgClientTestCase):
         names = {p["name"] for c in data["categories"] for p in c["products"]}
         self.assertEqual(names, {"Visible"})
 
+    def test_product_hidden_when_recipe_ingredient_runs_out(self):
+        from decimal import Decimal
+
+        from app.inventory_models import InventoryItem, ProductRecipe, UnitOfMeasure
+
+        ok = models.Product(tenant_id=self.tenant.id, name="Con stock", price_cents=100, category="Principales")
+        out = models.Product(tenant_id=self.tenant.id, name="Sin ingrediente", price_cents=100, category="Principales")
+        free = models.Product(tenant_id=self.tenant.id, name="Sin receta", price_cents=100, category="Principales")
+        self.session.add_all([ok, out, free])
+        flour = InventoryItem(tenant_id=self.tenant.id, sku="F-1", name="Harina", unit=UnitOfMeasure.kilogram, current_quantity=Decimal("5"))
+        egg = InventoryItem(tenant_id=self.tenant.id, sku="H-1", name="Huevo", unit=UnitOfMeasure.piece, current_quantity=Decimal("0"))
+        self.session.add_all([flour, egg])
+        self.session.commit()
+        for prod, item, qty, unit in ((ok, flour, "0.2", UnitOfMeasure.kilogram), (out, egg, "1", UnitOfMeasure.piece)):
+            self.session.add(
+                ProductRecipe(
+                    tenant_id=self.tenant.id,
+                    product_id=prod.id,
+                    inventory_item_id=item.id,
+                    quantity_required=Decimal(qty),
+                    unit=unit,
+                )
+            )
+        self.session.commit()
+        data = self.client.get(f"/public/tenants/{self.tenant.id}/menu").json()
+        names = {p["name"] for c in data["categories"] for p in c["products"]}
+        self.assertEqual(names, {"Con stock", "Sin receta"})
+
     def test_lang_query_es_formats_price_with_comma(self):
         self.session.add(
             models.Product(

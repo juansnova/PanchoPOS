@@ -10593,13 +10593,18 @@ def get_menu(
         if available_until is not None and available_until < today:
             return False
         return True
+    from .product_stock import products_blocked_by_recipe
+
+    recipe_blocked = products_blocked_by_recipe(session, table.tenant_id)
     tenant_products = [
         tp for tp in tenant_products
-        if not tp.out_of_stock and _is_available(tp.available_from, tp.available_until)
+        if not tp.out_of_stock
+        and tp.product_id not in recipe_blocked
+        and _is_available(tp.available_from, tp.available_until)
     ]
     legacy_products = [
         p for p in legacy_products
-        if not p.out_of_stock and _is_available(p.available_from, p.available_until)
+        if not p.out_of_stock and p.id not in recipe_blocked and _is_available(p.available_from, p.available_until)
     ]
 
     linked_legacy_product_ids = {
