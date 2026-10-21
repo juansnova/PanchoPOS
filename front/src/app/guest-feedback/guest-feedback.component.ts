@@ -50,6 +50,40 @@ export class GuestFeedbackComponent implements OnInit {
     return s.by_day.slice(-14);
   });
 
+  /** Star filter (0 = all) and "only with comment" switch for the list. */
+  ratingFilter = signal(0);
+  onlyComments = signal(false);
+
+  filteredItems = computed(() => {
+    const rating = this.ratingFilter();
+    const onlyC = this.onlyComments();
+    return this.items().filter((f) => (rating === 0 || f.rating === rating) && (!onlyC || !!f.comment?.trim()));
+  });
+
+  /** Share of 4-5 star ratings in the lookback window, 0-100. */
+  satisfiedPct = computed(() => {
+    const s = this.summary();
+    if (!s || !s.total_count) return 0;
+    const good = (s.rating_counts['5'] || 0) + (s.rating_counts['4'] || 0);
+    return Math.round((good / s.total_count) * 100);
+  });
+
+  countByRating(stars: number): number {
+    return this.items().filter((f) => f.rating === stars).length;
+  }
+
+  /** Colour tone for a rating: good (4-5), mid (3), low (1-2). */
+  toneFor(stars: number): 'good' | 'mid' | 'low' {
+    return stars >= 4 ? 'good' : stars === 3 ? 'mid' : 'low';
+  }
+
+  dateLabel(iso: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso.endsWith('Z') || iso.includes('+') ? iso : iso + 'Z');
+    if (Number.isNaN(d.getTime())) return iso.slice(0, 16);
+    return d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
   ngOnInit() {
     this.load();
   }
