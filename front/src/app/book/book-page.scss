@@ -150,7 +150,8 @@ $muted: #78716c;
   border-radius: 30px;
   background: #fff;
   box-shadow: 0 40px 70px -40px rgba(60, 30, 10, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.05);
-  animation: bk-in 0.6s 0.08s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  // Opacity only: a transform here would become the containing block of the fixed select panel.
+  animation: bk-fade 0.6s 0.08s ease both;
 }
 
 .bk-ticket-top {
@@ -543,6 +544,7 @@ $muted: #78716c;
   i { display: block; height: 460px; border-radius: 30px; background: linear-gradient(90deg, #f1ebe2 25%, #f8f3ea 50%, #f1ebe2 75%); background-size: 200% 100%; animation: bk-shimmer 1.4s linear infinite; }
 }
 
+@keyframes bk-fade { from { opacity: 0; } }
 @keyframes bk-in { from { opacity: 0; transform: translateY(14px); } }
 @keyframes bk-shake { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
 @keyframes bk-rot { to { transform: rotate(360deg); } }

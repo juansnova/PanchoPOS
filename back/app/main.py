@@ -8924,6 +8924,7 @@ def _send_reservation_confirmation_background(tenant_id: int, reservation_id: in
 @limiter.limit("30/hour")
 def create_reservation(
     request: Request,
+    response: Response,
     body: models.ReservationCreate,
     current_user: Annotated[models.User | None, Depends(security.get_current_user_optional)],
     background_tasks: BackgroundTasks,
