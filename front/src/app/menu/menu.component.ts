@@ -184,6 +184,26 @@ export class MenuComponent implements OnInit, OnDestroy {
   });
 
   // Featured products (first 5 with images, for now)
+  /**
+   * "Todos" shows the menu grouped by category (same order as the chips); a single
+   * category shows one group without a header.
+   */
+  productGroups = computed(() => {
+    const list = this.filteredProducts();
+    if (this.selectedCategory() !== null) {
+      return [{ category: null as string | null, label: '', items: list }];
+    }
+    const byCat = new Map<string, Product[]>();
+    for (const p of list) {
+      const key = p.category || '';
+      byCat.set(key, [...(byCat.get(key) ?? []), p]);
+    }
+    const order = [...this.availableCategories(), ...[...byCat.keys()].filter((k) => !this.availableCategories().includes(k))];
+    return order
+      .filter((k) => byCat.has(k))
+      .map((k) => ({ category: k as string | null, label: k ? this.getCategoryLabel(k) : '', items: byCat.get(k)! }));
+  });
+
   featuredProducts = computed(() => {
     return this.products()
       .filter(p => p.image_filename)
