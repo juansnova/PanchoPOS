@@ -60,43 +60,52 @@
         <h2>{{ 'REPORTS.SUMMARY' | translate }}</h2>
         <div class="summary-cards">
           <div class="summary-card revenue">
+            <span class="sc-ico" aria-hidden="true">💰</span>
             <span class="card-label">{{ 'REPORTS.TOTAL_REVENUE' | translate }}</span>
             <span class="card-value">{{ formatCurrency(r.summary.total_revenue_cents) }}</span>
           </div>
           <div class="summary-card tips" data-testid="reports-summary-tips">
+            <span class="sc-ico" aria-hidden="true">💝</span>
             <span class="card-label">{{ 'REPORTS.TOTAL_TIPS' | translate }}</span>
             <span class="card-value">{{ formatCurrency(r.summary.total_tips_cents ?? 0) }}</span>
           </div>
           @if ((r.summary.total_cost_cents ?? 0) > 0 || (r.summary.total_profit_cents ?? 0) !== 0) {
             <div class="summary-card cost">
+            <span class="sc-ico" aria-hidden="true">🧾</span>
               <span class="card-label">{{ 'REPORTS.TOTAL_COST' | translate }}</span>
               <span class="card-value">{{ formatCurrency(r.summary.total_cost_cents ?? 0) }}</span>
             </div>
             <div class="summary-card profit">
+            <span class="sc-ico" aria-hidden="true">📈</span>
               <span class="card-label">{{ 'REPORTS.TOTAL_PROFIT' | translate }}</span>
               <span class="card-value">{{ formatCurrency(r.summary.total_profit_cents ?? 0) }}</span>
             </div>
           }
           <div class="summary-card orders">
+            <span class="sc-ico" aria-hidden="true">🛎️</span>
             <span class="card-label">{{ 'REPORTS.TOTAL_ORDERS' | translate }}</span>
             <span class="card-value">{{ r.summary.total_orders }}</span>
           </div>
           <div class="summary-card avg-payment">
+            <span class="sc-ico" aria-hidden="true">👥</span>
             <span class="card-label">{{ 'REPORTS.AVG_PAYMENT_PER_CLIENT' | translate }}</span>
             <span class="card-value">{{ formatCurrency(r.summary.average_revenue_per_order_cents) }}</span>
           </div>
           @if (r.reservations) {
             <div class="summary-card reservations">
+            <span class="sc-ico" aria-hidden="true">📅</span>
               <span class="card-label">{{ 'REPORTS.RESERVATIONS_TOTAL' | translate }}</span>
               <span class="card-value">{{ r.reservations.total }}</span>
             </div>
             <div class="summary-card reservations">
+            <span class="sc-ico" aria-hidden="true">📅</span>
               <span class="card-label">{{ 'REPORTS.RESERVATIONS_ACTIVE' | translate }}</span>
               <span class="card-value">{{ r.reservations.active_count }}</span>
             </div>
           }
           @if ((r.reservations?.overbooking_slots_count ?? 0) > 0) {
             <div class="summary-card overbooking">
+            <span class="sc-ico" aria-hidden="true">⚠️</span>
               <span class="card-label">{{ 'REPORTS.OVERBOOKING_SLOTS' | translate }}</span>
               <span class="card-value">{{ r.reservations?.overbooking_slots_count }}</span>
             </div>
@@ -125,7 +134,7 @@
               <svg class="revenue-graph" [attr.viewBox]="'0 0 ' + chartWidth + ' ' + chartHeight" preserveAspectRatio="xMidYMid meet">
                 <defs>
                   <linearGradient id="revenueAreaGrad" x1="0" y1="1" x2="0" y2="0">
-                    <stop offset="0%" stop-color="var(--color-primary, #0d9488)" stop-opacity="0.2"/>
+                    <stop offset="0%" stop-color="var(--color-primary, #0d9488)" stop-opacity="0.45"/>
                     <stop offset="100%" stop-color="var(--color-primary, #0d9488)" stop-opacity="0.02"/>
                   </linearGradient>
                 </defs>
@@ -180,7 +189,7 @@
             <ol>
               @for (p of rankedProducts().top; track trackByProductRow(p); let i = $index) {
                 <li>
-                  <span class="rk-pos">{{ i + 1 }}</span>
+                  <span class="rk-pos" [attr.data-i]="i">{{ i + 1 }}</span>
                   <div class="rk-body">
                     <b>{{ p.product_name }}</b>
                     <div class="rk-bar"><div [style.width.%]="(p.quantity / rankedProducts().topMax) * 100"></div></div>
@@ -210,7 +219,7 @@
       }
 
       <!-- By product -->
-      <section class="report-section" data-testid="reports-by-product">
+      <section class="report-section sec-product" data-testid="reports-by-product">
         <h2>{{ 'REPORTS.BY_PRODUCT' | translate }}</h2>
         <div class="data-table-wrap">
           <table class="data-table">
@@ -250,7 +259,7 @@
       </section>
 
       <!-- By category -->
-      <section class="report-section">
+      <section class="report-section sec-category">
         <h2>{{ 'REPORTS.BY_CATEGORY' | translate }}</h2>
         <div class="data-table-wrap">
           <table class="data-table">
@@ -290,7 +299,7 @@
       </section>
 
       <!-- By table -->
-      <section class="report-section">
+      <section class="report-section sec-table">
         <h2>{{ 'REPORTS.BY_TABLE' | translate }}</h2>
         <div class="data-table-wrap">
           <table class="data-table">
@@ -330,7 +339,7 @@
       </section>
 
       <!-- By waiter -->
-      <section class="report-section">
+      <section class="report-section sec-waiter">
         <h2>{{ 'REPORTS.BY_WAITER' | translate }}</h2>
         <div class="data-table-wrap">
           <table class="data-table">
