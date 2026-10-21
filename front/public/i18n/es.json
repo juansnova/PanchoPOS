@@ -2326,6 +2326,11 @@
     },
     "REPORTS": {
       "TITLE": "Informes de Inventario",
+      "TOP_VALUE": "Lo que más dinero tiene",
+      "FILTER_ALL": "Todos",
+      "FILTER_IN": "Entradas",
+      "FILTER_OUT": "Salidas",
+      "FILTER_WASTE": "Mermas",
       "REFRESH": "Recargar",
       "FIFO_VALUATION": "Valoración FIFO de Inventario",
       "AS_OF": "A fecha de",
