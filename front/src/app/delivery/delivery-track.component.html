@@ -82,7 +82,11 @@
 
     @if (s.status === 'delivered') {
       <section class="rate-card" aria-label="{{ 'DELIVERY_TRACK.RATE_TITLE' | translate }}">
-        <div class="rate-card-icon">🎉</div>
+        <div class="rate-card-icon" aria-hidden="true">
+          <span class="rate-ring"></span>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <p class="rate-eyebrow"><i></i>{{ 'DELIVERY_TRACK.STATUS_DELIVERED' | translate }}<i></i></p>
         <h2 class="rate-card-title">{{ 'DELIVERY_TRACK.RATE_TITLE' | translate }}</h2>
         <p class="rate-card-subtitle">{{ 'DELIVERY_TRACK.RATE_SUBTITLE' | translate }}</p>
         <div class="rate-card-stars" role="group" aria-label="{{ 'DELIVERY_TRACK.RATE_TITLE' | translate }}">

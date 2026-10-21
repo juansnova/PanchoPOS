@@ -218,3 +218,32 @@
 .trk-actions .btn { min-width: 0; padding: 0 12px; font-size: 0.88rem; white-space: nowrap; }
 
 .oi-thumb { overflow: hidden; img { width: 100%; height: 100%; object-fit: cover; } }
+
+// Rating card v2: ticket with a seal, serif title, interactive stars
+.rate-card {
+  position: relative;
+  gap: 0;
+  padding: 28px 22px 22px;
+  margin: 0;
+  border: 0;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 24px 44px -28px rgba(23, 18, 16, 0.5), 0 0 0 1px color-mix(in srgb, var(--color-primary) 14%, transparent);
+  overflow: hidden;
+}
+.rate-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 110px; background: radial-gradient(120% 100% at 50% 0, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 70%); pointer-events: none; }
+.rate-card-icon { position: relative; display: grid; place-items: center; width: 68px; height: 68px; margin-bottom: 14px; border-radius: 24px; font-size: 0; color: #fff; background: linear-gradient(145deg, #22c55e, #15803d); box-shadow: 0 18px 26px -14px #16a34a, inset 0 1px 0 rgba(255, 255, 255, 0.35); transform: rotate(-4deg); }
+.rate-ring { position: absolute; inset: -8px; border-radius: 30px; border: 1.5px dashed rgba(22, 163, 74, 0.45); }
+.rate-card-icon svg { position: relative; }
+.rate-eyebrow { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #15803d; i { width: 18px; height: 1.5px; background: currentColor; } }
+.rate-card-title { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 2rem; letter-spacing: -0.02em; line-height: 1.1; color: var(--color-text); }
+.rate-card-subtitle { max-width: 30ch; margin: 8px 0 4px; font-size: 0.92rem; line-height: 1.45; color: var(--color-text-muted); }
+.rate-card-stars { gap: 6px; margin: 16px 0 6px; padding: 8px 14px; border-radius: 999px; background: color-mix(in srgb, var(--color-primary) 5%, #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 14%, transparent); }
+.rate-star { font-size: 2.1rem; color: #f1c27a; text-shadow: none; transition: transform 0.15s, color 0.15s, filter 0.15s; }
+.rate-card-stars:hover .rate-star { color: #f59e0b; }
+.rate-card-stars .rate-star:hover ~ .rate-star { color: #ead9bf; }
+.rate-star:hover, .rate-star:focus-visible { transform: scale(1.18) rotate(-4deg); filter: drop-shadow(0 6px 8px rgba(245, 158, 11, 0.5)); }
+.btn-google-rate { margin-top: 14px; padding: 0 20px 0 8px; min-height: 52px; gap: 12px; font-size: 0.95rem; font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--color-border), 0 14px 22px -16px rgba(23, 18, 16, 0.5); border: 0; }
+.btn-google-rate:hover { box-shadow: inset 0 0 0 1.5px var(--color-primary), 0 16px 24px -14px rgba(23, 18, 16, 0.55); }
+.google-g { width: 36px; height: 36px; font-size: 1.05rem; box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px #eee; }
+.rate-card-hint { margin: 12px 0 0; font-size: 0.78rem; color: var(--color-text-muted); opacity: 1; }
