@@ -96,13 +96,23 @@
       }
     </header>
     <main class="book-content">
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="fb-gold" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffe27a" />
+            <stop offset="55%" stop-color="#f5b301" />
+            <stop offset="100%" stop-color="#d98e04" />
+          </linearGradient>
+        </defs>
+      </svg>
       <div class="book-card book-success-card fb-card fb-thanks">
         <div class="fb-thanks-badge" aria-hidden="true">
           <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
         </div>
+        <div class="fb-sparkles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <div class="fb-thanks-stars" aria-hidden="true">
           @for (s of stars; track s) {
-            <i [class.on]="rating() >= s">★</i>
+            <i [class.on]="rating() >= s"><svg class="fb-star-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2l2.9 6.1 6.7.9-4.9 4.6 1.2 6.6L12 17.2 6.1 20.4l1.2-6.6L2.4 9.2l6.7-.9z" fill="url(#fb-gold)" stroke="#b8860b" stroke-width=".6" stroke-linejoin="round"/></svg></i>
           }
         </div>
         <h2 class="success-title">{{ 'FEEDBACK.THANK_YOU' | translate }}</h2>
@@ -185,7 +195,21 @@
         }
       </div>
     </header>
-    <main class="book-content">
+    <main class="book-content fb-main">
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="fb-gold" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffe27a" />
+            <stop offset="55%" stop-color="#f5b301" />
+            <stop offset="100%" stop-color="#d98e04" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="fb-headline">
+        <span class="fb-orn" aria-hidden="true"><i></i><b>✦</b><i></i></span>
+        <h2>{{ 'FEEDBACK.TITLE' | translate }}</h2>
+        <span class="fb-orn" aria-hidden="true"><i></i><b>✦</b><i></i></span>
+      </div>
       <div class="book-card fb-card">
         <div class="book-form">
           <p class="feedback-intro fb-intro">{{ 'FEEDBACK.INTRO' | translate }}</p>
@@ -211,18 +235,23 @@
                   [attr.aria-pressed]="rating() >= s"
                   [attr.aria-label]="s + ' / 5'"
                 >
-                  ★
+                  <svg class="fb-star-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2l2.9 6.1 6.7.9-4.9 4.6 1.2 6.6L12 17.2 6.1 20.4l1.2-6.6L2.4 9.2l6.7-.9z" fill="url(#fb-gold)" stroke="#b8860b" stroke-width=".6" stroke-linejoin="round"/></svg>
                 </button>
               }
             </div>
-            <p class="fb-mood" [attr.data-tone]="moodTone()" aria-live="polite">
-              @if (shownRating() > 0) {
-                {{ ('FEEDBACK.MOOD_' + shownRating()) | translate }}
-              } @else {
-                {{ 'FEEDBACK.MOOD_NONE' | translate }}
-              }
-            </p>
+            <div class="fb-mood-wrap" [attr.data-tone]="moodTone()" aria-live="polite">
+              <span class="fb-face" [attr.data-r]="shownRating()" aria-hidden="true">{{ moodFace() }}</span>
+              <p class="fb-mood" [attr.data-tone]="moodTone()">
+                @if (shownRating() > 0) {
+                  {{ ('FEEDBACK.MOOD_' + shownRating()) | translate }}
+                } @else {
+                  {{ 'FEEDBACK.MOOD_NONE' | translate }}
+                }
+              </p>
+            </div>
           </div>
+
+          <div class="fb-divider" aria-hidden="true"><i></i><b>✦</b><i></i></div>
 
           <div class="form-group fb-comment">
             <label for="fb-comment">{{ 'FEEDBACK.COMMENT_LABEL' | translate }}</label>
@@ -268,7 +297,8 @@
             [disabled]="!canSubmit() || !optionalContactOk() || submitting()"
             (click)="submit()"
           >
-            {{ submitting() ? ('FEEDBACK.SENDING' | translate) : ('FEEDBACK.SUBMIT' | translate) }}
+            <span>{{ submitting() ? ('FEEDBACK.SENDING' | translate) : ('FEEDBACK.SUBMIT' | translate) }}</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
         </div>
       </div>

@@ -67,6 +67,7 @@ export class FeedbackPublicComponent implements OnInit, OnDestroy {
   hoverRating = signal(0);
   /** Stars shown as filled: the preview while hovering, otherwise the chosen rating. */
   shownRating = computed(() => this.hoverRating() || this.rating());
+  moodFace = computed(() => ['', '😞', '😕', '😐', '🙂', '🤩'][this.shownRating()] || '🍽️');
   moodTone = computed(() => {
     const r = this.shownRating();
     return r >= 4 ? 'good' : r === 3 ? 'mid' : r >= 1 ? 'low' : 'none';
