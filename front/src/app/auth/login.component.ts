@@ -311,15 +311,16 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
 
     /* the restaurant's own logo on a white plaque */
     .lg-plaque {
-      display: grid;
-      place-items: center;
-      height: 92px;
-      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 14px 24px;
       border-radius: 24px;
       background: #fff;
       box-shadow: 0 22px 36px -18px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(0, 0, 0, 0.04);
     }
-    .lg-plaque img { display: block; height: 100%; width: auto; max-width: 190px; object-fit: contain; }
+    .lg-plaque img { display: block; height: 66px; width: auto; max-width: 170px; object-fit: contain; }
     .lg-logo-mono { font-family: Georgia, 'Times New Roman', serif; font-size: 2rem; font-style: italic; color: var(--color-primary); }
 
     .lg-kicker { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); }
