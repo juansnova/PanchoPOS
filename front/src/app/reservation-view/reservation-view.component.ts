@@ -35,6 +35,8 @@ export class ReservationViewComponent implements OnInit {
   updatingDelay = signal(false);
   delaySuccess = signal(false);
   delayRateLimited = signal(false);
+  delayEmpty = signal(false);
+  delayFailed = signal(false);
 
   googleMapsUrl = computed(() => this.tenant()?.public_google_maps_url?.trim() || null);
   openstreetmapUrl = computed(() => this.tenant()?.public_openstreetmap_url?.trim() || null);
@@ -166,9 +168,15 @@ export class ReservationViewComponent implements OnInit {
     const r = this.reservation();
     const token = this.route.snapshot.queryParamMap.get('token');
     if (!r || !token) return;
+    if (!this.delayNotice.trim()) {
+      this.delayEmpty.set(true);
+      return;
+    }
     this.updatingDelay.set(true);
     this.delaySuccess.set(false);
     this.delayRateLimited.set(false);
+    this.delayEmpty.set(false);
+    this.delayFailed.set(false);
     this.api.updateReservationPublic(r.id, token, { delay_notice: this.delayNotice.trim() || null }).subscribe({
       next: (updated) => {
         this.reservation.set(updated);
@@ -180,6 +188,8 @@ export class ReservationViewComponent implements OnInit {
         this.updatingDelay.set(false);
         if (e?.status === 429) {
           this.delayRateLimited.set(true);
+        } else {
+          this.delayFailed.set(true);
         }
       },
     });

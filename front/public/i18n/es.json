@@ -1429,7 +1429,9 @@
     "WHEN_TODAY": "Es hoy",
     "WHEN_TOMORROW": "Es mañana",
     "WHEN_IN": "Faltan {{n}} días",
-    "BOOK_AGAIN": "Reservar otra mesa"
+    "BOOK_AGAIN": "Reservar otra mesa",
+    "DELAY_EMPTY": "Escribe un mensaje primero, por ejemplo: llegaremos 15 minutos tarde.",
+    "DELAY_FAILED": "No se pudo enviar el aviso. Inténtalo de nuevo."
   },
   "BOOK": {
     "EYEBROW": "Reservas",

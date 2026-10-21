@@ -175,13 +175,19 @@
           <div class="rv-actions">
             <label for="delay-notice">{{ 'RESERVATIONS.NOTIFY_DELAY' | translate }}</label>
             <div class="rv-delay-row">
-              <input id="delay-notice" type="text" [(ngModel)]="delayNotice" name="delayNotice" maxlength="500" [placeholder]="'RESERVATIONS.NOTIFY_DELAY_PLACEHOLDER' | translate" />
+              <input id="delay-notice" type="text" [(ngModel)]="delayNotice" name="delayNotice" maxlength="500" (ngModelChange)="delayEmpty.set(false)" [placeholder]="'RESERVATIONS.NOTIFY_DELAY_PLACEHOLDER' | translate" />
               <button type="button" class="rv-send" [disabled]="updatingDelay()" (click)="submitDelayNotice()">
                 {{ updatingDelay() ? ('RESERVATIONS.SENDING' | translate) : ('RESERVATIONS.SEND_DELAY' | translate) }}
               </button>
             </div>
             @if (delaySuccess()) {
               <p class="rv-ok">{{ 'RESERVATIONS.DELAY_SENT' | translate }}</p>
+            }
+            @if (delayEmpty()) {
+              <p class="rv-warn">{{ 'RES_VIEW.DELAY_EMPTY' | translate }}</p>
+            }
+            @if (delayFailed()) {
+              <p class="rv-warn">{{ 'RES_VIEW.DELAY_FAILED' | translate }}</p>
             }
             @if (delayRateLimited()) {
               <p class="rv-warn">{{ 'RESERVATIONS.DELAY_RATE_LIMITED' | translate }}</p>
