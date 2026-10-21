@@ -68,6 +68,16 @@ def live_credentials_ready() -> bool:
     return bool(_client_id() and _client_secret() and _username() and _password())
 
 
+def provider_status() -> dict[str, Any]:
+    """Read-only summary for the Settings screen. Never includes credential values."""
+    name = dian_provider_name()
+    return {
+        "provider": name,
+        "credentials_ready": live_credentials_ready(),
+        "live_unlocked": bool(getattr(settings, "dian_live_unlock", False)) and live_credentials_ready(),
+    }
+
+
 def submit_dian_invoice(
     payload: dict[str, Any],
     tenant: models.Tenant,

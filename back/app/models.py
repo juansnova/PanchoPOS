@@ -249,8 +249,12 @@ class Tenant(SQLModel, table=True):
     # Colombia DIAN electronic invoicing via certified provider (see docs/0078-dian-invoicing.md)
     dian_mode: str = Field(default="off", max_length=16)  # off | test | live
     dian_invoice_next_number: int = Field(default=1)
-    dian_tax_regime: str | None = Field(default=None, max_length=32)  # responsable_iva | regimen_simple
-    dian_client_id: str | None = Field(default=None, max_length=128)  # Provider-side tenant/client identifier
+    # no_responsable_iva | responsable_iva | regimen_simple
+    dian_tax_regime: str | None = Field(default=None, max_length=32)
+    # Factus numbering range (resolución DIAN) to invoice with; null = provider default range
+    dian_numbering_range_id: int | None = Field(default=None)
+    # Ask the provider to email the invoice to the customer when an email is known
+    dian_send_email: bool = Field(default=True)
 
     users: list["User"] = Relationship(back_populates="tenant")
 
@@ -1522,7 +1526,8 @@ class TenantUpdate(SQLModel):
     # Colombia DIAN electronic invoicing (certified provider)
     dian_mode: str | None = Field(default=None, max_length=16)
     dian_tax_regime: str | None = Field(default=None, max_length=32)
-    dian_client_id: str | None = Field(default=None, max_length=128)
+    dian_numbering_range_id: int | None = None
+    dian_send_email: bool | None = None
 
 
 class TenantProductCreate(SQLModel):

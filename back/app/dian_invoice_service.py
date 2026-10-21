@@ -98,6 +98,8 @@ def build_issue_payload(
         "tenant_id": tenant.id,
         "tenant_tax_id": tenant.tax_id,
         "tenant_tax_regime": tenant.dian_tax_regime,
+        "numbering_range_id": tenant.dian_numbering_range_id,
+        "send_email": bool(tenant.dian_send_email),
         "amount_cents": amount_cents,
         "items": items,
         "customer": customer,

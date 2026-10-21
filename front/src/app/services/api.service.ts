@@ -1379,8 +1379,13 @@ export interface TenantSettings {
   ui_modules?: Partial<Record<TenantUiModuleKey, boolean>> | null;
   /** Colombia DIAN electronic invoicing (certified provider, e.g. Factus): off | test | live */
   dian_mode?: 'off' | 'test' | 'live' | string | null;
-  dian_tax_regime?: 'responsable_iva' | 'regimen_simple' | string | null;
-  dian_client_id?: string | null;
+  dian_tax_regime?: 'no_responsable_iva' | 'responsable_iva' | 'regimen_simple' | string | null;
+  /** Factus numbering range (resolución DIAN) to invoice with; null = provider default. */
+  dian_numbering_range_id?: number | null;
+  /** Ask the provider to email the invoice to the customer. */
+  dian_send_email?: boolean | null;
+  /** Read-only (GET): provider readiness on the server; never carries credentials. */
+  dian_status?: { provider: string; credentials_ready: boolean; live_unlocked: boolean } | null;
 }
 
 export interface OrderItemCreate {

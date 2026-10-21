@@ -64,6 +64,7 @@ from .clock_qr_util import (
     generate_clock_qr_token,
     hash_clock_qr_token,
 )
+from .dian_providers import provider_status as dian_provider_status
 from .dian_invoice_service import (
     assert_dian_mode_allowed,
     cancel_dian_invoice,
@@ -2968,6 +2969,7 @@ def get_tenant_settings(
     tenant_dict["currency_code"] = "COP"
     tenant_dict["currency"] = "$"
     tenant_dict["ui_modules"] = resolve_tenant_ui_modules(tenant.ui_modules)
+    tenant_dict["dian_status"] = dian_provider_status()
 
     tenant_dict.pop("clock_qr_token_hash", None)
     tenant_dict.pop("clock_qr_token_encrypted", None)
@@ -3155,22 +3157,22 @@ def update_tenant_settings(
             if isinstance(tenant_update.dian_tax_regime, str)
             else ""
         )
-        if dr in ("responsable_iva", "regimen_simple"):
+        if dr in ("no_responsable_iva", "responsable_iva", "regimen_simple"):
             tenant.dian_tax_regime = dr
         elif dr == "":
             tenant.dian_tax_regime = None
         else:
             raise HTTPException(
                 status_code=400,
-                detail="dian_tax_regime must be responsable_iva or regimen_simple",
+                detail="dian_tax_regime must be no_responsable_iva, responsable_iva or regimen_simple",
             )
-    if tenant_update.dian_client_id is not None:
-        dcid = (
-            tenant_update.dian_client_id.strip()
-            if isinstance(tenant_update.dian_client_id, str)
-            else ""
-        )
-        tenant.dian_client_id = dcid[:128] if dcid else None
+    if "dian_numbering_range_id" in tenant_update.model_fields_set:
+        rid = tenant_update.dian_numbering_range_id
+        if rid is not None and rid <= 0:
+            raise HTTPException(status_code=400, detail="dian_numbering_range_id must be a positive integer")
+        tenant.dian_numbering_range_id = rid
+    if tenant_update.dian_send_email is not None:
+        tenant.dian_send_email = bool(tenant_update.dian_send_email)
 
     # Per-tenant SMTP / email (optional; fallback to global config)
     if tenant_update.smtp_host is not None:

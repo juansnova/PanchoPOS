@@ -30,6 +30,7 @@ type SettingsSectionId =
   | 'contact'
   | 'hours'
   | 'payments'
+  | 'invoicing'
   | 'reservations';
 
 /**
@@ -48,6 +49,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
   contact: 'contact',
   hours: 'openinghours',
   payments: 'payments',
+  invoicing: 'invoicing',
   reservations: 'reservations',
 };
 
@@ -780,44 +782,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     </div>
                   </div>
                   </div>
-                  @if (showDianInvoicingPrep()) {
-                    <div class="st-card">
-                    <h3 class="st-card-title">{{ 'SETTINGS.DIAN_TITLE' | translate }}</h3>
-                    <p class="st-card-desc">{{ 'SETTINGS.DIAN_DESC' | translate }}</p>
-                    <div class="form-group">
-                      <label for="dian_mode">{{ 'SETTINGS.DIAN_MODE' | translate }}</label>
-                      <select id="dian_mode" class="form-select" [(ngModel)]="formData.dian_mode" name="dian_mode">
-                        <option value="off">{{ 'SETTINGS.DIAN_MODE_OFF' | translate }}</option>
-                        <option value="test">{{ 'SETTINGS.DIAN_MODE_TEST' | translate }}</option>
-                        <option value="live">{{ 'SETTINGS.DIAN_MODE_LIVE' | translate }}</option>
-                      </select>
-                      <p class="hint">{{ 'SETTINGS.DIAN_MODE_HINT' | translate }}</p>
-                    </div>
-                    <div class="form-group">
-                      <label for="dian_tax_regime">{{ 'SETTINGS.DIAN_TAX_REGIME' | translate }}</label>
-                      <select id="dian_tax_regime" class="form-select" [(ngModel)]="formData.dian_tax_regime" name="dian_tax_regime">
-                        <option [ngValue]="null">{{ 'COMMON.NONE' | translate }}</option>
-                        <option value="responsable_iva">{{ 'SETTINGS.DIAN_TAX_REGIME_IVA' | translate }}</option>
-                        <option value="regimen_simple">{{ 'SETTINGS.DIAN_TAX_REGIME_SIMPLE' | translate }}</option>
-                      </select>
-                      <p class="hint">{{ 'SETTINGS.DIAN_TAX_REGIME_HINT' | translate }}</p>
-                    </div>
-                    <div class="form-group">
-                      <label for="dian_client_id">{{ 'SETTINGS.DIAN_CLIENT_ID' | translate }}</label>
-                      <input
-                        type="text"
-                        id="dian_client_id"
-                        [(ngModel)]="formData.dian_client_id"
-                        name="dian_client_id"
-                        maxlength="128"
-                        class="input-medium"
-                        autocomplete="off"
-                      />
-                      <p class="hint">{{ 'SETTINGS.DIAN_CLIENT_ID_HINT' | translate }}</p>
-                    </div>
-                    </div>
-                  }
-
                   <div class="st-card st-card-list">
                   <div class="form-group checkbox-row">
                     <label class="switch">
@@ -830,6 +794,117 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     </div>
                   </div>
 
+                  </div>
+                </div>
+              }
+
+              <!-- Invoicing (DIAN / Factus) Section -->
+              @if (activeSection() === 'invoicing') {
+                <div class="section" data-testid="settings-invoicing-section">
+                  <div class="section-header">
+                    <h2>{{ 'SETTINGS.INV_TITLE' | translate }}</h2>
+                    <p>{{ 'SETTINGS.INV_SUBTITLE' | translate }}</p>
+                  </div>
+
+                  <div class="iv-hero" [attr.data-mode]="formData.dian_mode">
+                    <div class="iv-hero-main">
+                      <span class="iv-eyebrow">{{ 'SETTINGS.INV_STATE' | translate }}</span>
+                      <b class="iv-state">{{ ('SETTINGS.INV_MODE_' + (formData.dian_mode || 'off').toUpperCase() + '_SHORT') | translate }}</b>
+                      <span class="iv-progress">{{ 'SETTINGS.INV_READY_COUNT' | translate: { done: dianChecklist().done, total: dianChecklist().items.length } }}</span>
+                    </div>
+                    <ul class="iv-check">
+                      @for (it of dianChecklist().items; track it.key) {
+                        <li [class.ok]="it.ok">
+                          <i aria-hidden="true">{{ it.ok ? '✓' : '·' }}</i>
+                          <span>{{ it.labelKey | translate }}</span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+
+                  <div class="st-card">
+                    <h3 class="st-card-title">{{ 'SETTINGS.INV_ENV_TITLE' | translate }}</h3>
+                    <p class="st-card-desc">{{ 'SETTINGS.INV_ENV_DESC' | translate }}</p>
+                    <div class="iv-modes" role="radiogroup" [attr.aria-label]="'SETTINGS.INV_ENV_TITLE' | translate">
+                      <button type="button" role="radio" class="iv-mode" [class.on]="formData.dian_mode === 'off'" [attr.aria-checked]="formData.dian_mode === 'off'" (click)="setDianMode('off')">
+                        <b>{{ 'SETTINGS.INV_MODE_OFF' | translate }}</b>
+                        <small>{{ 'SETTINGS.INV_MODE_OFF_DESC' | translate }}</small>
+                      </button>
+                      <button type="button" role="radio" class="iv-mode iv-mode-test" [class.on]="formData.dian_mode === 'test'" [attr.aria-checked]="formData.dian_mode === 'test'" (click)="setDianMode('test')">
+                        <b>{{ 'SETTINGS.INV_MODE_TEST' | translate }}</b>
+                        <small>{{ 'SETTINGS.INV_MODE_TEST_DESC' | translate }}</small>
+                      </button>
+                      <button type="button" role="radio" class="iv-mode iv-mode-live" [class.on]="formData.dian_mode === 'live'" [class.locked]="!dianLiveAllowed()" [attr.aria-checked]="formData.dian_mode === 'live'" [attr.aria-disabled]="!dianLiveAllowed()" (click)="setDianMode('live')">
+                        <b>{{ 'SETTINGS.INV_MODE_LIVE' | translate }}@if (!dianLiveAllowed()) { <em>{{ 'SETTINGS.INV_LOCKED' | translate }}</em> }</b>
+                        <small>{{ (dianLiveAllowed() ? 'SETTINGS.INV_MODE_LIVE_DESC' : 'SETTINGS.INV_MODE_LIVE_LOCKED') | translate }}</small>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="st-card">
+                    <h3 class="st-card-title">{{ 'SETTINGS.INV_ISSUER_TITLE' | translate }}</h3>
+                    <p class="st-card-desc">{{ 'SETTINGS.INV_ISSUER_DESC' | translate }}</p>
+                    <div class="form-group">
+                      <label for="dian_nit">{{ 'SETTINGS.INV_NIT' | translate }}</label>
+                      <div class="iv-nit">
+                        <input id="dian_nit" type="text" inputmode="numeric" autocomplete="off" maxlength="15"
+                          [ngModel]="nitDigits()" (ngModelChange)="onNitInput($event)" name="dian_nit"
+                          placeholder="900123456" data-testid="settings-dian-nit" />
+                        <span class="iv-dv" [class.empty]="nitDv() === null">
+                          <small>{{ 'SETTINGS.INV_DV' | translate }}</small>
+                          <b>{{ nitDv() === null ? '–' : nitDv() }}</b>
+                        </span>
+                      </div>
+                      <small class="field-hint">{{ 'SETTINGS.INV_NIT_HINT' | translate }}</small>
+                    </div>
+
+                    <div class="form-group">
+                      <label>{{ 'SETTINGS.INV_REGIME' | translate }}</label>
+                      <div class="iv-regimes" role="radiogroup" [attr.aria-label]="'SETTINGS.INV_REGIME' | translate">
+                        @for (r of dianRegimes; track r.value) {
+                          <button type="button" role="radio" class="iv-regime" [class.on]="formData.dian_tax_regime === r.value" [attr.aria-checked]="formData.dian_tax_regime === r.value" (click)="setDianRegime(r.value)">
+                            <span class="iv-code">{{ r.code }}</span>
+                            <b>{{ r.labelKey | translate }}</b>
+                            <small>{{ r.descKey | translate }}</small>
+                          </button>
+                        }
+                      </div>
+                      <small class="field-hint">{{ 'SETTINGS.INV_REGIME_HINT' | translate }}</small>
+                    </div>
+                  </div>
+
+                  <div class="st-card st-card-list">
+                    <h3 class="st-card-title">{{ 'SETTINGS.INV_DELIVERY_TITLE' | translate }}</h3>
+                    <div class="form-group">
+                      <label for="dian_numbering_range">{{ 'SETTINGS.INV_RANGE' | translate }}</label>
+                      <input id="dian_numbering_range" type="number" min="1" step="1" class="input-medium"
+                        [ngModel]="formData.dian_numbering_range_id" (ngModelChange)="onRangeInput($event)" name="dian_numbering_range"
+                        placeholder="{{ 'SETTINGS.INV_RANGE_PLACEHOLDER' | translate }}" />
+                      <small class="field-hint">{{ 'SETTINGS.INV_RANGE_HINT' | translate }}</small>
+                    </div>
+                    <div class="form-group checkbox-row">
+                      <label class="switch">
+                        <input type="checkbox" [(ngModel)]="formData.dian_send_email" name="dian_send_email">
+                        <span class="slider round"></span>
+                      </label>
+                      <div>
+                        <label class="check-label">{{ 'SETTINGS.INV_SEND_EMAIL' | translate }}</label>
+                        <p class="hint">{{ 'SETTINGS.INV_SEND_EMAIL_HINT' | translate }}</p>
+                      </div>
+                    </div>
+                    <p class="iv-note">{{ 'SETTINGS.INV_DEFAULT_CUSTOMER' | translate }}</p>
+                  </div>
+
+                  <div class="st-card iv-creds">
+                    <h3 class="st-card-title">{{ 'SETTINGS.INV_CREDS_TITLE' | translate }}</h3>
+                    <p class="st-card-desc">{{ 'SETTINGS.INV_CREDS_DESC' | translate }}</p>
+                    <pre class="iv-pre" aria-label="config.env">DIAN_PROVIDER=factus
+DIAN_PROVIDER_CLIENT_ID=…
+DIAN_PROVIDER_CLIENT_SECRET=…
+DIAN_PROVIDER_USERNAME=…
+DIAN_PROVIDER_PASSWORD=…
+DIAN_LIVE_UNLOCK=true</pre>
+                    <p class="iv-warn">{{ 'SETTINGS.INV_CREDS_WARN' | translate }}</p>
                   </div>
                 </div>
               }
@@ -2203,6 +2278,46 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .st-fixed-sm .st-fixed-name { font-family: inherit; font-size: .95rem; font-style: normal; font-weight: 600; color: var(--color-text-muted); }
     .st-fixed-sm .st-fixed-chip { padding: 2px 8px; font-size: .6rem; color: var(--color-text-muted); background: #e9e2d8; }
     .st-fixed-chip { flex: none; padding: 4px 12px; border-radius: 999px; font-size: .66rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, #fff); }
+    /* Facturación electrónica (DIAN / Factus) */
+    .iv-hero { display: flex; align-items: stretch; justify-content: space-between; gap: 18px 28px; flex-wrap: wrap; margin-bottom: 16px; padding: 22px 26px; border-radius: 28px; border: 1px solid var(--color-border); background: radial-gradient(80% 160% at 0% 0%, color-mix(in srgb, var(--color-primary) 14%, #fff), transparent 70%), #fffdfa; box-shadow: 0 26px 40px -34px rgba(60, 30, 10, .55); }
+    .iv-hero[data-mode='live'] { background: radial-gradient(80% 160% at 0% 0%, #dcfce7, transparent 70%), #fffdfa; border-color: #86efac; }
+    .iv-hero[data-mode='test'] { background: radial-gradient(80% 160% at 0% 0%, #fef3c7, transparent 70%), #fffdfa; }
+    .iv-hero-main { display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+    .iv-eyebrow { font-size: .64rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--color-text-muted); }
+    .iv-state { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.8rem, 4vw, 2.6rem); font-style: italic; font-weight: 500; letter-spacing: -.02em; line-height: 1.05; }
+    .iv-progress { font-size: .84rem; font-weight: 700; color: var(--color-text-muted); }
+    .iv-check { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; align-content: center; }
+    .iv-check li { display: flex; align-items: center; gap: 10px; font-size: .88rem; font-weight: 600; color: var(--color-text-muted); }
+    .iv-check i { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-style: normal; font-weight: 800; color: #a39a90; background: #ece5da; }
+    .iv-check li.ok { color: var(--color-text); }
+    .iv-check li.ok i { color: #fff; background: #22a05a; }
+
+    .iv-modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .iv-mode, .iv-regime { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 16px; border-radius: 22px; border: 1.5px solid var(--color-border); background: #fffdfa; color: var(--color-text); font: inherit; text-align: left; cursor: pointer; transition: border-color .15s, background .15s, box-shadow .15s; }
+    .iv-mode b, .iv-regime b { font-family: Georgia, 'Times New Roman', serif; font-size: 1.15rem; font-style: italic; font-weight: 500; }
+    .iv-mode b em { margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-family: inherit; font-size: .6rem; font-style: normal; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #92400e; background: #fef3c7; }
+    .iv-mode small, .iv-regime small { font-size: .78rem; line-height: 1.4; color: var(--color-text-muted); }
+    .iv-mode:hover:not(.locked), .iv-regime:hover { border-color: var(--color-primary); }
+    .iv-mode.on, .iv-regime.on { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, #fff); box-shadow: 0 0 0 1px var(--color-primary), 0 18px 28px -22px var(--color-primary); }
+    .iv-mode.locked { cursor: not-allowed; background: repeating-linear-gradient(135deg, #f6f1e9 0 6px, #fbf8f3 6px 12px); }
+    .iv-mode.locked b { color: var(--color-text-muted); }
+    .iv-regimes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .iv-code { align-self: flex-start; padding: 2px 10px; margin-bottom: 2px; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .06em; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, #fff); }
+    @media (max-width: 760px) { .iv-modes, .iv-regimes { grid-template-columns: minmax(0, 1fr); } }
+
+    .iv-nit { display: flex; align-items: stretch; gap: 10px; max-width: 360px; }
+    .settings-form .iv-nit input { flex: 1; min-width: 0; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 1.15rem; font-weight: 700; letter-spacing: .08em; }
+    .iv-dv { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 64px; padding: 4px 12px; border-radius: 16px; background: color-mix(in srgb, var(--color-primary) 10%, #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 35%, transparent); }
+    .iv-dv.empty { background: #f3eee6; box-shadow: inset 0 0 0 1px var(--color-border); }
+    .iv-dv small { font-size: .56rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--color-text-muted); }
+    .iv-dv b { font-family: Georgia, 'Times New Roman', serif; font-size: 1.4rem; font-weight: 500; line-height: 1; color: var(--color-primary); }
+    .iv-note { margin: 0 0 14px; padding: 10px 14px; border-radius: 16px; font-size: .84rem; line-height: 1.45; color: var(--color-text-muted); background: #f6f1e9; }
+    .iv-creds { background: #1c1917; border-color: #1c1917; }
+    .iv-creds .st-card-title { color: #fff; }
+    .iv-creds .st-card-desc { color: rgba(255,255,255,.7); }
+    pre.iv-pre { margin: 0 0 12px; padding: 14px 16px; border-radius: 16px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: .8rem; line-height: 1.7; letter-spacing: 0; text-transform: none; color: #fde68a; background: rgba(255,255,255,.07); overflow-x: auto; }
+    .iv-warn { margin: 0 0 14px; font-size: .8rem; font-weight: 600; line-height: 1.45; color: #fbbf24; }
+
     /* Transferencias */
     .tr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
     .tr-wide { grid-column: 1 / -1; }
@@ -2292,11 +2407,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private sanitizer = inject(DomSanitizer);
   private permissions = inject(PermissionService);
 
-  /** Colombia DIAN electronic invoicing prep: always shown (this deployment is Colombia-only). */
-  showDianInvoicingPrep(): boolean {
-    return true;
-  }
-
   settings = signal<TenantSettings | null>(null);
   taxes = signal<Tax[]>([]);
   taxError = signal('');
@@ -2334,11 +2444,79 @@ export class SettingsComponent implements OnInit, OnDestroy {
           icon: 'M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z M16 2v4 M8 2v4 M3 10h18' },
         { id: 'payments', labelKey: 'SETTINGS.PAYMENT_SETTINGS', descKey: 'SETTINGS.NAV_DESC_PAYMENTS', testid: 'settings-payments-tab',
           icon: 'M3 6h18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z M1 10h22' },
+        { id: 'invoicing', labelKey: 'SETTINGS.NAV_INVOICING', descKey: 'SETTINGS.NAV_DESC_INVOICING', testid: 'settings-invoicing-tab',
+          icon: 'M6 2h12v20l-3-2-3 2-3-2-3 2z M9 7h6 M9 11h6 M9 15h4' },
         { id: 'navigation', labelKey: 'SETTINGS.NAVIGATION_UI_TAB', descKey: 'SETTINGS.NAV_DESC_NAVIGATION', testid: 'settings-navigation-tab',
           icon: 'M4 6h16M4 12h16M4 18h10' },
       ],
     },
   ];
+
+  // ---- Factura electrónica DIAN (Factus)
+  readonly dianRegimes = [
+    { value: 'no_responsable_iva', code: '49', labelKey: 'SETTINGS.INV_REGIME_NO_IVA', descKey: 'SETTINGS.INV_REGIME_NO_IVA_DESC' },
+    { value: 'responsable_iva', code: '48', labelKey: 'SETTINGS.INV_REGIME_IVA', descKey: 'SETTINGS.INV_REGIME_IVA_DESC' },
+    { value: 'regimen_simple', code: '47', labelKey: 'SETTINGS.INV_REGIME_SIMPLE', descKey: 'SETTINGS.INV_REGIME_SIMPLE_DESC' },
+  ];
+
+  dianStatus(): { provider: string; credentials_ready: boolean; live_unlocked: boolean } {
+    return this.settings()?.dian_status ?? { provider: 'mock', credentials_ready: false, live_unlocked: false };
+  }
+
+  dianLiveAllowed(): boolean {
+    return this.dianStatus().live_unlocked || this.formData.dian_mode === 'live';
+  }
+
+  setDianMode(mode: 'off' | 'test' | 'live'): void {
+    if (mode === 'live' && !this.dianLiveAllowed()) return;
+    this.formData.dian_mode = mode;
+    this.markDirty();
+  }
+
+  setDianRegime(value: string): void {
+    this.formData.dian_tax_regime = this.formData.dian_tax_regime === value ? null : value;
+    this.markDirty();
+  }
+
+  onRangeInput(v: number | string | null): void {
+    const n = Math.floor(Number(v));
+    this.formData.dian_numbering_range_id = v === null || v === '' || !Number.isFinite(n) || n <= 0 ? null : n;
+    this.markDirty();
+  }
+
+  /** NIT without check digit (the stored value may come as "123456789-1"). */
+  nitDigits(): string {
+    return String(this.formData.tax_id || '').split('-')[0].replace(/\D/g, '');
+  }
+
+  onNitInput(v: string): void {
+    const digits = String(v || '').replace(/\D/g, '').slice(0, 15);
+    this.formData.tax_id = digits || null;
+    this.markDirty();
+  }
+
+  /** DIAN check digit (módulo 11 with the official prime weights). */
+  nitDv(): number | null {
+    const d = this.nitDigits();
+    if (d.length < 5) return null;
+    const w = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71];
+    let sum = 0;
+    for (let i = 0; i < d.length; i++) sum += Number(d[d.length - 1 - i]) * w[i];
+    const r = sum % 11;
+    return r > 1 ? 11 - r : r;
+  }
+
+  /** What is still missing before invoices can go out. */
+  dianChecklist(): { done: number; items: { key: string; ok: boolean; labelKey: string }[] } {
+    const st = this.dianStatus();
+    const items = [
+      { key: 'creds', ok: st.credentials_ready && st.provider === 'factus', labelKey: 'SETTINGS.INV_CHECK_CREDS' },
+      { key: 'nit', ok: this.nitDigits().length >= 5, labelKey: 'SETTINGS.INV_CHECK_NIT' },
+      { key: 'regime', ok: !!this.formData.dian_tax_regime, labelKey: 'SETTINGS.INV_CHECK_REGIME' },
+      { key: 'live', ok: st.live_unlocked, labelKey: 'SETTINGS.INV_CHECK_LIVE' },
+    ];
+    return { done: items.filter((i) => i.ok).length, items };
+  }
 
   linkCopied = signal(false);
 
@@ -2369,6 +2547,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     'contact',
     'hours',
     'payments',
+    'invoicing',
     'reservations',
   ];
 
@@ -2588,7 +2767,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     clock_qr_location_verify: false,
     dian_mode: 'off' as 'off' | 'test' | 'live',
     dian_tax_regime: null as string | null,
-    dian_client_id: null as string | null,
+    dian_numbering_range_id: null as number | null,
+    dian_send_email: true,
   };
 
   allTimezones: string[] = [];
@@ -2828,7 +3008,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
               ? settings.dian_mode
               : 'off',
           dian_tax_regime: settings.dian_tax_regime?.trim() || null,
-          dian_client_id: settings.dian_client_id?.trim() || null,
+          dian_numbering_range_id: settings.dian_numbering_range_id ?? null,
+          dian_send_email: settings.dian_send_email ?? true,
         };
         this.publicBackgroundColorPickerFallback =
           this.normalizeHex6(settings.public_background_color) ?? '#f5f5f5';
