@@ -1820,27 +1820,27 @@
   overscroll-behavior-x: contain;
 }
 
-// soft fades at both ends hint that there is more to scroll
-.fc::before,
-.fc::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 26px;
-  width: 36px;
-  z-index: 2;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s;
+// edge fades are a mask on the scroller itself (no colored overlay on top of the cards)
+.fc .featured-scroll {
+  padding-top: 12px;
+  padding-bottom: 34px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
 }
-.fc::before { left: -1px; background: linear-gradient(90deg, var(--color-bg, #fbf7f1), transparent); }
-.fc::after { right: -1px; background: linear-gradient(270deg, var(--color-bg, #fbf7f1), transparent); }
-.fc.fc-overflow:not(.fc-at-start)::before { opacity: 1; }
-.fc.fc-overflow:not(.fc-at-end)::after { opacity: 1; }
+.fc:not(.fc-overflow) .featured-scroll,
+.fc.fc-overflow.fc-at-start.fc-at-end .featured-scroll { -webkit-mask-image: none; mask-image: none; }
+.fc.fc-overflow.fc-at-start:not(.fc-at-end) .featured-scroll {
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%);
+}
+.fc.fc-overflow.fc-at-end:not(.fc-at-start) .featured-scroll {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 26px, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 26px, #000 100%);
+}
 
 .fc-btn {
   position: absolute;
-  top: calc(50% - 30px);
+  top: calc(50% - 26px);
   z-index: 3;
   display: none;
   place-items: center;
@@ -1850,7 +1850,7 @@
   border-radius: 50%;
   color: var(--color-primary);
   background: #fffdfa;
-  box-shadow: 0 14px 24px -10px rgba(23, 18, 16, 0.5), 0 0 0 1px rgba(23, 18, 16, 0.08);
+  box-shadow: 0 8px 16px -8px rgba(23, 18, 16, 0.45), 0 0 0 1px rgba(23, 18, 16, 0.08);
   cursor: pointer;
   transition: transform 0.15s, background 0.15s, color 0.15s, opacity 0.15s;
 
@@ -1865,7 +1865,7 @@
 .fc-track {
   position: relative;
   height: 5px;
-  margin: 2px 6px 0;
+  margin: -18px 6px 0;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-primary) 14%, #ece5da);
   overflow: hidden;
