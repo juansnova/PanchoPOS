@@ -519,6 +519,7 @@
     "ELABORATION": "Elaboración",
     "ITEMS_ADDED_TO_ORDER": "Artículos añadidos al Pedido #{{orderId}}",
     "CHECKOUT": "Hacer pedido",
+    "ORDER_WORD": "Pedido",
     "YOUR_ORDER_EYEBROW": "Tu selección",
     "YOUR_ORDER_TITLE": "Tu pedido",
     "DONE": "Hecho",

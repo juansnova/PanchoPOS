@@ -861,6 +861,13 @@ export class MenuComponent implements OnInit, OnDestroy {
     return full ? this.getProductImageUrl(full) : this.getProductImageUrl(product);
   }
 
+  /** 1 = received, 2 = in the kitchen, 3 = ready or later. */
+  orderStep(status: string): number {
+    if (status === 'pending') return 1;
+    if (status === 'preparing') return 2;
+    return 3;
+  }
+
   getProductKey(product: Product): string {
     if (!product) return 'null-product';
     const source = product._source || 'unknown';

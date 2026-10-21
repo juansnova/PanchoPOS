@@ -184,16 +184,6 @@
         </div>
       </div>
       } @else {
-      <!-- Order status bar -->
-      <section class="order-status-bar" aria-label="Order status">
-        @for (order of placedOrders(); track order.id) {
-        <div class="order-status-bar-inner">
-          <span class="order-status-bar-dot" [class]="'status-' + order.status" aria-hidden="true"></span>
-          <span class="order-status-bar-label">{{ 'ORDERS.YOUR_ORDER_STATUS' | translate }}:</span>
-          <span class="order-status-bar-value">{{ ('ORDER_STATUS.' + order.status) | translate }}</span>
-        </div>
-        }
-      </section>
     }
 
     <!-- Active order tracker card -->
@@ -202,19 +192,27 @@
       @for (order of placedOrders(); track order.id) {
       <div class="order-tracker-card">
         <div class="order-tracker-header" (click)="ordersExpanded.set(!ordersExpanded())">
-          <div class="order-status-indicator" [class]="'status-' + order.status">
-            <span class="pulse-dot"></span>
-          </div>
           <div class="order-info">
-            <span class="order-label">{{ 'ORDERS.ORDER_ID' | translate }} {{ order.id }}</span>
-            <span class="order-status-text">{{ 'ORDERS.STATUS' | translate }}: {{ ('ORDER_STATUS.' + order.status) | translate }}</span>
+            <span class="order-label"><i></i>{{ 'MENU.ORDER_WORD' | translate }}</span>
+            <span class="order-number">Nº {{ order.id }}</span>
           </div>
-          <span class="order-total-badge">{{ formatPrice(order.total) }}</span>
+          <div class="order-head-right">
+            <span class="order-total-badge">{{ formatPrice(order.total) }}</span>
+            <span class="order-state-chip" [class]="'status-' + order.status">
+              <span class="pulse-dot"></span>{{ ('ORDER_STATUS.' + order.status) | translate }}
+            </span>
+          </div>
           <svg class="chevron-toggle" [class.expanded]="ordersExpanded()" width="20" height="20" viewBox="0 0 24 24"
             fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6,9 12,15 18,9" />
           </svg>
         </div>
+
+        <ol class="order-steps" [attr.data-step]="orderStep(order.status)" aria-hidden="true">
+          <li><i>1</i><span>{{ 'ORDER_STATUS.pending' | translate }}</span></li>
+          <li><i>2</i><span>{{ 'ORDER_STATUS.preparing' | translate }}</span></li>
+          <li><i>3</i><span>{{ 'ORDER_STATUS.ready' | translate }}</span></li>
+        </ol>
 
         @if (ordersExpanded()) {
         <div class="order-tracker-body">
@@ -244,7 +242,7 @@
               <span class="item-price">{{ formatPrice(item.product.price_cents * item.quantity) }}</span>
               @if (item.status) {
               <span class="item-status-label" [class]="'status-' + item.status">
-                {{ getItemStatusLabel(item.status) }}
+                {{ ('ITEM_STATUS.' + item.status) | translate }}
               </span>
               }
               @if (canEditItem(item)) {
@@ -307,7 +305,7 @@
             </button>
             }
             <button class="btn-pay-now" (click)="startCheckout(order)">
-              {{ 'PAYMENTS.PAY_NOW' | translate }}
+              {{ 'PAYMENTS.PAY_NOW' | translate }}<i aria-hidden="true">→</i>
             </button>
             }
           </div>
