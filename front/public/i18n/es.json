@@ -1875,6 +1875,7 @@
     "PAYMENT_QR_UPLOAD": "Subir imagen del QR",
     "NAME_FIXED": "Marca fija",
     "NAME_FIXED_HINT": "Es la marca de tu restaurante. Siempre se muestra así en toda la aplicación.",
+    "CITY_FIXED": "Fija",
     "SECTION_NAV_ARIA": "Secciones de configuración",
     "NAVIGATION_UI_TAB": "Navegación",
     "UI_MODULES_TITLE": "Navegación del personal",

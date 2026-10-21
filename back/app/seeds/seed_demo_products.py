@@ -287,6 +287,26 @@ def _tenant_missing_demo_names(session, tenant_id: int) -> list[str]:
     return [name for name in DEMO_PRODUCT_NAMES if name not in existing_names]
 
 
+DEFAULT_ADDRESS = "Calle 10 N° 11-04, Segundo Piso, Barrio El Centro, San Vicente de Chucurí, Santander."
+FIXED_CITY = "San Vicente de Chucurí"
+
+
+def _ensure_location(session: Session, tenant_id: int) -> None:
+    """Default address (only when empty: it stays editable) and fixed city for the single restaurant."""
+    tenant = session.get(Tenant, tenant_id)
+    if tenant is None:
+        return
+    changed = False
+    if not (tenant.address or "").strip():
+        tenant.address = DEFAULT_ADDRESS
+        changed = True
+    if tenant.city != FIXED_CITY:
+        tenant.city = FIXED_CITY
+        changed = True
+    if changed:
+        session.add(tenant)
+
+
 def run() -> None:
     with Session(engine) as session:
         result = session.execute(text("SELECT id FROM tenant ORDER BY id"))
@@ -294,7 +314,12 @@ def run() -> None:
         if not tenant_ids:
             # Fresh install without config.env (no default admin): create the single
             # restaurant so the menu exists before the owner registers (register() reuses it).
-            tenant = Tenant(name="Pancho Panza", ui_modules=new_tenant_ui_modules_stored())
+            tenant = Tenant(
+                name="Pancho Panza",
+                address=DEFAULT_ADDRESS,
+                city=FIXED_CITY,
+                ui_modules=new_tenant_ui_modules_stored(),
+            )
             session.add(tenant)
             session.commit()
             session.refresh(tenant)
@@ -304,6 +329,7 @@ def run() -> None:
         # Repair every tenant: create missing DEMO_PRODUCTS names and attach photos to
         # demo products that lack one. Idempotent; never deletes existing products.
         for tenant_id in tenant_ids:
+            _ensure_location(session, tenant_id)
             created = _seed_tenant_products(session, tenant_id)
             moved = _regroup_categories(session, tenant_id)
             _ensure_category_labels(session, tenant_id)

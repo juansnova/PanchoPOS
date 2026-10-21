@@ -290,8 +290,14 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
 
                   <div class="form-row">
                     <div class="form-group">
-                      <label for="city">{{ 'SETTINGS.CITY' | translate }}</label>
-                      <input type="text" id="city" [(ngModel)]="formData.city" name="city" />
+                      <label>{{ 'SETTINGS.CITY' | translate }}</label>
+                      <div class="st-fixed" data-testid="settings-city-fixed">
+                        <span class="st-fixed-ico" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                        </span>
+                        <span class="st-fixed-name">{{ formData.city }}</span>
+                        <span class="st-fixed-chip">{{ 'SETTINGS.CITY_FIXED' | translate }}</span>
+                      </div>
                     </div>
                     <div class="form-group">
                       <label for="public_slug">{{ 'SETTINGS.PUBLIC_SLUG' | translate }}</label>
@@ -2795,7 +2801,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
           whatsapp: settings.whatsapp || null,
           email: settings.email || null,
           address: settings.address || null,
-          city: settings.city || null,
+          city: 'San Vicente de Chucurí', // fixed: shown read-only in Settings
           public_slug: settings.public_slug || null,
           website: settings.website || null,
           tax_id: settings.tax_id || null,

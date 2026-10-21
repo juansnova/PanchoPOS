@@ -43,7 +43,11 @@ def run() -> None:
             return
         tenant = session.exec(select(Tenant).order_by(Tenant.id)).first()
         if not tenant:
-            tenant = Tenant(name="Pancho Panza")
+            tenant = Tenant(
+                name="Pancho Panza",
+                address="Calle 10 N° 11-04, Segundo Piso, Barrio El Centro, San Vicente de Chucurí, Santander.",
+                city="San Vicente de Chucurí",
+            )
             session.add(tenant)
             session.commit()
             session.refresh(tenant)
