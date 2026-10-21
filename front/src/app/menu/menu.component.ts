@@ -873,6 +873,13 @@ export class MenuComponent implements OnInit, OnDestroy {
     return `${this.getProductKey(item.product)}|${notePart}|${sess}`;
   }
 
+  /** The guest's own cart line for a product (drives the − n + stepper on the dish card). */
+  myCartItem(product: Product): CartItem | null {
+    const id = product.id;
+    if (id == null) return null;
+    return this.cart().find((i) => i.product.id === id && this.isMyCartItem(i)) ?? null;
+  }
+
   isMyCartItem(item: CartItem): boolean {
     if (!item.sessionId) return true;
     return item.sessionId === this.sessionId;

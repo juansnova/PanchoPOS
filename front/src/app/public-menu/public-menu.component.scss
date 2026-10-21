@@ -2367,3 +2367,56 @@
 .menu-page .products-grid > .product-card.dish .dish-more { cursor: pointer; }
 .menu-page .products-grid > .product-card.dish .dish-more:hover { color: var(--color-primary); }
 .menu-page .featured-card { cursor: pointer; }
+
+// ================================================================ card stepper (− 2 +) shown once a dish is in the order
+.menu-page .products-grid > .product-card.dish .dish-stepper {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 46px;
+  margin: 0;
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary) 10%, #f6efe4);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-primary) 35%, transparent);
+
+  button {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-text);
+    background: #fff;
+    cursor: pointer;
+    box-shadow: 0 6px 10px -7px rgba(0, 0, 0, 0.45);
+    transition: transform 0.12s, filter 0.12s;
+
+    &:hover { filter: brightness(0.97); }
+    &:active { transform: scale(0.88); }
+    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+    &.plus {
+      color: #fff;
+      background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, #000));
+      box-shadow: 0 10px 14px -8px var(--color-primary);
+    }
+  }
+
+  span {
+    min-width: 32px;
+    text-align: center;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.3rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) { .menu-page .products-grid > .product-card.dish .dish-stepper button { transition: none; } }

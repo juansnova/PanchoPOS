@@ -231,10 +231,10 @@
                         @if (!product.available) {
                           <span class="unavailable-badge">{{ 'DELIVERY_CHECKOUT.UNAVAILABLE' | translate }}</span>
                         } @else if (cartQtyFor(product.id) > 0) {
-                          <div class="qty-stepper qty-stepper-card">
-                            <button type="button" (click)="setQty(product.id, cartQtyFor(product.id) - 1)">−</button>
-                            <span>{{ cartQtyFor(product.id) }}</span>
-                            <button type="button" (click)="setQty(product.id, cartQtyFor(product.id) + 1)">+</button>
+                          <div class="dish-stepper" role="group" [attr.aria-label]="'MENU.QUANTITY' | translate">
+                            <button type="button" (click)="setQty(product.id, cartQtyFor(product.id) - 1)" aria-label="-">−</button>
+                            <span aria-live="polite">{{ cartQtyFor(product.id) }}</span>
+                            <button type="button" class="plus" (click)="setQty(product.id, cartQtyFor(product.id) + 1)" aria-label="+">+</button>
                           </div>
                         } @else {
                           <button type="button" class="add-to-cart-btn" (click)="addToCart(product)"

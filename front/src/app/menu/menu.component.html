@@ -508,6 +508,13 @@
 
             <div class="dish-foot">
               <span class="dish-more">{{ 'MENU.VIEW_DETAIL' | translate }} <i>→</i></span>
+              @if (myCartItem(product); as ci) {
+              <div class="dish-stepper" role="group" [attr.aria-label]="'MENU.QUANTITY' | translate" (click)="$event.stopPropagation()">
+                <button type="button" (click)="decrementItem(ci)" aria-label="-">−</button>
+                <span aria-live="polite">{{ ci.quantity }}</span>
+                <button type="button" class="plus" (click)="incrementItem(ci)" aria-label="+">+</button>
+              </div>
+              } @else {
               <button class="add-to-cart-btn" (click)="addToCart(product); $event.stopPropagation()" [attr.aria-label]="'MENU.ADD_TO_CART' | translate">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
                   <line x1="12" y1="5" x2="12" y2="19" />
@@ -515,6 +522,7 @@
                 </svg>
                 <span>{{ 'MENU.ADD_SHORT' | translate }}</span>
               </button>
+              }
             </div>
           </div>
         </article>
