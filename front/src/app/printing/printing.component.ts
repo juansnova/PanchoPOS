@@ -204,11 +204,10 @@ const ICON: Record<string, string> = {
       color: #fff;
       overflow: hidden;
       background:
-        radial-gradient(circle at 90% 10%, rgba(45, 212, 191, 0.55) 0, transparent 30%),
-        radial-gradient(circle at 65% 120%, rgba(244, 114, 182, 0.5) 0, transparent 34%),
-        radial-gradient(circle at 5% -20%, rgba(96, 165, 250, 0.45) 0, transparent 35%),
-        linear-gradient(135deg, #4f46e5, #7c3aed 55%, #6d28d9);
-      box-shadow: 0 18px 34px -22px #6d28d9;
+        radial-gradient(circle at 92% 15%, rgba(245, 196, 81, 0.5) 0, transparent 28%),
+        radial-gradient(circle at 70% 115%, rgba(108, 178, 238, 0.45) 0, transparent 32%),
+        linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 70%, #000));
+      box-shadow: 0 18px 34px -22px var(--color-primary);
     }
     .pr-hero > * { position: relative; z-index: 1; }
     .pr-hero-ico {
@@ -241,7 +240,7 @@ const ICON: Record<string, string> = {
     }
     .pr-btn span { display: inline-flex; }
     .pr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .pr-btn-light { background: #fff; color: #5b21b6; box-shadow: 0 10px 20px -12px rgba(0, 0, 0, 0.5); }
+    .pr-btn-light { background: #fff; color: var(--color-primary); box-shadow: 0 10px 20px -12px rgba(0, 0, 0, 0.5); }
     .pr-btn-light:hover { filter: brightness(0.96); }
     .pr-btn-clear { background: rgba(255, 255, 255, 0.18); color: #fff; border: 1px solid rgba(255, 255, 255, 0.6); }
     .pr-btn-clear:hover:not(:disabled) { background: #dc2626; border-color: #dc2626; }
