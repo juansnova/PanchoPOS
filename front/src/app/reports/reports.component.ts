@@ -110,6 +110,17 @@ export class ReportsComponent implements OnInit {
     return Math.max(1, dailyMax, productMax);
   });
 
+  /** Best sellers (by units) and the slowest movers, shown above the product table. */
+  rankedProducts = computed(() => {
+    const r = this.report();
+    const list = [...(r?.by_product ?? [])].sort((a, b) => b.quantity - a.quantity);
+    const top = list.slice(0, 5);
+    const rest = list.slice(5);
+    const bottom = rest.length ? [...rest].sort((a, b) => a.quantity - b.quantity).slice(0, 5) : [];
+    const topMax = Math.max(1, ...top.map((p) => p.quantity));
+    return { top, bottom, topMax };
+  });
+
   totalProductQuantity = computed(() => {
     const r = this.report();
     if (!r?.by_product?.length) return 0;

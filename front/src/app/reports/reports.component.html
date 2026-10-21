@@ -171,6 +171,44 @@
       </section>
 
       @if (r.summary.total_orders > 0) {
+      <!-- Best / slowest sellers -->
+      @if (rankedProducts().top.length > 0) {
+      <section class="report-section rk" data-testid="reports-ranking">
+        <div class="rk-grid">
+          <div class="rk-card rk-top">
+            <h2>🏆 {{ 'REPORTS.TOP_SELLERS' | translate }}</h2>
+            <ol>
+              @for (p of rankedProducts().top; track trackByProductRow(p); let i = $index) {
+                <li>
+                  <span class="rk-pos">{{ i + 1 }}</span>
+                  <div class="rk-body">
+                    <b>{{ p.product_name }}</b>
+                    <div class="rk-bar"><div [style.width.%]="(p.quantity / rankedProducts().topMax) * 100"></div></div>
+                  </div>
+                  <span class="rk-qty">{{ p.quantity }}</span>
+                </li>
+              }
+            </ol>
+          </div>
+          @if (rankedProducts().bottom.length > 0) {
+            <div class="rk-card rk-low">
+              <h2>🐢 {{ 'REPORTS.SLOW_SELLERS' | translate }}</h2>
+              <p class="rk-hint">{{ 'REPORTS.SLOW_SELLERS_HINT' | translate }}</p>
+              <ol>
+                @for (p of rankedProducts().bottom; track trackByProductRow(p)) {
+                  <li>
+                    <span class="rk-pos rk-pos-low">•</span>
+                    <div class="rk-body"><b>{{ p.product_name }}</b></div>
+                    <span class="rk-qty">{{ p.quantity }}</span>
+                  </li>
+                }
+              </ol>
+            </div>
+          }
+        </div>
+      </section>
+      }
+
       <!-- By product -->
       <section class="report-section" data-testid="reports-by-product">
         <h2>{{ 'REPORTS.BY_PRODUCT' | translate }}</h2>
