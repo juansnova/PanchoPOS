@@ -2466,6 +2466,13 @@
   },
   "USERS": {
     "TITLE": "Gestión de Usuarios",
+    "SUBTITLE": "Quién tiene acceso y qué puede hacer cada persona",
+    "ALL": "Todos",
+    "YOU": "Tú",
+    "ROLE_DESC_OWNER": "Ve y cambia todo, incluidos informes y usuarios",
+    "ROLE_DESC_WAITER": "Toma pedidos y atiende las mesas",
+    "ROLE_DESC_KITCHEN": "Prepara los pedidos en la pantalla de cocina",
+    "ROLE_DESC_COURIER": "Lleva los pedidos a domicilio",
     "ADD_USER": "Añadir Usuario",
     "EDIT_USER": "Editar Usuario",
     "DELETE_USER": "Eliminar Usuario",
