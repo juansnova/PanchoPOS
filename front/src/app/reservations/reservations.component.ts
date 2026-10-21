@@ -316,10 +316,15 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
         <div class="modal-overlay">
           <div class="modal-content rf" (click)="$event.stopPropagation()" appFocusFirstInput>
             <div class="rf-head">
-              <span class="rf-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+              @if (editingReservation(); as er) {
+                <span class="tk-avatar rf-avatar" [style.--h]="hue(er.customer_name)" aria-hidden="true">{{ initial(er.customer_name) }}</span>
+              } @else {
+                <span class="rf-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+              }
               <div class="rf-head-text">
-                <h3>{{ editingReservation() ? ('RESERVATIONS.EDIT' | translate) : ('RESERVATIONS.NEW' | translate) }}</h3>
-                <p>{{ formSummary() }}</p>
+                <small>{{ editingReservation() ? ('RESERVATIONS.EDIT' | translate) : ('RESERVATIONS.NEW' | translate) }}@if (editingReservation(); as er2) { · #{{ er2.id }} }</small>
+                <h3>{{ editingReservation()?.customer_name || formName || ('RESERVATIONS.NEW' | translate) }}</h3>
+                @if (formSummary()) { <p><span>{{ formSummary() }}</span></p> }
               </div>
               <button type="button" class="rf-close" (click)="closeForm()" [attr.aria-label]="'COMMON.CANCEL' | translate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
             </div>
@@ -333,6 +338,7 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
                       <input id="res-modal-party" type="number" name="partySize" min="1" [max]="maxPartySize()" required
                         [(ngModel)]="formPartySize" (ngModelChange)="loadSlotCapacity()" />
                       <span>{{ 'RESERVATIONS.PARTY_SIZE' | translate }}</span>
+                      <span class="rf-dots" aria-hidden="true">@for (i of partyDots(formPartySize); track i) { <i></i> }</span>
                     </label>
                     <button type="button" class="rf-step rf-step-plus" (click)="stepParty(1)" [disabled]="formPartySize >= maxPartySize()" aria-label="+1">+</button>
                   </div>
@@ -453,8 +459,9 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
                 }
               </div>
               <div class="rf-foot">
+                <span class="rf-foot-sum">{{ formSummary() }}</span>
                 <button type="button" class="rf-btn rf-btn-ghost" (click)="closeForm()">{{ 'COMMON.CANCEL' | translate }}</button>
-                <button type="submit" class="rf-btn rf-btn-main">{{ 'COMMON.SAVE' | translate }}</button>
+                <button type="submit" class="rf-btn rf-btn-main">{{ 'COMMON.SAVE' | translate }}<i>→</i></button>
               </div>
             </form>
           </div>
@@ -919,6 +926,41 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     .rf-btn-ghost { background: transparent; border: 1px solid var(--color-border); color: var(--color-text); }
     .rf-btn-main { border: 0; background: var(--color-primary); color: #fff; box-shadow: 0 10px 20px -10px var(--color-primary); }
     .rf-btn-main:hover { filter: brightness(1.07); }
+
+    /* ===== Nueva / editar reservación: acabado ===== */
+    .modal-overlay { backdrop-filter: blur(3px); background: rgba(28, 25, 23, .45); }
+    .rf { border-radius: 30px; background: #fffdfa; box-shadow: 0 40px 90px -24px rgba(40, 20, 5, .6); }
+    .rf-head { position: relative; padding: 24px 26px 20px; background: radial-gradient(90% 160% at 0% 0%, color-mix(in srgb, var(--color-primary) 24%, #fff), transparent 72%), #fffdfa; }
+    .rf-head::after { content: ''; position: absolute; left: 20px; right: 20px; bottom: 0; border-bottom: 2px dashed var(--color-border); }
+    .rf-icon, .rf-avatar { flex: none; width: 58px; height: 58px; border-radius: 20px; }
+    .rf-icon { background: linear-gradient(150deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, #000)); box-shadow: 0 16px 24px -14px var(--color-primary); }
+    .rf-avatar { border-radius: 50%; font-size: 1.5rem; }
+    .rf-head-text small { display: block; font-size: .66rem; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--color-primary); }
+    .rf-head-text h3 { margin: 2px 0 6px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.85rem; font-weight: 500; letter-spacing: -.02em; line-height: 1.1; overflow-wrap: anywhere; }
+    .rf-head-text p { margin: 0; }
+    .rf-head-text p span { display: inline-block; padding: 4px 14px; border-radius: 999px; font-size: .8rem; font-weight: 800; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, #fff); }
+    .rf-body { padding: 18px 24px 10px; gap: 16px; }
+    .rf-sec { padding: 20px 20px 22px; gap: 16px; border-radius: 24px; background: #fff; border: 1px solid var(--color-border); box-shadow: 0 18px 30px -26px rgba(60, 30, 10, .5); }
+    .rf-sec h4 { gap: 12px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.15rem; font-weight: 500; font-style: italic; letter-spacing: 0; text-transform: none; color: var(--color-text); }
+    .rf-sec h4 i { width: 30px; height: 30px; font-family: inherit; font-size: .9rem; font-style: normal; font-weight: 800; background: linear-gradient(150deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); box-shadow: 0 10px 14px -8px var(--color-primary); }
+    .rf-label { font-size: .64rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .rf input:not([type='radio']):not([type='checkbox']), .rf select, .rf textarea { border-radius: 16px; background: #fffdfa; }
+    .rf-step { border-radius: 50%; width: 54px; height: 54px; box-shadow: 0 8px 14px -10px rgba(0,0,0,.4); }
+    .rf-step-plus { background: linear-gradient(150deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); box-shadow: 0 14px 20px -12px var(--color-primary); }
+    .rf .rf-party-box input { font-family: Georgia, 'Times New Roman', serif; font-size: 3.4rem; font-weight: 500; }
+    .rf-dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; min-height: 9px; margin-top: 4px; max-width: 110px; }
+    .rf-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); }
+    .rf-seg { border-radius: 999px; background: color-mix(in srgb, var(--color-primary) 7%, #fff); border-color: transparent; }
+    .rf-seg button.on { background: linear-gradient(150deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); box-shadow: 0 10px 14px -8px var(--color-primary); }
+    .rf-card-opt { border-radius: 20px; }
+    .rf-card-opt.on { background: linear-gradient(150deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); border-color: transparent; color: #fff; box-shadow: 0 14px 20px -12px var(--color-primary); }
+    .rf-capacity span { background: color-mix(in srgb, var(--color-primary) 10%, #fff); color: var(--color-primary); }
+    .rf-foot { position: relative; align-items: center; padding: 16px 24px 20px; background: #fffdfa; border-top: 2px dashed var(--color-border); }
+    .rf-foot-sum { flex: 1; min-width: 0; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 1.05rem; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rf-btn-main { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 66%, #000)); box-shadow: 0 16px 24px -14px var(--color-primary); }
+    .rf-btn-main i { font-style: normal; transition: transform .2s; }
+    .rf-btn-main:hover i { transform: translateX(4px); }
+    @media (max-width: 560px) { .rf-foot-sum { display: none; } .rf-head { padding: 18px 18px 16px; } .rf-body { padding: 14px 14px 8px; } }
   `],
 })
 export class ReservationsComponent implements OnInit, OnDestroy {
