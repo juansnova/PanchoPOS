@@ -148,16 +148,12 @@ def _submit_factus(
         }
 
     document_type = str(payload.get("document_type") or "invoice")
-    if document_type != "invoice":
-        return {
-            "status": "provider_error",
-            "channel": "factus",
-            "provider": PROVIDER_FACTUS,
-            "error": "Factus credit notes are not implemented yet",
-        }
     pos_payload = payload.get("request_payload") if isinstance(payload.get("request_payload"), dict) else {}
-    content = _factus_bill_payload(pos_payload)
-    url = f"{base}/bills/validate"
+    if document_type == "invoice":
+        content, endpoint = _factus_bill_payload(pos_payload), "bills/validate"
+    else:
+        content, endpoint = _factus_credit_note_payload(pos_payload), "credit-notes/validate"
+    url = f"{base}/{endpoint}"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -198,6 +194,18 @@ def _submit_factus(
         }
 
 
+# POS payment_method -> Factus payment_method_code (10 cash, 47 transfer, 48 credit card, ZZZ other)
+_FACTUS_PAYMENT_CODES = {
+    "cash": "10",
+    "transfer": "47",
+    "terminal": "48",
+    "card_terminal": "48",
+    "card": "48",
+    "stripe": "48",
+    "revolut": "48",
+}
+
+
 def _money(cents: float) -> str:
     return f"{cents / 100:.2f}"
 
@@ -229,12 +237,13 @@ def _factus_customer(customer: dict[str, Any] | None) -> dict[str, Any]:
     return out
 
 
-def _factus_bill_payload(pos: dict[str, Any]) -> dict[str, Any]:
-    """Translate the provider-agnostic POS payload into Factus `POST /v2/bills/validate`.
+def _factus_items_and_payment(pos: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Items and a single payment detail shared by invoices and credit notes.
 
     Item prices are tax-inclusive in the POS. Under `responsable_iva` the net price is
     sent with IVA (code 01); otherwise items go out as excluded (0%).
-    Tips are not part of the invoice; the payment amount is the items total.
+    Tips are not part of the invoice; the payment amount is the items total, paid with
+    the order's dominant payment method.
     """
     iva_regime = pos.get("tenant_tax_regime") == "responsable_iva"
     items = []
@@ -261,17 +270,44 @@ def _factus_bill_payload(pos: dict[str, Any]) -> dict[str, Any]:
                 "taxes": [tax],
             }
         )
+    method = _FACTUS_PAYMENT_CODES.get(str(pos.get("payment_method") or "cash").lower(), "ZZZ")
+    payments = [{"payment_form": "1", "payment_method_code": method, "amount": _money(total_cents)}]
+    return items, payments
+
+
+def _factus_bill_payload(pos: dict[str, Any]) -> dict[str, Any]:
+    """Translate the provider-agnostic POS payload into Factus `POST /v2/bills/validate`."""
+    items, payments = _factus_items_and_payment(pos)
     content: dict[str, Any] = {
         "reference_code": f"POS-{pos.get('tenant_id')}-{pos.get('order_id')}",
-        "payment_details": [
-            {"payment_form": "1", "payment_method_code": "10", "amount": _money(total_cents)}
-        ],
+        "payment_details": payments,
         "send_email": bool(pos.get("send_email")),
         "customer": _factus_customer(pos.get("customer")),
         "items": items,
     }
     if pos.get("numbering_range_id"):
         content["numbering_range_id"] = int(pos["numbering_range_id"])
+    return content
+
+
+def _factus_credit_note_payload(pos: dict[str, Any]) -> dict[str, Any]:
+    """Factus `POST /v2/credit-notes/validate`: full annulment (concept 2) of an issued invoice.
+
+    Docs say `customer` is optional, but the sandbox rejects the note without it, so the
+    same customer as on the invoice is sent.
+    """
+    items, payments = _factus_items_and_payment(pos)
+    for it in items:
+        it["note"] = "Anulación de factura"
+    content: dict[str, Any] = {
+        "reference_code": f"POS-{pos.get('tenant_id')}-{pos.get('order_id')}-NC",
+        "correction_concept_code": "2",
+        "customization_id": "20",
+        "bill_number": pos.get("cancels_provider_invoice_number"),
+        "payment_details": payments,
+        "customer": {**_factus_customer(pos.get("customer")), "responsibilities": ["R-99-PN"]},
+        "items": items,
+    }
     return content
 
 

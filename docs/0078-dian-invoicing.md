@@ -30,9 +30,11 @@ pattern.
   `https://api-sandbox.factus.com.co`, live `https://api.factus.com.co`.
 - Field mapping (`_factus_bill_payload`) was verified on 2026-10-21 against the Factus V2 sandbox
   (account of the tenant owner): invoices are accepted and validated (`is_validated`), CUFE, QR and
-  public PDF link are read from `data.links`. Still open: credit notes (not implemented), payment
-  method (always cash `10`), tips (excluded from the invoice), IVA/consumo tax codes for
-  `responsable_iva` (only IVA `01` is mapped), RUT-name validation warnings (FAJ43b/FAJ44b) in sandbox.
+  public PDF link are read from `data.links`. Credit notes (full annulment, concept 2) verified too:
+  the sandbox requires `customer` even though the docs say optional. Payment method is mapped from the
+  POS (cash 10, transfer 47, card/terminal/stripe/revolut 48, other ZZZ); with split payments the
+  dominant leg is used. Still open: tips (excluded from the invoice), IVA/consumo tax codes for
+  `responsable_iva` (only IVA `01` is mapped), partial credit notes, RUT-name warnings in sandbox.
 - `app/dian_invoice_service.py` owns: eligibility (order must be `paid`/`completed`),
   idempotency (one active invoice per order), credit-note cancellation, and persistence to the
   `dian_invoice` table.

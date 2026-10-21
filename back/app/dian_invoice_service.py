@@ -71,6 +71,16 @@ def _order_dian_items(session: Session, order: models.Order) -> list[dict[str, A
     return out
 
 
+def order_dian_payment_method(session: Session, order: models.Order) -> str:
+    """Dominant payment method of the order (largest split leg), else the order's own."""
+    legs = session.exec(
+        select(models.OrderPayment).where(models.OrderPayment.order_id == order.id)
+    ).all()
+    if legs:
+        return max(legs, key=lambda p: p.amount_cents or 0).payment_method
+    return order.payment_method or "cash"
+
+
 def build_issue_payload(
     order: models.Order,
     tenant: models.Tenant,
@@ -79,6 +89,7 @@ def build_issue_payload(
     document_type: str,
     amount_cents: int,
     items: list[dict[str, Any]],
+    payment_method: str = "cash",
     cancels_provider_invoice_number: str | None = None,
 ) -> dict[str, Any]:
     customer = None
@@ -100,6 +111,7 @@ def build_issue_payload(
         "tenant_tax_regime": tenant.dian_tax_regime,
         "numbering_range_id": tenant.dian_numbering_range_id,
         "send_email": bool(tenant.dian_send_email),
+        "payment_method": payment_method,
         "amount_cents": amount_cents,
         "items": items,
         "customer": customer,
@@ -247,6 +259,7 @@ def issue_or_get_dian_invoice(
         document_type="invoice",
         amount_cents=amount_cents,
         items=items,
+        payment_method=order_dian_payment_method(session, order),
     )
 
     di = models.DianInvoice(
@@ -296,14 +309,21 @@ def cancel_dian_invoice(
     if existing_credit:
         return existing_credit
 
+    billing_customer = None
+    if order.billing_customer_id:
+        billing_customer = session.get(models.BillingCustomer, order.billing_customer_id)
+        if billing_customer and billing_customer.tenant_id != tenant.id:
+            billing_customer = None
+
     amount_cents = int(original.amount_cents or 0)
     req_payload = build_issue_payload(
         order,
         tenant,
-        None,
+        billing_customer,
         document_type="credit_note",
         amount_cents=amount_cents,
         items=_order_dian_items(session, order),
+        payment_method=order_dian_payment_method(session, order),
         cancels_provider_invoice_number=original.provider_invoice_number,
     )
 
