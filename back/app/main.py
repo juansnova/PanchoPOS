@@ -13202,6 +13202,7 @@ def _billing_customer_dict(c: models.BillingCustomer, current_tenant_id: int, st
         "name": c.name,
         "company_name": c.company_name,
         "tax_id": c.tax_id,
+        "document_type": c.document_type,
         "address": c.address,
         "email": c.email,
         "phone": c.phone,
@@ -13243,6 +13244,32 @@ def list_billing_customers(
     return [_billing_customer_dict(c, current_user.tenant_id, stats.get(c.id)) for c in customers]
 
 
+_BILLING_DOCUMENT_TYPES = frozenset({"CC", "NIT", "CE", "PA", "TI", "RC"})
+
+
+def _clean_text(value: str | None, *, lower: bool = False) -> str | None:
+    """Trim; blank becomes None (so a field can be cleared)."""
+    if value is None:
+        return None
+    v = value.strip()
+    if not v:
+        return None
+    return v.lower() if lower else v
+
+
+def _clean_document_type(value: str | None) -> str | None:
+    v = _clean_text(value)
+    if v is None:
+        return None
+    v = v.upper()
+    if v not in _BILLING_DOCUMENT_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="document_type must be one of: " + ", ".join(sorted(_BILLING_DOCUMENT_TYPES)),
+        )
+    return v
+
+
 @app.post("/billing-customers")
 def create_billing_customer(
     body: models.BillingCustomerCreate,
@@ -13251,14 +13278,17 @@ def create_billing_customer(
 ) -> dict:
     customer = models.BillingCustomer(
         tenant_id=current_user.tenant_id,
-        name=body.name,
-        company_name=body.company_name,
-        tax_id=body.tax_id,
-        address=body.address,
-        email=body.email,
-        phone=body.phone,
+        name=body.name.strip(),
+        company_name=_clean_text(body.company_name),
+        tax_id=_clean_text(body.tax_id),
+        document_type=_clean_document_type(body.document_type),
+        address=_clean_text(body.address),
+        email=_clean_text(body.email, lower=True),
+        phone=_clean_text(body.phone),
         birth_date=body.birth_date,
     )
+    if not customer.name:
+        raise HTTPException(status_code=400, detail="name is required")
     session.add(customer)
     session.commit()
     session.refresh(customer)
@@ -13292,18 +13322,23 @@ def update_billing_customer(
     ).first()
     if not customer:
         raise HTTPException(status_code=404, detail="Billing customer not found")
-    if body.name is not None:
-        customer.name = body.name
-    if body.company_name is not None:
-        customer.company_name = body.company_name
-    if body.tax_id is not None:
-        customer.tax_id = body.tax_id
-    if body.address is not None:
-        customer.address = body.address
-    if body.email is not None:
-        customer.email = body.email
-    if body.phone is not None:
-        customer.phone = body.phone
+    _sent = body.model_fields_set
+    if "name" in _sent and body.name is not None:
+        if not body.name.strip():
+            raise HTTPException(status_code=400, detail="name is required")
+        customer.name = body.name.strip()
+    if "company_name" in _sent:
+        customer.company_name = _clean_text(body.company_name)
+    if "tax_id" in _sent:
+        customer.tax_id = _clean_text(body.tax_id)
+    if "document_type" in _sent:
+        customer.document_type = _clean_document_type(body.document_type)
+    if "address" in _sent:
+        customer.address = _clean_text(body.address)
+    if "email" in _sent:
+        customer.email = _clean_text(body.email, lower=True)
+    if "phone" in _sent:
+        customer.phone = _clean_text(body.phone)
     _bc_upd = body.model_dump(exclude_unset=True)
     if "birth_date" in _bc_upd:
         customer.birth_date = _bc_upd["birth_date"]

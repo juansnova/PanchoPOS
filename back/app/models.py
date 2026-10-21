@@ -775,7 +775,9 @@ class BillingCustomer(TenantMixin, table=True):
     tenant_id: int = Field(foreign_key="tenant.id", index=True)
     name: str = Field(index=True)  # Contact or company name
     company_name: str | None = Field(default=None, index=True)  # Legal / company name for invoice
-    tax_id: str | None = Field(default=None, index=True)  # CIF / NIF / VAT number
+    tax_id: str | None = Field(default=None, index=True)  # Document number (NIT without check digit, cédula, ...)
+    # CC | NIT | CE | PA | TI | RC (DIAN identification document type); null = not specified
+    document_type: str | None = Field(default=None, max_length=8)
     address: str | None = None
     email: str | None = Field(default=None, index=True)
     phone: str | None = None
@@ -1406,6 +1408,7 @@ class BillingCustomerCreate(SQLModel):
     name: str
     company_name: str | None = None
     tax_id: str | None = None
+    document_type: str | None = None
     address: str | None = None
     email: str | None = None
     phone: str | None = None
@@ -1416,6 +1419,7 @@ class BillingCustomerUpdate(SQLModel):
     name: str | None = None
     company_name: str | None = None
     tax_id: str | None = None
+    document_type: str | None = None
     address: str | None = None
     email: str | None = None
     phone: str | None = None

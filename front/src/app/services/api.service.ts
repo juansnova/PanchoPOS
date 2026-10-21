@@ -1049,6 +1049,8 @@ export interface BillingCustomer {
   name: string;
   company_name?: string | null;
   tax_id?: string | null;
+  /** DIAN identification type: CC | NIT | CE | PA | TI | RC */
+  document_type?: string | null;
   address?: string | null;
   email?: string | null;
   phone?: string | null;
@@ -2424,11 +2426,12 @@ export class ApiService {
 
   createBillingCustomer(data: {
     name: string;
-    company_name?: string;
-    tax_id?: string;
-    address?: string;
-    email?: string;
-    phone?: string;
+    company_name?: string | null;
+    tax_id?: string | null;
+    document_type?: string | null;
+    address?: string | null;
+    email?: string | null;
+    phone?: string | null;
     birth_date?: string | null;
   }): Observable<BillingCustomer> {
     return this.http.post<BillingCustomer>(`${this.apiUrl}/billing-customers`, data);

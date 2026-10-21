@@ -185,60 +185,95 @@ import { formatMoneyCents } from '../shared/currency-symbol';
               <span class="cu-av cu-av-lg" [style.--h]="hue(form.name || '?')" aria-hidden="true">{{ initial(form.name) }}</span>
               <div class="cu-mhead-text">
                 <small>{{ editing() ? ('CUSTOMERS.EDIT' | translate) : ('CUSTOMERS.ADD' | translate) }}</small>
-                <h3>{{ form.name.trim() || ('CUSTOMERS.NAME' | translate) }}</h3>
+                <h3>{{ form.name.trim() || ('CUSTOMERS.NEW_NAME' | translate) }}</h3>
+                <div class="cu-ready">
+                  <span [class.ok]="!!form.name.trim()">{{ 'CUSTOMERS.CHK_NAME' | translate }}</span>
+                  <span [class.ok]="docOk()">{{ 'CUSTOMERS.CHK_DOC' | translate }}</span>
+                  <span [class.ok]="emailOk() && !!form.email.trim()">{{ 'CUSTOMERS.CHK_EMAIL' | translate }}</span>
+                </div>
               </div>
               <button type="button" class="icon-btn" (click)="closeModal()" aria-label="×">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
-            <form (ngSubmit)="save()" class="cu-form">
+            <form (ngSubmit)="save()" class="cu-form" novalidate>
+              @if (duplicate(); as dup) {
+                <div class="cu-dup" role="status">
+                  <b>{{ 'CUSTOMERS.DUP_TITLE' | translate }}</b>
+                  <span>{{ 'CUSTOMERS.DUP_BODY' | translate: { name: dup.name } }}</span>
+                </div>
+              }
+
               <div class="cu-sec">
-                <h4><i>1</i>{{ 'CUSTOMERS.SEC_IDENTITY' | translate }}</h4>
+                <h4><i>1</i>{{ 'CUSTOMERS.SEC_WHO' | translate }}</h4>
                 <div class="form-group">
-                  <label for="cust-name">{{ 'CUSTOMERS.NAME' | translate }} *</label>
-                  <input id="cust-name" type="text" [(ngModel)]="form.name" name="name" required />
+                  <label for="cust-name">{{ (isCompany() ? 'CUSTOMERS.NAME_CONTACT' : 'CUSTOMERS.NAME_FULL') | translate }} *</label>
+                  <input id="cust-name" type="text" [(ngModel)]="form.name" name="name" required autocomplete="off" />
                 </div>
-                <div class="cu-two">
-                  <div class="form-group">
-                    <label for="cust-company">{{ 'CUSTOMERS.COMPANY' | translate }}</label>
-                    <input id="cust-company" type="text" [(ngModel)]="form.company_name" name="company_name" />
-                  </div>
-                  <div class="form-group">
-                    <label for="cust-birth">{{ 'CUSTOMERS.BIRTH_DATE' | translate }}</label>
-                    <app-date-picker id="cust-birth" [(ngModel)]="form.birth_date" name="birth_date" />
-                  </div>
+                <div class="form-group">
+                  <label for="cust-company">{{ (isCompany() ? 'CUSTOMERS.COMPANY_LEGAL' : 'CUSTOMERS.COMPANY') | translate }}</label>
+                  <input id="cust-company" type="text" [(ngModel)]="form.company_name" name="company_name" autocomplete="off" />
                 </div>
-                <p class="field-hint">{{ 'CUSTOMERS.BIRTH_DATE_HINT' | translate }}</p>
               </div>
+
               <div class="cu-sec">
-                <h4><i>2</i>{{ 'CUSTOMERS.SEC_CONTACT' | translate }}</h4>
+                <h4><i>2</i>{{ 'CUSTOMERS.SEC_DOC' | translate }}</h4>
+                <div class="cu-doctypes" role="radiogroup" [attr.aria-label]="'CUSTOMERS.DOC_TYPE' | translate">
+                  @for (d of docTypes; track d.value) {
+                    <button type="button" role="radio" class="cu-doctype" [class.on]="form.document_type === d.value" [attr.aria-checked]="form.document_type === d.value" (click)="setDocType(d.value)">
+                      <b>{{ d.value }}</b><small>{{ d.labelKey | translate }}</small>
+                    </button>
+                  }
+                </div>
+                <div class="form-group">
+                  <label for="cust-tax">{{ 'CUSTOMERS.DOC_NUMBER' | translate }}</label>
+                  <div class="cu-docnum">
+                    <input id="cust-tax" type="text" [ngModel]="form.tax_id" (ngModelChange)="onDocInput($event)" name="tax_id" autocomplete="off"
+                      [attr.inputmode]="form.document_type === 'PA' ? 'text' : 'numeric'" [placeholder]="'CUSTOMERS.TAX_ID_PLACEHOLDER' | translate" [class.bad]="!!form.tax_id && !docOk()" />
+                    @if (form.document_type === 'NIT') {
+                      <span class="cu-dv" [class.empty]="nitDv() === null"><small>DV</small><b>{{ nitDv() === null ? '–' : nitDv() }}</b></span>
+                    }
+                  </div>
+                  @if (form.tax_id && !docOk()) {
+                    <p class="cu-err">{{ 'CUSTOMERS.DOC_INVALID' | translate }}</p>
+                  } @else {
+                    <p class="field-hint">{{ 'CUSTOMERS.DOC_HINT' | translate }}</p>
+                  }
+                </div>
+              </div>
+
+              <div class="cu-sec">
+                <h4><i>3</i>{{ 'CUSTOMERS.SEC_CONTACT' | translate }}</h4>
                 <div class="cu-two">
                   <div class="form-group">
                     <label for="cust-phone">{{ 'CUSTOMERS.PHONE' | translate }}</label>
-                    <input id="cust-phone" type="tel" [(ngModel)]="form.phone" name="phone" />
+                    <input id="cust-phone" type="tel" [(ngModel)]="form.phone" name="phone" autocomplete="off" />
                   </div>
                   <div class="form-group">
                     <label for="cust-email">{{ 'CUSTOMERS.EMAIL' | translate }}</label>
-                    <input id="cust-email" type="email" [(ngModel)]="form.email" name="email" />
+                    <input id="cust-email" type="email" [(ngModel)]="form.email" name="email" autocomplete="off" [class.bad]="!emailOk()" />
+                    @if (!emailOk()) { <p class="cu-err">{{ 'CUSTOMERS.EMAIL_INVALID' | translate }}</p> }
                   </div>
                 </div>
+                <p class="field-hint">{{ 'CUSTOMERS.EMAIL_HINT' | translate }}</p>
+                <div class="form-group">
+                  <label for="cust-address">{{ 'CUSTOMERS.ADDRESS' | translate }}</label>
+                  <input id="cust-address" type="text" [(ngModel)]="form.address" name="address" autocomplete="off" />
+                </div>
               </div>
+
               <div class="cu-sec">
-                <h4><i>3</i>{{ 'CUSTOMERS.SEC_BILLING' | translate }}</h4>
-                <div class="cu-two">
-                  <div class="form-group">
-                    <label for="cust-tax">{{ 'CUSTOMERS.TAX_ID' | translate }}</label>
-                    <input id="cust-tax" type="text" [(ngModel)]="form.tax_id" name="tax_id" [placeholder]="'CUSTOMERS.TAX_ID_PLACEHOLDER' | translate" />
-                  </div>
-                  <div class="form-group">
-                    <label for="cust-address">{{ 'CUSTOMERS.ADDRESS' | translate }}</label>
-                    <input id="cust-address" type="text" [(ngModel)]="form.address" name="address" />
-                  </div>
+                <h4><i>4</i>{{ 'CUSTOMERS.SEC_EXTRA' | translate }}</h4>
+                <div class="form-group">
+                  <label for="cust-birth">{{ 'CUSTOMERS.BIRTH_DATE' | translate }}</label>
+                  <app-date-picker id="cust-birth" [(ngModel)]="form.birth_date" name="birth_date" />
+                  <p class="field-hint">{{ 'CUSTOMERS.BIRTH_DATE_HINT' | translate }}</p>
                 </div>
               </div>
+
               <div class="cu-mfoot">
                 <button type="button" class="cu-ghost" (click)="closeModal()">{{ 'COMMON.CANCEL' | translate }}</button>
-                <button type="submit" class="cu-new" [disabled]="!form.name.trim() || saving()">
+                <button type="submit" class="cu-new" [disabled]="!canSave() || saving()">
                   {{ saving() ? ('COMMON.SAVING' | translate) : (editing() ? ('COMMON.SAVE' | translate) : ('CUSTOMERS.CREATE' | translate)) }}
                 </button>
               </div>
@@ -376,6 +411,25 @@ import { formatMoneyCents } from '../shared/currency-symbol';
     .cu-sec { padding: 16px 18px 6px; border-radius: 22px; border: 1px solid var(--color-border); background: #fff; }
     .cu-sec h4 { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.05rem; font-style: italic; font-weight: 500; }
     .cu-sec h4 i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-family: inherit; font-size: .8rem; font-style: normal; font-weight: 800; color: #fff; background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); }
+    .cu-ready { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .cu-ready span { padding: 2px 10px; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #8a817a; background: #ece5da; }
+    .cu-ready span.ok { color: #166534; background: #dcfce7; }
+    .cu-ready span.ok::before { content: '✓ '; }
+    .cu-dup { display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; border-radius: 18px; font-size: .86rem; color: #78350f; background: #fef3c7; box-shadow: inset 0 0 0 1px rgba(180, 83, 9, .2); }
+    .cu-doctypes { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; margin-bottom: 14px; }
+    .cu-doctype { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 10px 12px; border: 1.5px solid var(--color-border); border-radius: 16px; background: #fffdfa; font: inherit; text-align: left; cursor: pointer; color: var(--color-text); }
+    .cu-doctype b { font-size: .98rem; font-weight: 800; letter-spacing: .04em; }
+    .cu-doctype small { font-size: .66rem; font-weight: 600; line-height: 1.25; color: var(--color-text-muted); }
+    .cu-doctype:hover { border-color: var(--color-primary); }
+    .cu-doctype.on { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 9%, #fff); box-shadow: 0 0 0 1px var(--color-primary); }
+    .cu-docnum { display: flex; align-items: stretch; gap: 10px; }
+    .cu-form .cu-docnum input { flex: 1; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 1.05rem; letter-spacing: .06em; font-weight: 700; }
+    .cu-form input.bad { border-color: #dc2626; background: #fef2f2; }
+    .cu-dv { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 58px; padding: 2px 10px; border-radius: 16px; background: color-mix(in srgb, var(--color-primary) 10%, #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 35%, transparent); }
+    .cu-dv.empty { background: #f3eee6; box-shadow: inset 0 0 0 1px var(--color-border); }
+    .cu-dv small { font-size: .54rem; font-weight: 800; letter-spacing: .16em; color: var(--color-text-muted); }
+    .cu-dv b { font-family: Georgia, 'Times New Roman', serif; font-size: 1.25rem; font-weight: 500; line-height: 1; color: var(--color-primary); }
+    .cu-err { margin: 2px 0 0; font-size: .78rem; font-weight: 700; color: #dc2626; }
     .cu-two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
     @media (max-width: 560px) { .cu-two { grid-template-columns: 1fr; } }
     .cu-form .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
@@ -524,6 +578,7 @@ export class CustomersComponent implements OnInit {
     email: string;
     phone: string;
     birth_date: string;
+    document_type: string;
   } = {
     name: '',
     company_name: '',
@@ -531,8 +586,79 @@ export class CustomersComponent implements OnInit {
     address: '',
     email: '',
     phone: '',
-    birth_date: ''
+    birth_date: '',
+    document_type: 'CC'
   };
+
+  /** DIAN identification document types (RUT / Factus). */
+  readonly docTypes = [
+    { value: 'CC', labelKey: 'CUSTOMERS.DOC_CC' },
+    { value: 'NIT', labelKey: 'CUSTOMERS.DOC_NIT' },
+    { value: 'CE', labelKey: 'CUSTOMERS.DOC_CE' },
+    { value: 'PA', labelKey: 'CUSTOMERS.DOC_PA' },
+    { value: 'TI', labelKey: 'CUSTOMERS.DOC_TI' },
+  ];
+
+  isCompany(): boolean {
+    return this.form.document_type === 'NIT';
+  }
+
+  setDocType(value: string): void {
+    this.form.document_type = value;
+    this.onDocInput(this.form.tax_id);
+  }
+
+  /** Numeric documents keep digits only; passport allows letters and digits. */
+  onDocInput(v: string): void {
+    const raw = String(v ?? '');
+    this.form.tax_id =
+      this.form.document_type === 'PA'
+        ? raw.replace(/[^0-9a-zA-Z]/g, '').toUpperCase().slice(0, 16)
+        : raw.split('-')[0].replace(/\D/g, '').slice(0, 15);
+  }
+
+  docOk(): boolean {
+    const d = this.form.tax_id.trim();
+    if (!d) return false;
+    if (this.form.document_type === 'NIT') return d.length >= 8;
+    if (this.form.document_type === 'PA') return d.length >= 5;
+    return d.length >= 6;
+  }
+
+  emailOk(): boolean {
+    const e = this.form.email.trim();
+    return !e || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+  }
+
+  /** DIAN check digit for a NIT (módulo 11 with the official weights). */
+  nitDv(): number | null {
+    const d = this.form.tax_id.trim();
+    if (d.length < 5) return null;
+    const w = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71];
+    let sum = 0;
+    for (let i = 0; i < d.length; i++) sum += Number(d[d.length - 1 - i]) * w[i];
+    const r = sum % 11;
+    return r > 1 ? 11 - r : r;
+  }
+
+  /** Another customer with the same document or phone (warns before creating a duplicate). */
+  duplicate(): BillingCustomer | null {
+    const tax = this.form.tax_id.trim();
+    const phone = this.form.phone.replace(/\D/g, '');
+    const editingId = this.editing()?.id;
+    return (
+      this.customers().find(
+        (c) =>
+          c.id !== editingId &&
+          ((tax.length >= 5 && (c.tax_id || '').trim() === tax) ||
+            (phone.length >= 7 && (c.phone || '').replace(/\D/g, '') === phone)),
+      ) ?? null
+    );
+  }
+
+  canSave(): boolean {
+    return !!this.form.name.trim() && this.emailOk() && (!this.form.tax_id.trim() || this.docOk());
+  }
 
   canWrite(): boolean {
     return this.permissions.hasPermission(this.api.getCurrentUser(), 'billing_customer:write');
@@ -563,7 +689,8 @@ export class CustomersComponent implements OnInit {
         address: c.address ?? '',
         email: c.email ?? '',
         phone: c.phone ?? '',
-        birth_date: c.birth_date ?? ''
+        birth_date: c.birth_date ?? '',
+        document_type: c.document_type || 'CC'
       };
     } else {
       this.form = {
@@ -573,7 +700,8 @@ export class CustomersComponent implements OnInit {
         address: '',
         email: '',
         phone: '',
-        birth_date: ''
+        birth_date: '',
+        document_type: 'CC'
       };
     }
     this.showModal.set(true);
@@ -585,35 +713,27 @@ export class CustomersComponent implements OnInit {
   }
 
   save() {
-    if (!this.form.name.trim()) return;
+    if (!this.canSave()) return;
     this.saving.set(true);
-    const payload: {
-      name: string;
-      company_name?: string;
-      tax_id?: string;
-      address?: string;
-      email?: string;
-      phone?: string;
-      birth_date?: string | null;
-    } = {
-      name: this.form.name.trim(),
-      company_name: this.form.company_name?.trim() || undefined,
-      tax_id: this.form.tax_id?.trim() || undefined,
-      address: this.form.address?.trim() || undefined,
-      email: this.form.email?.trim() || undefined,
-      phone: this.form.phone?.trim() || undefined
-    };
+    const f = this.form;
+    const orNull = (v: string): string | null => v.trim() || null;
     const editing = this.editing();
+    const payload = {
+      name: f.name.trim(),
+      company_name: orNull(f.company_name),
+      tax_id: orNull(f.tax_id),
+      document_type: f.tax_id.trim() ? f.document_type : null,
+      address: orNull(f.address),
+      email: orNull(f.email),
+      phone: orNull(f.phone),
+      birth_date: orNull(f.birth_date),
+    };
     if (editing) {
-      payload.birth_date = this.form.birth_date.trim() || null;
       this.api.updateBillingCustomer(editing.id, payload).subscribe({
         next: () => { this.saving.set(false); this.closeModal(); this.load(); },
         error: err => { this.error.set(err.error?.detail || 'Update failed'); this.saving.set(false); }
       });
     } else {
-      if (this.form.birth_date.trim()) {
-        payload.birth_date = this.form.birth_date.trim();
-      }
       this.api.createBillingCustomer(payload).subscribe({
         next: () => { this.saving.set(false); this.closeModal(); this.load(); },
         error: err => { this.error.set(err.error?.detail || 'Create failed'); this.saving.set(false); }

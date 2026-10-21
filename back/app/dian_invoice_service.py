@@ -98,6 +98,7 @@ def build_issue_payload(
             "name": billing_customer.name,
             "company_name": billing_customer.company_name,
             "identification": billing_customer.tax_id,
+            "document_type": billing_customer.document_type,
             "address": billing_customer.address,
             "email": billing_customer.email,
             "phone": billing_customer.phone,
