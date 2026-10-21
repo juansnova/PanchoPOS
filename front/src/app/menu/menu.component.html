@@ -376,116 +376,122 @@
         </header>
         }
         <div class="products-grid">
-          @for (product of group.items; track getProductKey(product)) {
-          <article class="product-card" (click)="openProductDetail(product)"
-            [class.in-cart]="isProductInMenuCart(product)" [class.just-added]="isProductJustAdded(product)">
-            <!-- Product Image -->
-            <div class="product-image-container" [attr.data-initial]="product.name.charAt(0)">
-              @if (product.image_filename) {
-              <img [src]="getProductImageUrl(product)" class="product-image" alt="{{ product.name }}" loading="lazy">
-              } @else {
-              <div class="product-image-placeholder">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <path d="M21 15l-5-5L5 21" />
-                </svg>
-              </div>
-              }
-
-              <!-- Badges overlay -->
-              <div class="badges-overlay">
-                @if (product.wine_type) {
-                <span class="type-badge" [class]="'wine-type-' + getWineTypeClass(product.wine_type)">
-                  {{ getWineTypeLabel(product.wine_type) }}
-                </span>
-                }
-                @if (hasDietaryInfo(product)) {
-                <div class="dietary-badges">
-                  @if (isVegetarian(product)) {
-                  <span class="dietary-badge vegetarian" title="Vegetarian">🥬</span>
-                  }
-                  @if (isVegan(product)) {
-                  <span class="dietary-badge vegan" title="Vegan">🌱</span>
-                  }
-                  @if (isGlutenFree(product)) {
-                  <span class="dietary-badge gluten-free" title="Gluten Free">🌾</span>
-                  }
-                </div>
-                }
-              </div>
+          @for (product of group.items; track getProductKey(product); let pi = $index) {
+          <article class="product-card dish" (click)="openProductDetail(product)"
+          [class.in-cart]="isProductInMenuCart(product)" [class.just-added]="isProductJustAdded(product)">
+          <!-- Photo -->
+          <div class="product-image-container dish-photo" [attr.data-initial]="product.name.charAt(0)">
+            @if (product.image_filename) {
+            <img [src]="getProductImageUrl(product)" class="product-image" alt="{{ product.name }}" loading="lazy">
+            } @else {
+            <div class="product-image-placeholder">
+              <span class="dish-initial" aria-hidden="true">{{ product.name.charAt(0) }}</span>
             </div>
+            }
 
-            <!-- Product Info -->
-            <div class="product-info">
-              <div class="product-header-row">
-                <h3 class="product-name">{{ product.name }}</h3>
-                <span class="product-price">
-                  @if (product.list_price_cents != null && product.list_price_cents > product.price_cents) {
-                    <span class="list-price">{{ formatPrice(product.list_price_cents) }}</span>
-                  }
-                  {{ formatPrice(product.price_cents) }}
-                  @if (product.promo_label) {
-                    <span class="promo-badge">{{ product.promo_label }}</span>
-                  }
-                </span>
-              </div>
-              @if (stockLeft(product); as left) {
-              <p class="stock-left-badge">{{ 'MENU.STOCK_ONLY_LEFT' | translate:{ count: left } }}</p>
+            <div class="badges-overlay">
+              @if (product.wine_type) {
+              <span class="type-badge" [class]="'wine-type-' + getWineTypeClass(product.wine_type)">
+                {{ getWineTypeLabel(product.wine_type) }}
+              </span>
               }
-
-              <!-- Origin / Winery -->
-              @if (product.country || product.region || product.winery) {
-              <p class="product-origin">
-                @if (product.winery) {
-                {{ product.winery }}
-                @if (product.country || product.region) { · }
+              @if (hasDietaryInfo(product)) {
+              <div class="dietary-badges">
+                @if (isVegetarian(product)) {
+                <span class="dietary-badge vegetarian" title="Vegetarian">🥬</span>
                 }
-                {{ product.country }}{{ product.country && product.region ? ', ' : '' }}{{ product.region }}
-                @if (product.vintage) { · {{ product.vintage }} }
-              </p>
-              }
-
-              <!-- Short Description (visible by default) -->
-              @if (product.detailed_description || product.description) {
-              <p class="product-description">
-                {{ (product.detailed_description || product.description) | slice:0:80 }}@if ((product.detailed_description
-                || product.description)!.length > 80) {…}
-              </p>
-              }
-
-              <!-- Ingredients preview -->
-              @if (product.ingredients) {
-              <p class="product-ingredients">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path
-                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-                </svg>
-                {{ product.ingredients | slice:0:50 }}@if (product.ingredients.length > 50) {…}
-              </p>
-              }
-
-              <!-- Wine details badges -->
-              @if (product.wine_style || product.grape_variety) {
-              <div class="detail-badges">
-                @if (product.grape_variety) {
-                <span class="detail-badge">{{ product.grape_variety }}</span>
+                @if (isVegan(product)) {
+                <span class="dietary-badge vegan" title="Vegan">🌱</span>
                 }
-                @if (product.wine_style) {
-                <span class="detail-badge">{{ product.wine_style }}</span>
+                @if (isGlutenFree(product)) {
+                <span class="dietary-badge gluten-free" title="Gluten Free">🌾</span>
                 }
               </div>
               }
             </div>
 
-            <!-- Add Button -->
-            <button class="add-to-cart-btn" (click)="addToCart(product); $event.stopPropagation()">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
+            @if (isProductInMenuCart(product)) {
+            <span class="dish-in-cart">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+              {{ 'MENU.IN_CART_BADGE' | translate }}
+            </span>
+            }
+
+            <!-- Price stamp -->
+            <span class="product-price dish-price">
+              @if (product.list_price_cents != null && product.list_price_cents > product.price_cents) {
+                <span class="list-price">{{ formatPrice(product.list_price_cents) }}</span>
+              }
+              {{ formatPrice(product.price_cents) }}
+              @if (product.promo_label) {
+                <span class="promo-badge">{{ product.promo_label }}</span>
+              }
+            </span>
+          </div>
+
+          <!-- Body -->
+          <div class="product-info dish-body">
+            <p class="dish-eyebrow">
+              <span>{{ product.category ? getCategoryLabel(product.category) : ('MENU.TITLE' | translate) }}</span>
+              <i aria-hidden="true"></i>
+              <b>{{ pi + 1 < 10 ? '0' : '' }}{{ pi + 1 }}</b>
+            </p>
+            <h3 class="product-name">{{ product.name }}</h3>
+            @if (stockLeft(product); as left) {
+            <p class="stock-left-badge">{{ 'MENU.STOCK_ONLY_LEFT' | translate:{ count: left } }}</p>
+            }
+
+            @if (product.country || product.region || product.winery) {
+            <p class="product-origin">
+              @if (product.winery) {
+              {{ product.winery }}
+              @if (product.country || product.region) { · }
+              }
+              {{ product.country }}{{ product.country && product.region ? ', ' : '' }}{{ product.region }}
+              @if (product.vintage) { · {{ product.vintage }} }
+            </p>
+            }
+
+            @if (product.detailed_description || product.description) {
+            <p class="product-description">
+              {{ (product.detailed_description || product.description) | slice:0:80 }}@if ((product.detailed_description
+              || product.description)!.length > 80) {…}
+            </p>
+            }
+
+            @if (product.ingredients) {
+            <p class="product-ingredients">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
               </svg>
-            </button>
-          </article>
+              {{ product.ingredients | slice:0:50 }}@if (product.ingredients.length > 50) {…}
+            </p>
+            }
+
+            @if (product.wine_style || product.grape_variety) {
+            <div class="detail-badges">
+              @if (product.grape_variety) {
+              <span class="detail-badge">{{ product.grape_variety }}</span>
+              }
+              @if (product.wine_style) {
+              <span class="detail-badge">{{ product.wine_style }}</span>
+              }
+            </div>
+            }
+
+            <div class="dish-foot">
+              <span class="dish-more">{{ 'MENU.VIEW_DETAIL' | translate }} <i>→</i></span>
+              <button class="add-to-cart-btn" (click)="addToCart(product); $event.stopPropagation()" [attr.aria-label]="'MENU.ADD_TO_CART' | translate">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span>{{ 'MENU.ADD_SHORT' | translate }}</span>
+              </button>
+            </div>
+          </div>
+        </article>
           }
         </div>
       </section>

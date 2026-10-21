@@ -308,7 +308,7 @@
 }
 
 // Signature dish: dark card (every 9th, starting with the first); from tablet up it spans two columns.
-.menu-page .products-grid > .product-card:nth-child(9n + 1) {
+.menu-page .products-grid > .product-card:not(.dish):nth-child(9n + 1) {
   background: linear-gradient(160deg, var(--gm-ink-2), var(--gm-ink));
 
   .product-info {
@@ -356,7 +356,7 @@
 }
 
 @media (min-width: 600px) {
-  .menu-page .products-grid > .product-card:nth-child(9n + 1) {
+  .menu-page .products-grid > .product-card:not(.dish):nth-child(9n + 1) {
     grid-column: span 2;
     display: grid;
     grid-template-columns: 1.15fr 1fr;
@@ -431,7 +431,7 @@
 }
 
 // Table menu uses .stock-left-badge / .product-origin / .product-ingredients inside the dark signature card.
-.menu-page .products-grid > .product-card:nth-child(9n + 1) {
+.menu-page .products-grid > .product-card:not(.dish):nth-child(9n + 1) {
   .stock-left-badge {
     background: rgba(242, 184, 75, 0.16);
     color: var(--gm-saffron);
@@ -521,7 +521,7 @@
 }
 
 // ---- 3: POSTER. Tall card, photo fills it, text sits on a dark gradient over the image.
-.menu-page .products-grid > .product-card:nth-child(9n + 3) {
+.menu-page .products-grid > .product-card:not(.dish):nth-child(9n + 3) {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -586,7 +586,7 @@
 }
 
 // ---- 5: STAMP. Classic card, but the price becomes a tilted round seal on the photo.
-.menu-page .products-grid > .product-card:nth-child(9n + 5) {
+.menu-page .products-grid > .product-card:not(.dish):nth-child(9n + 5) {
   .product-price {
     position: absolute;
     top: var(--space-3);
@@ -623,7 +623,7 @@
 }
 
 // ---- 8: MENU LINE. Full-width strip like a printed menu: round thumb, name .......... price.
-.menu-page .products-grid > .product-card:nth-child(9n + 8) {
+.menu-page .products-grid > .product-card:not(.dish):nth-child(9n + 8) {
   display: grid;
   grid-template-columns: 4.75rem 1fr;
   align-items: center;
@@ -702,7 +702,7 @@
   }
 }
 
-.menu-page .products-grid > .product-card:nth-child(9n + 6) {
+.menu-page .products-grid > .product-card:not(.dish):nth-child(9n + 6) {
   @include gm-tone(var(--gm-blush), var(--gm-ink), #5f554e, var(--gm-ink), var(--gm-cream), var(--color-primary), #fff);
 
   display: grid;
@@ -743,7 +743,7 @@
     grid-auto-flow: dense;
   }
 
-  .menu-page .products-grid > .product-card:nth-child(9n + 6) {
+  .menu-page .products-grid > .product-card:not(.dish):nth-child(9n + 6) {
     grid-column: span 2;
     grid-template-columns: 1fr 1.1fr;
 

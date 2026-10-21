@@ -480,6 +480,9 @@
   "MENU": {
     "TITLE": "Menú",
     "ADD_TO_CART": "Añadir al carrito",
+    "IN_CART_BADGE": "En tu pedido",
+    "ADD_SHORT": "Agregar",
+    "VIEW_DETAIL": "Ver detalle",
     "VIEW_CART": "Ver carrito",
     "CART": "Carrito",
     "CART_EMPTY": "Tu carrito está vacío",
