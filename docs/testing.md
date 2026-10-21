@@ -434,6 +434,14 @@ npm run test:review-order-edit --prefix front
 
 ---
 
+### Admin screens smoke test (cash close, stock, purchase orders, reports, customers)
+
+Logs in as **owner or admin**, opens each redesigned admin screen, checks its main block renders with no console errors, and that the first four have no horizontal scroll at 390px.
+
+```bash
+LOGIN_EMAIL=... LOGIN_PASSWORD=... npm run test:admin-screens --prefix front
+```
+
 ### 8. Reports (Sales & Revenue) smoke test
 
 Login as **owner or admin**, open `/reports`, and assert the Reports page loads (date range inputs and `[data-testid="reports-page"]` present). Use after Reports feature work.
