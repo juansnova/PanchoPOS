@@ -153,6 +153,9 @@ def _submit_factus(
         content, endpoint = _factus_bill_payload(pos_payload), "bills/validate"
     else:
         content, endpoint = _factus_credit_note_payload(pos_payload), "credit-notes/validate"
+        range_id = _factus_credit_note_range_id(base, token)
+        if range_id:
+            content["numbering_range_id"] = range_id
     url = f"{base}/{endpoint}"
     headers = {
         "Authorization": f"Bearer {token}",
@@ -309,6 +312,31 @@ def _factus_credit_note_payload(pos: dict[str, Any]) -> dict[str, Any]:
         "items": items,
     }
     return content
+
+
+def _factus_credit_note_range_id(base: str, token: str) -> int | None:
+    """Factus requires `numbering_range_id` only when several credit-note ranges are active.
+
+    A range can get stuck (e.g. a DIAN rejection leaves a pending note), so when there is
+    more than one the most recent (highest id) is used. None = let Factus pick the only one.
+    """
+    try:
+        resp = requests.get(
+            f"{base}/numbering-ranges",
+            headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+            timeout=12,
+        )
+        rows = (_parse_json_body(resp).get("data") or {}).get("data") or []
+        ids = [
+            int(r["id"])
+            for r in rows
+            if str(r.get("document", "")).startswith("Nota Cr")
+            and r.get("is_active")
+            and not r.get("is_expired")
+        ]
+    except (requests.RequestException, AttributeError, KeyError, TypeError, ValueError):
+        return None
+    return max(ids) if len(ids) > 1 else None
 
 
 def _factus_auth(base: str, *, mode: str) -> str | None:
