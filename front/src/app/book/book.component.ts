@@ -24,7 +24,7 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
   standalone: true,
   imports: [FormsModule, TranslateModule, PublicGuestHeaderComponent, ReservationWeekSlotGridComponent, LegalLinksComponent, RouterLink],
   templateUrl: './book.component.html',
-  styleUrl: './book.component.scss',
+  styleUrl: './book-page.scss',
 })
 export class BookComponent implements OnInit {
   @ViewChild(ReservationWeekSlotGridComponent) private weekSlotGrid?: ReservationWeekSlotGridComponent;
@@ -96,6 +96,29 @@ export class BookComponent implements OnInit {
       month: '2-digit',
       day: '2-digit',
     }).format(new Date());
+  }
+
+  readonly serviceKeys: ('all' | 'lunch' | 'dinner')[] = ['all', 'lunch', 'dinner'];
+
+  /** One dot per guest on the ticket (up to 8; the rest shown as +N). */
+  partyDots(): number[] {
+    const n = Math.max(0, Math.min(8, Math.floor(Number(this.formPartySize) || 0)));
+    return Array.from({ length: n }, (_, i) => i);
+  }
+
+  changeParty(delta: number): void {
+    const cur = Math.floor(Number(this.formPartySize) || 1);
+    this.formPartySize = Math.min(this.maxPartySize(), Math.max(1, cur + delta));
+  }
+
+  /** "mié 21 oct · 7:30 p. m." once a day and a time are chosen. */
+  summaryWhen(): string {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec((this.formDate || '').trim());
+    const tm = /^(\d{2}):(\d{2})/.exec((this.formTime || '').trim());
+    if (!m || !tm) return '';
+    const d = new Date(+m[1], +m[2] - 1, +m[3], +tm[1], +tm[2]);
+    const day = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+    return `${day.charAt(0).toUpperCase()}${day.slice(1)} · ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
   }
 
   hasMealSplit = computed(() => tenantOpeningHoursHasMealSplit(this.tenant()?.opening_hours));

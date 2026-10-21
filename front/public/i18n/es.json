@@ -1415,6 +1415,18 @@
     "reserved": "Reservada"
   },
   "BOOK": {
+    "EYEBROW": "Reservas",
+    "HEADLINE_A": "Reserva tu mesa",
+    "HEADLINE_B": "y deja el sabor en nuestras manos.",
+    "INTRO_FALLBACK": "Elige cuántos son, el día y la hora. Tu reserva queda confirmada al instante.",
+    "TICKET_LABEL": "Tu reserva",
+    "SUBMIT_HINT": "Cuatro pasos y listo",
+    "SEC_TABLE": "Tu mesa",
+    "SEC_WHEN": "Día y hora",
+    "SEC_YOU": "Tus datos",
+    "SEC_EXTRA": "Detalles (opcional)",
+    "SUMMARY_EMPTY": "Elige un día y una hora",
+    "SUMMARY_GUESTS": "{{n}} persona(s)",
     "TITLE": "Reservar una mesa",
     "OPENING_HOURS": "Horario",
     "SUBMIT": "Reservar mesa",

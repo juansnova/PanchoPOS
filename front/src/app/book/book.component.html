@@ -1,4 +1,4 @@
-<div class="book-page" [style.--color-bg]="tenant()?.public_background_color ?? null" [style.--hero-header-bg]="tenant()?.public_background_color ?? null" [style.--color-primary]="primaryColorCss()">
+<div class="bk-page book-page" [style.--color-primary]="primaryColorCss()">
   <app-public-guest-header
     [tenantId]="tenantId()"
     [publicMenuRef]="tenant()?.public_slug?.trim() || tenantId()"
@@ -8,448 +8,320 @@
     [headerBackgroundColor]="tenant()?.public_background_color ?? null"
     activePage="book"
   />
+
   @if (loading()) {
-    <div class="loading-screen">
-      <div class="loading-content">
-        <div class="skeleton-header">
-          <div class="skeleton-logo"></div>
-          <div class="skeleton-text skeleton-title"></div>
-          <div class="skeleton-text skeleton-subtitle short"></div>
-        </div>
-        <div class="skeleton-cards">
-          <div class="skeleton-card">
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short"></div>
-          </div>
-          <div class="skeleton-card">
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div class="bk-loading loading-screen" aria-hidden="true"><i></i><i></i></div>
   } @else {
-    <!-- Hero Header: same layout/classes as /public-menu (carta) -->
-    <header class="hero-header" [class.has-bg-image]="tenant()?.header_background_filename">
-      @if (headerBackgroundImgUrl(); as bannerUrl) {
-        <img [src]="bannerUrl" alt="" class="hero-banner-img" />
-      } @else {
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-          <div class="hero-top-row">
-            @if (logoUrl()) {
-              <div class="logo-container">
-                <img [src]="getLogoSafeUrl(logoUrl())" [alt]="tenant()?.name" class="tenant-logo" />
-              </div>
-            }
-          </div>
-          <div class="hero-info">
-            <h1 class="restaurant-name">{{ tenant()?.name || ('BOOK.TITLE' | translate) }}</h1>
-            @if (tenant()?.description) {
-              <p class="restaurant-tagline">{{ tenant()!.description }}</p>
-            }
-          </div>
-        </div>
-      }
-
-    </header>
-
-    <main class="book-content" id="book-content">
-      @if (!successReservation()) {
-        @if (tenant()?.reservation_cancellation_policy || tenant()?.reservation_prepayment_text || tenant()?.reservation_arrival_tolerance_minutes != null || tenant()?.reservation_dress_code) {
-          <div class="book-card book-guidelines">
-            <h3 class="guidelines-title">{{ 'BOOK.RESTAURANT_GUIDELINES' | translate }}</h3>
-            @if (tenant()?.reservation_prepayment_cents != null && (tenant()?.reservation_prepayment_cents ?? 0) > 0) {
-              <div class="guideline-item">
-                <span class="guideline-label">{{ 'BOOK.PREPAYMENT' | translate }}:</span>
-                <span class="guideline-text">{{ tenant()?.reservation_prepayment_text || ('BOOK.PREPAYMENT_DEFAULT' | translate) }}</span>
-              </div>
-            }
-            @if (tenant()?.reservation_cancellation_policy) {
-              <div class="guideline-item">
-                <span class="guideline-label">{{ 'BOOK.CANCELLATION_POLICY' | translate }}:</span>
-                <span class="guideline-text">{{ tenant()?.reservation_cancellation_policy }}</span>
-              </div>
-            }
-            @if (tenant()?.reservation_arrival_tolerance_minutes != null && (tenant()?.reservation_arrival_tolerance_minutes ?? 0) > 0) {
-              <div class="guideline-item">
-                <span class="guideline-label">{{ 'BOOK.ARRIVAL_TOLERANCE' | translate }}:</span>
-                <span class="guideline-text">{{ 'BOOK.ARRIVAL_TOLERANCE_MINUTES' | translate: { minutes: tenant()?.reservation_arrival_tolerance_minutes } }}</span>
-              </div>
-            }
-            @if (tenant()?.reservation_dress_code) {
-              <div class="guideline-item">
-                <span class="guideline-label">{{ 'BOOK.DRESS_CODE' | translate }}:</span>
-                <span class="guideline-text">{{ tenant()?.reservation_dress_code }}</span>
-              </div>
-            }
-          </div>
-        }
-        <div class="book-card" id="book-form-card">
-          <form (ngSubmit)="submit()" class="book-form" id="book-form" data-testid="book-form">
-            <div class="book-booking-controls">
-              <div class="form-group">
-                <label for="book-party">{{ 'RESERVATIONS.PARTY_SIZE' | translate }}</label>
-                <input
-                  id="book-party"
-                  type="number"
-                  min="1"
-                  [max]="maxPartySize()"
-                  [(ngModel)]="formPartySize"
-                  name="partySize"
-                  required
-                />
-              </div>
-              @if (hasMealSplit()) {
-                <div class="form-group">
-                  <label for="book-service">{{ 'BOOK.SERVICE_TYPE' | translate }}</label>
-                  <select id="book-service" [(ngModel)]="formService" name="serviceType">
-                    <option value="all">{{ serviceOptionLabel('all') }}</option>
-                    <option value="lunch">{{ serviceOptionLabel('lunch') }}</option>
-                    <option value="dinner">{{ serviceOptionLabel('dinner') }}</option>
-                  </select>
-                </div>
-              }
-              <div class="form-group book-seating-group">
-                <span class="label-block">{{ 'BOOK.SEATING_PREFERENCE' | translate }}</span>
-                <div class="radio-row">
-                  <label class="radio-label">
-                    <input type="radio" name="bookSeating" [(ngModel)]="formSeating" (ngModelChange)="onSeatingPreferenceChange()" value="no_preference" />
-                    {{ 'BOOK.SEATING_ANY' | translate }}
-                  </label>
-                  <label class="radio-label">
-                    <input type="radio" name="bookSeating" [(ngModel)]="formSeating" (ngModelChange)="onSeatingPreferenceChange()" value="indoor" />
-                    {{ 'BOOK.SEATING_INDOOR' | translate }}
-                  </label>
-                  <label class="radio-label">
-                    <input type="radio" name="bookSeating" [(ngModel)]="formSeating" (ngModelChange)="onSeatingPreferenceChange()" value="terrace" />
-                    {{ 'BOOK.SEATING_TERRACE' | translate }}
-                  </label>
-                </div>
-              </div>
-              @if (bookZones().length >= 1 && bookZonesForSeating().length === 0) {
-                <div class="form-error form-hint-block">{{ 'BOOK.NO_ZONE_FOR_SEATING' | translate }}</div>
-              }
-              @if (bookZonesForSeating().length >= 2) {
-                <div class="form-group">
-                  <label for="book-zone">{{ 'BOOK.LOCATION_ZONE' | translate }}</label>
-                  <select id="book-zone" [(ngModel)]="formFloorId" name="floorId" required>
-                    <option [ngValue]="null" disabled>{{ 'BOOK.LOCATION_ZONE_PLACEHOLDER' | translate }}</option>
-                    @for (z of bookZonesForSeating(); track z.id) {
-                      <option [ngValue]="z.id">{{ z.name }}</option>
-                    }
-                  </select>
-                </div>
-              }
-              <div class="form-group">
-                <label for="book-dietary">{{ 'RESERVATIONS.CUSTOMER_NOTES' | translate }}</label>
-                <textarea
-                  id="book-dietary"
-                  class="book-dietary-notes"
-                  [(ngModel)]="formDietaryNotes"
-                  name="dietaryNotes"
-                  rows="2"
-                  [placeholder]="'BOOK.ALLERGIES_DETAIL_PLACEHOLDER' | translate"
-                ></textarea>
-              </div>
-            </div>
-            <app-reservation-week-slot-grid
-              [tenantId]="tenantId()"
-              [partySize]="formPartySize"
-              [timezone]="tenant()?.timezone ?? null"
-              [weekAnchorSeed]="formDate"
-              [serviceType]="hasMealSplit() ? formService : 'all'"
-              [openingHoursJson]="tenant()?.opening_hours ?? null"
-              [bookFloorId]="formFloorId"
-              [(selectedDate)]="formDate"
-              [(selectedTime)]="formTime"
-            />
-            <div class="form-group">
-              <label>{{ 'RESERVATIONS.CUSTOMER_NAME' | translate }}</label>
-              <input type="text" [(ngModel)]="formName" name="name" required />
-            </div>
-            <div class="form-group">
-              <label>{{ 'RESERVATIONS.CUSTOMER_PHONE' | translate }}</label>
-              <input type="tel" [(ngModel)]="formPhone" name="phone" required />
-            </div>
-            <div class="form-group">
-              <label for="book-email">{{ 'RESERVATIONS.CUSTOMER_EMAIL' | translate }}</label>
-              <input type="email" id="book-email" [(ngModel)]="formEmail" name="email" placeholder="your@email.com" autocomplete="email" />
-            </div>
-              <div class="form-group">
-                <label for="book-notes">{{ 'RESERVATIONS.RESERVATION_NOTES' | translate }}</label>
-                <textarea id="book-notes" [(ngModel)]="formClientNotes" name="clientNotes" rows="2" [placeholder]="'RESERVATIONS.RESERVATION_NOTES_PLACEHOLDER' | translate"></textarea>
-              </div>
-              @if (tenant()?.guest_birthday_capture_enabled !== false) {
-                <div class="form-group form-row-birthday">
-                  <span class="label-block">{{ 'BOOK.BIRTHDAY_OPTIONAL' | translate }}</span>
-                  <div class="birthday-selects">
-                    <label class="sr-only" for="book-bday-month">{{ 'BOOK.BIRTHDAY_MONTH' | translate }}</label>
-                    <select id="book-bday-month" [(ngModel)]="formBirthdayMonth" name="bdayMonth">
-                      <option [ngValue]="null">{{ 'BOOK.BIRTHDAY_MONTH' | translate }}</option>
-                      @for (m of birthdayMonths; track m.value) {
-                        <option [ngValue]="m.value">{{ m.labelKey | translate }}</option>
-                      }
-                    </select>
-                    <label class="sr-only" for="book-bday-day">{{ 'BOOK.BIRTHDAY_DAY' | translate }}</label>
-                    <select id="book-bday-day" [(ngModel)]="formBirthdayDay" name="bdayDay">
-                      <option [ngValue]="null">{{ 'BOOK.BIRTHDAY_DAY' | translate }}</option>
-                      @for (d of birthdayDays; track d) {
-                        <option [ngValue]="d">{{ d }}</option>
-                      }
-                    </select>
-                  </div>
-                  <small class="field-hint">{{ 'BOOK.BIRTHDAY_HINT' | translate }}</small>
-                </div>
-                @if (tenant()?.guest_birthday_marketing_enabled) {
-                  <div class="form-group checkbox-row">
-                    <label class="check-label">
-                      <input type="checkbox" [(ngModel)]="formBirthdayMarketingConsent" name="bdayConsent" />
-                      {{ tenant()?.guest_birthday_consent_text || ('BOOK.BIRTHDAY_CONSENT_DEFAULT' | translate) }}
-                    </label>
-                  </div>
-                }
-              }
-              @if (error()) {
-              <div class="form-error">{{ error() }}</div>
-            }
-            <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-              {{ submitting() ? ('BOOK.SUBMITTING' | translate) : ('BOOK.SUBMIT' | translate) }}
-            </button>
-            <p class="book-waitlist-link">
-              <a [routerLink]="['/waitlist', tenantId()]">{{ 'BOOK.LINK_WAITLIST' | translate }}</a>
-            </p>
-          </form>
-        </div>
-        @if (tenant()?.phone || tenant()?.email || tenant()?.whatsapp || tenant()?.address?.trim() || googleMapsUrl() || openstreetmapUrl() || websiteHref() || facebookUrl() || instagramUrl() || formatOpeningHours(tenant()?.opening_hours)) {
-          <div class="book-card book-contact-card">
-            <h3 class="success-contact-title">{{ 'BOOK.CONTACT_RESTAURANT' | translate }}</h3>
-            @if (tenant()?.address?.trim() || googleMapsUrl() || openstreetmapUrl()) {
-              <div class="restaurant-location">
-                @if (tenant()?.address?.trim()) {
-                  <p class="restaurant-address">
-                    <span class="oh-label">{{ 'BOOK.ADDRESS' | translate }}:</span>
-                    {{ tenant()!.address }}
-                  </p>
-                }
-                @if (googleMapsUrl() || openstreetmapUrl()) {
-                  <div class="book-maps-actions">
-                    @if (googleMapsUrl()) {
-                      <a
-                        [href]="googleMapsUrl()!"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="btn btn-secondary book-maps-btn"
-                      >
-                        {{ 'BOOK.OPEN_IN_GOOGLE_MAPS' | translate }}
-                      </a>
-                    }
-                    @if (openstreetmapUrl()) {
-                      <a
-                        [href]="openstreetmapUrl()!"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="btn btn-secondary book-maps-btn"
-                      >
-                        {{ 'BOOK.OPEN_IN_OPENSTREETMAP' | translate }}
-                      </a>
-                    }
-                  </div>
-                }
-              </div>
-            }
-            @if (formatOpeningHours(tenant()?.opening_hours)) {
-              <div class="opening-hours-display">
-                <span class="oh-label">{{ 'BOOK.OPENING_HOURS' | translate }}:</span>
-                <span class="oh-text">{{ formatOpeningHours(tenant()?.opening_hours) }}</span>
-              </div>
-            }
-            @if (tenant()?.phone || tenant()?.email || tenant()?.whatsapp) {
-              <div class="restaurant-contact">
-                @if (tenant()?.phone) {
-                  <a [href]="'tel:' + tenant()!.phone" class="contact-link">{{ tenant()!.phone }}</a>
-                }
-                @if (tenant()?.phone && (tenant()?.email || tenant()?.whatsapp)) {
-                  <span class="contact-sep">·</span>
-                }
-                @if (tenant()?.whatsapp) {
-                  <a [href]="getWhatsAppUrl(tenant()?.whatsapp ?? '')" target="_blank" rel="noopener noreferrer" class="contact-link contact-link-whatsapp">
-                    <svg class="whatsapp-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                    </svg>
-                    <span>{{ 'SETTINGS.WHATSAPP' | translate }}</span>
-                  </a>
-                }
-                @if (tenant()?.whatsapp && tenant()?.email) {
-                  <span class="contact-sep">·</span>
-                }
-                @if (tenant()?.email) {
-                  <a [href]="'mailto:' + tenant()!.email" class="contact-link">{{ tenant()!.email }}</a>
-                }
-              </div>
-            }
-            @if (websiteHref()) {
-              <p class="restaurant-website">
-                <a
-                  [href]="websiteHref()!"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="contact-link restaurant-website-link"
-                  [attr.title]="websiteHref()"
-                >
-                  <span class="restaurant-website-text">{{ websiteLinkText() }}</span>
-                  <svg
-                    class="external-link-icon"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    aria-hidden="true"
-                  >
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    <polyline points="15 3 21 3 21 9" />
-                    <line x1="10" y1="14" x2="21" y2="3" />
-                  </svg>
-                </a>
-              </p>
-            }
-            @if (facebookUrl() || instagramUrl()) {
-              <div class="restaurant-social-links">
-                @if (facebookUrl()) {
-                  <a [href]="facebookUrl()!" target="_blank" rel="noopener noreferrer" class="contact-link contact-link-social" [attr.aria-label]="'BOOK.FACEBOOK' | translate">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.89h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94Z"/>
-                    </svg>
-                    <span>{{ 'BOOK.FACEBOOK' | translate }}</span>
-                  </a>
-                }
-                @if (instagramUrl()) {
-                  <a [href]="instagramUrl()!" target="_blank" rel="noopener noreferrer" class="contact-link contact-link-social" [attr.aria-label]="'BOOK.INSTAGRAM' | translate">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <rect x="3" y="3" width="18" height="18" rx="5" ry="5"/>
-                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37Z"/>
-                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-                    </svg>
-                    <span>{{ 'BOOK.INSTAGRAM' | translate }}</span>
-                  </a>
-                }
-              </div>
-            }
-          </div>
-        }
-      } @else {
-        <div class="book-card book-success-card">
-          <h2 class="success-title">{{ 'BOOK.SUCCESS_TITLE' | translate }}</h2>
-          <p class="success-message">{{ 'BOOK.SUCCESS_MESSAGE' | translate }}</p>
-          <div class="reservation-details">
-            <p><strong>{{ 'RESERVATIONS.RESERVATION_NUMBER' | translate }}:</strong> #{{ successReservation()?.id }}</p>
-            <p><strong>{{ 'RESERVATIONS.DATE' | translate }}:</strong> {{ successReservation()?.reservation_date }} {{ successReservation()?.reservation_time }}</p>
-            <p><strong>{{ 'RESERVATIONS.PARTY_SIZE' | translate }}:</strong> {{ successReservation()?.party_size }}</p>
-            <p><strong>{{ 'RESERVATIONS.CUSTOMER_NAME' | translate }}:</strong> {{ successReservation()?.customer_name }}</p>
-            @if (successReservation()?.customer_email) {
-              <p><strong>{{ 'RESERVATIONS.CUSTOMER_EMAIL' | translate }}:</strong> {{ successReservation()?.customer_email }}</p>
-            }
-            @if (successReservation()?.customer_phone) {
-              <p><strong>{{ 'RESERVATIONS.CUSTOMER_PHONE' | translate }}:</strong> {{ successReservation()?.customer_phone }}</p>
-            }
-          </div>
-          @if (tenant()?.address?.trim() || googleMapsUrl() || openstreetmapUrl()) {
-            <div class="restaurant-location book-success-location">
-              @if (tenant()?.address?.trim()) {
-                <p class="restaurant-address">
-                  <span class="oh-label">{{ 'BOOK.ADDRESS' | translate }}:</span>
-                  {{ tenant()!.address }}
-                </p>
-              }
-              @if (googleMapsUrl() || openstreetmapUrl()) {
-                <div class="book-maps-actions">
-                  @if (googleMapsUrl()) {
-                    <a
-                      [href]="googleMapsUrl()!"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="btn btn-secondary book-maps-btn"
-                    >
-                      {{ 'BOOK.OPEN_IN_GOOGLE_MAPS' | translate }}
-                    </a>
-                  }
-                  @if (openstreetmapUrl()) {
-                    <a
-                      [href]="openstreetmapUrl()!"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="btn btn-secondary book-maps-btn"
-                    >
-                      {{ 'BOOK.OPEN_IN_OPENSTREETMAP' | translate }}
-                    </a>
-                  }
-                </div>
-              }
-            </div>
+    <main class="bk-main" id="book-content">
+      <!-- ================= story / restaurant ================= -->
+      <aside class="bk-story">
+        <div class="bk-brand">
+          @if (logoUrl()) {
+            <span class="bk-brand-logo"><img [src]="getLogoSafeUrl(logoUrl())" [alt]="tenant()?.name || ''" /></span>
           }
-          @if (tenant()?.phone || tenant()?.email || tenant()?.whatsapp || facebookUrl() || instagramUrl()) {
-            <div class="book-contact-card">
-              <h3 class="success-contact-title">{{ 'BOOK.CONTACT_RESTAURANT' | translate }}</h3>
-              <div class="restaurant-contact">
-                @if (tenant()?.phone) {
-                  <a [href]="'tel:' + tenant()!.phone" class="contact-link">{{ tenant()!.phone }}</a>
-                }
-                @if (tenant()?.phone && (tenant()?.email || tenant()?.whatsapp)) {
-                  <span class="contact-sep">·</span>
-                }
-                @if (tenant()?.whatsapp) {
-                  <a [href]="getWhatsAppUrl(tenant()?.whatsapp ?? '')" target="_blank" rel="noopener noreferrer" class="contact-link contact-link-whatsapp">
-                    <svg class="whatsapp-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                    </svg>
-                    <span>{{ 'SETTINGS.WHATSAPP' | translate }}</span>
-                  </a>
-                }
-                @if (tenant()?.whatsapp && tenant()?.email) {
-                  <span class="contact-sep">·</span>
-                }
-                @if (tenant()?.email) {
-                  <a [href]="'mailto:' + tenant()!.email" class="contact-link">{{ tenant()!.email }}</a>
+          <span class="bk-brand-name">{{ tenant()?.name }}</span>
+        </div>
+
+        <span class="bk-eyebrow">{{ 'BOOK.EYEBROW' | translate }}</span>
+        <h1>{{ 'BOOK.HEADLINE_A' | translate }} <em>{{ 'BOOK.HEADLINE_B' | translate }}</em></h1>
+        <p class="bk-intro">{{ tenant()?.description || ('BOOK.INTRO_FALLBACK' | translate) }}</p>
+
+        <div class="bk-facts">
+          @if (formatOpeningHours(tenant()?.opening_hours)) {
+            <article class="bk-fact">
+              <span class="bk-fact-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></span>
+              <div><small>{{ 'BOOK.OPENING_HOURS' | translate }}</small><b>{{ formatOpeningHours(tenant()?.opening_hours) }}</b></div>
+            </article>
+          }
+          @if (tenant()?.address?.trim() || googleMapsUrl() || openstreetmapUrl()) {
+            <article class="bk-fact">
+              <span class="bk-fact-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z" /><circle cx="12" cy="10" r="2.5" /></svg></span>
+              <div>
+                <small>{{ 'BOOK.ADDRESS' | translate }}</small>
+                @if (tenant()?.address?.trim()) { <b>{{ tenant()!.address }}</b> }
+                @if (googleMapsUrl() || openstreetmapUrl()) {
+                  <div class="bk-maps">
+                    @if (googleMapsUrl()) { <a [href]="googleMapsUrl()!" target="_blank" rel="noopener noreferrer">{{ 'BOOK.OPEN_IN_GOOGLE_MAPS' | translate }} ↗</a> }
+                    @if (openstreetmapUrl()) { <a [href]="openstreetmapUrl()!" target="_blank" rel="noopener noreferrer">{{ 'BOOK.OPEN_IN_OPENSTREETMAP' | translate }} ↗</a> }
+                  </div>
                 }
               </div>
-              @if (facebookUrl() || instagramUrl()) {
-                <div class="restaurant-social-links">
+            </article>
+          }
+          @if (tenant()?.phone || tenant()?.email || tenant()?.whatsapp || websiteHref() || facebookUrl() || instagramUrl()) {
+            <article class="bk-fact">
+              <span class="bk-fact-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /></svg></span>
+              <div>
+                <small>{{ 'BOOK.CONTACT_RESTAURANT' | translate }}</small>
+                <div class="bk-links">
+                  @if (tenant()?.phone) { <a [href]="'tel:' + tenant()!.phone">{{ tenant()!.phone }}</a> }
+                  @if (tenant()?.whatsapp) {
+                    <a [href]="getWhatsAppUrl(tenant()?.whatsapp ?? '')" target="_blank" rel="noopener noreferrer" class="wa contact-link contact-link-whatsapp">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>WhatsApp
+                    </a>
+                  }
+                  @if (tenant()?.email) { <a [href]="'mailto:' + tenant()!.email">{{ tenant()!.email }}</a> }
+                  @if (websiteHref()) { <a [href]="websiteHref()!" target="_blank" rel="noopener noreferrer">{{ websiteLinkText() }} ↗</a> }
                   @if (facebookUrl()) {
-                    <a [href]="facebookUrl()!" target="_blank" rel="noopener noreferrer" class="contact-link contact-link-social" [attr.aria-label]="'BOOK.FACEBOOK' | translate">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.89h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94Z"/>
-                      </svg>
-                      <span>{{ 'BOOK.FACEBOOK' | translate }}</span>
+                    <a [href]="facebookUrl()!" target="_blank" rel="noopener noreferrer" [attr.aria-label]="'BOOK.FACEBOOK' | translate">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.89h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94Z" /></svg>{{ 'BOOK.FACEBOOK' | translate }}
                     </a>
                   }
                   @if (instagramUrl()) {
-                    <a [href]="instagramUrl()!" target="_blank" rel="noopener noreferrer" class="contact-link contact-link-social" [attr.aria-label]="'BOOK.INSTAGRAM' | translate">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <rect x="3" y="3" width="18" height="18" rx="5" ry="5"/>
-                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37Z"/>
-                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-                      </svg>
-                      <span>{{ 'BOOK.INSTAGRAM' | translate }}</span>
+                    <a [href]="instagramUrl()!" target="_blank" rel="noopener noreferrer" [attr.aria-label]="'BOOK.INSTAGRAM' | translate">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37Z" /><path d="M17.5 6.5h.01" /></svg>{{ 'BOOK.INSTAGRAM' | translate }}
                     </a>
                   }
                 </div>
-              }
-            </div>
-          }
-          <p class="view-cancel-hint">{{ 'BOOK.VIEW_CANCEL_HINT' | translate }}</p>
-          @if (successReservation()?.token) {
-            <button type="button" class="btn btn-secondary" (click)="goManageReservation()">
-              {{ 'BOOK.VIEW_OR_CANCEL' | translate }}
-            </button>
-          } @else {
-            <p class="form-error">{{ 'BOOK.VIEW_LINK_UNAVAILABLE' | translate }}</p>
+              </div>
+            </article>
           }
         </div>
-      }
+
+        @if (tenant()?.reservation_cancellation_policy || tenant()?.reservation_prepayment_text || tenant()?.reservation_arrival_tolerance_minutes != null || tenant()?.reservation_dress_code || (tenant()?.reservation_prepayment_cents ?? 0) > 0) {
+          <section class="bk-rules">
+            <h3>{{ 'BOOK.RESTAURANT_GUIDELINES' | translate }}</h3>
+            <ul>
+              @if ((tenant()?.reservation_prepayment_cents ?? 0) > 0) {
+                <li><b>{{ 'BOOK.PREPAYMENT' | translate }}</b> {{ tenant()?.reservation_prepayment_text || ('BOOK.PREPAYMENT_DEFAULT' | translate) }}</li>
+              }
+              @if (tenant()?.reservation_cancellation_policy) {
+                <li><b>{{ 'BOOK.CANCELLATION_POLICY' | translate }}</b> {{ tenant()?.reservation_cancellation_policy }}</li>
+              }
+              @if ((tenant()?.reservation_arrival_tolerance_minutes ?? 0) > 0) {
+                <li><b>{{ 'BOOK.ARRIVAL_TOLERANCE' | translate }}</b> {{ 'BOOK.ARRIVAL_TOLERANCE_MINUTES' | translate: { minutes: tenant()?.reservation_arrival_tolerance_minutes } }}</li>
+              }
+              @if (tenant()?.reservation_dress_code) {
+                <li><b>{{ 'BOOK.DRESS_CODE' | translate }}</b> {{ tenant()?.reservation_dress_code }}</li>
+              }
+            </ul>
+          </section>
+        }
+
+        <a class="bk-waitlist" [routerLink]="['/waitlist', tenantId()]">
+          <span>{{ 'BOOK.LINK_WAITLIST' | translate }}</span><i aria-hidden="true">→</i>
+        </a>
+      </aside>
+
+      <!-- ================= reservation ticket ================= -->
+      <section class="bk-ticket" id="book-form-card">
+        <header class="bk-ticket-top">
+          <div>
+            <small>{{ 'BOOK.TICKET_LABEL' | translate }}</small>
+            <b>{{ tenant()?.name }}</b>
+          </div>
+          <span class="bk-steps-hint">{{ successReservation() ? ('BOOK.SUCCESS_TITLE' | translate) : ('BOOK.SUBMIT_HINT' | translate) }}</span>
+        </header>
+        <div class="bk-perf" aria-hidden="true"><i></i><i></i></div>
+
+        @if (!successReservation()) {
+          <form (ngSubmit)="submit()" class="bk-form book-form" id="book-form" data-testid="book-form">
+            <!-- 1 · table -->
+            <fieldset class="bk-sec">
+              <legend><span>1</span>{{ 'BOOK.SEC_TABLE' | translate }}</legend>
+
+              <div class="bk-field">
+                <label for="book-party">{{ 'RESERVATIONS.PARTY_SIZE' | translate }}</label>
+                <div class="bk-guests">
+                  <button type="button" class="bk-step" (click)="changeParty(-1)" [disabled]="formPartySize <= 1" aria-label="-">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14" /></svg>
+                  </button>
+                  <div class="bk-count">
+                    <input id="book-party" type="number" min="1" [max]="maxPartySize()" [(ngModel)]="formPartySize" name="partySize" required inputmode="numeric" />
+                    <div class="bk-dots" aria-hidden="true">
+                      @for (d of partyDots(); track $index) { <i></i> }
+                      @if (formPartySize > 8) { <small>+{{ formPartySize - 8 }}</small> }
+                    </div>
+                  </div>
+                  <button type="button" class="bk-step" (click)="changeParty(1)" [disabled]="formPartySize >= maxPartySize()" aria-label="+">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                  </button>
+                </div>
+              </div>
+
+              @if (hasMealSplit()) {
+                <div class="bk-field">
+                  <span class="bk-label">{{ 'BOOK.SERVICE_TYPE' | translate }}</span>
+                  <div class="bk-chips" role="radiogroup">
+                    @for (s of serviceKeys; track s) {
+                      <label class="bk-chip">
+                        <input type="radio" name="serviceType" [value]="s" [(ngModel)]="formService" />
+                        <span>{{ serviceOptionLabel(s) }}</span>
+                      </label>
+                    }
+                  </div>
+                </div>
+              }
+
+              <div class="bk-field">
+                <span class="bk-label">{{ 'BOOK.SEATING_PREFERENCE' | translate }}</span>
+                <div class="bk-chips" role="radiogroup">
+                  <label class="bk-chip">
+                    <input type="radio" name="bookSeating" [(ngModel)]="formSeating" (ngModelChange)="onSeatingPreferenceChange()" value="no_preference" />
+                    <span>{{ 'BOOK.SEATING_ANY' | translate }}</span>
+                  </label>
+                  <label class="bk-chip">
+                    <input type="radio" name="bookSeating" [(ngModel)]="formSeating" (ngModelChange)="onSeatingPreferenceChange()" value="indoor" />
+                    <span>{{ 'BOOK.SEATING_INDOOR' | translate }}</span>
+                  </label>
+                  <label class="bk-chip">
+                    <input type="radio" name="bookSeating" [(ngModel)]="formSeating" (ngModelChange)="onSeatingPreferenceChange()" value="terrace" />
+                    <span>{{ 'BOOK.SEATING_TERRACE' | translate }}</span>
+                  </label>
+                </div>
+              </div>
+
+              @if (bookZones().length >= 1 && bookZonesForSeating().length === 0) {
+                <div class="bk-error">{{ 'BOOK.NO_ZONE_FOR_SEATING' | translate }}</div>
+              }
+              @if (bookZonesForSeating().length >= 2) {
+                <div class="bk-field">
+                  <span class="bk-label">{{ 'BOOK.LOCATION_ZONE' | translate }}</span>
+                  <div class="bk-chips" role="radiogroup">
+                    @for (z of bookZonesForSeating(); track z.id) {
+                      <label class="bk-chip">
+                        <input type="radio" name="floorId" [value]="z.id" [(ngModel)]="formFloorId" />
+                        <span>{{ z.name }}</span>
+                      </label>
+                    }
+                  </div>
+                </div>
+              }
+            </fieldset>
+
+            <!-- 2 · when -->
+            <fieldset class="bk-sec">
+              <legend><span>2</span>{{ 'BOOK.SEC_WHEN' | translate }}</legend>
+              <app-reservation-week-slot-grid
+                [elegant]="true"
+                [tenantId]="tenantId()"
+                [partySize]="formPartySize"
+                [timezone]="tenant()?.timezone ?? null"
+                [weekAnchorSeed]="formDate"
+                [serviceType]="hasMealSplit() ? formService : 'all'"
+                [openingHoursJson]="tenant()?.opening_hours ?? null"
+                [bookFloorId]="formFloorId"
+                [(selectedDate)]="formDate"
+                [(selectedTime)]="formTime"
+              />
+            </fieldset>
+
+            <!-- 3 · you -->
+            <fieldset class="bk-sec">
+              <legend><span>3</span>{{ 'BOOK.SEC_YOU' | translate }}</legend>
+              <div class="bk-field">
+                <label for="book-name">{{ 'RESERVATIONS.CUSTOMER_NAME' | translate }}</label>
+                <div class="bk-input">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6" /><path d="M5 20c.7-3.7 3.5-5.6 7-5.6s6.3 1.9 7 5.6" /></svg>
+                  <input id="book-name" type="text" [(ngModel)]="formName" name="name" required autocomplete="name" [placeholder]="'WAITLIST.NAME_PLACEHOLDER' | translate" />
+                </div>
+              </div>
+              <div class="bk-two">
+                <div class="bk-field">
+                  <label for="book-phone">{{ 'RESERVATIONS.CUSTOMER_PHONE' | translate }}</label>
+                  <div class="bk-input">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /></svg>
+                    <input id="book-phone" type="tel" [(ngModel)]="formPhone" name="phone" required autocomplete="tel" inputmode="tel" [placeholder]="'WAITLIST.PHONE_PLACEHOLDER' | translate" />
+                  </div>
+                </div>
+                <div class="bk-field">
+                  <label for="book-email">{{ 'RESERVATIONS.CUSTOMER_EMAIL' | translate }}</label>
+                  <div class="bk-input">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3" /><path d="m4 7 8 6 8-6" /></svg>
+                    <input id="book-email" type="email" [(ngModel)]="formEmail" name="email" autocomplete="email" placeholder="tu@correo.com" />
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- 4 · extras -->
+            <fieldset class="bk-sec">
+              <legend><span>4</span>{{ 'BOOK.SEC_EXTRA' | translate }}</legend>
+              <div class="bk-field">
+                <label for="book-dietary">{{ 'RESERVATIONS.CUSTOMER_NOTES' | translate }}</label>
+                <textarea id="book-dietary" class="bk-area" [(ngModel)]="formDietaryNotes" name="dietaryNotes" rows="2" [placeholder]="'BOOK.ALLERGIES_DETAIL_PLACEHOLDER' | translate"></textarea>
+              </div>
+              <div class="bk-field">
+                <label for="book-notes">{{ 'RESERVATIONS.RESERVATION_NOTES' | translate }}</label>
+                <textarea id="book-notes" class="bk-area" [(ngModel)]="formClientNotes" name="clientNotes" rows="2" [placeholder]="'RESERVATIONS.RESERVATION_NOTES_PLACEHOLDER' | translate"></textarea>
+              </div>
+              @if (tenant()?.guest_birthday_capture_enabled !== false) {
+                <div class="bk-field">
+                  <span class="bk-label">{{ 'BOOK.BIRTHDAY_OPTIONAL' | translate }}</span>
+                  <div class="bk-two bk-bday">
+                    <select id="book-bday-month" class="bk-select" [(ngModel)]="formBirthdayMonth" name="bdayMonth" [attr.aria-label]="'BOOK.BIRTHDAY_MONTH' | translate">
+                      <option [ngValue]="null">{{ 'BOOK.BIRTHDAY_MONTH' | translate }}</option>
+                      @for (m of birthdayMonths; track m.value) { <option [ngValue]="m.value">{{ m.labelKey | translate }}</option> }
+                    </select>
+                    <select id="book-bday-day" class="bk-select" [(ngModel)]="formBirthdayDay" name="bdayDay" [attr.aria-label]="'BOOK.BIRTHDAY_DAY' | translate">
+                      <option [ngValue]="null">{{ 'BOOK.BIRTHDAY_DAY' | translate }}</option>
+                      @for (d of birthdayDays; track d) { <option [ngValue]="d">{{ d }}</option> }
+                    </select>
+                  </div>
+                  <p class="bk-hint">{{ 'BOOK.BIRTHDAY_HINT' | translate }}</p>
+                </div>
+                @if (tenant()?.guest_birthday_marketing_enabled) {
+                  <label class="bk-check">
+                    <input type="checkbox" [(ngModel)]="formBirthdayMarketingConsent" name="bdayConsent" />
+                    <span>{{ tenant()?.guest_birthday_consent_text || ('BOOK.BIRTHDAY_CONSENT_DEFAULT' | translate) }}</span>
+                  </label>
+                }
+              }
+            </fieldset>
+
+            @if (error()) {
+              <div class="bk-error" role="alert">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5h.01" /></svg>
+                {{ error() }}
+              </div>
+            }
+
+            <!-- summary + submit -->
+            <div class="bk-bar">
+              <div class="bk-summary" [class.empty]="!summaryWhen()">
+                <small>{{ 'BOOK.TICKET_LABEL' | translate }}</small>
+                <b>{{ summaryWhen() || ('BOOK.SUMMARY_EMPTY' | translate) }}</b>
+                <span>{{ 'BOOK.SUMMARY_GUESTS' | translate: { n: formPartySize } }}</span>
+              </div>
+              <button type="submit" class="bk-submit" [disabled]="submitting()">
+                @if (submitting()) { <i class="bk-spin"></i> }
+                {{ submitting() ? ('BOOK.SUBMITTING' | translate) : ('BOOK.SUBMIT' | translate) }}
+                @if (!submitting()) {
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                }
+              </button>
+            </div>
+          </form>
+        } @else {
+          <div class="bk-done book-success-card">
+            <span class="bk-check-ico" aria-hidden="true">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+            </span>
+            <h2>{{ 'BOOK.SUCCESS_TITLE' | translate }}</h2>
+            <p>{{ 'BOOK.SUCCESS_MESSAGE' | translate }}</p>
+            <dl class="bk-sum">
+              <div><dt>{{ 'RESERVATIONS.RESERVATION_NUMBER' | translate }}</dt><dd>#{{ successReservation()?.id }}</dd></div>
+              <div><dt>{{ 'RESERVATIONS.DATE' | translate }}</dt><dd>{{ successReservation()?.reservation_date }} · {{ successReservation()?.reservation_time }}</dd></div>
+              <div><dt>{{ 'RESERVATIONS.PARTY_SIZE' | translate }}</dt><dd>{{ successReservation()?.party_size }}</dd></div>
+              <div><dt>{{ 'RESERVATIONS.CUSTOMER_NAME' | translate }}</dt><dd>{{ successReservation()?.customer_name }}</dd></div>
+              @if (successReservation()?.customer_phone) {
+                <div><dt>{{ 'RESERVATIONS.CUSTOMER_PHONE' | translate }}</dt><dd>{{ successReservation()?.customer_phone }}</dd></div>
+              }
+              @if (successReservation()?.customer_email) {
+                <div><dt>{{ 'RESERVATIONS.CUSTOMER_EMAIL' | translate }}</dt><dd>{{ successReservation()?.customer_email }}</dd></div>
+              }
+            </dl>
+            <p class="bk-hint">{{ 'BOOK.VIEW_CANCEL_HINT' | translate }}</p>
+            @if (successReservation()?.token) {
+              <button type="button" class="bk-ghost" (click)="goManageReservation()">{{ 'BOOK.VIEW_OR_CANCEL' | translate }}</button>
+            } @else {
+              <p class="bk-error">{{ 'BOOK.VIEW_LINK_UNAVAILABLE' | translate }}</p>
+            }
+          </div>
+        }
+      </section>
     </main>
-    <footer class="book-legal-footer">
+    <footer class="bk-legal">
       <app-legal-links [termsUrl]="termsOfServiceUrl()" [privacyUrl]="privacyPolicyUrl()" />
     </footer>
   }

@@ -27,6 +27,8 @@ export class ReservationWeekSlotGridComponent {
 
   tenantId = input.required<number>();
   partySize = input(2);
+  /** Warmer, rounder skin used on the public booking page. */
+  elegant = input(false);
   /** IANA TZ for “today” / max book range (falls back to browser TZ). */
   timezone = input<string | null>(null);
   excludeReservationId = input<number | null>(null);
