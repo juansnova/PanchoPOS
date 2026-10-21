@@ -155,8 +155,16 @@
                   <p class="sel-eyebrow"><i></i>{{ 'MENU.YOUR_ORDER_EYEBROW' | translate }}</p>
                   <p class="sel-count">{{ cartCount() }} <span>{{ 'COMMON.ITEMS' | translate }}</span></p>
                 </div>
-                <span class="sel-chip"><i></i>{{ 'PUBLIC_MENU.SEL_DRAFT' | translate }}</span>
+                <div class="sel-top-right">
+                  <span class="sel-total-top">{{ formatCents(cartTotalCents()) }}</span>
+                  <span class="sel-chip"><i></i>{{ 'PUBLIC_MENU.SEL_DRAFT' | translate }}</span>
+                </div>
               </div>
+              <ol class="sel-steps" aria-hidden="true">
+                <li class="on"><i>1</i><span>{{ 'PUBLIC_MENU.SEL_STEP_PICK' | translate }}</span></li>
+                <li><i>2</i><span>{{ 'PUBLIC_MENU.SEL_STEP_ADDRESS' | translate }}</span></li>
+                <li><i>3</i><span>{{ 'PUBLIC_MENU.SEL_STEP_CONFIRM' | translate }}</span></li>
+              </ol>
               <ul class="sel-list">
                 @for (line of cart(); track line.product.id) {
                 <li class="sel-row">
