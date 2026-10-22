@@ -363,45 +363,44 @@ function localIso(d: Date): string {
       .sv-avatar { width: 42px; height: 42px; }
     }
 
-    /* ===== date range card v4: dark "desk calendar" with tear-off leaves ===== */
+    /* ===== date range card v5: white + orange desk calendar with tear-off leaves ===== */
     .sv-range {
       position: relative; z-index: 4; display: flex; flex-direction: column; gap: 20px; padding: 26px 26px 24px;
-      border: 0; border-radius: 30px; color: #fbf3e9;
+      border: 0; border-radius: 30px; overflow: hidden;
       background:
-        radial-gradient(90% 120% at 100% 0, rgba(232, 154, 82, 0.28), transparent 55%),
-        radial-gradient(60% 80% at 0 100%, rgba(193, 90, 30, 0.18), transparent 60%),
-        linear-gradient(160deg, #2b1d16, #150d0a);
-      box-shadow: 0 30px 50px -30px rgba(21, 13, 10, 0.8); overflow: hidden;
+        radial-gradient(90% 120% at 100% 0, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 55%),
+        #fff;
+      box-shadow: 0 26px 46px -30px rgba(23, 18, 16, 0.5), 0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent);
     }
-    .sv-range::before { content: ''; position: absolute; right: -50px; bottom: -70px; width: 220px; height: 220px; border-radius: 50%; border: 1.5px dashed rgba(240, 163, 94, 0.28); pointer-events: none; }
+    .sv-range::before { content: ''; position: absolute; right: -50px; bottom: -70px; width: 220px; height: 220px; border-radius: 50%; border: 1.5px dashed color-mix(in srgb, var(--color-primary) 35%, transparent); pointer-events: none; }
     .sv-range-top { position: relative; align-items: flex-start; }
-    .sv-range-eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #f0a35e; }
+    .sv-range-eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-primary); }
     .sv-range-eyebrow i { width: 18px; height: 1.5px; background: currentColor; }
-    .sv-range h2 { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.05; color: #fff; }
-    .sv-range .sv-muted { margin-top: 6px; color: rgba(251, 243, 233, 0.62); }
+    .sv-range h2 { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.05; color: var(--color-text); }
+    .sv-range .sv-muted { margin-top: 6px; }
 
-    .sv-range .sv-presets { margin: 0; padding: 4px; gap: 2px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
-    .sv-range .sv-presets button { min-height: 36px; padding: 0 16px; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(251, 243, 233, 0.7); }
-    .sv-range .sv-presets button:hover:not(.on):not(:disabled) { color: #fff; }
-    .sv-range .sv-presets button.on { color: #2b1d16; background: #f6d9b4; box-shadow: 0 10px 16px -10px rgba(0, 0, 0, 0.6); }
+    .sv-range .sv-presets { margin: 0; padding: 4px; gap: 2px; border-radius: 999px; background: color-mix(in srgb, var(--color-primary) 8%, #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 22%, transparent); }
+    .sv-range .sv-presets button { min-height: 36px; padding: 0 16px; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-primary); }
+    .sv-range .sv-presets button:hover:not(.on):not(:disabled) { color: color-mix(in srgb, var(--color-primary) 70%, #000); }
+    .sv-range .sv-presets button.on { color: #fff; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); box-shadow: 0 12px 18px -10px var(--color-primary); }
 
     .sv-leaves { position: relative; display: flex; align-items: center; gap: 14px; }
-    .sv-leaf { flex: 1 1 0; min-width: 0; border-radius: 18px; background: #fffaf3; box-shadow: 0 22px 30px -22px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.35); }
-    .sv-leaf-head { position: relative; display: flex; align-items: center; justify-content: center; min-height: 30px; padding: 0 12px; border-radius: 18px 18px 0 0; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, #d9692a, #a8431a); }
-    .sv-leaf-head i { position: absolute; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: #2b1d16; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6); }
+    .sv-leaf { flex: 1 1 0; min-width: 0; border-radius: 18px; background: #fff; box-shadow: 0 20px 28px -22px color-mix(in srgb, var(--color-primary) 70%, #000), 0 0 0 1.5px color-mix(in srgb, var(--color-primary) 40%, transparent); }
+    .sv-leaf-head { position: relative; display: flex; align-items: center; justify-content: center; min-height: 30px; padding: 0 12px; border-radius: 17px 17px 0 0; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 88%, #fff), color-mix(in srgb, var(--color-primary) 72%, #000)); }
+    .sv-leaf-head i { position: absolute; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: #fff; box-shadow: inset 0 1px 2px color-mix(in srgb, var(--color-primary) 60%, #000); }
     .sv-leaf-head i:nth-child(1) { left: 16px; }
     .sv-leaf-head i:nth-child(2) { right: 16px; }
     .sv-leaf-body { padding: 10px; }
     .sv-leaf-body .sv-field { width: 100%; }
 
-    .sv-stamp { flex: none; display: grid; place-items: center; width: 74px; height: 74px; border-radius: 50%; color: #f6d9b4; border: 2px double rgba(246, 217, 180, 0.7); transform: rotate(-8deg); text-align: center; }
+    .sv-stamp { flex: none; display: grid; place-items: center; width: 74px; height: 74px; border-radius: 50%; color: var(--color-primary); background: #fff; border: 2px double color-mix(in srgb, var(--color-primary) 70%, transparent); box-shadow: 0 14px 22px -16px var(--color-primary); transform: rotate(-8deg); text-align: center; }
     .sv-stamp b { font-family: Georgia, serif; font-style: italic; font-weight: 500; font-size: 1.9rem; line-height: 0.9; }
     .sv-stamp small { display: block; margin-top: -14px; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; }
 
-    .sv-range .sv-go { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 12px; align-self: stretch; min-height: 54px; padding: 0 10px 0 26px; border-radius: 999px; font-size: 1rem; font-weight: 800; color: #2b1d16; background: #f6d9b4; box-shadow: 0 18px 28px -16px rgba(0, 0, 0, 0.7); transition: transform 0.15s, background 0.2s; }
-    .sv-range .sv-go:hover:not(:disabled) { filter: none; background: #fff; }
+    .sv-range .sv-go { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 12px; align-self: stretch; min-height: 54px; padding: 0 10px 0 26px; border-radius: 999px; font-size: 1rem; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, #000)); box-shadow: 0 18px 28px -14px var(--color-primary); transition: transform 0.15s; }
+    .sv-range .sv-go:hover:not(:disabled) { filter: brightness(1.06); }
     .sv-range .sv-go:active:not(:disabled) { transform: scale(0.98); }
-    .sv-range .sv-go i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; font-style: normal; color: #fff; background: #b4551f; transition: transform 0.2s; }
+    .sv-range .sv-go i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; font-style: normal; color: var(--color-primary); background: #fff; transition: transform 0.2s; }
     .sv-range .sv-go:hover:not(:disabled) i { transform: translateX(3px); }
     @media (max-width: 760px) {
       .sv-range { padding: 20px 16px; border-radius: 26px; }
