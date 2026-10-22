@@ -73,6 +73,7 @@ function localIso(d: Date): string {
       <section class="sv-card sv-range">
         <div class="sv-range-top">
           <div>
+            <p class="sv-range-eyebrow"><i></i>{{ 'SHIFT_SUPERVISION.RANGE_EYEBROW' | translate }}</p>
             <h2>{{ 'SHIFT_SUPERVISION.RANGE_TITLE' | translate }}</h2>
             <p class="sv-muted">{{ 'SHIFT_SUPERVISION.RANGE_HINT' | translate }}</p>
           </div>
@@ -83,21 +84,30 @@ function localIso(d: Date): string {
           </div>
         </div>
 
-        <div class="sv-controls">
-          <div class="sv-field">
-            <label>{{ 'SHIFT_SUPERVISION.FROM' | translate }}</label>
-            <app-date-picker [compact]="true" [clearable]="false" [(ngModel)]="fromDate" />
+        <div class="sv-leaves">
+          <div class="sv-leaf">
+            <span class="sv-leaf-head"><i></i><i></i>{{ 'SHIFT_SUPERVISION.FROM' | translate }}</span>
+            <div class="sv-leaf-body">
+              <app-date-picker [compact]="true" [clearable]="false" [(ngModel)]="fromDate" />
+            </div>
           </div>
-          <span class="sv-arrow" aria-hidden="true">→</span>
-          <div class="sv-field">
-            <label>{{ 'SHIFT_SUPERVISION.TO' | translate }}</label>
-            <app-date-picker [compact]="true" [clearable]="false" [min]="fromDate" [(ngModel)]="toDate" />
+
+          <div class="sv-stamp" aria-hidden="true">
+            <b>{{ rangeDays() }}</b>
+            <small>{{ 'SHIFT_SUPERVISION.RANGE_DAYS' | translate }}</small>
           </div>
-          <button type="button" class="sv-go" (click)="loadRange()" [disabled]="loadingRange()">
-            {{ loadingRange() ? ('SHIFT_SUPERVISION.LOADING' | translate) : ('SHIFT_SUPERVISION.APPLY' | translate) }}
-          </button>
+
+          <div class="sv-leaf">
+            <span class="sv-leaf-head"><i></i><i></i>{{ 'SHIFT_SUPERVISION.TO' | translate }}</span>
+            <div class="sv-leaf-body">
+              <app-date-picker [compact]="true" [clearable]="false" [min]="fromDate" [(ngModel)]="toDate" />
+            </div>
+          </div>
         </div>
-        <p class="sv-span">{{ rangeDays() }} {{ 'SHIFT_SUPERVISION.RANGE_DAYS' | translate }}</p>
+
+        <button type="button" class="sv-go" (click)="loadRange()" [disabled]="loadingRange()">
+          {{ loadingRange() ? ('SHIFT_SUPERVISION.LOADING' | translate) : ('SHIFT_SUPERVISION.APPLY' | translate) }}<i aria-hidden="true">→</i>
+        </button>
       </section>
 
       <!-- ===================== activity ===================== -->
@@ -353,27 +363,54 @@ function localIso(d: Date): string {
       .sv-avatar { width: 42px; height: 42px; }
     }
 
-    /* ===== date range card v3: quiet, editorial ===== */
-    .sv-range { position: relative; z-index: 4; display: flex; flex-direction: column; gap: 18px; padding: 22px 24px; border-radius: 22px; }
-    .sv-range h2 { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.5rem; letter-spacing: -0.01em; }
-    .sv-range-top { align-items: flex-end; }
-    .sv-range .sv-presets { margin: 0; padding: 0; gap: 22px; background: none; box-shadow: none; border-radius: 0; }
-    .sv-range .sv-presets button { position: relative; min-height: 32px; padding: 0 0 6px; border-radius: 0; background: none; font-size: 0.86rem; font-weight: 600; color: var(--color-text-muted); }
-    .sv-range .sv-presets button::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--color-primary); transform: scaleX(0); transform-origin: left; transition: transform 0.25s; }
-    .sv-range .sv-presets button.on { color: var(--color-text); background: none; box-shadow: none; }
-    .sv-range .sv-presets button.on::after { transform: scaleX(1); }
-    .sv-range .sv-controls { align-items: flex-end; gap: 10px; padding-top: 16px; border-top: 1px solid var(--color-border); }
-    .sv-range .sv-field label { font-size: 0.66rem; letter-spacing: 0.12em; }
-    .sv-range .sv-arrow { padding-bottom: 12px; color: var(--color-text-muted); }
-    .sv-range .sv-go { min-height: 46px; padding: 0 24px; border-radius: 12px; color: #fff; background: #1c1917; box-shadow: none; font-weight: 700; }
-    .sv-range .sv-go:hover:not(:disabled) { background: var(--color-primary); filter: none; }
-    .sv-span { margin: -6px 0 0; font-size: 0.8rem; color: var(--color-text-muted); }
+    /* ===== date range card v4: dark "desk calendar" with tear-off leaves ===== */
+    .sv-range {
+      position: relative; z-index: 4; display: flex; flex-direction: column; gap: 20px; padding: 26px 26px 24px;
+      border: 0; border-radius: 30px; color: #fbf3e9;
+      background:
+        radial-gradient(90% 120% at 100% 0, rgba(232, 154, 82, 0.28), transparent 55%),
+        radial-gradient(60% 80% at 0 100%, rgba(193, 90, 30, 0.18), transparent 60%),
+        linear-gradient(160deg, #2b1d16, #150d0a);
+      box-shadow: 0 30px 50px -30px rgba(21, 13, 10, 0.8); overflow: hidden;
+    }
+    .sv-range::before { content: ''; position: absolute; right: -50px; bottom: -70px; width: 220px; height: 220px; border-radius: 50%; border: 1.5px dashed rgba(240, 163, 94, 0.28); pointer-events: none; }
+    .sv-range-top { position: relative; align-items: flex-start; }
+    .sv-range-eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #f0a35e; }
+    .sv-range-eyebrow i { width: 18px; height: 1.5px; background: currentColor; }
+    .sv-range h2 { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.05; color: #fff; }
+    .sv-range .sv-muted { margin-top: 6px; color: rgba(251, 243, 233, 0.62); }
+
+    .sv-range .sv-presets { margin: 0; padding: 4px; gap: 2px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+    .sv-range .sv-presets button { min-height: 36px; padding: 0 16px; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(251, 243, 233, 0.7); }
+    .sv-range .sv-presets button:hover:not(.on):not(:disabled) { color: #fff; }
+    .sv-range .sv-presets button.on { color: #2b1d16; background: #f6d9b4; box-shadow: 0 10px 16px -10px rgba(0, 0, 0, 0.6); }
+
+    .sv-leaves { position: relative; display: flex; align-items: center; gap: 14px; }
+    .sv-leaf { flex: 1 1 0; min-width: 0; border-radius: 18px; background: #fffaf3; box-shadow: 0 22px 30px -22px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.35); }
+    .sv-leaf-head { position: relative; display: flex; align-items: center; justify-content: center; min-height: 30px; padding: 0 12px; border-radius: 18px 18px 0 0; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, #d9692a, #a8431a); }
+    .sv-leaf-head i { position: absolute; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: #2b1d16; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6); }
+    .sv-leaf-head i:nth-child(1) { left: 16px; }
+    .sv-leaf-head i:nth-child(2) { right: 16px; }
+    .sv-leaf-body { padding: 10px; }
+    .sv-leaf-body .sv-field { width: 100%; }
+
+    .sv-stamp { flex: none; display: grid; place-items: center; width: 74px; height: 74px; border-radius: 50%; color: #f6d9b4; border: 2px double rgba(246, 217, 180, 0.7); transform: rotate(-8deg); text-align: center; }
+    .sv-stamp b { font-family: Georgia, serif; font-style: italic; font-weight: 500; font-size: 1.9rem; line-height: 0.9; }
+    .sv-stamp small { display: block; margin-top: -14px; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; }
+
+    .sv-range .sv-go { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 12px; align-self: stretch; min-height: 54px; padding: 0 10px 0 26px; border-radius: 999px; font-size: 1rem; font-weight: 800; color: #2b1d16; background: #f6d9b4; box-shadow: 0 18px 28px -16px rgba(0, 0, 0, 0.7); transition: transform 0.15s, background 0.2s; }
+    .sv-range .sv-go:hover:not(:disabled) { filter: none; background: #fff; }
+    .sv-range .sv-go:active:not(:disabled) { transform: scale(0.98); }
+    .sv-range .sv-go i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; font-style: normal; color: #fff; background: #b4551f; transition: transform 0.2s; }
+    .sv-range .sv-go:hover:not(:disabled) i { transform: translateX(3px); }
     @media (max-width: 760px) {
-      .sv-range { padding: 18px 16px; }
-      .sv-range-top { align-items: flex-start; flex-direction: column; gap: 12px; }
-      .sv-range .sv-controls { display: grid; grid-template-columns: 1fr; }
-      .sv-range .sv-go { width: 100%; }
-      .sv-range .sv-arrow { display: none; }
+      .sv-range { padding: 20px 16px; border-radius: 26px; }
+      .sv-range-top { flex-direction: column; gap: 14px; }
+      .sv-range h2 { font-size: 1.6rem; }
+      .sv-range .sv-presets { align-self: stretch; }
+      .sv-leaves { flex-direction: column; align-items: stretch; gap: 10px; }
+      .sv-stamp { width: 62px; height: 62px; align-self: center; margin: -4px 0; }
+      .sv-stamp b { font-size: 1.6rem; }
     }
     @media (prefers-reduced-motion: reduce) { .sv-dot::after, .sv-skeleton i { animation: none; } .sv-bar i { transition: none; } }
     @media (max-width: 760px) {
