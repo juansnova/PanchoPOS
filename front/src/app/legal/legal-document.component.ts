@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs/operators';
+import { ApiService } from '../services/api.service';
 
 type LegalDocKind = 'terms' | 'privacy';
 
@@ -186,8 +187,12 @@ const PRIVACY: LegalDoc = {
       <header class="lg-hero">
         <div class="lg-hero-inner">
           <div class="lg-brand">
-            <span class="lg-brand-mark" aria-hidden="true">P</span>
-            <span class="lg-brand-name">Pancho Panza</span>
+            @if (logoUrl()) {
+              <img class="lg-brand-logo" [src]="logoUrl()!" alt="" />
+            } @else {
+              <span class="lg-brand-mark" aria-hidden="true">P</span>
+            }
+            <span class="lg-brand-name">{{ brandName() }}</span>
           </div>
           <span class="lg-eyebrow">{{ d.eyebrow }}</span>
           <h1>{{ d.title }}</h1>
@@ -309,6 +314,12 @@ const PRIVACY: LegalDoc = {
         place-items: center;
         font-family: var(--font-brand);
         font-weight: 700;
+      }
+      .lg-brand-logo {
+        height: 2.75rem;
+        width: auto;
+        max-width: 6rem;
+        object-fit: contain;
       }
       .lg-brand-name {
         font-family: var(--font-brand);
@@ -591,8 +602,25 @@ const PRIVACY: LegalDoc = {
     `,
   ],
 })
-export class LegalDocumentComponent {
+export class LegalDocumentComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly api = inject(ApiService);
+
+  readonly logoUrl = signal<string | null>(null);
+  readonly brandName = signal('Pancho Panza');
+
+  ngOnInit(): void {
+    // Single-restaurant deployment: the first public tenant is the restaurant.
+    this.api.getPublicTenants().subscribe({
+      next: (list) => {
+        const t = list[0];
+        if (!t) return;
+        this.brandName.set(t.name || 'Pancho Panza');
+        this.logoUrl.set(this.api.getTenantLogoUrl(t.logo_filename, t.id));
+      },
+      error: () => {},
+    });
+  }
 
   readonly lastUpdated = '22 de octubre de 2026';
 
