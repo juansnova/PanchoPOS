@@ -336,6 +336,65 @@ def render_kitchen_ticket(payload: dict, *, cols: int = 48) -> bytes:
     return bytes(out)
 
 
+def render_bar_ticket(payload: dict, *, cols: int = 48) -> bytes:
+    """Bar ticket: same data as the kitchen ticket, laid out for drinks.
+
+    Big reversed BARRA banner, service label, a bordered header, quantities in double size so the
+    bartender reads them from a distance, notes in reverse video, drink count and a toast footer.
+    Only CP437 glyphs are used (box drawing, diamonds, notes) so every ESC/POS printer renders it.
+    """
+    out = bytearray()
+    put = _make_put(out, cols)
+    out.extend(ESC + b"@")  # init
+    out.extend(ESC + b"t\x00")  # code page 437
+    addition = bool(payload.get("addition"))
+
+    def rule(mid: str = "\u25a0", ch: str = "\u2550") -> None:
+        side = (cols - 3) // 2
+        put(ch * side + f" {mid} " + ch * (cols - side - 3), align="center")
+
+    rule()
+    put("BARRA", size=0x22, bold=True, align="center", reverse=True)
+    if addition:
+        put("ADICION - solo bebidas nuevas", bold=True, align="center")
+    put(str(payload.get("service_label") or "PARA LLEVAR"), size=0x22, bold=True, align="center")
+    put(f"Pedido #{payload.get('order_id', '')}", size=0x11, bold=True, align="center")
+    if payload.get("time_label"):
+        put(f"\u2248  {payload['time_label']}  \u2248", bold=True, align="center")
+    if payload.get("customer_name"):
+        put(f"Cliente: {payload['customer_name']}", bold=True, align="center")
+    if payload.get("delivery_address"):
+        put(f"Dir: {payload['delivery_address']}", align="center")
+    if payload.get("customer_phone"):
+        put(f"Tel: {payload['customer_phone']}", align="center")
+    rule()
+
+    total = 0
+    lines = payload.get("lines") or []
+    for idx, line in enumerate(lines):
+        qty = int(line.get("quantity") or 1)
+        total += qty
+        # double width + height: 24 columns of 48, so qty and name stay huge and readable
+        put(f"{qty}x {line.get('name') or ''}", size=0x11, bold=True)
+        if line.get("notes"):
+            put(f"   > {line['notes']}", bold=True)
+        if line.get("item_note"):
+            put(f"NOTA: {line['item_note']}", bold=True, reverse=True)
+        if idx < len(lines) - 1:
+            put(". " * (cols // 2), align="center")
+    rule("\u25a0")
+    put(f"{total} bebida{'s' if total != 1 else ''}", size=0x11, bold=True, align="center", reverse=True)
+    if payload.get("order_notes"):
+        put("NOTA DEL PEDIDO", bold=True, align="center", reverse=True)
+        put(str(payload["order_notes"]), size=0x01, bold=True)
+    put("\u2248  \u00a1Salud!  \u2248", size=0x01, bold=True, align="center")
+    rule()
+
+    out.extend(ESC + b"d" + bytes([FEED_BEFORE_CUT]))
+    out.extend(GS + b"V\x00")
+    return bytes(out)
+
+
 def printer_targets(role: str) -> list[str]:
     """Ordered list of targets for a role; the first one that works wins.
 
@@ -452,7 +511,8 @@ def process_job(token: str, base: str, job: dict, *, dry_run: bool) -> None:
     kind = job.get("job_type") or role
     cols = int(_env("PRINTER_COLUMNS", "48") or "48")
     if kind == "kitchen" and payload.get("lines") and payload.get("service_label"):
-        data = render_kitchen_ticket(payload, cols=cols)
+        is_bar = str(payload.get("station") or role).lower() == "bar"
+        data = (render_bar_ticket if is_bar else render_kitchen_ticket)(payload, cols=cols)
     elif kind == "receipt" and payload.get("business") and payload.get("lines"):
         data = render_receipt_ticket(payload, cols=cols)
     else:

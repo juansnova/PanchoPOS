@@ -112,7 +112,18 @@ RECEIPT_SIMPLE = {
     "total_cents": 2200000,
     "paid": False,
 }
-BAR_TEXT = "BAR - MESA 5\nPedido #128   20/10 13:42\nCliente: Carlos\n" + "-" * 32 + "\n3x Limonada de coco\n  >> Poco hielo\n1x Cerveza Club Colombia\n"
+BAR = {
+    **KITCHEN,
+    "station": "bar",
+    "station_label": "BARRA",
+    "lines": [
+        {"quantity": 3, "name": "Limonada de coco", "notes": None, "item_note": "Poco hielo"},
+        {"quantity": 1, "name": "Cerveza Club Colombia", "notes": None, "item_note": None},
+        {"quantity": 2, "name": "Jugo de lulo en leche", "notes": "Sin azúcar", "item_note": None},
+    ],
+    "order_notes": None,
+}
+BAR_ADDITION = {**BAR, "addition": True, "lines": BAR["lines"][:1], "customer_name": None}
 
 
 def interpret(data: bytes) -> str:
@@ -209,7 +220,8 @@ def main() -> None:
         ("Cocina · comanda", interpret(agent.render_kitchen_ticket(KITCHEN, cols=COLS))),
         ("Cocina · adición (solo platos nuevos)", interpret(agent.render_kitchen_ticket(ADDITION, cols=COLS))),
         ("Cocina · domicilio", interpret(agent.render_kitchen_ticket(DELIVERY, cols=COLS))),
-        ("Barra", interpret(agent.render_escpos(BAR_TEXT, big=False))),
+        ("Barra · comanda de bebidas", interpret(agent.render_bar_ticket(BAR, cols=COLS))),
+        ("Barra · adición (solo bebidas nuevas)", interpret(agent.render_bar_ticket(BAR_ADDITION, cols=COLS))),
         ("Factura · pagada, con cliente de facturación e importe adicional", interpret(agent.render_receipt_ticket(RECEIPT, cols=COLS))),
         ("Factura · sencilla, sin pagar", interpret(agent.render_receipt_ticket(RECEIPT_SIMPLE, cols=COLS))),
     ]
