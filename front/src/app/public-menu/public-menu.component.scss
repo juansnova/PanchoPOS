@@ -2614,3 +2614,5 @@
 .co-sum-text { display: flex; flex-direction: column; flex: 1; min-width: 0; small { font-size: 0.64rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-muted); } b { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.6rem; line-height: 1.1; color: var(--color-primary); } }
 
 .co-btn-ghost { flex: none; width: 52px; padding: 0; font-size: 1.2rem; }
+
+.co-paynote { display: flex; align-items: flex-start; gap: 8px; margin: 2px 4px 0; font-size: 0.82rem; line-height: 1.4; color: var(--color-text-muted); svg { flex: none; margin-top: 2px; color: var(--color-primary); } }
