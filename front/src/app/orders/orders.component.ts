@@ -1151,7 +1151,7 @@ ModuleRegistry.registerModules([
                     </button>
                     @for (c of couriers(); track c.id) {
                       <button type="button" role="radio" class="dslip-courier" [class.on]="deliveryFormCourierId === c.id"
-                        [attr.aria-checked]="deliveryFormCourierId === c.id" (click)="deliveryFormCourierId = c.id">
+                        [attr.aria-checked]="deliveryFormCourierId === c.id" (click)="deliveryFormCourierId = c.id ?? null">
                         <i aria-hidden="true">{{ ((c.full_name || c.username) || '?').trim().charAt(0).toUpperCase() }}</i>
                         <span>{{ c.full_name || c.username }}</span>
                       </button>
