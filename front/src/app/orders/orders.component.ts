@@ -2916,7 +2916,7 @@ ModuleRegistry.registerModules([
     }
     .grid-container ::ng-deep .order-action-cell { display: flex !important; align-items: center; justify-content: center; padding: 0 !important; overflow: visible !important; text-overflow: clip !important; }
     .grid-container ::ng-deep .order-action-cell .ag-cell-value, .grid-container ::ng-deep .order-action-cell .ag-cell-wrapper { display: flex; align-items: center; justify-content: center; overflow: visible; text-overflow: clip; width: auto; padding: 0; }
-    .grid-container ::ng-deep .order-action-cell button { position: absolute !important; top: 0; right: 0; bottom: 0; left: 0; margin: auto !important; }
+    .grid-container ::ng-deep .order-action-wrap { display: flex; align-items: center; justify-content: center; width: 100%; height: 54px; }
     .grid-container ::ng-deep .btn-edit-order-row { background: #e8803a !important; color: #fff !important; }
     .grid-container ::ng-deep .btn-factura-row { background: #26a65b !important; color: #fff !important; }
     .grid-container ::ng-deep .btn-delete-order-row { background: #e5484d !important; color: #fff !important; }
@@ -3310,7 +3310,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
           const editTitle = this.translate.instant('ORDERS.EDIT_ORDER');
           const safeEditTitle = (editTitle || 'Edit').replace(/"/g, '&quot;');
           const editIcon = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>';
-          return `<button type="button" class="btn-edit-order-row" data-order-id="${id}" title="${safeEditTitle}">${editIcon}</button>`;
+          return `<span class="order-action-wrap"><button type="button" class="btn-edit-order-row" data-order-id="${id}" title="${safeEditTitle}">${editIcon}</button></span>`;
         },
       },
       {
@@ -3326,7 +3326,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
           const title = this.translate.instant('CUSTOMERS.PRINT_FACTURA');
           const icon = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>';
           const safeTitle = (title || '').replace(/"/g, '&quot;');
-          return `<button type="button" class="btn-factura-row" data-order-id="${id}" title="${safeTitle}">${icon}</button>`;
+          return `<span class="order-action-wrap"><button type="button" class="btn-factura-row" data-order-id="${id}" title="${safeTitle}">${icon}</button></span>`;
         },
       },
       ...(this.canDeleteOrder() ? [{
@@ -3342,7 +3342,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
           const deleteTitle = this.translate.instant('ORDERS.DELETE_ORDER');
           const safeDeleteTitle = (deleteTitle || 'Delete').replace(/"/g, '&quot;');
           const deleteIcon = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M10 11v6M14 11v6"/></svg>';
-          return `<button type="button" class="btn-delete-order-row" data-order-id="${id}" title="${safeDeleteTitle}">${deleteIcon}</button>`;
+          return `<span class="order-action-wrap"><button type="button" class="btn-delete-order-row" data-order-id="${id}" title="${safeDeleteTitle}">${deleteIcon}</button></span>`;
         },
       }] : []),
     ];
