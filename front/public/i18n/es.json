@@ -247,6 +247,7 @@
     "CONTINUE_PAY": "Continuar al pago",
     "CONFIRM_ORDER": "Confirmar pedido",
     "PAY_ON_DELIVERY": "No se cobra ahora: pagas al recibir tu pedido, en efectivo o por transferencia.",
+    "EXTRA_FEE_NOTE": "El servicio de domicilio puede tener un cobro adicional de $ 1.500, que se suma al valor de tu pedido.",
     "CREATE_FAILED": "No se pudo crear el pedido. Inténtelo de nuevo.",
     "PAY_TITLE": "Pagar el pedido",
     "TOTAL": "Total",
