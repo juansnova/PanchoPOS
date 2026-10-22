@@ -463,21 +463,21 @@ function localIso(d: Date): string {
     }
 
     /* ===== mini calendar: shows how many days the range covers ===== */
-    .sv-mini { flex: none; width: 119px; border-radius: 19px; background: #fff; text-align: center; transform: rotate(-3deg); box-shadow: 0 20px 28px -18px color-mix(in srgb, var(--color-primary) 70%, #000), 0 0 0 1.5px color-mix(in srgb, var(--color-primary) 45%, transparent); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .sv-mini { flex: none; width: 101px; border-radius: 16px; background: #fff; text-align: center; transform: rotate(-3deg); box-shadow: 0 20px 28px -18px color-mix(in srgb, var(--color-primary) 70%, #000), 0 0 0 1.5px color-mix(in srgb, var(--color-primary) 45%, transparent); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
     .sv-mini:hover { transform: rotate(0deg) scale(1.04); }
-    .sv-mini-top { position: relative; display: block; padding: 4px 0; border-radius: 18px 18px 0 0; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 88%, #fff), color-mix(in srgb, var(--color-primary) 72%, #000)); }
-    .sv-mini-top i { position: absolute; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; background: #fff; }
-    .sv-mini-top i:nth-child(1) { left: 10px; }
-    .sv-mini-top i:nth-child(2) { right: 10px; }
-    .sv-mini b { display: block; margin-top: 3px; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 2.2rem; line-height: 1; letter-spacing: -0.03em; color: var(--color-primary); font-variant-numeric: tabular-nums; }
-    .sv-mini-grid { display: grid; grid-template-columns: repeat(7, 8px); justify-content: center; gap: 4px; padding: 4px 11px 9px; }
-    .sv-mini-grid i { width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); opacity: 0.95; animation: sv-dot-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.4) both; animation-delay: calc(var(--n) * 22ms); }
-    .sv-mini-grid i:last-child { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 25%, transparent); }
+    .sv-mini-top { position: relative; display: block; padding: 3.5px 0; border-radius: 15px 15px 0 0; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 88%, #fff), color-mix(in srgb, var(--color-primary) 72%, #000)); }
+    .sv-mini-top i { position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: #fff; }
+    .sv-mini-top i:nth-child(1) { left: 8px; }
+    .sv-mini-top i:nth-child(2) { right: 8px; }
+    .sv-mini b { display: block; margin-top: 2px; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.9rem; line-height: 1; letter-spacing: -0.03em; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+    .sv-mini-grid { display: grid; grid-template-columns: repeat(7, 7px); justify-content: center; gap: 3px; padding: 4px 9px 7px; }
+    .sv-mini-grid i { width: 7px; height: 7px; border-radius: 50%; background: var(--color-primary); opacity: 0.95; animation: sv-dot-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.4) both; animation-delay: calc(var(--n) * 22ms); }
+    .sv-mini-grid i:last-child { box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--color-primary) 25%, transparent); }
     @keyframes sv-dot-in { from { transform: scale(0); opacity: 0; } }
     .sv-range.loading .sv-mini { animation: sv-mini-pulse 0.9s ease-in-out infinite; }
     @keyframes sv-mini-pulse { 50% { transform: rotate(-3deg) scale(1.05); } }
     @media (max-width: 760px) {
-      .sv-mini { align-self: center; width: 130px; margin: -2px 0; }
+      .sv-mini { align-self: center; width: 110px; margin: -2px 0; }
     }
     @media (prefers-reduced-motion: reduce) { .sv-mini-grid i, .sv-range.loading .sv-mini { animation: none; } .sv-mini { transition: none; } }
     @media (prefers-reduced-motion: reduce) { .sv-dot::after, .sv-skeleton i { animation: none; } .sv-bar i { transition: none; } }
