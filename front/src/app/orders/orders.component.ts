@@ -1121,36 +1121,53 @@ ModuleRegistry.registerModules([
                 </button>
               </div>
               <div class="modal-body">
-                <div class="mx-total">
-                  <span>{{ 'ORDERS.TOTAL' | translate }}</span>
-                  <strong>{{ formatPrice(dOrder.total_cents) }}</strong>
+                <div class="dv-total">
+                  <div>
+                    <small>{{ 'ORDERS.TOTAL' | translate }}</small>
+                    <b>{{ formatPrice(dOrder.total_cents) }}</b>
+                  </div>
                 </div>
+
+                <p class="dv-section"><i></i>{{ 'ORDERS.DELIVERY_SECTION_WHERE' | translate }}</p>
                 <div class="form-group">
-                  <label for="edit-delivery-address">{{ 'ORDERS.DELIVERY_ADDRESS' | translate }} *</label>
-                  <input id="edit-delivery-address" type="text" class="form-input" [(ngModel)]="deliveryFormAddress" name="editDeliveryAddress" />
+                  <label for="edit-delivery-address">{{ 'ORDERS.DELIVERY_ADDRESS' | translate }} <b>*</b></label>
+                  <span class="dv-input">
+                    <span class="dv-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+                    <input id="edit-delivery-address" type="text" [(ngModel)]="deliveryFormAddress" name="editDeliveryAddress" />
+                  </span>
                 </div>
+
+                <p class="dv-section"><i></i>{{ 'ORDERS.DELIVERY_SECTION_WHO' | translate }}</p>
                 <div class="dv-two">
                   <div class="form-group">
-                    <label for="edit-delivery-phone">{{ 'ORDERS.DELIVERY_PHONE' | translate }}</label>
-                    <input id="edit-delivery-phone" type="tel" class="form-input" [(ngModel)]="deliveryFormPhone" name="editDeliveryPhone" />
+                    <label for="edit-delivery-customer">{{ 'ORDERS.CUSTOMER' | translate }}</label>
+                    <span class="dv-input">
+                      <span class="dv-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+                      <input id="edit-delivery-customer" type="text" [(ngModel)]="deliveryFormCustomerName" name="editDeliveryCustomer" />
+                    </span>
                   </div>
                   <div class="form-group">
-                    <label for="edit-delivery-customer">{{ 'ORDERS.CUSTOMER' | translate }}</label>
-                    <input id="edit-delivery-customer" type="text" class="form-input" [(ngModel)]="deliveryFormCustomerName" name="editDeliveryCustomer" />
+                    <label for="edit-delivery-phone">{{ 'ORDERS.DELIVERY_PHONE' | translate }}</label>
+                    <span class="dv-input">
+                      <span class="dv-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></span>
+                      <input id="edit-delivery-phone" type="tel" [(ngModel)]="deliveryFormPhone" name="editDeliveryPhone" />
+                    </span>
                   </div>
                 </div>
+
+                <p class="dv-section"><i></i>{{ 'ORDERS.DELIVERY_SECTION_HOW' | translate }}</p>
                 <div class="form-group">
                   <label for="edit-delivery-courier">{{ 'ORDERS.COURIER' | translate }}</label>
-                  <select id="edit-delivery-courier" class="form-select" [(ngModel)]="deliveryFormCourierId" name="editDeliveryCourier">
-                    <option [ngValue]="null">{{ 'COMMON.NONE' | translate }}</option>
-                    @for (c of couriers(); track c.id) {
-                      <option [ngValue]="c.id">{{ c.full_name || c.username }}</option>
-                    }
-                  </select>
+                  <app-select id="edit-delivery-courier" [options]="courierOptions()" [searchable]="false"
+                    [clearable]="true" [emptyValue]="null" [placeholder]="'COMMON.NONE' | translate"
+                    [(ngModel)]="deliveryFormCourierId" name="editDeliveryCourier"></app-select>
                 </div>
                 <div class="form-group">
                   <label for="edit-delivery-notes">{{ 'ORDERS.ORDER_NOTES' | translate }}</label>
-                  <textarea id="edit-delivery-notes" class="form-input modifier-textarea" rows="2" [(ngModel)]="deliveryFormNotes" name="editDeliveryNotes"></textarea>
+                  <span class="dv-input dv-input-area">
+                    <span class="dv-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg></span>
+                    <textarea id="edit-delivery-notes" rows="2" [(ngModel)]="deliveryFormNotes" name="editDeliveryNotes"></textarea>
+                  </span>
                 </div>
               </div>
               <div class="modal-actions">
@@ -2841,6 +2858,26 @@ ModuleRegistry.registerModules([
     .mx-delivery { max-width: 520px; }
     .mx-delivery .modal-body { padding-top: 10px; }
     .dv-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    /* ===== Editar entrega: grouped fields with icon chips ===== */
+    .mx-delivery .mx-head-text h3 { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.6rem; letter-spacing: -0.02em; }
+    .dv-total { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 6px; padding: 14px 16px; border-radius: 20px; background: color-mix(in srgb, var(--color-primary) 6%, #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 18%, transparent); }
+    .dv-total small { display: block; font-size: .62rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--color-text-muted); }
+    .dv-total b { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.9rem; line-height: 1.1; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+    .dv-total-tag { padding: 5px 12px; border-radius: 999px; font-size: .74rem; font-weight: 800; letter-spacing: .06em; color: var(--color-primary); background: #fff; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 30%, transparent); }
+    .dv-section { display: flex; align-items: center; gap: 8px; margin: 16px 0 6px; font-size: .62rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--color-primary); }
+    .dv-section i { width: 16px; height: 1.5px; background: currentColor; }
+    .mx-delivery .form-group { margin-bottom: 12px; }
+    .mx-delivery .form-group label b { color: var(--color-primary); }
+    .dv-input { display: flex; align-items: center; gap: 10px; padding: 0 12px 0 6px; border-radius: 16px; background: color-mix(in srgb, var(--color-primary) 3%, #fff); box-shadow: inset 0 0 0 1.5px var(--color-border); transition: box-shadow .2s, background .2s; }
+    .dv-input:focus-within { background: #fff; box-shadow: inset 0 0 0 2px var(--color-primary), 0 0 0 4px color-mix(in srgb, var(--color-primary) 14%, transparent); }
+    .dv-input-area { align-items: flex-start; padding-top: 6px; padding-bottom: 6px; }
+    .dv-ico { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 11%, #fff); }
+    .dv-input input, .dv-input textarea { flex: 1; min-width: 0; min-height: 44px; padding: 0; border: 0; border-radius: 0; background: transparent; font: inherit; font-size: .95rem; outline: none; box-shadow: none; resize: none; }
+    .dv-input textarea { min-height: 0; padding-top: 10px; }
+    .mx-delivery app-select { display: block; }
+    .mx-delivery .modal-actions .btn.mx-ghost { border-radius: 999px; border: 0; box-shadow: inset 0 0 0 1.5px var(--color-border); }
+    .mx-delivery .modal-actions .btn.mx-main { border-radius: 999px; min-height: 48px; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, #000)); box-shadow: 0 16px 24px -14px var(--color-primary); }
+
     @media (max-width: 480px) { .dv-two { grid-template-columns: minmax(0, 1fr); } }
     .dv-items { margin-top: 6px; padding: 14px; border-radius: 16px; background: var(--color-bg); border: 1px solid var(--color-border); }
     .dv-items-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
@@ -2983,6 +3020,14 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   /** Satisfecho Delivery create / edit forms */
   createDeliveryOpen = signal(false);
+  /** Couriers for the delivery editor's list: initial in a tinted chip. */
+  courierOptions = computed<AppSelectOption[]>(() =>
+    this.couriers().map((c) => {
+      const label = c.full_name || c.username;
+      return { value: c.id, label, icon: (label || '?').trim().charAt(0).toUpperCase(), tone: 'e' as const };
+    })
+  );
+
   editDeliveryOrder = signal<Order | null>(null);
   creatingDelivery = signal(false);
   savingDelivery = signal(false);
