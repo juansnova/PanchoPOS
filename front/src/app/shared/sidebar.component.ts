@@ -318,8 +318,11 @@ type NavGroupKey = 'operations' | 'planning' | 'catalog' | 'admin';
         @if (user()) {
           <div class="sidebar-footer">
             <div class="user-info">
-              <span class="user-email">{{ user()?.username }}</span>
-              <span class="user-role">{{ getRoleDisplayName() }}</span>
+              <span class="user-avatar" aria-hidden="true">{{ (user()?.username || '?').charAt(0).toUpperCase() }}</span>
+              <div class="user-text">
+                <span class="user-email" [attr.title]="user()?.username">{{ user()?.username }}</span>
+                <span class="user-role"><i></i>{{ getRoleDisplayName() }}</span>
+              </div>
             </div>
           </div>
         }
