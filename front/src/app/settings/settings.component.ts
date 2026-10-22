@@ -2990,8 +2990,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
           public_google_review_url: settings.public_google_review_url ?? null,
           public_google_maps_url: settings.public_google_maps_url ?? null,
           public_openstreetmap_url: settings.public_openstreetmap_url ?? null,
-          public_terms_of_service_url: settings.public_terms_of_service_url ?? null,
-          public_privacy_policy_url: settings.public_privacy_policy_url ?? null,
+          public_terms_of_service_url:
+            settings.public_terms_of_service_url ?? `${window.location.origin}/terms`,
+          public_privacy_policy_url:
+            settings.public_privacy_policy_url ?? `${window.location.origin}/privacy`,
           public_facebook_url: settings.public_facebook_url ?? null,
           public_instagram_url: settings.public_instagram_url ?? null,
           tip_tax_rate_percent: settings.tip_tax_rate_percent ?? 0,
