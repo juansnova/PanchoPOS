@@ -13,6 +13,7 @@ import { SidebarComponent } from '../../shared/sidebar.component';
 import { FocusFirstInputDirective } from '../../shared/focus-first-input.directive';
 import { AppSelectComponent, AppSelectOption } from '../../shared/app-select.component';
 import { InventoryService } from '../inventory.service';
+import { StockAlertsPanelComponent } from '../stock-alerts-panel.component';
 import { unitSelectOptions, unitShort } from '../unit-select-options';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
@@ -39,6 +40,7 @@ import {
     FocusFirstInputDirective,
     TranslateModule,
     AppSelectComponent,
+    StockAlertsPanelComponent,
   ],
   template: `
     <app-sidebar>
@@ -53,6 +55,8 @@ import {
       </div>
 
       <div class="content">
+        <app-stock-alerts-panel />
+
         <!-- Stats -->
         <div class="ii-kpis">
           <div class="ii-kpi">

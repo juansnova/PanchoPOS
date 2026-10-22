@@ -33,6 +33,8 @@ import {
     InventoryCategory,
     TransactionType,
     UnitsResponse,
+    StockAlert,
+    StockAlertsResponse,
 } from './inventory.types';
 
 @Injectable({
@@ -188,6 +190,24 @@ export class InventoryService {
 
     getLowStockItems(): Observable<LowStockItem[]> {
         return this.http.get<LowStockItem[]>(`${this.apiUrl}/low-stock`);
+    }
+
+    // ============ STOCK ALERTS (the admin decides, nothing is hidden automatically) ============
+
+    getStockAlerts(): Observable<StockAlertsResponse> {
+        return this.http.get<StockAlertsResponse>(`${this.apiUrl}/alerts`);
+    }
+
+    withdrawAlertProducts(alertId: number): Observable<StockAlert> {
+        return this.http.post<StockAlert>(`${this.apiUrl}/alerts/${alertId}/withdraw`, {});
+    }
+
+    keepAlertProducts(alertId: number): Observable<StockAlert> {
+        return this.http.post<StockAlert>(`${this.apiUrl}/alerts/${alertId}/keep`, {});
+    }
+
+    offerAlertProductsAgain(alertId: number): Observable<StockAlert> {
+        return this.http.post<StockAlert>(`${this.apiUrl}/alerts/${alertId}/offer-again`, {});
     }
 
     getInventoryValuation(): Observable<InventoryValuation> {

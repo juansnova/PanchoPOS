@@ -10,6 +10,7 @@ import { TablesAreaPreferenceService } from '../services/tables-area-preference.
 import { StaffLayoutService } from '../services/staff-layout.service';
 import { ConnectivityService } from '../services/connectivity.service';
 import { OfflineOrderQueueService } from '../services/offline-order-queue.service';
+import { StockAlertsService } from '../inventory/stock-alerts.service';
 
 type NavGroupKey = 'operations' | 'planning' | 'catalog' | 'admin';
 
@@ -235,6 +236,9 @@ type NavGroupKey = 'operations' | 'planning' | 'catalog' | 'admin';
                     <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
                   </svg>
                   <span>{{ 'NAV.GROUP_CATALOG' | translate }}</span>
+                  @if (stockAlerts.attentionCount() > 0) {
+                    <b class="nav-badge" [attr.title]="'INVENTORY.ALERTS.TITLE' | translate">{{ stockAlerts.attentionCount() }}</b>
+                  }
                 </a>
                 <button
                   type="button"
@@ -253,6 +257,9 @@ type NavGroupKey = 'operations' | 'planning' | 'catalog' | 'admin';
                 <div class="nav-submenu" id="nav-group-catalog">
                   <a routerLink="/inventory/items" routerLinkActive="active" class="nav-sublink" (click)="closeSidebar()">
                     <span>{{ 'NAV.ITEMS' | translate }}</span>
+                    @if (stockAlerts.attentionCount() > 0) {
+                      <b class="nav-badge nav-badge--sub">{{ stockAlerts.attentionCount() }}</b>
+                    }
                   </a>
                   <a routerLink="/inventory/purchase-orders" routerLinkActive="active" class="nav-sublink" (click)="closeSidebar()">
                     <span>{{ 'NAV.PURCHASE_ORDERS' | translate }}</span>
@@ -363,6 +370,8 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   staffLayout = inject(StaffLayoutService);
   readonly connectivity = inject(ConnectivityService);
   readonly offlineQueue = inject(OfflineOrderQueueService);
+  readonly stockAlerts = inject(StockAlertsService);
+  private stockAlertsTimer: ReturnType<typeof setInterval> | null = null;
 
   @ViewChild('navScroll') navScroll?: ElementRef<HTMLElement>;
 
@@ -437,6 +446,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.api.getTenantBranding().subscribe({ error: () => {} });
     this.api.user$.subscribe(user => {
       this.user.set(user);
+      this.syncStockAlertsPolling(user);
       if (user && String(user.role).toLowerCase() === 'owner') {
         this.api.getScheduleNotification().subscribe({
           next: (n) => this.api.workingPlanHasUpdates.set(n.has_updates),
@@ -459,11 +469,27 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
+  /** Admins get a badge on Inventory when an ingredient runs out or is running low. */
+  private syncStockAlertsPolling(user: User | null): void {
+    const wanted = !!user && this.permissions.isAdmin(user);
+    if (wanted && !this.stockAlertsTimer) {
+      this.stockAlerts.refresh();
+      this.stockAlertsTimer = setInterval(() => this.stockAlerts.refresh(), 60_000);
+    } else if (!wanted && this.stockAlertsTimer) {
+      clearInterval(this.stockAlertsTimer);
+      this.stockAlertsTimer = null;
+    }
+  }
+
   ngAfterViewInit() {
     this.syncNavScrollAfterRouteChange();
   }
 
   ngOnDestroy() {
+    if (this.stockAlertsTimer) {
+      clearInterval(this.stockAlertsTimer);
+      this.stockAlertsTimer = null;
+    }
     const el = this.navScroll?.nativeElement;
     if (!el || el.scrollTop <= 0) return;
     this.persistNavScroll();

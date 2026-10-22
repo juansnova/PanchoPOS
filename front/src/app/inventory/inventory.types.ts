@@ -325,3 +325,29 @@ export function inventoryUnitKey(unit: string): string {
 export function inventoryCategoryKey(category: string): string {
     return 'INVENTORY.CATEGORIES.' + category.toUpperCase();
 }
+
+
+export type StockAlertKind = 'out' | 'low';
+export type StockAlertStatus = 'open' | 'kept' | 'withdrawn' | 'restocked' | 'resolved';
+
+export interface StockAlert {
+    id: number;
+    kind: StockAlertKind;
+    status: StockAlertStatus;
+    needs_attention: boolean;
+    created_at: string | null;
+    item: {
+        id: number;
+        name: string;
+        unit: string;
+        current_quantity: number;
+        reorder_level: number;
+        suggested_order_quantity: number;
+    };
+    products: { id: number; name: string; withdrawn: boolean }[];
+}
+
+export interface StockAlertsResponse {
+    attention_count: number;
+    alerts: StockAlert[];
+}

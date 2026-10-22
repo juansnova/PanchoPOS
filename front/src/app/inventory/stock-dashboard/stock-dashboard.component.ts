@@ -11,13 +11,14 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { SidebarComponent } from '../../shared/sidebar.component';
 import { InventoryService } from '../inventory.service';
+import { StockAlertsPanelComponent } from '../stock-alerts-panel.component';
 import { StockLevel, LowStockItem, InventoryCategory, Warehouse, WasteReport, CostAlert, CostHistory, inventoryUnitKey, inventoryCategoryKey } from '../inventory.types';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-stock-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, SidebarComponent, TranslateModule],
+  imports: [CommonModule, FormsModule, RouterModule, SidebarComponent, TranslateModule, StockAlertsPanelComponent],
   template: `
     <app-sidebar>
       <div class="sk-hero">
@@ -29,6 +30,8 @@ import { TranslateModule } from '@ngx-translate/core';
       </div>
 
       <div class="content">
+        <app-stock-alerts-panel />
+
         <div class="sk-kpis">
           <div class="sk-kpi"><span class="sk-kpi-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></span><div><b>{{ totalItems() }}</b><small>{{ 'INVENTORY.ITEMS.TOTAL_ITEMS' | translate }}</small></div></div>
           <div class="sk-kpi" [class.sk-kpi-warn]="lowStockCount() > 0" [class.sk-kpi-good]="lowStockCount() === 0">

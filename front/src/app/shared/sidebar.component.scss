@@ -969,3 +969,41 @@ $sidebar-active-text: #ffffff;
         background: rgba(255, 255, 255, 0.16);
     }
 }
+
+// Stock notices badge (Inventory)
+.nav-badge {
+    display: inline-grid;
+    place-items: center;
+    min-width: 20px;
+    height: 20px;
+    margin-left: auto;
+    padding: 0 6px;
+    border-radius: 10px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #fff;
+    background: linear-gradient(145deg, #ef4444, #b91c1c);
+    box-shadow: 0 6px 10px -4px #dc2626;
+    animation: nav-badge-pulse 2.4s ease-in-out infinite;
+
+    &--sub {
+        margin-left: 8px;
+    }
+}
+
+.nav-section-link .nav-badge {
+    margin-right: 2px;
+}
+
+@keyframes nav-badge-pulse {
+    50% {
+        box-shadow: 0 6px 10px -4px #dc2626, 0 0 0 4px rgba(239, 68, 68, 0.22);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-badge {
+        animation: none;
+    }
+}
