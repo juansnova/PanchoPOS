@@ -369,11 +369,9 @@ def render_bar_ticket(payload: dict, *, cols: int = 48) -> bytes:
         put(f"Tel: {payload['customer_phone']}", align="center")
     rule()
 
-    total = 0
     lines = payload.get("lines") or []
     for idx, line in enumerate(lines):
         qty = int(line.get("quantity") or 1)
-        total += qty
         # double width + height: 24 columns of 48, so qty and name stay huge and readable
         put(f"{qty}x {line.get('name') or ''}", size=0x11, bold=True)
         if line.get("notes"):
@@ -383,11 +381,9 @@ def render_bar_ticket(payload: dict, *, cols: int = 48) -> bytes:
         if idx < len(lines) - 1:
             put(". " * (cols // 2), align="center")
     rule("\u25a0")
-    put(f"{total} bebida{'s' if total != 1 else ''}", size=0x11, bold=True, align="center", reverse=True)
     if payload.get("order_notes"):
         put("NOTA DEL PEDIDO", bold=True, align="center", reverse=True)
         put(str(payload["order_notes"]), size=0x01, bold=True)
-    put("\u2248  \u00a1Salud!  \u2248", size=0x01, bold=True, align="center")
     rule()
 
     out.extend(ESC + b"d" + bytes([FEED_BEFORE_CUT]))
