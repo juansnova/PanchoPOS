@@ -298,6 +298,58 @@ function localIso(d: Date): string {
     .sv-more { display: block; margin: 14px auto 0; min-height: 40px; padding: 0 22px; border-radius: 999px; border: 1px dashed var(--color-border); background: transparent; color: var(--color-text); font: inherit; font-weight: 800; cursor: pointer; }
     .sv-more:hover { border-color: var(--color-primary); color: var(--color-primary); }
 
+
+    /* ===== responsive pass ===== */
+    .sv-page { width: 100%; min-width: 0; box-sizing: border-box; }
+    .sv-page > * { min-width: 0; }
+    .sv-live-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+    .sv-people { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+    .sv-person { min-width: 0; }
+    .sv-act-top { flex-wrap: wrap; row-gap: 10px; }
+    .sv-act-name { flex: 1 1 8rem; }
+    .sv-act-hours { flex: none; }
+    .sv-act-name b, .sv-person-main b { max-width: 100%; }
+    .sv-presets { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+    .sv-presets::-webkit-scrollbar { display: none; }
+    .sv-presets button { flex: none; white-space: nowrap; }
+    .sv-controls { min-width: 0; }
+
+    @container (max-width: 360px) {
+      .sv-act-hours { flex-basis: 100%; flex-direction: row; align-items: baseline; justify-content: space-between; padding-top: 10px; border-top: 1.5px dashed var(--color-border); text-align: left; }
+    }
+
+    @media (max-width: 1100px) {
+      .sv-hero { align-items: flex-start; }
+    }
+    @media (max-width: 760px) {
+      .sv-page { gap: 14px; }
+      .sv-hero h1 { font-size: 1.65rem; }
+      .sv-hero { flex-direction: column; align-items: stretch; gap: 14px; }
+      .sv-now { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .sv-now div { flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px 16px; border-radius: 22px; background: var(--color-surface); border: 1px solid var(--color-border); }
+      .sv-now strong { font-size: 2.4rem; }
+      .sv-card { padding: 18px 16px; border-radius: 24px; }
+      .sv-card-head { flex-wrap: wrap; gap: 8px; }
+      .sv-range-top { flex-direction: column; align-items: stretch; }
+      .sv-controls { display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 10px; }
+      .sv-controls .sv-go { grid-column: 1 / -1; width: 100%; }
+      .sv-presets { display: flex; width: 100%; box-sizing: border-box; }
+      .sv-presets button { flex: 1 0 auto; padding: 0 12px; }
+      .sv-totals div { padding: 14px 14px; border-radius: 20px; }
+      .sv-totals strong { font-size: 1.65rem; }
+      .sv-act { padding: 16px; border-radius: 22px; }
+      .sv-rows { padding-right: 0; max-height: none; }
+      .sv-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px; padding: 12px 14px; align-items: start; }
+      .sv-who { grid-column: 1 / -1; }
+      .sv-day { grid-column: 1 / -1; font-size: 0.9rem; color: var(--color-text-muted); }
+      .sv-dur { grid-column: auto; justify-self: end; align-self: center; }
+    }
+    @media (max-width: 420px) {
+      .sv-person { flex-wrap: wrap; }
+      .sv-elapsed { flex-basis: 100%; padding-top: 10px; border-top: 1.5px dashed var(--color-border); font-size: 1.4rem; }
+      .sv-controls { grid-template-columns: 1fr; }
+      .sv-avatar { width: 42px; height: 42px; }
+    }
     @media (prefers-reduced-motion: reduce) { .sv-dot::after, .sv-skeleton i { animation: none; } .sv-bar i { transition: none; } }
     @media (max-width: 760px) {
       .sv-totals { grid-template-columns: 1fr 1fr; }
