@@ -2910,17 +2910,16 @@ ModuleRegistry.registerModules([
     .hs-empty { padding: 36px 16px; }
     .hs-empty h3 { margin-bottom: 12px; }
     .grid-container .btn-factura-row, .grid-container .btn-edit-order-row, .grid-container .btn-delete-order-row {
-      display: inline-flex !important; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0 !important; cursor: pointer;
-      border: 0 !important; border-radius: 50% !important; box-shadow: none;
-      transition: background .18s ease, color .18s ease, transform .15s, box-shadow .18s;
+      display: inline-flex !important; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0 !important; cursor: pointer;
+      border: 0 !important; border-radius: 13px !important; color: #fff !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35);
+      transition: transform .18s cubic-bezier(.2, .8, .2, 1), box-shadow .2s, filter .2s;
     }
-    .grid-container .btn-edit-order-row { background: color-mix(in srgb, var(--color-primary) 12%, #fff) !important; color: var(--color-primary) !important; }
-    .grid-container .btn-factura-row { background: #f1ece6 !important; color: #57493f !important; }
-    .grid-container .btn-delete-order-row { background: #fef2f2 !important; color: #dc2626 !important; }
-    .grid-container .btn-edit-order-row:hover { background: var(--color-primary) !important; color: #fff !important; box-shadow: 0 10px 16px -8px var(--color-primary); }
-    .grid-container .btn-factura-row:hover { background: #2b211b !important; color: #fff !important; box-shadow: 0 10px 16px -8px rgba(23, 18, 16, .6); }
-    .grid-container .btn-delete-order-row:hover { background: #dc2626 !important; color: #fff !important; box-shadow: 0 10px 16px -8px #dc2626; }
-    .grid-container .btn-edit-order-row svg, .grid-container .btn-factura-row svg, .grid-container .btn-delete-order-row svg { width: 17px; height: 17px; stroke-width: 1.9; flex-shrink: 0; }
+    .grid-container .btn-edit-order-row { background: linear-gradient(145deg, #f59a52, #c2531a) !important; box-shadow: 0 10px 16px -8px #d9692a, inset 0 1px 0 rgba(255, 255, 255, .35); }
+    .grid-container .btn-factura-row { background: linear-gradient(145deg, #22a5c4, #0e5f7a) !important; box-shadow: 0 10px 16px -8px #0e7490, inset 0 1px 0 rgba(255, 255, 255, .35); }
+    .grid-container .btn-delete-order-row { background: linear-gradient(145deg, #f87171, #c42424) !important; box-shadow: 0 10px 16px -8px #dc2626, inset 0 1px 0 rgba(255, 255, 255, .35); }
+    .grid-container .btn-edit-order-row:hover, .grid-container .btn-factura-row:hover, .grid-container .btn-delete-order-row:hover { transform: translateY(-2px) scale(1.06); filter: brightness(1.06); }
+    .grid-container .btn-edit-order-row svg, .grid-container .btn-factura-row svg, .grid-container .btn-delete-order-row svg { width: 18px; height: 18px; flex-shrink: 0; }
     .grid-container button:active { transform: scale(.92); }
     @media (max-width: 720px) {
       .hs-stats { grid-template-columns: 1fr 1fr; }
@@ -3304,7 +3303,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
           if (id == null) return '';
           const editTitle = this.translate.instant('ORDERS.EDIT_ORDER');
           const safeEditTitle = (editTitle || 'Edit').replace(/"/g, '&quot;');
-          const editIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+          const editIcon = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>';
           return `<button type="button" class="btn-edit-order-row" data-order-id="${id}" title="${safeEditTitle}">${editIcon}</button>`;
         },
       },
@@ -3317,7 +3316,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
           const id = params.data?.id;
           if (id == null) return '';
           const title = this.translate.instant('CUSTOMERS.PRINT_FACTURA');
-          const icon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+          const icon = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>';
           const safeTitle = (title || '').replace(/"/g, '&quot;');
           return `<button type="button" class="btn-factura-row" data-order-id="${id}" title="${safeTitle}">${icon}</button>`;
         },
@@ -3332,7 +3331,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
           if (id == null) return '';
           const deleteTitle = this.translate.instant('ORDERS.DELETE_ORDER');
           const safeDeleteTitle = (deleteTitle || 'Delete').replace(/"/g, '&quot;');
-          const deleteIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+          const deleteIcon = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M10 11v6M14 11v6"/></svg>';
           return `<button type="button" class="btn-delete-order-row" data-order-id="${id}" title="${safeDeleteTitle}">${deleteIcon}</button>`;
         },
       }] : []),
