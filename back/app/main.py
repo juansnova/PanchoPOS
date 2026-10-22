@@ -256,6 +256,18 @@ async def _app_lifespan(app: FastAPI):
     app.state.idle_tables_task = idle_tables_task
     logger.info("Idle table worker started (closes tables with no order after %d minutes)", IDLE_CLOSE_AFTER_MINUTES)
 
+    # Stock is deducted when a dish is delivered, not when ordered: give back what older orders
+    # deducted up front (runs once; later starts find nothing to fix).
+    try:
+        from .inventory_service import reconcile_undelivered_deductions
+
+        with Session(engine) as _s:
+            _fixed = reconcile_undelivered_deductions(_s)
+        if _fixed:
+            logger.info("Inventory: returned up-front deductions of %d undelivered order(s)", _fixed)
+    except Exception as exc:  # never block startup
+        logger.warning("Inventory reconcile skipped: %s", exc)
+
     yield
 
     stop_it = getattr(app.state, "idle_tables_stop", None)
@@ -5817,6 +5829,8 @@ def courier_order_action(
     session.add(order)
     session.commit()
     session.refresh(order)
+    if action == models.CourierOrderActionType.delivered.value:
+        _sync_order_inventory(session, order)
 
     publish_order_update(
         tenant_id,
@@ -12923,6 +12937,8 @@ def finish_order(
         session.refresh(order)
         recon = order_pay_svc.reconciliation_dict(session, order)
 
+    # Finishing the order delivers every line: ingredients are deducted now.
+    _sync_order_inventory(session, order)
 
     table = session.exec(select(models.Table).where(models.Table.id == order.table_id)).first()
     publish_order_update(

@@ -290,9 +290,16 @@ def deduct_from_batches_fifo(
 
 
 def _line_target_quantity(order_item) -> int:
-    """Units of this line that should currently be deducted (0 once removed or cancelled)."""
+    """Units of this line whose ingredients should currently be deducted.
+
+    Stock is consumed only when the dish is delivered: a pending / preparing / ready line has not
+    left the kitchen yet, so cancelling or deleting the order never has anything to put back.
+    Removed or cancelled lines go back to 0 (the ingredients return if they had been deducted).
+    """
     status = getattr(order_item.status, "value", order_item.status)
     if order_item.removed_by_customer or order_item.removed_by_user_id is not None or status == "cancelled":
+        return 0
+    if status != "delivered":
         return 0
     return max(0, order_item.quantity or 0)
 
@@ -305,6 +312,7 @@ def deduct_inventory_for_order(
 ) -> list[InventoryTransaction]:
     """
     Bring inventory in line with the order's lines, deducting only what is new.
+    Only delivered lines count (see ``_line_target_quantity``).
 
     Each line remembers how many units were already deducted (``inventory_deducted_qty``), so calling
     this after every change is safe: added units are deducted (FIFO, negative stock allowed), and units
@@ -674,3 +682,32 @@ def get_low_stock_items(
         .where(InventoryItem.current_quantity <= InventoryItem.reorder_level)
     )
     return list(session.exec(statement).all())
+
+
+def reconcile_undelivered_deductions(session: Session) -> int:
+    """Return stock that the old rule deducted when the order was placed.
+
+    Lines that are not delivered yet but still carry ``inventory_deducted_qty > 0`` are synced once:
+    the ingredients go back, and they are deducted again when the dish is delivered. Idempotent:
+    after the first pass those lines have 0 deducted, so later runs find nothing. Returns orders fixed.
+    """
+    order_ids = list(
+        session.exec(
+            select(models.OrderItem.order_id)
+            .where(models.OrderItem.inventory_deducted_qty > 0)
+            .where(models.OrderItem.status != models.OrderItemStatus.delivered)
+            .distinct()
+        ).all()
+    )
+    fixed = 0
+    for order_id in order_ids:
+        order = session.get(models.Order, order_id)
+        if order is None:
+            continue
+        tenant = session.get(models.Tenant, order.tenant_id)
+        if tenant is None:
+            continue
+        deduct_inventory_for_order(session, order, tenant)
+        session.commit()
+        fixed += 1
+    return fixed
