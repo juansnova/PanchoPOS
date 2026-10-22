@@ -190,7 +190,7 @@ function localIso(d: Date): string {
     </div>
   `,
   styles: `
-    .sv-page { max-width: none; display: flex; flex-direction: column; gap: 18px; }
+    .sv-page { max-width: 1020px; display: flex; flex-direction: column; gap: 18px; }
     .sv-muted { margin: 2px 0 0; font-size: 0.86rem; color: var(--color-text-muted); }
 
     /* ---- hero ---- */
