@@ -273,10 +273,12 @@ function localIso(d: Date): string {
     .sv-act-hours span { font-size: 0.72rem; font-weight: 700; color: var(--color-text-muted); }
     .sv-bar { height: 8px; border-radius: 999px; background: var(--color-bg); box-shadow: inset 0 0 0 1px var(--color-border); overflow: hidden; }
     .sv-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 55%, #fbbf24)); transition: width .5s ease; }
-    .sv-act-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .sv-act-stats div { display: flex; flex-direction: column; gap: 2px; padding: 10px 6px; border-radius: 16px; background: var(--color-bg); text-align: center; }
+    .sv-act { container-type: inline-size; min-width: 0; }
+    .sv-act-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    @container (max-width: 400px) { .sv-act-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .sv-act-stats div { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 10px 6px; border-radius: 16px; background: var(--color-bg); text-align: center; }
     .sv-act-stats strong { font-size: 1.15rem; font-weight: 800; font-variant-numeric: tabular-nums; }
-    .sv-act-stats span { font-size: 0.6rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--color-text-muted); }
+    .sv-act-stats span { font-size: 0.6rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--color-text-muted); overflow-wrap: anywhere; hyphens: auto; line-height: 1.15; }
     .sv-act-stats .warn strong { color: #b45309; }
 
     /* ---- history ---- */
