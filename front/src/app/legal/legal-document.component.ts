@@ -185,10 +185,10 @@ const PRIVACY: LegalDoc = {
     <div class="lg-page">
       <header class="lg-hero">
         <div class="lg-hero-inner">
-          <a routerLink="/" class="lg-brand">
+          <div class="lg-brand">
             <span class="lg-brand-mark" aria-hidden="true">P</span>
             <span class="lg-brand-name">Pancho Panza</span>
-          </a>
+          </div>
           <span class="lg-eyebrow">{{ d.eyebrow }}</span>
           <h1>{{ d.title }}</h1>
           <p class="lg-lead">{{ d.lead }}</p>
@@ -245,7 +245,6 @@ const PRIVACY: LegalDoc = {
                 <a [routerLink]="kind() === 'terms' ? '/privacy' : '/terms'">
                   {{ kind() === 'terms' ? 'Ver la política de privacidad' : 'Ver los términos del servicio' }}
                 </a>
-                <a routerLink="/">Volver al inicio</a>
               </div>
             </footer>
           </article>
