@@ -1109,73 +1109,68 @@ ModuleRegistry.registerModules([
         <!-- Edit Satisfecho Delivery metadata Modal -->
         @if (editDeliveryOrder(); as dOrder) {
           <div class="modal-overlay">
-            <div class="modal modal-order-edit mx mx-delivery" (click)="$event.stopPropagation()" appFocusFirstInput>
-              <div class="mx-head">
-                <span class="mx-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
-                <div class="mx-head-text">
+            <div class="modal modal-order-edit mx mx-delivery dslip" (click)="$event.stopPropagation()" appFocusFirstInput>
+              <header class="dslip-head">
+                <div>
+                  <p class="dslip-eyebrow">{{ 'ORDERS.DELIVERY_SLIP' | translate }}</p>
                   <h3>{{ 'ORDERS.EDIT_DELIVERY' | translate }}</h3>
-                  <p>{{ 'ORDERS.ORDER_ID' | translate }}{{ dOrder.id }}@if (dOrder.customer_name) { · {{ dOrder.customer_name }} }</p>
                 </div>
                 <button class="mx-close" (click)="closeEditDeliveryModal()" [attr.aria-label]="'COMMON.CANCEL' | translate">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
+              </header>
+
+              <div class="dslip-meta">
+                <div><small>{{ 'ORDERS.ORDER_ID' | translate }}</small><b class="dslip-num">Nº {{ dOrder.id }}</b></div>
+                <div><small>{{ 'ORDERS.TOTAL' | translate }}</small><b class="dslip-total">{{ formatPrice(dOrder.total_cents) }}</b></div>
               </div>
-              <div class="modal-body">
-                <div class="dv-total">
-                  <div>
-                    <small>{{ 'ORDERS.TOTAL' | translate }}</small>
-                    <b>{{ formatPrice(dOrder.total_cents) }}</b>
-                  </div>
+
+              <div class="modal-body dslip-body">
+                <div class="dslip-field dslip-field-main">
+                  <label for="edit-delivery-address">{{ 'ORDERS.DELIVERY_ADDRESS' | translate }}</label>
+                  <input id="edit-delivery-address" type="text" [(ngModel)]="deliveryFormAddress" name="editDeliveryAddress" />
                 </div>
 
-                <p class="dv-section"><i></i>{{ 'ORDERS.DELIVERY_SECTION_WHERE' | translate }}</p>
-                <div class="form-group">
-                  <label for="edit-delivery-address">{{ 'ORDERS.DELIVERY_ADDRESS' | translate }} <b>*</b></label>
-                  <span class="dv-input">
-                    <span class="dv-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
-                    <input id="edit-delivery-address" type="text" [(ngModel)]="deliveryFormAddress" name="editDeliveryAddress" />
-                  </span>
-                </div>
-
-                <p class="dv-section"><i></i>{{ 'ORDERS.DELIVERY_SECTION_WHO' | translate }}</p>
-                <div class="dv-two">
-                  <div class="form-group">
+                <div class="dslip-two">
+                  <div class="dslip-field">
                     <label for="edit-delivery-customer">{{ 'ORDERS.CUSTOMER' | translate }}</label>
-                    <span class="dv-input">
-                      <span class="dv-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
-                      <input id="edit-delivery-customer" type="text" [(ngModel)]="deliveryFormCustomerName" name="editDeliveryCustomer" />
-                    </span>
+                    <input id="edit-delivery-customer" type="text" [(ngModel)]="deliveryFormCustomerName" name="editDeliveryCustomer" />
                   </div>
-                  <div class="form-group">
+                  <div class="dslip-field">
                     <label for="edit-delivery-phone">{{ 'ORDERS.DELIVERY_PHONE' | translate }}</label>
-                    <span class="dv-input">
-                      <span class="dv-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></span>
-                      <input id="edit-delivery-phone" type="tel" [(ngModel)]="deliveryFormPhone" name="editDeliveryPhone" />
-                    </span>
+                    <input id="edit-delivery-phone" type="tel" [(ngModel)]="deliveryFormPhone" name="editDeliveryPhone" />
                   </div>
                 </div>
 
-                <p class="dv-section"><i></i>{{ 'ORDERS.DELIVERY_SECTION_HOW' | translate }}</p>
-                <div class="form-group">
-                  <label for="edit-delivery-courier">{{ 'ORDERS.COURIER' | translate }}</label>
-                  <app-select id="edit-delivery-courier" [options]="courierOptions()" [searchable]="false"
-                    [clearable]="true" [emptyValue]="null" [placeholder]="'COMMON.NONE' | translate"
-                    [(ngModel)]="deliveryFormCourierId" name="editDeliveryCourier"></app-select>
+                <div class="dslip-field">
+                  <span class="dslip-label">{{ 'ORDERS.COURIER' | translate }}</span>
+                  <div class="dslip-couriers" role="radiogroup" [attr.aria-label]="'ORDERS.COURIER' | translate">
+                    <button type="button" role="radio" class="dslip-courier" [class.on]="deliveryFormCourierId === null"
+                      [attr.aria-checked]="deliveryFormCourierId === null" (click)="deliveryFormCourierId = null">
+                      <i aria-hidden="true">–</i><span>{{ 'COMMON.NONE' | translate }}</span>
+                    </button>
+                    @for (c of couriers(); track c.id) {
+                      <button type="button" role="radio" class="dslip-courier" [class.on]="deliveryFormCourierId === c.id"
+                        [attr.aria-checked]="deliveryFormCourierId === c.id" (click)="deliveryFormCourierId = c.id">
+                        <i aria-hidden="true">{{ ((c.full_name || c.username) || '?').trim().charAt(0).toUpperCase() }}</i>
+                        <span>{{ c.full_name || c.username }}</span>
+                      </button>
+                    }
+                  </div>
                 </div>
-                <div class="form-group">
+
+                <div class="dslip-field">
                   <label for="edit-delivery-notes">{{ 'ORDERS.ORDER_NOTES' | translate }}</label>
-                  <span class="dv-input dv-input-area">
-                    <span class="dv-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg></span>
-                    <textarea id="edit-delivery-notes" rows="2" [(ngModel)]="deliveryFormNotes" name="editDeliveryNotes"></textarea>
-                  </span>
+                  <textarea id="edit-delivery-notes" class="dslip-notes" rows="3" [(ngModel)]="deliveryFormNotes" name="editDeliveryNotes"></textarea>
                 </div>
               </div>
-              <div class="modal-actions">
-                <button type="button" class="btn btn-secondary mx-ghost" (click)="closeEditDeliveryModal()">{{ 'COMMON.CANCEL' | translate }}</button>
-                <button type="button" class="btn btn-primary mx-main" (click)="submitEditDelivery()" [disabled]="savingDelivery() || !deliveryFormAddress.trim()">
-                  {{ savingDelivery() ? ('COMMON.LOADING' | translate) : ('COMMON.SAVE' | translate) }}
+
+              <footer class="dslip-foot">
+                <button type="button" class="dslip-cancel" (click)="closeEditDeliveryModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+                <button type="button" class="dslip-save" (click)="submitEditDelivery()" [disabled]="savingDelivery() || !deliveryFormAddress.trim()">
+                  {{ savingDelivery() ? ('COMMON.LOADING' | translate) : ('COMMON.SAVE' | translate) }}<i aria-hidden="true">→</i>
                 </button>
-              </div>
+              </footer>
             </div>
           </div>
         }
@@ -2858,25 +2853,45 @@ ModuleRegistry.registerModules([
     .mx-delivery { max-width: 520px; }
     .mx-delivery .modal-body { padding-top: 10px; }
     .dv-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    /* ===== Editar entrega: grouped fields with icon chips ===== */
-    .mx-delivery .mx-head-text h3 { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.6rem; letter-spacing: -0.02em; }
-    .dv-total { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 6px; padding: 14px 16px; border-radius: 20px; background: color-mix(in srgb, var(--color-primary) 6%, #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 18%, transparent); }
-    .dv-total small { display: block; font-size: .62rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--color-text-muted); }
-    .dv-total b { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.9rem; line-height: 1.1; color: var(--color-primary); font-variant-numeric: tabular-nums; }
-    .dv-total-tag { padding: 5px 12px; border-radius: 999px; font-size: .74rem; font-weight: 800; letter-spacing: .06em; color: var(--color-primary); background: #fff; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 30%, transparent); }
-    .dv-section { display: flex; align-items: center; gap: 8px; margin: 16px 0 6px; font-size: .62rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--color-primary); }
-    .dv-section i { width: 16px; height: 1.5px; background: currentColor; }
-    .mx-delivery .form-group { margin-bottom: 12px; }
-    .mx-delivery .form-group label b { color: var(--color-primary); }
-    .dv-input { display: flex; align-items: center; gap: 10px; padding: 0 12px 0 6px; border-radius: 16px; background: color-mix(in srgb, var(--color-primary) 3%, #fff); box-shadow: inset 0 0 0 1.5px var(--color-border); transition: box-shadow .2s, background .2s; }
-    .dv-input:focus-within { background: #fff; box-shadow: inset 0 0 0 2px var(--color-primary), 0 0 0 4px color-mix(in srgb, var(--color-primary) 14%, transparent); }
-    .dv-input-area { align-items: flex-start; padding-top: 6px; padding-bottom: 6px; }
-    .dv-ico { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 11%, #fff); }
-    .dv-input input, .dv-input textarea { flex: 1; min-width: 0; min-height: 44px; padding: 0; border: 0; border-radius: 0; background: transparent; font: inherit; font-size: .95rem; outline: none; box-shadow: none; resize: none; }
-    .dv-input textarea { min-height: 0; padding-top: 10px; }
-    .mx-delivery app-select { display: block; }
-    .mx-delivery .modal-actions .btn.mx-ghost { border-radius: 999px; border: 0; box-shadow: inset 0 0 0 1.5px var(--color-border); }
-    .mx-delivery .modal-actions .btn.mx-main { border-radius: 999px; min-height: 48px; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, #000)); box-shadow: 0 16px 24px -14px var(--color-primary); }
+    /* ===== Editar entrega: dispatch slip (editorial, hairlines, no boxed inputs) ===== */
+    .dslip { max-width: 540px; padding: 0; border-radius: 22px; background: #fff; overflow: hidden; }
+    .dslip-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 22px 24px 16px; background: #1c1612; color: #fbf3e9; position: relative; }
+    .dslip-head::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 40%, #f6d9b4)); }
+    .dslip-eyebrow { margin: 0 0 6px; font-size: .62rem; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: color-mix(in srgb, var(--color-primary) 55%, #f6d9b4); }
+    .dslip-head h3 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.7rem; letter-spacing: -.02em; line-height: 1.1; color: #fff; }
+    .dslip-head .mx-close { color: rgba(255, 255, 255, .7); }
+    .dslip-head .mx-close:hover { background: rgba(255, 255, 255, .12); color: #fff; }
+    .dslip-meta { display: grid; grid-template-columns: 1fr 1fr; background: #faf6f1; border-bottom: 1px solid var(--color-border); }
+    .dslip-meta > div { padding: 12px 24px; min-width: 0; }
+    .dslip-meta > div + div { border-left: 1px solid var(--color-border); }
+    .dslip-meta small { display: block; font-size: .6rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--color-text-muted); }
+    .dslip-meta b { display: block; margin-top: 2px; font-size: 1rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dslip-num { font-family: Georgia, 'Times New Roman', serif; font-weight: 500 !important; font-size: 1.4rem !important; letter-spacing: -.01em; }
+    .dslip-total { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500 !important; font-size: 1.4rem !important; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+    .dslip-body { padding: 20px 24px 6px !important; display: flex; flex-direction: column; gap: 18px; }
+    .dslip-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .dslip-field label, .dslip-label { font-size: .62rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--color-text-muted); }
+    .dslip-field input, .dslip-field textarea { width: 100%; min-height: 40px; padding: 4px 0 8px; border: 0; border-bottom: 1.5px solid var(--color-border); border-radius: 0; background: transparent; font: inherit; font-size: 1rem; color: var(--color-text); outline: none; box-shadow: none; transition: border-color .2s, box-shadow .2s; }
+    .dslip-field input:focus, .dslip-field textarea:focus { border-bottom-color: var(--color-primary); box-shadow: 0 1.5px 0 0 var(--color-primary); }
+    .dslip-field-main input { font-family: Georgia, 'Times New Roman', serif; font-size: 1.3rem; padding-bottom: 10px; }
+    .dslip-two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .dslip-couriers { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 6px; }
+    .dslip-courier { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 4px 14px 4px 5px; border: 0; border-radius: 999px; background: #fff; color: var(--color-text); font: inherit; font-size: .86rem; font-weight: 600; cursor: pointer; box-shadow: inset 0 0 0 1.5px var(--color-border); transition: background .18s, box-shadow .18s, color .18s; touch-action: manipulation; }
+    .dslip-courier i { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; font-style: normal; font-family: Georgia, serif; font-size: .95rem; background: color-mix(in srgb, var(--color-primary) 12%, #fff); color: var(--color-primary); }
+    .dslip-courier:hover { box-shadow: inset 0 0 0 1.5px var(--color-primary); }
+    .dslip-courier.on { background: #1c1612; color: #fff; box-shadow: none; }
+    .dslip-courier.on i { background: var(--color-primary); color: #fff; }
+    .dslip-notes { resize: none; line-height: 28px; padding: 0 !important; border: 0 !important; background-image: repeating-linear-gradient(transparent 0, transparent 27px, var(--color-border) 27px, var(--color-border) 28px) !important; }
+    .dslip-notes:focus { background-image: repeating-linear-gradient(transparent 0, transparent 27px, color-mix(in srgb, var(--color-primary) 45%, var(--color-border)) 27px, color-mix(in srgb, var(--color-primary) 45%, var(--color-border)) 28px) !important; box-shadow: none !important; }
+    .dslip-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px 22px; }
+    .dslip-cancel { border: 0; background: none; padding: 10px 4px; font: inherit; font-size: .9rem; font-weight: 700; color: var(--color-text-muted); cursor: pointer; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--color-border); }
+    .dslip-cancel:hover { color: var(--color-text); text-decoration-color: currentColor; }
+    .dslip-save { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 10px 0 22px; border: 0; border-radius: 12px; background: #1c1612; color: #fff; font: inherit; font-size: .95rem; font-weight: 800; cursor: pointer; box-shadow: 0 16px 24px -16px rgba(28, 22, 18, .8); transition: background .2s, transform .15s; }
+    .dslip-save i { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; font-style: normal; background: var(--color-primary); }
+    .dslip-save:hover:not(:disabled) { background: color-mix(in srgb, var(--color-primary) 80%, #000); }
+    .dslip-save:active:not(:disabled) { transform: scale(.98); }
+    .dslip-save:disabled { opacity: .5; cursor: not-allowed; }
+    @media (max-width: 520px) { .dslip-two { grid-template-columns: minmax(0, 1fr); } .dslip-head, .dslip-body, .dslip-foot, .dslip-meta > div { padding-left: 18px; padding-right: 18px; } }
 
     @media (max-width: 480px) { .dv-two { grid-template-columns: minmax(0, 1fr); } }
     .dv-items { margin-top: 6px; padding: 14px; border-radius: 16px; background: var(--color-bg); border: 1px solid var(--color-border); }
@@ -3020,14 +3035,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   /** Satisfecho Delivery create / edit forms */
   createDeliveryOpen = signal(false);
-  /** Couriers for the delivery editor's list: initial in a tinted chip. */
-  courierOptions = computed<AppSelectOption[]>(() =>
-    this.couriers().map((c) => {
-      const label = c.full_name || c.username;
-      return { value: c.id, label, icon: (label || '?').trim().charAt(0).toUpperCase(), tone: 'e' as const };
-    })
-  );
-
   editDeliveryOrder = signal<Order | null>(null);
   creatingDelivery = signal(false);
   savingDelivery = signal(false);

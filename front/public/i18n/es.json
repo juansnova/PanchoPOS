@@ -981,6 +981,7 @@
     "COURIER": "Repartidor",
     "COURIER_UNASSIGNED": "Sin asignar",
     "EDIT_DELIVERY": "Editar entrega",
+    "DELIVERY_SLIP": "Hoja de despacho",
     "DELIVERY_SECTION_WHERE": "Dónde",
     "DELIVERY_SECTION_WHO": "Quién recibe",
     "DELIVERY_SECTION_HOW": "Cómo se entrega",
