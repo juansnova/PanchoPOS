@@ -264,7 +264,7 @@ const MY_SHIFT_QR_READER_ID = 'my-shift-qr-reader';
     </app-sidebar>
   `,
   styles: `
-    .ms-page { max-width: 1020px; display: flex; flex-direction: column; gap: 18px; }
+    .ms-page { max-width: none; display: flex; flex-direction: column; gap: 18px; }
     .ms-muted { color: var(--color-text-muted); margin: 0; }
 
     /* ---------- greeting ---------- */
