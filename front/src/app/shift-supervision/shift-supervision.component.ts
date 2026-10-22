@@ -70,7 +70,7 @@ function localIso(d: Date): string {
       </section>
 
       <!-- ===================== range ===================== -->
-      <section class="sv-card sv-range">
+      <section class="sv-card sv-range" [class.loading]="loadingRange()">
         <div class="sv-range-top">
           <div>
             <p class="sv-range-eyebrow"><i></i>{{ 'SHIFT_SUPERVISION.RANGE_EYEBROW' | translate }}</p>
@@ -106,7 +106,7 @@ function localIso(d: Date): string {
         </div>
 
         <button type="button" class="sv-go" (click)="loadRange()" [disabled]="loadingRange()">
-          {{ loadingRange() ? ('SHIFT_SUPERVISION.LOADING' | translate) : ('SHIFT_SUPERVISION.APPLY' | translate) }}<i aria-hidden="true">→</i>
+          {{ loadingRange() ? ('SHIFT_SUPERVISION.LOADING' | translate) : ('SHIFT_SUPERVISION.APPLY' | translate) }}<i aria-hidden="true">@if (loadingRange()) { <span class="sv-spin"></span> } @else { → }</i>
         </button>
       </section>
 
@@ -117,7 +117,8 @@ function localIso(d: Date): string {
           <p class="sv-muted">{{ 'SHIFT_SUPERVISION.ACTIVITY_HINT' | translate }}</p>
         </div>
         @if (loadingRange()) {
-          <div class="sv-skeleton"><i></i><i></i></div>
+          <div class="sv-sk-totals"><i></i><i></i><i></i><i></i></div>
+          <div class="sv-sk-cards"><i></i><i></i><i></i></div>
         } @else if (activity().length === 0) {
           <div class="sv-empty"><p>{{ 'SHIFT_SUPERVISION.ACTIVITY_EMPTY' | translate }}</p></div>
         } @else {
@@ -410,6 +411,52 @@ function localIso(d: Date): string {
       .sv-leaves { flex-direction: column; align-items: stretch; gap: 10px; }
       .sv-stamp { width: 62px; height: 62px; align-self: center; margin: -4px 0; }
       .sv-stamp b { font-size: 1.6rem; }
+    }
+
+    /* ===== motion: loading state + staggered reveal after "Ver" ===== */
+    .sv-range::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--color-primary), transparent); background-size: 40% 100%; background-repeat: no-repeat; opacity: 0; transform: translateX(-100%); }
+    .sv-range.loading::after { opacity: 1; animation: sv-sweep 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+    @keyframes sv-sweep { from { transform: translateX(-60%); } to { transform: translateX(250%); } }
+    .sv-range .sv-go:disabled { opacity: 1; cursor: progress; filter: saturate(0.85); }
+    .sv-spin { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid color-mix(in srgb, var(--color-primary) 25%, transparent); border-top-color: var(--color-primary); animation: sv-rot 0.7s linear infinite; }
+    @keyframes sv-rot { to { transform: rotate(360deg); } }
+    .sv-leaf, .sv-stamp { transition: opacity 0.3s, transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .sv-range.loading .sv-stamp { animation: sv-stamp-pulse 0.9s ease-in-out infinite; }
+    @keyframes sv-stamp-pulse { 50% { transform: rotate(-8deg) scale(1.1); } }
+
+    .sv-sk-totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .sv-sk-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+    .sv-sk-totals i, .sv-sk-cards i { display: block; border-radius: 24px; background: linear-gradient(100deg, color-mix(in srgb, var(--color-primary) 6%, #f1e9df) 30%, color-mix(in srgb, var(--color-primary) 16%, #fff) 50%, color-mix(in srgb, var(--color-primary) 6%, #f1e9df) 70%); background-size: 220% 100%; animation: sv-shimmer 1.3s linear infinite; }
+    .sv-sk-totals i { height: 84px; }
+    .sv-sk-cards i { height: 214px; border-radius: 26px; }
+    @media (max-width: 760px) { .sv-sk-totals { grid-template-columns: 1fr 1fr; } }
+
+    @keyframes sv-rise { from { opacity: 0; transform: translateY(18px) scale(0.97); } }
+    @keyframes sv-rise-sm { from { opacity: 0; transform: translateY(10px); } }
+    @keyframes sv-fill { from { width: 0; } }
+    @keyframes sv-fade { from { opacity: 0; } }
+    .sv-block-head { animation: sv-fade 0.4s ease both; }
+    .sv-totals > div { animation: sv-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+    .sv-totals > div:nth-child(2) { animation-delay: 70ms; }
+    .sv-totals > div:nth-child(3) { animation-delay: 140ms; }
+    .sv-totals > div:nth-child(4) { animation-delay: 210ms; }
+    .sv-people .sv-act { animation: sv-rise 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: 200ms; }
+    .sv-people .sv-act:nth-child(2) { animation-delay: 270ms; }
+    .sv-people .sv-act:nth-child(3) { animation-delay: 340ms; }
+    .sv-people .sv-act:nth-child(4) { animation-delay: 410ms; }
+    .sv-people .sv-act:nth-child(5) { animation-delay: 480ms; }
+    .sv-people .sv-act:nth-child(n+6) { animation-delay: 540ms; }
+    .sv-people .sv-bar i { animation: sv-fill 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) 450ms both; }
+    .sv-people .sv-act-stats > div { animation: sv-rise-sm 0.5s ease both; animation-delay: 450ms; }
+    .sv-rows .sv-row:not(.sv-row-head) { animation: sv-rise-sm 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: 350ms; }
+    .sv-rows .sv-row:nth-child(3) { animation-delay: 400ms; }
+    .sv-rows .sv-row:nth-child(4) { animation-delay: 450ms; }
+    .sv-rows .sv-row:nth-child(5) { animation-delay: 500ms; }
+    .sv-rows .sv-row:nth-child(6) { animation-delay: 550ms; }
+    .sv-rows .sv-row:nth-child(n+7) { animation-delay: 600ms; }
+    @media (prefers-reduced-motion: reduce) {
+      .sv-range.loading::after, .sv-spin, .sv-range.loading .sv-stamp, .sv-sk-totals i, .sv-sk-cards i,
+      .sv-block-head, .sv-totals > div, .sv-people .sv-act, .sv-people .sv-bar i, .sv-people .sv-act-stats > div, .sv-rows .sv-row { animation: none; }
     }
     @media (prefers-reduced-motion: reduce) { .sv-dot::after, .sv-skeleton i { animation: none; } .sv-bar i { transition: none; } }
     @media (max-width: 760px) {
