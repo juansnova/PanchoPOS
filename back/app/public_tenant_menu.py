@@ -141,20 +141,17 @@ def _load_flat_products(
     tenant = session.get(models.Tenant, tenant_id)
     today = _tenant_today(tenant)
 
-    from .product_stock import products_blocked_by_recipe
-
-    recipe_blocked = products_blocked_by_recipe(session, tenant_id)
+    # Dishes are not hidden automatically when an ingredient runs short: the admin is notified
+    # (inventory alerts) and decides. Only the manual out_of_stock flag removes a dish.
     tenant_products = [
         tp
         for tp in tenant_products
-        if not tp.out_of_stock
-        and tp.product_id not in recipe_blocked
-        and _is_available_today(tp.available_from, tp.available_until, today)
+        if not tp.out_of_stock and _is_available_today(tp.available_from, tp.available_until, today)
     ]
     legacy_products = [
         p
         for p in legacy_products
-        if not p.out_of_stock and p.id not in recipe_blocked and _is_available_today(p.available_from, p.available_until, today)
+        if not p.out_of_stock and _is_available_today(p.available_from, p.available_until, today)
     ]
 
     products: list[dict] = []

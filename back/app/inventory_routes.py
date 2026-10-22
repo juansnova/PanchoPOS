@@ -1122,6 +1122,83 @@ def get_low_stock_alerts(
     ]
 
 
+@router.get("/alerts")
+@admin_user_limit()
+def list_stock_alerts(
+    request: Request,
+    response: Response,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.INVENTORY_READ))],
+    session: Session = Depends(get_session),
+):
+    """Stock notices for the admin: ingredients that ran out (with the dishes they affect) or are low."""
+    from .inventory_alerts import list_alerts
+
+    alerts = list_alerts(session, current_user.tenant_id)
+    return {
+        "attention_count": sum(1 for a in alerts if a["needs_attention"]),
+        "alerts": alerts,
+    }
+
+
+def _get_alert_or_404(session: Session, tenant_id: int, alert_id: int):
+    from .inventory_models import InventoryAlert
+
+    alert = session.get(InventoryAlert, alert_id)
+    if alert is None or alert.tenant_id != tenant_id:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return alert
+
+
+@router.post("/alerts/{alert_id}/withdraw")
+@admin_user_limit()
+def withdraw_alert_products(
+    request: Request,
+    response: Response,
+    alert_id: int,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.INVENTORY_WRITE))],
+    session: Session = Depends(get_session),
+):
+    """Admin decision: take the affected dishes off the menu."""
+    from .inventory_alerts import alert_to_dict, withdraw_products
+
+    alert = _get_alert_or_404(session, current_user.tenant_id, alert_id)
+    if alert.kind != "out" or not alert.product_ids:
+        raise HTTPException(status_code=400, detail="This notice has no dishes to withdraw")
+    return alert_to_dict(session, withdraw_products(session, alert, current_user.id))
+
+
+@router.post("/alerts/{alert_id}/keep")
+@admin_user_limit()
+def keep_alert_products(
+    request: Request,
+    response: Response,
+    alert_id: int,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.INVENTORY_WRITE))],
+    session: Session = Depends(get_session),
+):
+    """Admin decision: keep the dishes on the menu / acknowledge the reminder."""
+    from .inventory_alerts import alert_to_dict, keep_selling
+
+    alert = _get_alert_or_404(session, current_user.tenant_id, alert_id)
+    return alert_to_dict(session, keep_selling(session, alert, current_user.id))
+
+
+@router.post("/alerts/{alert_id}/offer-again")
+@admin_user_limit()
+def offer_alert_products_again(
+    request: Request,
+    response: Response,
+    alert_id: int,
+    current_user: Annotated[models.User, Depends(require_permission(Permission.INVENTORY_WRITE))],
+    session: Session = Depends(get_session),
+):
+    """Admin decision: put the withdrawn dishes back on the menu."""
+    from .inventory_alerts import alert_to_dict, offer_again
+
+    alert = _get_alert_or_404(session, current_user.tenant_id, alert_id)
+    return alert_to_dict(session, offer_again(session, alert, current_user.id))
+
+
 @router.get("/valuation", response_model=InventoryValuationResponse)
 @admin_user_limit()
 def get_inventory_valuation(

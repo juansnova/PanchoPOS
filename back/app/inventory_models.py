@@ -13,7 +13,8 @@ from datetime import date, datetime, timezone
 from decimal import Decimal
 from enum import Enum
 
-from sqlalchemy import Numeric
+from sqlalchemy import Column, Numeric
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
 from .models import TenantMixin
@@ -230,6 +231,38 @@ class InventoryItem(TenantMixin, table=True):
     batches: list["InventoryBatch"] = Relationship(back_populates="inventory_item")
     transactions: list["InventoryTransaction"] = Relationship(back_populates="inventory_item")
     recipe_usages: list["ProductRecipe"] = Relationship(back_populates="inventory_item")
+
+
+class InventoryAlert(TenantMixin, table=True):
+    """Stock notice for the administrator: an ingredient ran out, or is running low.
+
+    The system never removes a dish from the menu on its own. When an ingredient can no longer
+    cover one portion of a dish ("out") the admin decides: withdraw the dishes, keep selling them
+    (maybe stock just arrived and was not registered yet) or register the incoming stock.
+    A "low" notice reminds the admin to register incoming stock before it runs out.
+
+    status: open (needs a decision) | kept (admin chose to keep selling / acknowledged) |
+            withdrawn (dishes taken off the menu by the admin) |
+            restocked (ingredient is back but withdrawn dishes were not offered again yet) |
+            resolved (closed).
+    """
+
+    __tablename__ = "inventory_alert"
+
+    id: int | None = Field(default=None, primary_key=True)
+    inventory_item_id: int = Field(foreign_key="inventory_item.id", index=True)
+    kind: str = Field(max_length=8)  # out | low
+    status: str = Field(default="open", max_length=12, index=True)
+    quantity_snapshot: Decimal = Field(default=Decimal("0"), sa_type=Numeric(12, 4))
+    # Dishes that cannot be sold with the current stock (kind=out)
+    product_ids: list[int] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    # Dishes the admin took off the menu from this notice (so they can be offered again)
+    withdrawn_product_ids: list[int] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    decided_at: datetime | None = Field(default=None)
+    decided_by_user_id: int | None = Field(default=None, foreign_key="user.id")
+    resolved_at: datetime | None = Field(default=None)
 
 
 class InventoryBatch(TenantMixin, table=True):

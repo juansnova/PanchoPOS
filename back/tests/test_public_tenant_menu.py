@@ -102,7 +102,8 @@ class TestPublicTenantMenu(PgClientTestCase):
         names = {p["name"] for c in data["categories"] for p in c["products"]}
         self.assertEqual(names, {"Visible"})
 
-    def test_product_hidden_when_recipe_ingredient_runs_out(self):
+    def test_product_stays_on_menu_when_recipe_ingredient_runs_out(self):
+        """The admin is notified (see test_inventory_alerts) and decides; the menu does not hide it."""
         from decimal import Decimal
 
         from app.inventory_models import InventoryItem, ProductRecipe, UnitOfMeasure
@@ -128,7 +129,7 @@ class TestPublicTenantMenu(PgClientTestCase):
         self.session.commit()
         data = self.client.get(f"/public/tenants/{self.tenant.id}/menu").json()
         names = {p["name"] for c in data["categories"] for p in c["products"]}
-        self.assertEqual(names, {"Con stock", "Sin receta"})
+        self.assertEqual(names, {"Con stock", "Sin ingrediente", "Sin receta"})
 
     def test_lang_query_es_formats_price_with_comma(self):
         self.session.add(
