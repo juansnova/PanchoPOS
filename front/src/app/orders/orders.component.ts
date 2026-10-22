@@ -2910,17 +2910,17 @@ ModuleRegistry.registerModules([
     .hs-empty { padding: 36px 16px; }
     .hs-empty h3 { margin-bottom: 12px; }
     .grid-container ::ng-deep .btn-factura-row, .grid-container ::ng-deep .btn-edit-order-row, .grid-container ::ng-deep .btn-delete-order-row {
-      display: inline-flex !important; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0 !important; cursor: pointer;
-      border: 0 !important; border-radius: 13px !important; color: #fff !important;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35);
-      transition: transform .18s cubic-bezier(.2, .8, .2, 1), box-shadow .2s, filter .2s;
+      display: inline-flex !important; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0 !important; cursor: pointer;
+      border: 0 !important; border-radius: 10px !important; box-shadow: none !important;
+      transition: background .18s ease, color .18s ease, transform .15s;
     }
-    .grid-container ::ng-deep .btn-edit-order-row { background: linear-gradient(145deg, #f59a52, #c2531a) !important; box-shadow: 0 10px 16px -8px #d9692a, inset 0 1px 0 rgba(255, 255, 255, .35); }
-    .grid-container ::ng-deep .btn-factura-row { background: linear-gradient(145deg, #34d399, #15803d) !important; box-shadow: 0 10px 16px -8px #16a34a, inset 0 1px 0 rgba(255, 255, 255, .35); }
-    .grid-container ::ng-deep .btn-delete-order-row { background: linear-gradient(145deg, #f87171, #c42424) !important; box-shadow: 0 10px 16px -8px #dc2626, inset 0 1px 0 rgba(255, 255, 255, .35); }
-    .grid-container ::ng-deep .btn-edit-order-row:hover, .grid-container ::ng-deep .btn-factura-row:hover, .grid-container ::ng-deep .btn-delete-order-row:hover { transform: translateY(-2px) scale(1.06); filter: brightness(1.06); }
-    .grid-container ::ng-deep .btn-edit-order-row svg, .grid-container ::ng-deep .btn-delete-order-row svg { width: 18px; height: 18px; flex-shrink: 0; }
-    .grid-container ::ng-deep .btn-factura-row svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .grid-container ::ng-deep .btn-edit-order-row { background: #fdeede !important; color: #c2531a !important; }
+    .grid-container ::ng-deep .btn-factura-row { background: #e3f6ec !important; color: #15803d !important; }
+    .grid-container ::ng-deep .btn-delete-order-row { background: #fde8e8 !important; color: #c42424 !important; }
+    .grid-container ::ng-deep .btn-edit-order-row:hover { background: #d9692a !important; color: #fff !important; }
+    .grid-container ::ng-deep .btn-factura-row:hover { background: #16a34a !important; color: #fff !important; }
+    .grid-container ::ng-deep .btn-delete-order-row:hover { background: #dc2626 !important; color: #fff !important; }
+    .grid-container ::ng-deep .btn-edit-order-row svg, .grid-container ::ng-deep .btn-factura-row svg, .grid-container ::ng-deep .btn-delete-order-row svg { width: 15px; height: 15px; stroke-width: 2; flex-shrink: 0; }
     .grid-container ::ng-deep button:active { transform: scale(.92); }
     @media (max-width: 720px) {
       .hs-stats { grid-template-columns: 1fr 1fr; }
