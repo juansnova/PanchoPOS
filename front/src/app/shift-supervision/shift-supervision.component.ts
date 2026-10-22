@@ -71,42 +71,33 @@ function localIso(d: Date): string {
 
       <!-- ===================== range ===================== -->
       <section class="sv-card sv-range">
-        <div class="sv-range-head">
-          <span class="sv-range-ico" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="M8 15h3M13 15h3"/></svg>
-          </span>
+        <div class="sv-range-top">
           <div>
-            <p class="sv-range-eyebrow"><i></i>{{ 'SHIFT_SUPERVISION.RANGE_EYEBROW' | translate }}</p>
             <h2>{{ 'SHIFT_SUPERVISION.RANGE_TITLE' | translate }}</h2>
             <p class="sv-muted">{{ 'SHIFT_SUPERVISION.RANGE_HINT' | translate }}</p>
           </div>
+          <div class="sv-presets" role="group">
+            @for (p of presets; track p.days) {
+              <button type="button" [class.on]="activeDays() === p.days" (click)="setRange(p.days)" [disabled]="loadingRange()">{{ p.label | translate }}</button>
+            }
+          </div>
         </div>
 
-        <div class="sv-presets" role="group">
-          @for (p of presets; track p.days) {
-            <button type="button" [class.on]="activeDays() === p.days" (click)="setRange(p.days)" [disabled]="loadingRange()">{{ p.label | translate }}</button>
-          }
-        </div>
-
-        <div class="sv-pass">
+        <div class="sv-controls">
           <div class="sv-field">
             <label>{{ 'SHIFT_SUPERVISION.FROM' | translate }}</label>
             <app-date-picker [compact]="true" [clearable]="false" [(ngModel)]="fromDate" />
           </div>
-          <div class="sv-bridge" aria-hidden="true">
-            <i></i>
-            <span>{{ rangeDays() }} <small>{{ 'SHIFT_SUPERVISION.RANGE_DAYS' | translate }}</small></span>
-            <i></i>
-          </div>
+          <span class="sv-arrow" aria-hidden="true">→</span>
           <div class="sv-field">
             <label>{{ 'SHIFT_SUPERVISION.TO' | translate }}</label>
             <app-date-picker [compact]="true" [clearable]="false" [min]="fromDate" [(ngModel)]="toDate" />
           </div>
+          <button type="button" class="sv-go" (click)="loadRange()" [disabled]="loadingRange()">
+            {{ loadingRange() ? ('SHIFT_SUPERVISION.LOADING' | translate) : ('SHIFT_SUPERVISION.APPLY' | translate) }}
+          </button>
         </div>
-
-        <button type="button" class="sv-go" (click)="loadRange()" [disabled]="loadingRange()">
-          {{ loadingRange() ? ('SHIFT_SUPERVISION.LOADING' | translate) : ('SHIFT_SUPERVISION.APPLY' | translate) }}<i aria-hidden="true">→</i>
-        </button>
+        <p class="sv-span">{{ rangeDays() }} {{ 'SHIFT_SUPERVISION.RANGE_DAYS' | translate }}</p>
       </section>
 
       <!-- ===================== activity ===================== -->
@@ -362,45 +353,27 @@ function localIso(d: Date): string {
       .sv-avatar { width: 42px; height: 42px; }
     }
 
-    /* ===== date range card v2 ===== */
-    .sv-range {
-      position: relative; z-index: 4; display: flex; flex-direction: column; gap: 18px; padding: 24px; overflow: visible;
-      border: 0; border-radius: 30px;
-      background:
-        radial-gradient(110% 120% at 100% 0, color-mix(in srgb, var(--color-primary) 13%, transparent), transparent 55%),
-        #fff;
-      box-shadow: 0 26px 46px -30px rgba(23, 18, 16, 0.5), 0 0 0 1px color-mix(in srgb, var(--color-primary) 16%, transparent);
-    }
-    .sv-range-head { display: flex; align-items: flex-start; gap: 16px; }
-    .sv-range-ico { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 20px; color: #fff; background: linear-gradient(145deg, #e89a52, #b4551f); box-shadow: 0 16px 24px -14px #c1621c, inset 0 1px 0 rgba(255, 255, 255, 0.35); transform: rotate(-4deg); }
-    .sv-range-eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 2px; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-primary); }
-    .sv-range-eyebrow i { width: 16px; height: 1.5px; background: currentColor; }
-    .sv-range h2 { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.05; }
-    .sv-range .sv-muted { margin-top: 6px; }
-
-    .sv-range .sv-presets { align-self: flex-start; margin: 0; padding: 5px; gap: 4px; background: color-mix(in srgb, var(--color-primary) 5%, #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 16%, var(--color-border)); }
-    .sv-range .sv-presets button { min-height: 38px; padding: 0 18px; font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; transition: background 0.2s, color 0.2s, box-shadow 0.2s; }
-    .sv-range .sv-presets button.on { color: #fff; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, #000)); box-shadow: 0 12px 18px -10px var(--color-primary); }
-
-    .sv-pass { display: flex; align-items: flex-end; gap: 12px; padding: 16px 18px; border-radius: 24px; background: color-mix(in srgb, var(--color-primary) 4%, #fff); border: 1.5px dashed color-mix(in srgb, var(--color-primary) 30%, var(--color-border)); }
-    .sv-pass .sv-field { flex: 1 1 0; min-width: 0; width: auto; }
-    .sv-pass .sv-field label { font-size: 0.62rem; letter-spacing: 0.18em; color: var(--color-primary); }
-    .sv-bridge { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; }
-    .sv-bridge i { width: 22px; height: 0; border-top: 2px dotted color-mix(in srgb, var(--color-primary) 55%, transparent); }
-    .sv-bridge span { display: grid; place-items: center; min-width: 54px; padding: 6px 12px; border-radius: 16px; font-family: Georgia, serif; font-style: italic; font-weight: 700; font-size: 1.2rem; line-height: 1; color: var(--color-primary); background: #fff; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-primary) 30%, transparent); }
-    .sv-bridge small { display: block; margin-top: 2px; font-family: inherit; font-style: normal; font-size: 0.54rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-muted); }
-
-    .sv-range .sv-go { display: inline-flex; align-items: center; justify-content: center; gap: 12px; align-self: stretch; min-height: 54px; padding: 0 10px 0 26px; font-size: 1rem; box-shadow: 0 18px 28px -14px var(--color-primary); }
-    .sv-range .sv-go i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; font-style: normal; background: rgba(255, 255, 255, 0.22); transition: transform 0.2s; }
-    .sv-range .sv-go:hover:not(:disabled) i { transform: translateX(3px); }
+    /* ===== date range card v3: quiet, editorial ===== */
+    .sv-range { position: relative; z-index: 4; display: flex; flex-direction: column; gap: 18px; padding: 22px 24px; border-radius: 22px; }
+    .sv-range h2 { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 1.5rem; letter-spacing: -0.01em; }
+    .sv-range-top { align-items: flex-end; }
+    .sv-range .sv-presets { margin: 0; padding: 0; gap: 22px; background: none; box-shadow: none; border-radius: 0; }
+    .sv-range .sv-presets button { position: relative; min-height: 32px; padding: 0 0 6px; border-radius: 0; background: none; font-size: 0.86rem; font-weight: 600; color: var(--color-text-muted); }
+    .sv-range .sv-presets button::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--color-primary); transform: scaleX(0); transform-origin: left; transition: transform 0.25s; }
+    .sv-range .sv-presets button.on { color: var(--color-text); background: none; box-shadow: none; }
+    .sv-range .sv-presets button.on::after { transform: scaleX(1); }
+    .sv-range .sv-controls { align-items: flex-end; gap: 10px; padding-top: 16px; border-top: 1px solid var(--color-border); }
+    .sv-range .sv-field label { font-size: 0.66rem; letter-spacing: 0.12em; }
+    .sv-range .sv-arrow { padding-bottom: 12px; color: var(--color-text-muted); }
+    .sv-range .sv-go { min-height: 46px; padding: 0 24px; border-radius: 12px; color: #fff; background: #1c1917; box-shadow: none; font-weight: 700; }
+    .sv-range .sv-go:hover:not(:disabled) { background: var(--color-primary); filter: none; }
+    .sv-span { margin: -6px 0 0; font-size: 0.8rem; color: var(--color-text-muted); }
     @media (max-width: 760px) {
-      .sv-range { padding: 18px 16px; border-radius: 26px; }
-      .sv-range-ico { width: 46px; height: 46px; border-radius: 16px; }
-      .sv-range h2 { font-size: 1.55rem; }
-      .sv-pass { flex-direction: column; align-items: stretch; gap: 8px; padding: 14px; }
-      .sv-bridge { justify-content: center; padding: 2px 0; }
-      .sv-bridge i { width: 40px; }
-      .sv-range .sv-presets { align-self: stretch; }
+      .sv-range { padding: 18px 16px; }
+      .sv-range-top { align-items: flex-start; flex-direction: column; gap: 12px; }
+      .sv-range .sv-controls { display: grid; grid-template-columns: 1fr; }
+      .sv-range .sv-go { width: 100%; }
+      .sv-range .sv-arrow { display: none; }
     }
     @media (prefers-reduced-motion: reduce) { .sv-dot::after, .sv-skeleton i { animation: none; } .sv-bar i { transition: none; } }
     @media (max-width: 760px) {
