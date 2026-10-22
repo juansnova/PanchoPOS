@@ -92,9 +92,12 @@ function localIso(d: Date): string {
             </div>
           </div>
 
-          <div class="sv-stamp" aria-hidden="true">
+          <div class="sv-mini" aria-hidden="true">
+            <span class="sv-mini-top"><i></i><i></i>{{ 'SHIFT_SUPERVISION.RANGE_DAYS' | translate }}</span>
             <b>{{ rangeDays() }}</b>
-            <small>{{ 'SHIFT_SUPERVISION.RANGE_DAYS' | translate }}</small>
+            <div class="sv-mini-grid">
+              @for (d of rangeDots(); track $index) { <i [style.--n]="$index"></i> }
+            </div>
           </div>
 
           <div class="sv-leaf">
@@ -458,6 +461,25 @@ function localIso(d: Date): string {
       .sv-range.loading::after, .sv-spin, .sv-range.loading .sv-stamp, .sv-sk-totals i, .sv-sk-cards i,
       .sv-block-head, .sv-totals > div, .sv-people .sv-act, .sv-people .sv-bar i, .sv-people .sv-act-stats > div, .sv-rows .sv-row { animation: none; }
     }
+
+    /* ===== mini calendar: shows how many days the range covers ===== */
+    .sv-mini { flex: none; width: 112px; border-radius: 18px; background: #fff; text-align: center; transform: rotate(-3deg); box-shadow: 0 20px 28px -18px color-mix(in srgb, var(--color-primary) 70%, #000), 0 0 0 1.5px color-mix(in srgb, var(--color-primary) 45%, transparent); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .sv-mini:hover { transform: rotate(0deg) scale(1.04); }
+    .sv-mini-top { position: relative; display: block; padding: 5px 0; border-radius: 17px 17px 0 0; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.26em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 88%, #fff), color-mix(in srgb, var(--color-primary) 72%, #000)); }
+    .sv-mini-top i { position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: #fff; }
+    .sv-mini-top i:nth-child(1) { left: 9px; }
+    .sv-mini-top i:nth-child(2) { right: 9px; }
+    .sv-mini b { display: block; margin-top: 6px; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 2.5rem; line-height: 1; letter-spacing: -0.03em; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+    .sv-mini-grid { display: grid; grid-template-columns: repeat(7, 8px); justify-content: center; gap: 4px; padding: 8px 10px 12px; }
+    .sv-mini-grid i { width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); opacity: 0.95; animation: sv-dot-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.4) both; animation-delay: calc(var(--n) * 22ms); }
+    .sv-mini-grid i:last-child { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 25%, transparent); }
+    @keyframes sv-dot-in { from { transform: scale(0); opacity: 0; } }
+    .sv-range.loading .sv-mini { animation: sv-mini-pulse 0.9s ease-in-out infinite; }
+    @keyframes sv-mini-pulse { 50% { transform: rotate(-3deg) scale(1.05); } }
+    @media (max-width: 760px) {
+      .sv-mini { align-self: center; width: 124px; margin: -2px 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { .sv-mini-grid i, .sv-range.loading .sv-mini { animation: none; } .sv-mini { transition: none; } }
     @media (prefers-reduced-motion: reduce) { .sv-dot::after, .sv-skeleton i { animation: none; } .sv-bar i { transition: none; } }
     @media (max-width: 760px) {
       .sv-totals { grid-template-columns: 1fr 1fr; }
@@ -530,6 +552,11 @@ export class ShiftSupervisionComponent implements OnInit, OnDestroy {
     const b = new Date(this.toDate + 'T00:00:00');
     const n = Math.round((b.getTime() - a.getTime()) / 86_400_000) + 1;
     return Number.isFinite(n) && n > 0 ? n : 1;
+  }
+
+  /** One dot per day of the range (capped at 28 = four weeks) for the mini calendar. */
+  rangeDots(): number[] {
+    return Array.from({ length: Math.min(this.rangeDays(), 28) });
   }
 
   activeDays(): number | null {
