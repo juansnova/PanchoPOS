@@ -1211,6 +1211,8 @@
     "WORKING": "Trabajando",
     "ON_BREAK": "En pausa",
     "RANGE_TITLE": "Rango de fechas",
+    "RANGE_EYEBROW": "Periodo",
+    "RANGE_DAYS": "días",
     "FROM": "Desde",
     "TO": "Hasta",
     "APPLY": "Ver",
