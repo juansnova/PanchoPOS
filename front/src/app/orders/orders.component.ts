@@ -2111,29 +2111,6 @@ ModuleRegistry.registerModules([
       border-radius: var(--radius-lg);
       overflow: hidden;
     }
-    .grid-container .btn-factura-row,
-    .grid-container .btn-edit-order-row {
-      display: inline-flex !important;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      padding: 0 !important;
-      cursor: pointer;
-      background: #fff !important;
-      color: #333 !important;
-      border: 1px solid #ddd !important;
-      border-radius: 8px;
-      transition: background 0.15s ease;
-    }
-    .grid-container .btn-factura-row:hover,
-    .grid-container .btn-edit-order-row:hover {
-      background: #f5f5f5 !important;
-    }
-    .grid-container .btn-factura-row svg,
-    .grid-container .btn-edit-order-row svg {
-      flex-shrink: 0;
-    }
 
     .mobile-header { display: none; position: fixed; top: 0; left: 0; right: 0; height: 56px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 0 var(--space-4); align-items: center; gap: var(--space-3); z-index: 99; }
     .menu-toggle { display: flex; flex-direction: column; gap: 4px; background: none; border: none; padding: var(--space-2); cursor: pointer; }
@@ -2934,11 +2911,16 @@ ModuleRegistry.registerModules([
     .hs-empty h3 { margin-bottom: 12px; }
     .grid-container .btn-factura-row, .grid-container .btn-edit-order-row, .grid-container .btn-delete-order-row {
       display: inline-flex !important; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0 !important; cursor: pointer;
-      background: var(--color-bg) !important; color: var(--color-text-muted) !important; border: 0 !important; border-radius: 12px !important;
-      transition: background .15s ease, color .15s ease, transform .12s;
+      border: 0 !important; border-radius: 50% !important; box-shadow: none;
+      transition: background .18s ease, color .18s ease, transform .15s, box-shadow .18s;
     }
-    .grid-container .btn-edit-order-row:hover, .grid-container .btn-factura-row:hover { background: var(--color-primary-light) !important; color: var(--color-primary) !important; }
-    .grid-container .btn-delete-order-row:hover { background: rgba(220, 38, 38, .1) !important; color: #dc2626 !important; }
+    .grid-container .btn-edit-order-row { background: color-mix(in srgb, var(--color-primary) 12%, #fff) !important; color: var(--color-primary) !important; }
+    .grid-container .btn-factura-row { background: #f1ece6 !important; color: #57493f !important; }
+    .grid-container .btn-delete-order-row { background: #fef2f2 !important; color: #dc2626 !important; }
+    .grid-container .btn-edit-order-row:hover { background: var(--color-primary) !important; color: #fff !important; box-shadow: 0 10px 16px -8px var(--color-primary); }
+    .grid-container .btn-factura-row:hover { background: #2b211b !important; color: #fff !important; box-shadow: 0 10px 16px -8px rgba(23, 18, 16, .6); }
+    .grid-container .btn-delete-order-row:hover { background: #dc2626 !important; color: #fff !important; box-shadow: 0 10px 16px -8px #dc2626; }
+    .grid-container .btn-edit-order-row svg, .grid-container .btn-factura-row svg, .grid-container .btn-delete-order-row svg { width: 17px; height: 17px; stroke-width: 1.9; flex-shrink: 0; }
     .grid-container button:active { transform: scale(.92); }
     @media (max-width: 720px) {
       .hs-stats { grid-template-columns: 1fr 1fr; }
@@ -3335,7 +3317,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
           const id = params.data?.id;
           if (id == null) return '';
           const title = this.translate.instant('CUSTOMERS.PRINT_FACTURA');
-          const icon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/></svg>';
+          const icon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
           const safeTitle = (title || '').replace(/"/g, '&quot;');
           return `<button type="button" class="btn-factura-row" data-order-id="${id}" title="${safeTitle}">${icon}</button>`;
         },
