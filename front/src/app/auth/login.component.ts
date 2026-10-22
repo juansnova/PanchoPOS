@@ -533,7 +533,7 @@ import { LegalLinksComponent } from '../shared/legal-links.component';
     }
 
     @media (max-width: 920px) {
-      .lg-page { grid-template-columns: 1fr; }
+      .lg-page { grid-template-columns: minmax(0, 1fr); }
       .lg-brand { display: none; }
       .lg-mobile-brand { display: flex; }
       .lg-form-side { min-height: 100vh; justify-content: flex-start; padding-top: 48px; }

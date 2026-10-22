@@ -181,7 +181,7 @@ select {
 // Responsive grid utilities
 .grid-responsive {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 
   @include for-tablet-portrait-up {
@@ -191,7 +191,7 @@ select {
 
 .grid-cards {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 
   @include for-phone-landscape-up {

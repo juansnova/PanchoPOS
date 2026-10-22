@@ -886,7 +886,7 @@ import { ApiErrorMessageService } from '../services/api-error-message.service';
     .rf-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
     .rf-label { font-size: .78rem; font-weight: 700; color: var(--color-text-muted); margin: 0; }
     .rf-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media (max-width: 560px) { .rf-two { grid-template-columns: 1fr; } }
+    @media (max-width: 560px) { .rf-two { grid-template-columns: minmax(0, 1fr); } }
     .rf input:not([type='radio']):not([type='checkbox']), .rf select, .rf textarea { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); color: var(--color-text); font: inherit; font-weight: 600; box-sizing: border-box; }
     .rf textarea { padding: 10px 12px; min-height: 72px; }
     .rf input:focus, .rf select:focus, .rf textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }

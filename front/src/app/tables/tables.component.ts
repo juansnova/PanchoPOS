@@ -1100,7 +1100,7 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
       min-width: 8rem;
     }
     .session-actions--single {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
     .session-actions--single .btn {
       max-width: 100%;
@@ -1164,7 +1164,7 @@ function getInitialTablesViewMode(): 'tiles' | 'table' {
     .tables-data-table .td-actions { display: flex; gap: var(--space-1); justify-content: flex-end; flex-wrap: wrap; }
 
     @media (max-width: 768px) {
-      .table-grid { grid-template-columns: 1fr; }
+      .table-grid { grid-template-columns: minmax(0, 1fr); }
     }
 
     /* ===== Mesas: rediseño ===== */

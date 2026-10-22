@@ -305,7 +305,7 @@ const HUES = [12, 18, 24, 30, 36, 42, 48];
     .qs-charge { flex: 1; min-height: 52px; font-size: 1.0625rem; font-weight: 700; }
 
     @media (max-width: 900px) {
-      .qs-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) auto; }
+      .qs-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; }
       .qs-cats { flex-direction: row; overflow-x: auto; overflow-y: hidden; border-inline-end: none; border-bottom: 1px solid var(--color-border, #e5e7eb); }
       .qs-cats button { flex-shrink: 0; white-space: nowrap; min-height: 40px; }
       .qs-ticket { max-height: 45vh; border-inline-start: none; border-top: 1px solid var(--color-border, #e5e7eb); }

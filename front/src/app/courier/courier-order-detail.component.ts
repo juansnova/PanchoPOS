@@ -182,7 +182,7 @@ import { formatMoneyCents } from '../shared/currency-symbol';
     .cd-hero .cd-eyebrow { color: #f0a35e; }
     .cd-num { margin: 6px 0 0; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 3rem; line-height: 1; letter-spacing: -0.03em; }
     .cd-created { margin: 8px 0 0; font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); }
-    .cd-steps { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); margin: 24px 6px 0; padding: 0; list-style: none; }
+    .cd-steps { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 24px 6px 0; padding: 0; list-style: none; }
     .cd-steps::before { content: ''; position: absolute; top: 12px; left: 12px; right: 12px; height: 2px; background: repeating-linear-gradient(90deg, rgba(255,255,255,0.3) 0 6px, transparent 6px 10px); }
     .cd-steps::after { content: ''; position: absolute; top: 12px; left: 12px; width: 0; height: 2px; border-radius: 2px; background: #f0a35e; transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
     .cd-steps[data-step='2']::after { width: calc(50% - 12px); }

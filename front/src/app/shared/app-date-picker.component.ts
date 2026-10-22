@@ -236,10 +236,10 @@ const QUICK_TIMES: [number, number][] = [
       font-size: 1.4rem; line-height: 1; cursor: pointer; touch-action: manipulation; transition: background .15s;
     }
     .dp-nav:hover { background: rgba(255,255,255,.36); }
-    .dp-week { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
+    .dp-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); margin-bottom: 4px; }
     .dp-week span { text-align: center; font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); padding: 4px 0; }
     .dp-week span.dp-sun { color: var(--color-primary); }
-    .dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .dp-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
     .dp-day {
       position: relative; aspect-ratio: 1; border: 0; border-radius: 50%; background: transparent; color: var(--color-text);
       font: inherit; font-size: .9rem; font-weight: 700; cursor: pointer; touch-action: manipulation; font-variant-numeric: tabular-nums;
@@ -256,7 +256,7 @@ const QUICK_TIMES: [number, number][] = [
     }
     .dp-day:disabled { opacity: .25; cursor: not-allowed; }
 
-    .dp-months { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 4px; }
+    .dp-months { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding-top: 4px; }
     .dp-month {
       min-height: 52px; border: 1px solid var(--color-border); border-radius: 16px; background: var(--color-bg); color: var(--color-text);
       font: inherit; font-weight: 800; text-transform: capitalize; cursor: pointer; touch-action: manipulation; transition: all .12s;

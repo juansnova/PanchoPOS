@@ -140,7 +140,7 @@ import { PermissionService } from '../services/permission.service';
 
       @media (max-width: 768px) {
         .quick-actions {
-          grid-template-columns: 1fr;
+          grid-template-columns: minmax(0, 1fr);
         }
       }
     `,

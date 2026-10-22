@@ -297,7 +297,7 @@ import { getCategoryLabel as resolveCategoryLabel } from '../shared/product-cate
     }
     @media (max-width: 860px) {
       .categories-container { height: auto; }
-      .split-view { grid-template-columns: 1fr; height: auto; }
+      .split-view { grid-template-columns: minmax(0, 1fr); height: auto; }
       .category-sidebar { border-right: 0; border-bottom: 1px solid var(--color-border); }
       .sidebar-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding-bottom: 12px; }
       .category-item { flex: none; width: auto; min-width: 210px; }

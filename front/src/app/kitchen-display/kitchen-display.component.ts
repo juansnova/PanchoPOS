@@ -694,7 +694,7 @@ const VIEW_CATEGORY: Record<string, string> = {
       box-shadow: var(--shadow-md);
       padding: var(--space-6);
       z-index: 1001;
-      min-width: 320px;
+      min-width: min(320px, 90vw);
       max-width: 90vw;
     }
     .ts-modal {
@@ -769,7 +769,7 @@ const VIEW_CATEGORY: Record<string, string> = {
       height: 10px; border-radius: 999px; margin-bottom: 14px;
       background: linear-gradient(90deg, #22c55e 0%, #eab308 38%, #f97316 66%, #dc2626 100%);
     }
-    .ts-colors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .ts-colors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
     .ts-color {
       display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; row-gap: 6px;
       margin: 0; padding: 10px; border-radius: 12px; background: var(--color-surface); border: 1px solid var(--color-border);
@@ -789,7 +789,7 @@ const VIEW_CATEGORY: Record<string, string> = {
     .ts-btn-ghost { background: transparent; border: 1px solid var(--color-border); color: var(--color-text); }
     .ts-btn-primary { background: var(--color-primary); border: 0; color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.18); }
     @media (prefers-reduced-motion: reduce) { .ts-rail-dot { animation: none; width: 100%; } }
-    @media (max-width: 420px) { .ts-colors { grid-template-columns: 1fr; } .ts-big input { font-size: 2.5rem; } }
+    @media (max-width: 420px) { .ts-colors { grid-template-columns: minmax(0, 1fr); } .ts-big input { font-size: 2.5rem; } }
     .modal-actions {
       display: flex;
       justify-content: flex-end;
@@ -925,7 +925,7 @@ const VIEW_CATEGORY: Record<string, string> = {
     @media (max-width: 720px) {
       .kitchen-header { padding: 12px 14px; }
       .kitchen-main { padding: 16px 12px 30px; }
-      .order-grid { grid-template-columns: 1fr; }
+      .order-grid { grid-template-columns: minmax(0, 1fr); }
       .kd-clock { display: none; }
     }
   `],

@@ -967,7 +967,7 @@ tr.low-stock-row td {
     gap: 12px;
 
     @media (max-width: 560px) {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -1177,7 +1177,7 @@ tr.low-stock-row td {
     gap: 10px;
 
     @media (max-width: 520px) {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 

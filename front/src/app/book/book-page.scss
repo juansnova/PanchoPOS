@@ -557,7 +557,7 @@ $muted: #78716c;
 }
 
 @media (max-width: 960px) {
-  .bk-main { grid-template-columns: 1fr; gap: 32px; padding: 28px 16px 24px; }
+  .bk-main { grid-template-columns: minmax(0, 1fr); gap: 32px; padding: 28px 16px 24px; }
   .bk-story { position: static; }
   // on phones the booking form comes first; restaurant details follow
   .bk-ticket { order: -1; }
@@ -573,6 +573,6 @@ $muted: #78716c;
   }
   .bk-summary b { font-size: 0.95rem; }
   .bk-submit { min-width: 0; height: 52px; padding: 0 20px; font-size: 0.95rem; }
-  .bk-two { grid-template-columns: 1fr; }
-  .bk-loading { grid-template-columns: 1fr; margin-top: 28px; i:last-child { display: none; } }
+  .bk-two { grid-template-columns: minmax(0, 1fr); }
+  .bk-loading { grid-template-columns: minmax(0, 1fr); margin-top: 28px; i:last-child { display: none; } }
 }

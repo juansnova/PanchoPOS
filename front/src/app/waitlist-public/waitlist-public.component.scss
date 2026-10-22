@@ -426,12 +426,12 @@ $paper: #fbf7f1;
 }
 
 @media (max-width: 900px) {
-  .wl-main { grid-template-columns: 1fr; gap: 36px; padding: 32px 18px 56px; }
+  .wl-main { grid-template-columns: minmax(0, 1fr); gap: 36px; padding: 32px 18px 56px; }
   .wl-ticket { margin: 0 auto; }
   .wl-art { display: none; }
   // on phones go straight to the form: the three steps are secondary
   .wl-steps { display: none; }
   .wl-intro { margin-bottom: 0; }
   .wl-story h1 { font-size: 2.4rem; }
-  .wl-loading { grid-template-columns: 1fr; margin-top: 32px; i:last-child { display: none; } }
+  .wl-loading { grid-template-columns: minmax(0, 1fr); margin-top: 32px; i:last-child { display: none; } }
 }

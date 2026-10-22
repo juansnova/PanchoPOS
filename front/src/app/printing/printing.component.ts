@@ -264,7 +264,7 @@ const ICON: Record<string, string> = {
     @keyframes pr-pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); } 100% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); } }
     @media (prefers-reduced-motion: reduce) { .online .dot { animation: none; } }
 
-    .pr-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .pr-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
     .pr-kpi { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 16px; border-radius: 20px; border: 1px solid var(--color-border); background: var(--color-surface, #fff); }
     .pr-kpi b { font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; }
     .pr-kpi span { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-muted); }

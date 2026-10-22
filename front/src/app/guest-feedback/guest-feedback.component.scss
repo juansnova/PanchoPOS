@@ -81,7 +81,7 @@
 
 @media (max-width: 1020px) {
   .gf-top {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -152,7 +152,7 @@
 
 @media (max-width: 720px) {
   .gf-hero {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     justify-items: center;
     gap: 16px;
   }

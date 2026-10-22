@@ -207,7 +207,7 @@ const ICON = {
     /* ---------- today ---------- */
     .db-today { display: grid; grid-template-columns: 1.7fr 1fr 1fr 1fr; gap: 14px; }
     @media (max-width: 1040px) { .db-today { grid-template-columns: 1fr 1fr; } .db-sales { grid-column: 1 / -1; } }
-    @media (max-width: 520px) { .db-today { grid-template-columns: 1fr; } }
+    @media (max-width: 520px) { .db-today { grid-template-columns: minmax(0, 1fr); } }
 
     .db-sales {
       position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 6px; padding: 22px 24px 16px; border-radius: 30px; color: #fff;
@@ -265,7 +265,7 @@ const ICON = {
       .db-shift, .db-tile, .db-team, .db-tile-go, .db-shift-go { transition: none; }
       .db-shift.on .db-pulse::after, .db-skeleton i { animation: none; }
     }
-    @media (max-width: 560px) { .db-tiles { grid-template-columns: 1fr; } }
+    @media (max-width: 560px) { .db-tiles { grid-template-columns: minmax(0, 1fr); } }
   `]
 })
 export class DashboardComponent implements OnInit, OnDestroy {

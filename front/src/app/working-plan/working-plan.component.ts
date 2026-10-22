@@ -936,7 +936,7 @@ function isValidView(v: string | null): v is ViewMode {
     .calendar-section { margin-bottom: 1.5rem; }
     .calendar-legend { font-size: 0.875rem; color: var(--text-muted, #666); margin: 0 0 0.5rem 0; }
     .calendar-grid { display: flex; flex-direction: column; gap: 2px; width: 100%; max-width: 100rem; }
-    .calendar-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .calendar-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
     .calendar-cell {
       min-height: 7.75rem; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start;
       border: 1px solid var(--border-color, #eee); border-radius: 6px;
@@ -1197,7 +1197,7 @@ function isValidView(v: string | null): v is ViewMode {
     .wpm-sub { margin-top: 4px !important; }
     .wpm-duration { margin-left: auto; padding: 2px 10px; border-radius: 999px; background: var(--color-primary-light); color: var(--color-primary); font-size: .75rem; letter-spacing: 0; text-transform: none; }
     .wpm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media (max-width: 520px) { .wpm-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 520px) { .wpm-grid { grid-template-columns: minmax(0, 1fr); } }
     .wpm-field { min-width: 0; }
     .wpm-field label, .wpm-check { margin: 0 0 4px; font-size: .78rem; font-weight: 700; color: var(--color-text-muted); }
     .wpm-field label { display: block; }

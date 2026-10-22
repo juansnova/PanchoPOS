@@ -634,7 +634,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     }
     .form-group input:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    .us-roles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .us-roles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     .us-role {
       --rc: var(--color-primary);
       --rc2: var(--color-primary);

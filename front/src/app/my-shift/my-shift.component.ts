@@ -291,7 +291,7 @@ const MY_SHIFT_QR_READER_ID = 'my-shift-qr-reader';
 
     /* ---------- layout ---------- */
     .ms-grid { display: grid; grid-template-columns: minmax(300px, 400px) 1fr; gap: 18px; align-items: stretch; }
-    @media (max-width: 860px) { .ms-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 860px) { .ms-grid { grid-template-columns: minmax(0, 1fr); } }
 
     /* ---------- the clock ---------- */
     .ms-clock {
@@ -342,12 +342,12 @@ const MY_SHIFT_QR_READER_ID = 'my-shift-qr-reader';
 
     /* ---------- side column ---------- */
     .ms-side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-    .ms-info { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .ms-info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
     .ms-info div { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 20px; background: var(--color-surface); border: 1px solid var(--color-border); }
     .ms-info span, .ms-stats span { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-muted); }
     .ms-info b { font-family: Georgia, 'Times New Roman', serif; font-size: 1.5rem; font-weight: 500; font-variant-numeric: tabular-nums; }
 
-    .ms-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .ms-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
     .ms-stats div { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 22px; color: #fff; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 62%, #000)); box-shadow: 0 18px 28px -22px var(--color-primary); }
     .ms-stats div:nth-child(2) { background: linear-gradient(135deg, #0e7490, #164e63); box-shadow: 0 18px 28px -22px #0e7490; }
     .ms-stats div:nth-child(3) { background: linear-gradient(135deg, #7c3aed, #4c1d95); box-shadow: 0 18px 28px -22px #7c3aed; }
@@ -358,7 +358,7 @@ const MY_SHIFT_QR_READER_ID = 'my-shift-qr-reader';
     .ms-bars-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
     .ms-bars-head b { font-weight: 800; }
     .ms-bars-head span { font-size: 0.74rem; color: var(--color-text-muted); font-weight: 600; }
-    .ms-bars-row { flex: 1; display: grid; grid-template-columns: repeat(14, 1fr); gap: 6px; align-items: end; }
+    .ms-bars-row { flex: 1; display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 6px; align-items: end; }
     .ms-bar { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%; min-height: 110px; }
     .ms-bar i { display: block; width: 100%; max-width: 22px; min-height: 4px; border-radius: 8px 8px 4px 4px; background: var(--color-bg); box-shadow: inset 0 0 0 1px var(--color-border); transition: height .5s ease; }
     .ms-bar i.has { background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 60%, #fbbf24), var(--color-primary)); box-shadow: 0 8px 12px -8px var(--color-primary); }

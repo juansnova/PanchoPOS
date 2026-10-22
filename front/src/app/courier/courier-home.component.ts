@@ -146,7 +146,7 @@ const REFRESH_INTERVAL_MS = 15000;
     @keyframes cp-pulse { 0%, 100% { transform: scale(1); opacity: 0.35; } 50% { transform: scale(1.7); opacity: 0; } }
 
     .cp-main { margin-top: -30px; padding: 0 16px 48px; position: relative; z-index: 1; }
-    .cp-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 5px; margin-bottom: 16px; border-radius: 999px; background: #fff; box-shadow: 0 18px 30px -18px rgba(23, 18, 16, 0.45), 0 0 0 1px rgba(193, 90, 30, 0.16); }
+    .cp-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 5px; margin-bottom: 16px; border-radius: 999px; background: #fff; box-shadow: 0 18px 30px -18px rgba(23, 18, 16, 0.45), 0 0 0 1px rgba(193, 90, 30, 0.16); }
     .cp-tab { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 6px; border: 0; border-radius: 999px; background: transparent; font: inherit; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-muted); cursor: pointer; transition: background 0.2s, color 0.2s; }
     .cp-tab b { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; font-family: Georgia, serif; font-style: italic; font-size: 0.82rem; font-weight: 700; letter-spacing: 0; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, #fff); }
     .cp-tab.active { color: #fff; background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 60%, #000)); box-shadow: 0 10px 18px -10px var(--color-primary); }

@@ -2436,7 +2436,7 @@ ModuleRegistry.registerModules([
       .sidebar-open .overlay { display: block; }
       .close-btn { display: block; }
       .main { margin-left: 0; padding: calc(56px + var(--space-4)) var(--space-4) var(--space-4); }
-      .order-grid { grid-template-columns: 1fr; }
+      .order-grid { grid-template-columns: minmax(0, 1fr); }
       
       .grid-container {
         margin-left: calc(-1 * var(--space-4));
@@ -2752,13 +2752,13 @@ ModuleRegistry.registerModules([
     .mx-total span { font-size: .8rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--color-text-muted); }
     .mx-total strong { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--color-text); }
     .mx-total-hero {
-      display: grid; grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 2px; padding: 18px 16px;
+      display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 2px; padding: 18px 16px;
       background: linear-gradient(160deg, color-mix(in srgb, #22c55e 14%, var(--color-surface)), var(--color-surface));
       border-color: color-mix(in srgb, #16a34a 35%, var(--color-border));
     }
     .mx-total-hero strong { font-size: 2.3rem; line-height: 1.1; color: #15803d; }
     .mx-total-hero small { font-size: .8rem; color: var(--color-text-muted); }
-    .mx-methods { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 6px; }
+    .mx-methods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
     .mx-method {
       display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px; border-radius: 14px;
       border: 1.5px solid var(--color-border); background: var(--color-surface); color: var(--color-text);
@@ -2864,7 +2864,7 @@ ModuleRegistry.registerModules([
     .mx-delivery { max-width: 520px; }
     .mx-delivery .modal-body { padding-top: 10px; }
     .dv-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    @media (max-width: 480px) { .dv-two { grid-template-columns: 1fr; } }
+    @media (max-width: 480px) { .dv-two { grid-template-columns: minmax(0, 1fr); } }
     .dv-items { margin-top: 6px; padding: 14px; border-radius: 16px; background: var(--color-bg); border: 1px solid var(--color-border); }
     .dv-items-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
     .dv-items-head span { font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--color-text-muted); }

@@ -394,7 +394,7 @@ import { formatMoneyCents } from '../shared/currency-symbol';
     .cu-dv b { font-family: Georgia, 'Times New Roman', serif; font-size: 1.25rem; font-weight: 500; line-height: 1; color: var(--color-primary); }
     .cu-err { margin: 2px 0 0; font-size: .78rem; font-weight: 700; color: #dc2626; }
     .cu-two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
-    @media (max-width: 560px) { .cu-two { grid-template-columns: 1fr; } }
+    @media (max-width: 560px) { .cu-two { grid-template-columns: minmax(0, 1fr); } }
     .cu-form .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
     .cu-form label { font-size: .64rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--color-text-muted); }
     .cu-form input { width: 100%; min-height: 46px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 16px; background: #fffdfa; font: inherit; font-weight: 600; color: var(--color-text); box-sizing: border-box; }

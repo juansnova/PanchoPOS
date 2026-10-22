@@ -10,7 +10,7 @@
   border: 1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
   box-shadow: 0 30px 50px -34px color-mix(in srgb, var(--color-primary) 80%, #000);
 
-  @media (max-width: 900px) { grid-template-columns: 1fr; }
+  @media (max-width: 900px) { grid-template-columns: minmax(0, 1fr); }
 }
 
 // ---- left: title + live readout of the selected range
@@ -788,7 +788,7 @@
   align-items: start;
 
   @media (max-width: 900px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1399,7 +1399,7 @@
 
 .xl-cells {
   display: grid;
-  grid-template-columns: 1.6fr repeat(5, 1fr);
+  grid-template-columns: 1.6fr repeat(5, minmax(0, 1fr));
   gap: 1px;
   padding: 1px;
   background: #e7e5e4;
@@ -1481,7 +1481,7 @@
 }
 
 @media (max-width: 860px) {
-  .xl-grid { grid-template-columns: 1fr; }
+  .xl-grid { grid-template-columns: minmax(0, 1fr); }
   .xl-sheet { max-width: 320px; }
 }
 
@@ -1758,7 +1758,7 @@
 
 .att-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 16px;
 
@@ -1926,7 +1926,7 @@
     .att-fix { grid-column: 1 / -1; justify-self: stretch; }
   }
 
-  .att-stats { grid-template-columns: 1fr; }
+  .att-stats { grid-template-columns: minmax(0, 1fr); }
   .att-sec { padding: 18px 16px; }
 }
 

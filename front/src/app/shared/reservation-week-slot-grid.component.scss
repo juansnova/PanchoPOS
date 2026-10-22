@@ -79,7 +79,7 @@
 
   .book-month-weekdays {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 2px;
     padding: var(--space-2) var(--space-2) var(--space-1);
     border-bottom: 1px solid var(--color-border);
@@ -94,7 +94,7 @@
 
   .book-month-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 4px;
     padding: var(--space-2);
     min-width: min(100%, 360px);
