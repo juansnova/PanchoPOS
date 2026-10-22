@@ -2916,10 +2916,11 @@ ModuleRegistry.registerModules([
       transition: transform .18s cubic-bezier(.2, .8, .2, 1), box-shadow .2s, filter .2s;
     }
     .grid-container ::ng-deep .btn-edit-order-row { background: linear-gradient(145deg, #f59a52, #c2531a) !important; box-shadow: 0 10px 16px -8px #d9692a, inset 0 1px 0 rgba(255, 255, 255, .35); }
-    .grid-container ::ng-deep .btn-factura-row { background: linear-gradient(145deg, #22a5c4, #0e5f7a) !important; box-shadow: 0 10px 16px -8px #0e7490, inset 0 1px 0 rgba(255, 255, 255, .35); }
+    .grid-container ::ng-deep .btn-factura-row { background: linear-gradient(145deg, #34d399, #15803d) !important; box-shadow: 0 10px 16px -8px #16a34a, inset 0 1px 0 rgba(255, 255, 255, .35); }
     .grid-container ::ng-deep .btn-delete-order-row { background: linear-gradient(145deg, #f87171, #c42424) !important; box-shadow: 0 10px 16px -8px #dc2626, inset 0 1px 0 rgba(255, 255, 255, .35); }
     .grid-container ::ng-deep .btn-edit-order-row:hover, .grid-container ::ng-deep .btn-factura-row:hover, .grid-container ::ng-deep .btn-delete-order-row:hover { transform: translateY(-2px) scale(1.06); filter: brightness(1.06); }
-    .grid-container ::ng-deep .btn-edit-order-row svg, .grid-container ::ng-deep .btn-factura-row svg, .grid-container ::ng-deep .btn-delete-order-row svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .grid-container ::ng-deep .btn-edit-order-row svg, .grid-container ::ng-deep .btn-delete-order-row svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .grid-container ::ng-deep .btn-factura-row svg { width: 15px; height: 15px; flex-shrink: 0; }
     .grid-container ::ng-deep button:active { transform: scale(.92); }
     @media (max-width: 720px) {
       .hs-stats { grid-template-columns: 1fr 1fr; }
