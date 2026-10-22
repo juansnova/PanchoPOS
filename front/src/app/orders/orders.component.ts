@@ -2881,8 +2881,8 @@ ModuleRegistry.registerModules([
     .dslip-courier:hover { box-shadow: inset 0 0 0 1.5px var(--color-primary); }
     .dslip-courier.on { background: #1c1612; color: #fff; box-shadow: none; }
     .dslip-courier.on i { background: var(--color-primary); color: #fff; }
-    .dslip-notes { resize: none; line-height: 28px; padding: 0 !important; border: 0 !important; background-image: repeating-linear-gradient(transparent 0, transparent 27px, var(--color-border) 27px, var(--color-border) 28px) !important; }
-    .dslip-notes:focus { background-image: repeating-linear-gradient(transparent 0, transparent 27px, color-mix(in srgb, var(--color-primary) 45%, var(--color-border)) 27px, color-mix(in srgb, var(--color-primary) 45%, var(--color-border)) 28px) !important; box-shadow: none !important; }
+    .dslip-field textarea.dslip-notes { resize: vertical; min-height: 92px; max-height: 220px; margin-top: 4px; padding: 12px 14px; border: 0; border-radius: 14px; background: color-mix(in srgb, var(--color-primary) 4%, #fff); box-shadow: inset 0 0 0 1.5px var(--color-border); font-size: .95rem; line-height: 1.5; transition: box-shadow .2s, background .2s; }
+    .dslip-field textarea.dslip-notes:focus { background: #fff; box-shadow: inset 0 0 0 2px var(--color-primary), 0 0 0 4px color-mix(in srgb, var(--color-primary) 14%, transparent); }
     .dslip-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px 22px; }
     .dslip-cancel { border: 0; background: none; padding: 10px 4px; font: inherit; font-size: .9rem; font-weight: 700; color: var(--color-text-muted); cursor: pointer; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--color-border); }
     .dslip-cancel:hover { color: var(--color-text); text-decoration-color: currentColor; }
