@@ -2914,12 +2914,12 @@ ModuleRegistry.registerModules([
       border: 0 !important; border-radius: 10px !important; box-shadow: none !important;
       transition: background .18s ease, color .18s ease, transform .15s;
     }
-    .grid-container ::ng-deep .btn-edit-order-row { background: #fdeede !important; color: #c2531a !important; }
-    .grid-container ::ng-deep .btn-factura-row { background: #e3f6ec !important; color: #15803d !important; }
-    .grid-container ::ng-deep .btn-delete-order-row { background: #fde8e8 !important; color: #c42424 !important; }
-    .grid-container ::ng-deep .btn-edit-order-row:hover { background: #d9692a !important; color: #fff !important; }
-    .grid-container ::ng-deep .btn-factura-row:hover { background: #16a34a !important; color: #fff !important; }
-    .grid-container ::ng-deep .btn-delete-order-row:hover { background: #dc2626 !important; color: #fff !important; }
+    .grid-container ::ng-deep .btn-edit-order-row { background: #e8803a !important; color: #fff !important; }
+    .grid-container ::ng-deep .btn-factura-row { background: #26a65b !important; color: #fff !important; }
+    .grid-container ::ng-deep .btn-delete-order-row { background: #e5484d !important; color: #fff !important; }
+    .grid-container ::ng-deep .btn-edit-order-row:hover { background: #c9631f !important; }
+    .grid-container ::ng-deep .btn-factura-row:hover { background: #1b8a47 !important; }
+    .grid-container ::ng-deep .btn-delete-order-row:hover { background: #c92f35 !important; }
     .grid-container ::ng-deep .btn-edit-order-row svg, .grid-container ::ng-deep .btn-factura-row svg, .grid-container ::ng-deep .btn-delete-order-row svg { width: 15px; height: 15px; stroke-width: 2; flex-shrink: 0; }
     .grid-container ::ng-deep button:active { transform: scale(.92); }
     @media (max-width: 720px) {
@@ -3296,7 +3296,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
       },
       {
         headerName: '',
-        width: 56,
+        width: 60,
+        cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', textOverflow: 'clip' },
         sortable: false,
         filter: false,
         cellRenderer: (params: ICellRendererParams) => {
@@ -3310,7 +3311,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
       },
       {
         headerName: '',
-        width: 56,
+        width: 60,
+        cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', textOverflow: 'clip' },
         sortable: false,
         filter: false,
         cellRenderer: (params: ICellRendererParams) => {
@@ -3324,7 +3326,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
       },
       ...(this.canDeleteOrder() ? [{
         headerName: '',
-        width: 56,
+        width: 60,
+        cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', textOverflow: 'clip' },
         sortable: false,
         filter: false,
         cellRenderer: (params: ICellRendererParams) => {
