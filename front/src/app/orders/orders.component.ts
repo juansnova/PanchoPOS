@@ -2914,6 +2914,8 @@ ModuleRegistry.registerModules([
       border: 0 !important; border-radius: 10px !important; box-shadow: none !important;
       transition: background .18s ease, color .18s ease, transform .15s;
     }
+    .grid-container ::ng-deep .order-action-cell { display: flex !important; align-items: center; justify-content: center; padding: 0 !important; overflow: visible !important; text-overflow: clip !important; }
+    .grid-container ::ng-deep .order-action-cell .ag-cell-value, .grid-container ::ng-deep .order-action-cell .ag-cell-wrapper { display: flex; align-items: center; justify-content: center; overflow: visible; text-overflow: clip; width: auto; padding: 0; }
     .grid-container ::ng-deep .btn-edit-order-row { background: #e8803a !important; color: #fff !important; }
     .grid-container ::ng-deep .btn-factura-row { background: #26a65b !important; color: #fff !important; }
     .grid-container ::ng-deep .btn-delete-order-row { background: #e5484d !important; color: #fff !important; }
@@ -3296,8 +3298,9 @@ export class OrdersComponent implements OnInit, OnDestroy {
       },
       {
         headerName: '',
-        width: 60,
-        cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', textOverflow: 'clip' },
+        width: 64,
+        minWidth: 64,
+        cellClass: 'order-action-cell',
         sortable: false,
         filter: false,
         cellRenderer: (params: ICellRendererParams) => {
@@ -3311,8 +3314,9 @@ export class OrdersComponent implements OnInit, OnDestroy {
       },
       {
         headerName: '',
-        width: 60,
-        cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', textOverflow: 'clip' },
+        width: 64,
+        minWidth: 64,
+        cellClass: 'order-action-cell',
         sortable: false,
         filter: false,
         cellRenderer: (params: ICellRendererParams) => {
@@ -3326,8 +3330,9 @@ export class OrdersComponent implements OnInit, OnDestroy {
       },
       ...(this.canDeleteOrder() ? [{
         headerName: '',
-        width: 60,
-        cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', textOverflow: 'clip' },
+        width: 64,
+        minWidth: 64,
+        cellClass: 'order-action-cell',
         sortable: false,
         filter: false,
         cellRenderer: (params: ICellRendererParams) => {
