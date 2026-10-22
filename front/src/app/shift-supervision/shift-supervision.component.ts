@@ -300,7 +300,7 @@ function localIso(d: Date): string {
 
 
     /* ===== responsive pass ===== */
-    .sv-page { width: 100%; min-width: 0; box-sizing: border-box; }
+    .sv-page { width: 100%; min-width: 0; box-sizing: border-box; margin-inline: auto; }
     .sv-page > * { min-width: 0; }
     .sv-live-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
     .sv-people { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
