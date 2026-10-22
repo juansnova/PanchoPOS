@@ -2910,7 +2910,7 @@ ModuleRegistry.registerModules([
     .hs-empty { padding: 36px 16px; }
     .hs-empty h3 { margin-bottom: 12px; }
     .grid-container ::ng-deep .btn-factura-row, .grid-container ::ng-deep .btn-edit-order-row, .grid-container ::ng-deep .btn-delete-order-row {
-      display: inline-flex !important; align-items: center; justify-content: center; width: 31.5px; height: 31.5px; padding: 0 !important; cursor: pointer;
+      display: inline-flex !important; align-items: center; justify-content: center; width: 34.65px; height: 34.65px; padding: 0 !important; cursor: pointer;
       border: 0 !important; border-radius: 10px !important; box-shadow: none !important;
       transition: background .18s ease, color .18s ease, transform .15s;
     }
@@ -2922,7 +2922,7 @@ ModuleRegistry.registerModules([
     .grid-container ::ng-deep .btn-edit-order-row:hover { background: #c9631f !important; }
     .grid-container ::ng-deep .btn-factura-row:hover { background: #1b8a47 !important; }
     .grid-container ::ng-deep .btn-delete-order-row:hover { background: #c92f35 !important; }
-    .grid-container ::ng-deep .btn-edit-order-row svg, .grid-container ::ng-deep .btn-factura-row svg, .grid-container ::ng-deep .btn-delete-order-row svg { width: 15.75px; height: 15.75px; stroke-width: 2; flex-shrink: 0; }
+    .grid-container ::ng-deep .btn-edit-order-row svg, .grid-container ::ng-deep .btn-factura-row svg, .grid-container ::ng-deep .btn-delete-order-row svg { width: 17.3px; height: 17.3px; stroke-width: 2; flex-shrink: 0; }
     .grid-container ::ng-deep button:active { transform: scale(.92); }
     @media (max-width: 720px) {
       .hs-stats { grid-template-columns: 1fr 1fr; }
@@ -3298,8 +3298,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
       },
       {
         headerName: '',
-        width: 66,
-        minWidth: 66,
+        width: 73,
+        minWidth: 73,
         cellClass: 'order-action-cell',
         sortable: false,
         filter: false,
@@ -3314,8 +3314,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
       },
       {
         headerName: '',
-        width: 66,
-        minWidth: 66,
+        width: 73,
+        minWidth: 73,
         cellClass: 'order-action-cell',
         sortable: false,
         filter: false,
@@ -3330,8 +3330,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
       },
       ...(this.canDeleteOrder() ? [{
         headerName: '',
-        width: 66,
-        minWidth: 66,
+        width: 73,
+        minWidth: 73,
         cellClass: 'order-action-cell',
         sortable: false,
         filter: false,
