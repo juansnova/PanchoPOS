@@ -21,6 +21,15 @@ const CHROME_PATH =
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/** Opens a date picker and chooses the idx-th enabled day of the month shown. */
+async function pickDay(page, pickerSelector, idx) {
+  await page.click(`${pickerSelector} .dp-trigger`);
+  await page.waitForSelector('.dp-panel .dp-day');
+  const days = await page.$$('.dp-panel .dp-day:not([disabled])');
+  await days[idx].click();
+  await sleep(250);
+}
+
 /** Opens a time picker and chooses hh:mm (hour cell, then quarter cell which closes it). */
 async function pickTime(page, pickerSelector, hhmm) {
   const [h, m] = hhmm.split(':');
@@ -168,10 +177,13 @@ async function main() {
     // Special days: own hours editor for "Horario distinto", hidden for "Cerrado todo el día"
     const special = '[data-testid="oh-override-card"]';
     check('special day with other hours shows its hours editor', (await page.$(`${special} [data-testid="oh-special-hours"]`)) !== null);
+    await pickDay(page, '#ov_from', 10);
+    await pickDay(page, '#ov_to', 12);
+    check('picking dates shows the live summary', (await page.$$eval(`${special} .oh-preview:not(.empty):not(.bad)`, (e) => e.length)) === 1);
     await pickTime(page, `${special} [data-testid="oh-special-hours"] app-time-picker:nth-of-type(2)`, '06:00');
     await sleep(300);
-    check('special hours closing before opening shows an error', (await page.$$eval(`${special} .oh-error`, (e) => e.length)) === 1);
-    await page.click(`${special} .oh-seg-ctl button:first-child`);
+    check('special hours closing before opening shows an error in the summary', (await page.$$eval(`${special} .oh-preview.bad`, (e) => e.length)) === 1);
+    await page.click(`${special} .oh-toggle button:first-child`);
     await sleep(300);
     check('closed all day hides the hours editor', (await page.$(`${special} [data-testid="oh-special-hours"]`)) === null);
 

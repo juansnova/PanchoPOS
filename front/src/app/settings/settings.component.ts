@@ -552,6 +552,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                       <ul class="oh-plan">
                         @for (b of openingHoursScheduleBaselines(); track b.id) {
                           <li class="oh-plan-item" [class.active]="b.id === activeBaselineId()">
+                            <div class="oh-tile" aria-hidden="true"><b>{{ dayNum(b.effective_from) }}</b><small>{{ monthShort(b.effective_from) }}</small></div>
                             <div class="oh-plan-main">
                               <span class="oh-plan-date">{{ 'SETTINGS.OH_FROM_DATE' | translate }} {{ fmtDate(b.effective_from) }}</span>
                               @if (b.id === activeBaselineId()) { <span class="oh-plan-tag">{{ 'SETTINGS.OH_IN_FORCE' | translate }}</span> }
@@ -572,49 +573,62 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     }
                   </div>
 
-                  <div class="oh-schedule-card" data-testid="oh-override-card">
-                    <h4>{{ 'SETTINGS.OPENING_HOURS_OVERRIDE_SECTION' | translate }}</h4>
-                    <p class="oh-help">{{ 'SETTINGS.OPENING_HOURS_OVERRIDE_HINT' | translate }}</p>
-                    <div class="oh-seg-ctl" role="radiogroup" [attr.aria-label]="'SETTINGS.OPENING_HOURS_OVERRIDE_TYPE' | translate">
-                      <button type="button" role="radio" [attr.aria-checked]="overrideClosedOnly" [class.on]="overrideClosedOnly" (click)="overrideClosedOnly = true">
-                        <b>{{ 'SETTINGS.OH_TYPE_CLOSED_TITLE' | translate }}</b>
-                        <small>{{ 'SETTINGS.OH_TYPE_CLOSED_DESC' | translate }}</small>
-                      </button>
-                      <button type="button" role="radio" [attr.aria-checked]="!overrideClosedOnly" [class.on]="!overrideClosedOnly" (click)="overrideClosedOnly = false">
-                        <b>{{ 'SETTINGS.OH_TYPE_HOURS_TITLE' | translate }}</b>
-                        <small>{{ 'SETTINGS.OH_TYPE_HOURS_DESC' | translate }}</small>
-                      </button>
-                    </div>
-                    <div class="oh-form oh-form-4">
-                      <div class="oh-fgroup">
-                        <label for="ov_from">{{ 'SETTINGS.OPENING_HOURS_DATE_FROM' | translate }}</label>
-                        <app-date-picker id="ov_from" [clearable]="false" [placeholder]="'SETTINGS.OH_PICK_DATE' | translate" [(ngModel)]="overrideDateFrom" name="ov_from" />
+                  <div class="oh-schedule-card oh-special" data-testid="oh-override-card">
+                    <div class="oh-special-head">
+                      <div>
+                        <h4>{{ 'SETTINGS.OPENING_HOURS_OVERRIDE_SECTION' | translate }}</h4>
+                        <p class="oh-help">{{ 'SETTINGS.OPENING_HOURS_OVERRIDE_HINT' | translate }}</p>
                       </div>
-                      <div class="oh-fgroup">
-                        <label for="ov_to">{{ 'SETTINGS.OPENING_HOURS_DATE_TO' | translate }}</label>
-                        <app-date-picker id="ov_to" [clearable]="false" [placeholder]="'SETTINGS.OH_PICK_DATE' | translate" [(ngModel)]="overrideDateTo" name="ov_to" />
+                      <div class="oh-toggle" role="radiogroup" [attr.aria-label]="'SETTINGS.OPENING_HOURS_OVERRIDE_TYPE' | translate">
+                        <button type="button" role="radio" [attr.aria-checked]="overrideClosedOnly" [class.on]="overrideClosedOnly" (click)="overrideClosedOnly = true">
+                          {{ 'SETTINGS.OH_TYPE_CLOSED_TITLE' | translate }}
+                        </button>
+                        <button type="button" role="radio" [attr.aria-checked]="!overrideClosedOnly" [class.on]="!overrideClosedOnly" (click)="overrideClosedOnly = false">
+                          {{ 'SETTINGS.OH_TYPE_HOURS_TITLE' | translate }}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="oh-composer">
+                      <div class="oh-capsule oh-cap-dates">
+                        <div class="oh-cap-field">
+                          <label for="ov_from">{{ 'SETTINGS.OPENING_HOURS_DATE_FROM' | translate }}</label>
+                          <app-date-picker id="ov_from" [compact]="true" [clearable]="false" [placeholder]="'SETTINGS.OH_PICK_DATE' | translate" [(ngModel)]="overrideDateFrom" name="ov_from" />
+                        </div>
+                        <span class="oh-cap-arrow" aria-hidden="true">→</span>
+                        <div class="oh-cap-field">
+                          <label for="ov_to">{{ 'SETTINGS.OPENING_HOURS_DATE_TO' | translate }}</label>
+                          <app-date-picker id="ov_to" [compact]="true" [clearable]="false" [placeholder]="'SETTINGS.OH_PICK_DATE' | translate" [(ngModel)]="overrideDateTo" name="ov_to" />
+                        </div>
                       </div>
                       @if (!overrideClosedOnly) {
-                        <div class="oh-fgroup oh-special-hours" data-testid="oh-special-hours">
+                        <div class="oh-capsule oh-cap-hours" data-testid="oh-special-hours">
                           <label>{{ 'SETTINGS.OH_SPECIAL_HOURS' | translate }}</label>
                           <div class="oh-range">
                             <app-time-picker [value]="overrideOpen" ariaLabel="SETTINGS.OH_OPENS" (valueChange)="overrideOpen = $event" />
                             <span class="oh-dash" aria-hidden="true">→</span>
                             <app-time-picker [value]="overrideClose" ariaLabel="SETTINGS.OH_CLOSES" (valueChange)="overrideClose = $event" />
                           </div>
-                          @if (overrideHoursInvalid()) {
-                            <p class="oh-error" role="alert">{{ 'SETTINGS.OH_ERR_ORDER' | translate }}</p>
-                          }
                         </div>
                       }
-                      <div class="oh-fgroup">
+                      <div class="oh-capsule oh-cap-note">
                         <label for="ov_note">{{ 'SETTINGS.OPENING_HOURS_BASELINE_NOTE' | translate }}</label>
-                        <input id="ov_note" class="oh-field" type="text" [(ngModel)]="overrideScheduleNote" name="ov_note" [placeholder]="'SETTINGS.OH_NOTE_OVERRIDE_PH' | translate" />
+                        <input id="ov_note" class="oh-cap-input" type="text" [(ngModel)]="overrideScheduleNote" name="ov_note" [placeholder]="'SETTINGS.OH_NOTE_OVERRIDE_PH' | translate" />
                       </div>
                       <button type="button" class="btn btn-primary oh-add" (click)="addOverrideSchedule()" [disabled]="saving()">
                         {{ 'SETTINGS.OPENING_HOURS_ADD_OVERRIDE' | translate }}
                       </button>
                     </div>
+
+                    @if (specialPreview(); as pv) {
+                      <p class="oh-preview" [class.bad]="pv.bad" role="status">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                        <span>{{ pv.text }}</span>
+                      </p>
+                    } @else {
+                      <p class="oh-preview empty">{{ 'SETTINGS.OH_PREVIEW_EMPTY' | translate }}</p>
+                    }
+
                     @if (loadingOpeningHoursSchedule()) {
                       <p class="oh-help">{{ 'COMMON.LOADING' | translate }}</p>
                     } @else if (openingHoursScheduleOverrides().length === 0) {
@@ -623,6 +637,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                       <ul class="oh-plan">
                         @for (o of openingHoursScheduleOverrides(); track o.id) {
                           <li class="oh-plan-item">
+                            <div class="oh-tile" aria-hidden="true"><b>{{ dayNum(o.date_from) }}</b><small>{{ monthShort(o.date_from) }}</small></div>
                             <div class="oh-plan-main">
                               <span class="oh-plan-date">{{ fmtDate(o.date_from) }}{{ o.date_to !== o.date_from ? ' → ' + fmtDate(o.date_to) : '' }}</span>
                               <span class="oh-plan-tag" [class.closed]="o.closed">{{ o.closed ? ('SETTINGS.OPENING_HOURS_TYPE_CLOSED' | translate) : overrideHoursLabel(o.opening_hours) }}</span>
@@ -630,12 +645,12 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                             </div>
                             <div class="oh-plan-actions">
                               @if (pendingDelete() === 'o:' + o.id) {
-                              <span class="oh-ask">{{ 'SETTINGS.OPENING_HOURS_CONFIRM_DELETE' | translate }}</span>
-                              <button type="button" class="oh-btn oh-btn-danger" (click)="deleteOverrideSchedule(o.id)">{{ 'COMMON.DELETE' | translate }}</button>
-                              <button type="button" class="oh-btn" (click)="pendingDelete.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
-                            } @else {
-                              <button type="button" class="oh-btn" (click)="pendingDelete.set('o:' + o.id)">{{ 'COMMON.DELETE' | translate }}</button>
-                            }
+                                <span class="oh-ask">{{ 'SETTINGS.OPENING_HOURS_CONFIRM_DELETE' | translate }}</span>
+                                <button type="button" class="oh-btn oh-btn-danger" (click)="deleteOverrideSchedule(o.id)">{{ 'COMMON.DELETE' | translate }}</button>
+                                <button type="button" class="oh-btn" (click)="pendingDelete.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
+                              } @else {
+                                <button type="button" class="oh-btn" (click)="pendingDelete.set('o:' + o.id)">{{ 'COMMON.DELETE' | translate }}</button>
+                              }
                             </div>
                           </li>
                         }
@@ -2029,26 +2044,49 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .oh-warn { margin: 0 0 12px; padding: 10px 14px; border-radius: 14px; font-size: .85rem; line-height: 1.45; color: #7c2d12; background: #ffedd5; }
     .oh-form { display: grid; gap: 14px 12px; align-items: end; margin-bottom: 18px; }
     .oh-form-3 { grid-template-columns: minmax(180px, 1fr) minmax(200px, 1.4fr) auto; }
-    .oh-form-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .oh-form-4 .oh-fgroup:nth-child(n+3) { grid-column: 1 / -1; }
-    .oh-form-4 .oh-add { grid-column: 1 / -1; justify-self: start; }
     .oh-fgroup ::ng-deep .dp-trigger { min-height: 48px; border-radius: 999px; background: #fffdfa; }
     .oh-fgroup { display: grid; gap: 6px; min-width: 0; }
     .oh-fgroup label { font-size: .75rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); }
     .oh-field { width: 100%; min-height: 48px; padding: 0 18px; border: 1px solid var(--color-border); border-radius: 999px; font: inherit; color: var(--color-text); background: #fffdfa; }
     .oh-field::placeholder { color: color-mix(in srgb, var(--color-text-muted) 75%, #fff); }
-    .oh-seg-ctl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
-    .oh-seg-ctl button { display: grid; gap: 2px; text-align: left; padding: 12px 16px; border: 1px solid var(--color-border); border-radius: 18px; font: inherit; color: var(--color-text); background: #fffdfa; cursor: pointer; transition: border-color .15s, background .15s; }
-    .oh-seg-ctl button b { font-size: .95rem; }
-    .oh-seg-ctl button small { font-size: .8rem; color: var(--color-text-muted); }
-    .oh-seg-ctl button:hover { border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border)); }
-    .oh-seg-ctl button.on { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, #fff); box-shadow: inset 0 0 0 1px var(--color-primary); }
-    .oh-seg-ctl button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-    @media (max-width: 760px) { .oh-form-3, .oh-form-4 { grid-template-columns: 1fr; } .oh-seg-ctl { grid-template-columns: 1fr; } }
+    @media (max-width: 760px) { .oh-form-3 { grid-template-columns: 1fr; } }
+    .oh-special-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 14px 24px; margin-bottom: 18px; }
+    .oh-special-head h4 { margin-top: 0; }
+    .oh-special-head .oh-help { margin-bottom: 0; }
+    .oh-toggle { display: inline-flex; padding: 4px; border-radius: 999px; background: #f1ebe2; }
+    .oh-toggle button { min-height: 40px; padding: 0 18px; border: 0; border-radius: 999px; font: inherit; font-size: .85rem; font-weight: 700; color: var(--color-text-muted); background: transparent; cursor: pointer; transition: background .18s, color .18s, box-shadow .18s; }
+    .oh-toggle button.on { color: var(--color-text); background: #fff; box-shadow: 0 6px 12px -8px rgba(60, 30, 10, .6); }
+    .oh-toggle button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    .oh-composer { display: flex; flex-wrap: wrap; align-items: stretch; gap: 12px; }
+    .oh-capsule { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 8px 18px; border: 1px solid var(--color-border); border-radius: 22px; background: #fffdfa; transition: border-color .15s; }
+    .oh-capsule:focus-within { border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border)); }
+    .oh-capsule label { font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); }
+    .oh-cap-dates { flex: 2 1 340px; flex-direction: row; align-items: center; gap: 10px; }
+    .oh-cap-field { flex: 1; display: grid; gap: 0; min-width: 0; }
+    .oh-cap-field ::ng-deep .dp-trigger { min-height: 40px; padding-left: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+    .oh-cap-arrow { color: var(--color-text-muted); font-size: 1.1rem; }
+    .oh-cap-hours { flex: 0 1 auto; }
+    .oh-cap-note { flex: 1 1 260px; }
+    .oh-cap-input { width: 100%; min-height: 40px; padding: 0; border: 0; font: inherit; color: var(--color-text); background: transparent; outline: none; }
+    .oh-cap-input::placeholder { color: color-mix(in srgb, var(--color-text-muted) 75%, #fff); }
+    .oh-composer .oh-add { align-self: stretch; min-height: 64px; padding: 0 28px; }
+    .oh-preview { display: flex; align-items: center; gap: 10px; margin: 14px 0 20px; padding: 12px 16px; border-radius: 16px; font-size: .92rem; font-weight: 600; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, #fff); }
+    .oh-preview svg { flex: none; }
+    .oh-preview.empty { font-weight: 500; color: var(--color-text-muted); background: transparent; border: 1px dashed var(--color-border); }
+    .oh-preview.bad { color: #7f1d1d; background: #fee2e2; }
+    .oh-tile { display: grid; place-items: center; align-content: center; width: 52px; height: 56px; border-radius: 16px; line-height: 1; color: var(--color-primary); background: #fff; border: 1px solid color-mix(in srgb, var(--color-primary) 25%, var(--color-border)); box-shadow: 0 8px 14px -12px rgba(60, 30, 10, .6); }
+    .oh-tile b { font-family: Georgia, 'Times New Roman', serif; font-size: 1.5rem; font-style: italic; font-weight: 500; }
+    .oh-tile small { margin-top: 2px; font-size: .62rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--color-text-muted); }
+    @media (max-width: 560px) {
+      .oh-toggle { width: 100%; } .oh-toggle button { flex: 1; padding: 0 8px; }
+      .oh-composer .oh-add { min-height: 48px; width: 100%; }
+      .oh-cap-dates { flex-direction: column; align-items: stretch; gap: 4px; } .oh-cap-arrow { display: none; }
+      .oh-plan-item { grid-template-columns: auto minmax(0, 1fr); } .oh-plan-actions { grid-column: 1 / -1; justify-content: flex-end; }
+    }
     .oh-add { min-height: 44px; border-radius: 999px; padding: 0 22px; font-weight: 800; }
     .oh-plan { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
     .oh-plan-item.active { border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border)); background: color-mix(in srgb, var(--color-primary) 6%, #fff); }
-    .oh-plan-item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 10px 14px; border-radius: 18px; background: #fbf8f3; border: 1px solid var(--color-border); }
+    .oh-plan-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px 14px; padding: 10px 14px 10px 10px; border-radius: 18px; background: #fbf8f3; border: 1px solid var(--color-border); }
     .oh-plan-main { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
     .oh-plan-date { font-weight: 800; font-variant-numeric: tabular-nums; }
     .oh-plan-tag { padding: 2px 10px; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, #fff); }
@@ -2936,6 +2974,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
       this.error.set(this.translate.instant('SETTINGS.OPENING_HOURS_DATES_REQUIRED'));
       return;
     }
+    if (dt < df) {
+      this.error.set(this.translate.instant('SETTINGS.OH_ERR_RANGE'));
+      return;
+    }
     const closed = this.overrideClosedOnly;
     if (!closed && this.overrideHoursInvalid()) {
       this.error.set(this.translate.instant('SETTINGS.OH_ERR_ORDER'));
@@ -2969,6 +3011,31 @@ export class SettingsComponent implements OnInit, OnDestroy {
           this.error.set(typeof d === 'string' ? d : this.translate.instant('COMMON.ERROR'));
         },
       });
+  }
+
+  dayNum(iso: string): number {
+    return Number(iso.slice(8, 10));
+  }
+
+  monthShort(iso: string): string {
+    const locale = this.translate.currentLang || this.translate.defaultLang || 'es';
+    return new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(`${iso}T12:00:00`)).replace('.', '');
+  }
+
+  /** Live summary of the special day being composed; null until a start date is chosen. */
+  specialPreview(): { text: string; bad: boolean } | null {
+    const from = (this.overrideDateFrom || '').trim();
+    const to = (this.overrideDateTo || '').trim() || from;
+    if (!from) return null;
+    if (to < from) return { text: this.translate.instant('SETTINGS.OH_ERR_RANGE'), bad: true };
+    const days = Math.round((new Date(`${to}T12:00:00`).getTime() - new Date(`${from}T12:00:00`).getTime()) / 86400000) + 1;
+    const range = from === to ? this.fmtDate(from) : `${this.fmtDate(from)} → ${this.fmtDate(to)}`;
+    const count = `${days} ${this.translate.instant(days === 1 ? 'SETTINGS.OH_DAY_ONE' : 'SETTINGS.OH_DAY_MANY')}`;
+    if (this.overrideClosedOnly) {
+      return { text: `${range} · ${count} · ${this.translate.instant('SETTINGS.OH_PREVIEW_CLOSED')}`, bad: false };
+    }
+    if (this.overrideHoursInvalid()) return { text: this.translate.instant('SETTINGS.OH_ERR_ORDER'), bad: true };
+    return { text: `${range} · ${count} · ${this.overrideOpen}–${this.overrideClose}`, bad: false };
   }
 
   overrideHoursInvalid(): boolean {

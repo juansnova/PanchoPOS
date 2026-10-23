@@ -34,7 +34,7 @@ app-time-picker { position: relative; display: inline-block; }
   transition: border-color 0.15s;
 
   b { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-  small { font-size: 0.7rem; font-weight: 700; color: var(--color-text-muted); }
+  small { font-size: 0.7rem; font-weight: 700; color: var(--color-text-muted); white-space: nowrap; }
   svg { color: var(--color-text-muted); }
   &:hover, &[aria-expanded='true'] { border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border)); }
   &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
@@ -118,6 +118,8 @@ app-time-picker { position: relative; display: inline-block; }
 @media (max-width: 560px) {
   .oh-range { width: 100%; }
   .oh-range app-time-picker { flex: 1; }
-  .oh-range .oh-tp-btn { width: 100%; justify-content: space-between; }
+  .oh-range .oh-tp-btn { width: 100%; justify-content: space-between; gap: 6px; padding: 0 10px 0 12px; }
+  .oh-range .oh-tp-btn b { font-size: 1rem; }
+  .oh-range { gap: 6px; }
   .oh-label { max-width: none; flex-basis: 100%; }
 }
