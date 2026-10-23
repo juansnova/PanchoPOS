@@ -80,6 +80,10 @@ app-time-picker { position: relative; display: inline-block; }
   &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 }
 .oh-tp-min { border-radius: 999px; }
+// Lighter pickers inside the special-day composer (capsules already carry the border)
+.oh-cap-hours .oh-tp-btn { min-height: 34px; padding: 0 10px 0 12px; border-color: transparent; background: #f6f1e9; }
+.oh-cap-hours .oh-tp-btn b { font-size: 0.95rem; font-weight: 600; }
+.oh-cap-hours .oh-tp-btn:hover, .oh-cap-hours .oh-tp-btn[aria-expanded='true'] { border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border)); }
 @keyframes oh-tp-in { from { opacity: 0; transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .oh-tp-panel { animation: none; } }
 
