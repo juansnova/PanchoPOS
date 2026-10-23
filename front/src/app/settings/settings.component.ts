@@ -525,43 +525,44 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <p>{{ 'SETTINGS.OPENING_HOURS_PLANNED_HELP' | translate }}</p>
                   </div>
 
-                  <div class="oh-schedule-card">
+                  <div class="oh-schedule-card" data-testid="oh-baseline-card">
                     <h4>{{ 'SETTINGS.OPENING_HOURS_BASELINE_SECTION' | translate }}</h4>
-                    <p class="hint">{{ 'SETTINGS.OPENING_HOURS_BASELINE_HINT' | translate }}</p>
-                    <div class="form-row oh-schedule-form">
-                      <div class="form-group">
+                    <p class="oh-help">{{ 'SETTINGS.OPENING_HOURS_BASELINE_HINT' | translate }}</p>
+                    <div class="oh-form oh-form-3">
+                      <div class="oh-fgroup">
                         <label for="baseline_eff">{{ 'SETTINGS.OPENING_HOURS_EFFECTIVE_FROM' | translate }}</label>
-                        <app-date-picker id="baseline_eff" [clearable]="false" [(ngModel)]="baselineScheduleEffectiveDate" name="baseline_eff" />
+                        <app-date-picker id="baseline_eff" [clearable]="false" [placeholder]="'SETTINGS.OH_PICK_DATE' | translate" [(ngModel)]="baselineScheduleEffectiveDate" name="baseline_eff" />
                       </div>
-                      <div class="form-group flex-grow">
+                      <div class="oh-fgroup">
                         <label for="baseline_note">{{ 'SETTINGS.OPENING_HOURS_BASELINE_NOTE' | translate }}</label>
-                        <input id="baseline_note" class="oh-field" type="text" [(ngModel)]="baselineScheduleNote" name="baseline_note" />
+                        <input id="baseline_note" class="oh-field" type="text" [(ngModel)]="baselineScheduleNote" name="baseline_note" [placeholder]="'SETTINGS.OH_NOTE_BASELINE_PH' | translate" />
                       </div>
                       <button type="button" class="btn btn-primary oh-add" (click)="addBaselineSchedule()" [disabled]="saving()">
                         {{ 'SETTINGS.OPENING_HOURS_ADD_BASELINE' | translate }}
                       </button>
                     </div>
-                    <h4>{{ 'SETTINGS.OPENING_HOURS_BASELINES_LIST' | translate }}</h4>
                     @if (loadingOpeningHoursSchedule()) {
-                      <p>{{ 'COMMON.LOADING' | translate }}</p>
+                      <p class="oh-help">{{ 'COMMON.LOADING' | translate }}</p>
                     } @else if (openingHoursScheduleBaselines().length === 0) {
-                      <p class="hint">{{ 'SETTINGS.OPENING_HOURS_NO_BASELINES' | translate }}</p>
+                      <p class="oh-empty">{{ 'SETTINGS.OPENING_HOURS_NO_BASELINES' | translate }}</p>
                     } @else {
+                      <p class="oh-warn" role="note">{{ 'SETTINGS.OH_BASELINE_WARN' | translate }}</p>
                       <ul class="oh-plan">
                         @for (b of openingHoursScheduleBaselines(); track b.id) {
-                          <li class="oh-plan-item">
+                          <li class="oh-plan-item" [class.active]="b.id === activeBaselineId()">
                             <div class="oh-plan-main">
-                              <span class="oh-plan-date">{{ b.effective_from }}</span>
-                              <span class="oh-plan-note">{{ b.note || '—' }}</span>
+                              <span class="oh-plan-date">{{ 'SETTINGS.OH_FROM_DATE' | translate }} {{ fmtDate(b.effective_from) }}</span>
+                              @if (b.id === activeBaselineId()) { <span class="oh-plan-tag">{{ 'SETTINGS.OH_IN_FORCE' | translate }}</span> }
+                              <span class="oh-plan-note">{{ b.note || '' }}</span>
                             </div>
                             <div class="oh-plan-actions">
                               @if (pendingDelete() === 'b:' + b.id) {
-                                <span class="oh-ask">{{ 'SETTINGS.OPENING_HOURS_CONFIRM_DELETE' | translate }}</span>
-                                <button type="button" class="oh-btn oh-btn-danger" (click)="deleteBaselineSchedule(b.id)">{{ 'COMMON.DELETE' | translate }}</button>
-                                <button type="button" class="oh-btn" (click)="pendingDelete.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
-                              } @else {
-                                <button type="button" class="oh-btn" (click)="pendingDelete.set('b:' + b.id)">{{ 'COMMON.DELETE' | translate }}</button>
-                              }
+                              <span class="oh-ask">{{ 'SETTINGS.OPENING_HOURS_CONFIRM_DELETE' | translate }}</span>
+                              <button type="button" class="oh-btn oh-btn-danger" (click)="deleteBaselineSchedule(b.id)">{{ 'COMMON.DELETE' | translate }}</button>
+                              <button type="button" class="oh-btn" (click)="pendingDelete.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
+                            } @else {
+                              <button type="button" class="oh-btn" (click)="pendingDelete.set('b:' + b.id)">{{ 'COMMON.DELETE' | translate }}</button>
+                            }
                             </div>
                           </li>
                         }
@@ -569,55 +570,57 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     }
                   </div>
 
-                  <div class="oh-schedule-card">
+                  <div class="oh-schedule-card" data-testid="oh-override-card">
                     <h4>{{ 'SETTINGS.OPENING_HOURS_OVERRIDE_SECTION' | translate }}</h4>
-                    <p class="hint">{{ 'SETTINGS.OPENING_HOURS_OVERRIDE_HINT' | translate }}</p>
-                    <div class="form-group checkbox-row">
-                      <label class="switch">
-                        <input type="checkbox" [(ngModel)]="overrideClosedOnly" name="override_closed" />
-                        <span class="slider round"></span>
-                      </label>
-                      <span>{{ 'SETTINGS.OPENING_HOURS_OVERRIDE_CLOSED' | translate }}</span>
+                    <p class="oh-help">{{ 'SETTINGS.OPENING_HOURS_OVERRIDE_HINT' | translate }}</p>
+                    <div class="oh-seg-ctl" role="radiogroup" [attr.aria-label]="'SETTINGS.OPENING_HOURS_OVERRIDE_TYPE' | translate">
+                      <button type="button" role="radio" [attr.aria-checked]="overrideClosedOnly" [class.on]="overrideClosedOnly" (click)="overrideClosedOnly = true">
+                        <b>{{ 'SETTINGS.OH_TYPE_CLOSED_TITLE' | translate }}</b>
+                        <small>{{ 'SETTINGS.OH_TYPE_CLOSED_DESC' | translate }}</small>
+                      </button>
+                      <button type="button" role="radio" [attr.aria-checked]="!overrideClosedOnly" [class.on]="!overrideClosedOnly" (click)="overrideClosedOnly = false">
+                        <b>{{ 'SETTINGS.OH_TYPE_HOURS_TITLE' | translate }}</b>
+                        <small>{{ 'SETTINGS.OH_TYPE_HOURS_DESC' | translate }}</small>
+                      </button>
                     </div>
-                    <div class="form-row oh-schedule-form">
-                      <div class="form-group">
+                    <div class="oh-form oh-form-4">
+                      <div class="oh-fgroup">
                         <label for="ov_from">{{ 'SETTINGS.OPENING_HOURS_DATE_FROM' | translate }}</label>
-                        <app-date-picker id="ov_from" [clearable]="false" [(ngModel)]="overrideDateFrom" name="ov_from" />
+                        <app-date-picker id="ov_from" [clearable]="false" [placeholder]="'SETTINGS.OH_PICK_DATE' | translate" [(ngModel)]="overrideDateFrom" name="ov_from" />
                       </div>
-                      <div class="form-group">
+                      <div class="oh-fgroup">
                         <label for="ov_to">{{ 'SETTINGS.OPENING_HOURS_DATE_TO' | translate }}</label>
-                        <app-date-picker id="ov_to" [clearable]="false" [(ngModel)]="overrideDateTo" name="ov_to" />
+                        <app-date-picker id="ov_to" [clearable]="false" [placeholder]="'SETTINGS.OH_PICK_DATE' | translate" [(ngModel)]="overrideDateTo" name="ov_to" />
                       </div>
-                      <div class="form-group flex-grow">
+                      <div class="oh-fgroup">
                         <label for="ov_note">{{ 'SETTINGS.OPENING_HOURS_BASELINE_NOTE' | translate }}</label>
-                        <input id="ov_note" class="oh-field" type="text" [(ngModel)]="overrideScheduleNote" name="ov_note" />
+                        <input id="ov_note" class="oh-field" type="text" [(ngModel)]="overrideScheduleNote" name="ov_note" [placeholder]="'SETTINGS.OH_NOTE_OVERRIDE_PH' | translate" />
                       </div>
                       <button type="button" class="btn btn-primary oh-add" (click)="addOverrideSchedule()" [disabled]="saving()">
                         {{ 'SETTINGS.OPENING_HOURS_ADD_OVERRIDE' | translate }}
                       </button>
                     </div>
-                    <h4>{{ 'SETTINGS.OPENING_HOURS_OVERRIDES_LIST' | translate }}</h4>
                     @if (loadingOpeningHoursSchedule()) {
-                      <p>{{ 'COMMON.LOADING' | translate }}</p>
+                      <p class="oh-help">{{ 'COMMON.LOADING' | translate }}</p>
                     } @else if (openingHoursScheduleOverrides().length === 0) {
-                      <p class="hint">{{ 'SETTINGS.OPENING_HOURS_NO_OVERRIDES' | translate }}</p>
+                      <p class="oh-empty">{{ 'SETTINGS.OPENING_HOURS_NO_OVERRIDES' | translate }}</p>
                     } @else {
                       <ul class="oh-plan">
                         @for (o of openingHoursScheduleOverrides(); track o.id) {
                           <li class="oh-plan-item">
                             <div class="oh-plan-main">
-                              <span class="oh-plan-date">{{ o.date_from }} → {{ o.date_to }}</span>
+                              <span class="oh-plan-date">{{ fmtDate(o.date_from) }}{{ o.date_to !== o.date_from ? ' → ' + fmtDate(o.date_to) : '' }}</span>
                               <span class="oh-plan-tag" [class.closed]="o.closed">{{ o.closed ? ('SETTINGS.OPENING_HOURS_TYPE_CLOSED' | translate) : ('SETTINGS.OPENING_HOURS_TYPE_HOURS' | translate) }}</span>
-                              <span class="oh-plan-note">{{ o.note || '—' }}</span>
+                              <span class="oh-plan-note">{{ o.note || '' }}</span>
                             </div>
                             <div class="oh-plan-actions">
                               @if (pendingDelete() === 'o:' + o.id) {
-                                <span class="oh-ask">{{ 'SETTINGS.OPENING_HOURS_CONFIRM_DELETE' | translate }}</span>
-                                <button type="button" class="oh-btn oh-btn-danger" (click)="deleteOverrideSchedule(o.id)">{{ 'COMMON.DELETE' | translate }}</button>
-                                <button type="button" class="oh-btn" (click)="pendingDelete.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
-                              } @else {
-                                <button type="button" class="oh-btn" (click)="pendingDelete.set('o:' + o.id)">{{ 'COMMON.DELETE' | translate }}</button>
-                              }
+                              <span class="oh-ask">{{ 'SETTINGS.OPENING_HOURS_CONFIRM_DELETE' | translate }}</span>
+                              <button type="button" class="oh-btn oh-btn-danger" (click)="deleteOverrideSchedule(o.id)">{{ 'COMMON.DELETE' | translate }}</button>
+                              <button type="button" class="oh-btn" (click)="pendingDelete.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
+                            } @else {
+                              <button type="button" class="oh-btn" (click)="pendingDelete.set('o:' + o.id)">{{ 'COMMON.DELETE' | translate }}</button>
+                            }
                             </div>
                           </li>
                         }
@@ -2005,11 +2008,31 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .oh-schedule-card { margin-top: 16px; padding: 22px 24px; border-radius: 26px; border: 1px solid var(--color-border); background: #fff; box-shadow: 0 22px 34px -30px rgba(60, 30, 10, .55); }
     .oh-schedule-card h4 { margin: 18px 0 10px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.15rem; font-style: italic; font-weight: 500; }
     .oh-schedule-card > h4:first-child { margin-top: 0; }
-    .oh-schedule-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 8px; }
-    .oh-field { min-height: 44px; padding: 0 16px; border: 1px solid var(--color-border); border-radius: 999px; font: inherit; color: var(--color-text); background: #fffdfa; }
     .oh-field:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    .oh-help { margin: 0 0 16px; max-width: 70ch; font-size: .92rem; line-height: 1.5; color: var(--color-text-muted); }
+    .oh-empty { margin: 4px 0 0; padding: 14px 16px; border-radius: 16px; border: 1px dashed var(--color-border); font-size: .9rem; color: var(--color-text-muted); text-align: center; }
+    .oh-warn { margin: 0 0 12px; padding: 10px 14px; border-radius: 14px; font-size: .85rem; line-height: 1.45; color: #7c2d12; background: #ffedd5; }
+    .oh-form { display: grid; gap: 14px 12px; align-items: end; margin-bottom: 18px; }
+    .oh-form-3 { grid-template-columns: minmax(180px, 1fr) minmax(200px, 1.4fr) auto; }
+    .oh-form-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .oh-form-4 .oh-fgroup:nth-child(3) { grid-column: 1 / -1; }
+    .oh-form-4 .oh-add { grid-column: 1 / -1; justify-self: start; }
+    .oh-fgroup ::ng-deep .dp-trigger { min-height: 48px; border-radius: 999px; background: #fffdfa; }
+    .oh-fgroup { display: grid; gap: 6px; min-width: 0; }
+    .oh-fgroup label { font-size: .75rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); }
+    .oh-field { width: 100%; min-height: 48px; padding: 0 18px; border: 1px solid var(--color-border); border-radius: 999px; font: inherit; color: var(--color-text); background: #fffdfa; }
+    .oh-field::placeholder { color: color-mix(in srgb, var(--color-text-muted) 75%, #fff); }
+    .oh-seg-ctl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+    .oh-seg-ctl button { display: grid; gap: 2px; text-align: left; padding: 12px 16px; border: 1px solid var(--color-border); border-radius: 18px; font: inherit; color: var(--color-text); background: #fffdfa; cursor: pointer; transition: border-color .15s, background .15s; }
+    .oh-seg-ctl button b { font-size: .95rem; }
+    .oh-seg-ctl button small { font-size: .8rem; color: var(--color-text-muted); }
+    .oh-seg-ctl button:hover { border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border)); }
+    .oh-seg-ctl button.on { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, #fff); box-shadow: inset 0 0 0 1px var(--color-primary); }
+    .oh-seg-ctl button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    @media (max-width: 760px) { .oh-form-3, .oh-form-4 { grid-template-columns: 1fr; } .oh-seg-ctl { grid-template-columns: 1fr; } }
     .oh-add { min-height: 44px; border-radius: 999px; padding: 0 22px; font-weight: 800; }
     .oh-plan { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .oh-plan-item.active { border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border)); background: color-mix(in srgb, var(--color-primary) 6%, #fff); }
     .oh-plan-item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 10px 14px; border-radius: 18px; background: #fbf8f3; border: 1px solid var(--color-border); }
     .oh-plan-main { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
     .oh-plan-date { font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -2860,6 +2883,22 @@ export class SettingsComponent implements OnInit, OnDestroy {
           this.error.set(typeof d === 'string' ? d : this.translate.instant('COMMON.ERROR'));
         },
       });
+  }
+
+  /** Scheduled weekly pattern in force today: the latest one starting on or before today. */
+  activeBaselineId(): number | null {
+    const today = new Date().toISOString().slice(0, 10);
+    const rows = this.openingHoursScheduleBaselines()
+      .filter((b) => b.effective_from <= today)
+      .sort((x, y) => (x.effective_from < y.effective_from ? 1 : -1));
+    return rows[0]?.id ?? null;
+  }
+
+  fmtDate(iso: string): string {
+    const locale = this.translate.currentLang || this.translate.defaultLang || 'es';
+    return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(
+      new Date(`${iso}T12:00:00`),
+    );
   }
 
   /** Row waiting for its inline delete confirmation: 'b:<id>' (baseline) or 'o:<id>' (override). */
