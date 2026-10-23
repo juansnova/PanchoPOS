@@ -57,11 +57,6 @@ class Settings(BaseSettings):
         default=7, validation_alias="REFRESH_TOKEN_EXPIRE_DAYS"
     )
 
-    # Revolut Merchant API (optional global fallback; tenants can set per-tenant key)
-    revolut_merchant_secret: str = Field(
-        default="", validation_alias="REVOLUT_MERCHANT_SECRET"
-    )
-
     # CORS configuration
     cors_origins: str = Field(
         default="http://localhost:4200", validation_alias="CORS_ORIGINS"

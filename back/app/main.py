@@ -2978,16 +2978,6 @@ def get_tenant_settings(
     tenant_dict["logo_size_formatted"] = format_file_size(logo_size)
 
     # Don't expose full secret key - only show last 4 characters for verification
-    if tenant_dict.get("stripe_secret_key"):
-        secret_key = tenant_dict["stripe_secret_key"]
-        tenant_dict["stripe_secret_key"] = (
-            f"{secret_key[:7]}...{secret_key[-4:]}" if len(secret_key) > 11 else "***"
-        )
-    if tenant_dict.get("revolut_merchant_secret"):
-        sk = tenant_dict["revolut_merchant_secret"]
-        tenant_dict["revolut_merchant_secret"] = (
-            f"{sk[:7]}...{sk[-4:]}" if len(sk) > 11 else "***"
-        )
     # Don't expose SMTP password; indicate if configured
     if tenant_dict.get("smtp_password"):
         tenant_dict["smtp_password"] = "********"
@@ -3486,16 +3476,6 @@ def update_tenant_settings(
     tenant_dict["logo_size_formatted"] = format_file_size(logo_size)
 
     # Don't expose full secret key - only show last 4 characters for verification
-    if tenant_dict.get("stripe_secret_key"):
-        secret_key = tenant_dict["stripe_secret_key"]
-        tenant_dict["stripe_secret_key"] = (
-            f"{secret_key[:7]}...{secret_key[-4:]}" if len(secret_key) > 11 else "***"
-        )
-    if tenant_dict.get("revolut_merchant_secret"):
-        sk = tenant_dict["revolut_merchant_secret"]
-        tenant_dict["revolut_merchant_secret"] = (
-            f"{sk[:7]}...{sk[-4:]}" if len(sk) > 11 else "***"
-        )
     # Don't expose SMTP password; indicate if configured
     if tenant_dict.get("smtp_password"):
         tenant_dict["smtp_password"] = "********"
@@ -4317,16 +4297,6 @@ async def upload_tenant_logo(
     tenant_dict["logo_size_formatted"] = format_file_size(logo_size)
 
     # Don't expose full secret key - only show last 4 characters for verification
-    if tenant_dict.get("stripe_secret_key"):
-        secret_key = tenant_dict["stripe_secret_key"]
-        tenant_dict["stripe_secret_key"] = (
-            f"{secret_key[:7]}...{secret_key[-4:]}" if len(secret_key) > 11 else "***"
-        )
-    if tenant_dict.get("revolut_merchant_secret"):
-        sk = tenant_dict["revolut_merchant_secret"]
-        tenant_dict["revolut_merchant_secret"] = (
-            f"{sk[:7]}...{sk[-4:]}" if len(sk) > 11 else "***"
-        )
     # Don't expose SMTP password; indicate if configured
     if tenant_dict.get("smtp_password"):
         tenant_dict["smtp_password"] = "********"
@@ -4438,16 +4408,6 @@ def delete_tenant_logo(
     tenant_dict["logo_size_bytes"] = None
     tenant_dict["logo_size_formatted"] = format_file_size(None)
 
-    if tenant_dict.get("stripe_secret_key"):
-        secret_key = tenant_dict["stripe_secret_key"]
-        tenant_dict["stripe_secret_key"] = (
-            f"{secret_key[:7]}...{secret_key[-4:]}" if len(secret_key) > 11 else "***"
-        )
-    if tenant_dict.get("revolut_merchant_secret"):
-        sk = tenant_dict["revolut_merchant_secret"]
-        tenant_dict["revolut_merchant_secret"] = (
-            f"{sk[:7]}...{sk[-4:]}" if len(sk) > 11 else "***"
-        )
     if tenant_dict.get("smtp_password"):
         tenant_dict["smtp_password"] = "********"
     return JSONResponse(content=tenant_dict)
@@ -4511,16 +4471,6 @@ async def upload_tenant_header_background(
 
     tenant_dict = tenant.model_dump(mode="json", exclude={"users"})
     tenant_dict["id"] = tenant.id
-    if tenant_dict.get("stripe_secret_key"):
-        secret_key = tenant_dict["stripe_secret_key"]
-        tenant_dict["stripe_secret_key"] = (
-            f"{secret_key[:7]}...{secret_key[-4:]}" if len(secret_key) > 11 else "***"
-        )
-    if tenant_dict.get("revolut_merchant_secret"):
-        sk = tenant_dict["revolut_merchant_secret"]
-        tenant_dict["revolut_merchant_secret"] = (
-            f"{sk[:7]}...{sk[-4:]}" if len(sk) > 11 else "***"
-        )
     if tenant_dict.get("smtp_password"):
         tenant_dict["smtp_password"] = "********"
     return JSONResponse(content=tenant_dict)
@@ -4556,16 +4506,6 @@ def delete_tenant_header_background(
 
     tenant_dict = tenant.model_dump(mode="json", exclude={"users"})
     tenant_dict["id"] = tenant.id
-    if tenant_dict.get("stripe_secret_key"):
-        secret_key = tenant_dict["stripe_secret_key"]
-        tenant_dict["stripe_secret_key"] = (
-            f"{secret_key[:7]}...{secret_key[-4:]}" if len(secret_key) > 11 else "***"
-        )
-    if tenant_dict.get("revolut_merchant_secret"):
-        sk = tenant_dict["revolut_merchant_secret"]
-        tenant_dict["revolut_merchant_secret"] = (
-            f"{sk[:7]}...{sk[-4:]}" if len(sk) > 11 else "***"
-        )
     if tenant_dict.get("smtp_password"):
         tenant_dict["smtp_password"] = "********"
     return JSONResponse(content=tenant_dict)

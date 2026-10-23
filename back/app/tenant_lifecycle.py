@@ -24,8 +24,6 @@ logger = logging.getLogger(__name__)
 
 TENANT_SECRET_FIELDS = frozenset(
     {
-        "stripe_secret_key",
-        "revolut_merchant_secret",
         "smtp_password",
     }
 )

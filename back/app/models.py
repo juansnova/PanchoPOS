@@ -119,17 +119,6 @@ class Tenant(SQLModel, table=True):
     # ISO 3166-1 alpha-2 (e.g. ES, IN); used for contract-template presets and similar locale rules
     country_code: str | None = Field(default=None, max_length=2)
 
-    stripe_secret_key: str | None = Field(
-        default=None
-    )  # Stripe secret key for this tenant
-    stripe_publishable_key: str | None = Field(
-        default=None
-    )  # Stripe publishable key for this tenant
-
-    revolut_merchant_secret: str | None = Field(
-        default=None
-    )  # Revolut Merchant API secret for this tenant (online payments via Revolut)
-
     # Transfer options shown on the guest menu (informational only; staff confirms payment)
     payment_nequi_number: str | None = Field(default=None, max_length=40)
     payment_llave: str | None = Field(default=None, max_length=120)  # Bre-B key
@@ -1458,9 +1447,6 @@ class TenantUpdate(SQLModel):
 
     default_tax_id: int | None = None  # FK to tax.id; system-wide default IVA
 
-    stripe_secret_key: str | None = None
-    stripe_publishable_key: str | None = None
-    revolut_merchant_secret: str | None = None
     payment_nequi_number: str | None = Field(default=None, max_length=40)
     payment_llave: str | None = Field(default=None, max_length=120)
     payment_account_holder: str | None = Field(default=None, max_length=120)

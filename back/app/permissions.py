@@ -23,7 +23,7 @@ class Permission(str, Enum):
     # Settings
     SETTINGS_READ = "settings:read"
     SETTINGS_UPDATE = "settings:update"
-    SETTINGS_BILLING = "settings:billing"  # Stripe keys - owner only
+    SETTINGS_BILLING = "settings:billing"  # Billing settings - owner only
     
     # Products
     PRODUCT_READ = "product:read"

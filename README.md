@@ -18,7 +18,7 @@ Es una aplicación propia, de un solo restaurante, que corre en contenedores Doc
 | **Reservas** | Clientes reservan en `/book/{tenantId}` y pueden ver/cancelar su reserva con un enlace. El personal gestiona todo en `/reservations`, incluye lista de espera y recordatorios. |
 | **Domicilios** | Canal de domicilios propio (no es Glovo/Uber): el cliente pide en `/delivery/{tenantId}`, el personal asigna repartidor desde la pestaña Delivery en Pedidos. |
 | **Portal de repartidor** | El repartidor inicia sesión en `/courier/login` (o directamente en el login principal) y gestiona sus entregas en `/courier`. |
-| **Pagos** | Efectivo, datafono (tarjeta en físico), o pago en línea con Revolut si se configura. |
+| **Pagos** | Efectivo, datafono (tarjeta en físico). |
 | **Factura electrónica (Colombia / DIAN)** | Módulo de prueba (modo simulación) para emitir facturas/notas crédito ante la DIAN vía un proveedor tecnológico certificado. Activable desde Configuración una vez se tengan credenciales reales; ver [docs/0078-dian-invoicing.md](docs/0078-dian-invoicing.md). |
 | **Usuarios y roles** | Owner (control total), mesero, cocina, repartidor. El cliente final nunca necesita cuenta. |
 | **Reportes** | Ventas, por producto/categoría/mesa/mesero, exportable a CSV/Excel, en `/reports`. |
@@ -163,7 +163,6 @@ Variables más relevantes (ver `config.env.example` para la lista completa, con 
 | `CORS_ORIGINS` | Dominios permitidos para hablar con la API. |
 | `SMTP_*` / `EMAIL_FROM` | Correo para confirmaciones de reserva (opcional). |
 | `TWILIO_*` | Recordatorios de reserva por WhatsApp (opcional). |
-| `REVOLUT_MERCHANT_SECRET` | Pago en línea con Revolut (opcional; también se configura por restaurante en Configuración). |
 
 Los datos del negocio (teléfono, dirección, horario, moneda, impuestos) se configuran directamente en **Configuración** dentro de la aplicación, no en este archivo.
 

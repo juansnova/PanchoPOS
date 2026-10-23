@@ -8,7 +8,6 @@ This folder contains deployment guides, feature documentation, and reference not
 
 | Need to… | See |
 |----------|-----|
-| Set up Revolut (sandbox, redirects, certificates) | [REVOLUT.md](REVOLUT.md) |
 | Run Puppeteer/UI tests | [testing.md](testing.md) |
 | Deploy to a server | [0004-deployment.md](0004-deployment.md) |
 | Configure Gmail for email | [0056-gmail-setup.md](0056-gmail-setup.md) |
@@ -52,7 +51,6 @@ This folder contains deployment guides, feature documentation, and reference not
 | [0051-table-groups-mvp.md](0051-table-groups-mvp.md) | Floor-plan table join/unjoin: combined seats and reservation pool for joined tables. |
 | [0053-satisfecho-delivery-order-channel.md](0053-satisfecho-delivery-order-channel.md) | Satisfecho Delivery: staff Delivery tab / courier API, public checkout `/delivery/{tenantId}`, fee/postal/radius coverage, guest track `/delivery/{tenantId}/track`, unpaid public TTL cleanup. |
 | [0055-public-seo.md](0055-public-seo.md) | Public SEO: titles/meta/OG, robots.txt, sitemap.xml, noindex for staff shells. |
-| [REVOLUT.md](REVOLUT.md) | Revolut Merchant API: checkout extension, sandbox CSR, redirect URLs, tenant payment setup. |
 
 ---
 

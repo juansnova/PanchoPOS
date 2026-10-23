@@ -46,8 +46,6 @@ certs/*.pem
 certs/*.crt
 certs/*.key
 
-# Revolut sandbox certificates and private key (never commit)
-revolut-certs/
 
 # Node / Angular (front has its own .gitignore too, this is just extra safety)
 node_modules/
