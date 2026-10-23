@@ -1,0 +1,12 @@
+# Cloudflare quick tunnel: publishes HAProxy (4202) on a public https URL.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.tunnel.yml up -d cloudflared
+#   docker logs pos-tunnel 2>&1 | grep trycloudflare
+# For a fixed URL, replace the command with: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:2025.9.1
+    container_name: pos-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://haproxy:4202
+    depends_on:
+      - haproxy
