@@ -32,10 +32,10 @@ def _setting(name: str) -> str:
     return ""
 
 
-# Pancho Panza: every day 7:00 a.m. – 9:15 p.m.
+# Pancho Panza: every day 10:30 a.m. – 9:15 p.m.
 DEFAULT_OPENING_HOURS = json.dumps(
     {
-        day: {"closed": False, "open": "07:00", "close": "21:15", "waiter": 0, "kitchen": 0}
+        day: {"closed": False, "open": "10:30", "close": "21:15", "waiter": 0, "kitchen": 0}
         for day in ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
     }
 )

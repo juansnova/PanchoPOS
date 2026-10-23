@@ -3492,11 +3492,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
     // Initialize all days with default values
     this.daysOfWeek.forEach(day => {
       this.openingHours[day.key] = {
-        open: '07:00',
+        open: '10:30',
         close: '21:15',
         closed: false,
         hasBreak: false,
-        morningOpen: '07:00',
+        morningOpen: '10:30',
         morningClose: '14:00',
         eveningOpen: '17:00',
         eveningClose: '21:15',
