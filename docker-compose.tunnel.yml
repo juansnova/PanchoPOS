@@ -1,12 +1,16 @@
-# Cloudflare quick tunnel: publishes HAProxy (4202) on a public https URL.
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.tunnel.yml up -d cloudflared
-#   docker logs pos-tunnel 2>&1 | grep trycloudflare
-# For a fixed URL, replace the command with: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+# Cloudflare Tunnel (túnel con nombre, URL fija): publica HAProxy (4202) en tu dominio con HTTPS.
+# Requiere CLOUDFLARE_TUNNEL_TOKEN en config.env (ver README, sección 12-B).
+#   docker compose --env-file config.env -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.tunnel.yml up -d
+#   docker logs pos-tunnel
+# Prueba rápida sin dominio (URL temporal trycloudflare.com): reemplaza `command` por
+#   tunnel --no-autoupdate --url http://haproxy:4202
 services:
   cloudflared:
     image: cloudflare/cloudflared:2025.9.1
     container_name: pos-tunnel
     restart: unless-stopped
-    command: tunnel --no-autoupdate --url http://haproxy:4202
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:?defina CLOUDFLARE_TUNNEL_TOKEN en config.env}
+    networks:
+      - pos2_net
     depends_on:
       - haproxy

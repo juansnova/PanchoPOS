@@ -648,22 +648,36 @@ Hay tres niveles, de más simple a más serio:
 ### A. Solo red local
 Es lo descrito en la sección 5 (IP del PC + puerto 4202). La base de datos vive solo en ese PC.
 
-### B. Túnel Cloudflare (temporal)
+### B. Túnel Cloudflare (fijo, con tu dominio)
 
-El archivo `docker-compose.tunnel.yml` crea una dirección pública `https://algo.trycloudflare.com` que apunta a tu sistema local.
+Para dejarlo permanente (el PC del local sirve la app y Cloudflare le da HTTPS y una dirección fija):
+
+1. Ten un dominio y agrégalo gratis a Cloudflare (cambiando sus servidores DNS).
+2. En https://one.dash.cloudflare.com → **Networks → Tunnels → Create a tunnel → Cloudflared**. Ponle nombre (p. ej. `panchopos`) y copia el **token**.
+3. En el túnel, pestaña **Public Hostname**: dominio `pos.tu-dominio.com`, servicio **HTTP** → `haproxy:4202`.
+4. En `config.env` (antes de encender; sección 14 explica el porqué):
+   - Genera dos secretos distintos: `python -c "import secrets;print(secrets.token_urlsafe(64))"` para `SECRET_KEY` y otra vez para `REFRESH_SECRET_KEY`.
+   - `PRODUCTION=true`, `CORS_ORIGINS=https://pos.tu-dominio.com`, `PUBLIC_APP_BASE_URL=https://pos.tu-dominio.com`
+   - `CLOUDFLARE_TUNNEL_TOKEN=<el token del paso 2>`
+5. Enciende y reinicia el back para que lea la configuración:
+
+```bash
+docker compose --env-file config.env -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.tunnel.yml up -d
+docker logs pos-tunnel
+```
+
+6. **Recomendado:** en Zero Trust → **Access → Applications**, crea una aplicación para `pos.tu-dominio.com` con login por correo, para que solo tú y tu equipo lleguen a la pantalla de acceso. Si usas QR de mesas o reservas públicas, excluye esas rutas (`/book`, `/m`, `/waitlist`, `/delivery`) de la regla.
+
+### B2. Túnel temporal de prueba (sin dominio)
+
+Sirve para una demo corta. En `docker-compose.tunnel.yml` reemplaza el `command` por `tunnel --no-autoupdate --url http://haproxy:4202` (instrucción en el comentario del archivo) y enciende:
 
 ```bash
 docker compose --env-file config.env -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.tunnel.yml up -d cloudflared
 docker logs pos-tunnel 2>&1 | grep trycloudflare
 ```
 
-La segunda línea muestra la dirección pública. Para apagarlo:
-
-```bash
-docker compose --env-file config.env -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.tunnel.yml stop cloudflared
-```
-
-**Cuidado:** el túnel expone el sistema de **desarrollo** (sin HTTPS forzado) a todo internet. Úsalo solo un rato, con `SECRET_KEY` propias (sección 4) y **no lo dejes permanente**. La dirección cambia cada vez que lo enciendes (por eso los QR impresos con ella dejan de servir). Si lo necesitas fijo, Cloudflare ofrece túneles con nombre (`tunnel run --token ...` con un `CLOUDFLARE_TUNNEL_TOKEN`) y se recomienda ponerle Cloudflare Access (login previo).
+La dirección `https://algo.trycloudflare.com` cambia cada vez (los QR impresos dejan de servir). Para apagarlo: mismo comando con `stop cloudflared`. **No lo dejes permanente** y no lo uses con los secretos de ejemplo.
 
 ### C. Servidor con dominio (producción)
 
