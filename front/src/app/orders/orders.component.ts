@@ -1233,7 +1233,7 @@ ModuleRegistry.registerModules([
                     <div class="fx-dian-head">
                       <h4>{{ 'ORDERS.DIAN_SECTION_TITLE' | translate }}</h4>
                       @if (dianInvoice(); as di) {
-                        <span class="fx-state" [attr.data-status]="di.status">{{ di.status }}</span>
+                        <span class="fx-state" [attr.data-status]="di.status">{{ 'ORDERS.DIAN_STATUS_' + di.status | translate }}</span>
                       }
                     </div>
                     <p class="fx-dian-hint">{{ 'ORDERS.DIAN_SECTION_HINT' | translate }}</p>
@@ -1246,8 +1246,11 @@ ModuleRegistry.registerModules([
                       <p class="fx-dian-meta">
                         @if (di.document_type === 'credit_note' && di.status !== 'error') {
                           {{ 'ORDERS.DIAN_CREDIT_NOTE_ISSUED' | translate }}
+                        } @else if (di.provider_invoice_number) {
+                          {{ 'ORDERS.DIAN_INVOICE_NUMBER' | translate }} {{ di.provider_invoice_number }}
                         }
-                        <small>{{ di.submission_status }} · {{ di.provider }}</small>
+                        @if (di.provider_invoice_number && di.document_type === 'credit_note') { <small>{{ di.provider_invoice_number }}</small> }
+                        @if (di.pdf_url) { <a class="fx-pdf" [href]="di.pdf_url" target="_blank" rel="noopener">{{ 'ORDERS.DIAN_VIEW_PDF' | translate }}</a> }
                         @if (di.cufe) { <code class="fx-cufe" [title]="di.cufe">CUFE {{ di.cufe }}</code> }
                         @if (di.error_message) { <span class="error-text">{{ di.error_message }}</span> }
                       </p>
