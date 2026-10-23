@@ -188,76 +188,94 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <input type="file" id="logo-upload" accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml,.svg" (change)="onLogoSelected($event)" hidden />
                     <input type="file" id="header-bg-upload" accept="image/jpeg,image/png,image/webp,image/avif" (change)="onHeaderBackgroundSelected($event)" hidden />
 
-                    <div class="br-stage">
+                    <div class="br-frame" aria-label="{{ 'SETTINGS.BR_PREVIEW' | translate }}">
+                      <div class="br-frame-bar" aria-hidden="true">
+                        <span class="br-dots"><i></i><i></i><i></i></span>
+                        <span class="br-url">{{ publicUrl().replace('https://', '').replace('http://', '') || ('SETTINGS.BR_PREVIEW' | translate) }}</span>
+                      </div>
                       <label
                         for="header-bg-upload"
-                        class="br-banner"
-                        [class.empty]="!(headerBackgroundPreview() || settings()?.header_background_filename)"
+                        class="br-hero"
                         [class.drag]="brandDrag() === 'header'"
                         (dragover)="onBrandDrag($event, 'header')"
                         (dragleave)="brandDrag.set(null)"
                         (drop)="onBrandDrop($event, 'header')"
                       >
                         @if (headerBackgroundPreview() || settings()?.header_background_filename) {
-                          <img [src]="getHeaderBackgroundDisplaySrc()" alt="" />
+                          <img class="br-hero-img" [src]="getHeaderBackgroundDisplaySrc()" alt="" />
                         } @else {
-                          <span class="br-empty">
-                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>
-                            <b>{{ 'SETTINGS.BR_ADD_BACKGROUND' | translate }}</b>
-                            <small>{{ 'SETTINGS.BR_DROP_HINT' | translate }}</small>
+                          <span class="br-hero-fallback">
+                            @if (logoPreview() || settings()?.logo_filename) {
+                              <span class="br-hero-logo"><img [src]="getDisplayLogoSrc()" alt="" /></span>
+                            }
+                            <span class="br-hero-name">{{ formData.name }}</span>
                           </span>
                         }
-                        <span class="br-over">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                          {{ 'SETTINGS.BR_CHANGE_IMAGE' | translate }}
-                        </span>
+                        <span class="br-over"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>{{ 'SETTINGS.BR_CHANGE_IMAGE' | translate }}</span>
                       </label>
+                      <p class="br-frame-note">
+                        {{ ((headerBackgroundPreview() || settings()?.header_background_filename) ? 'SETTINGS.BR_NOTE_IMAGE' : 'SETTINGS.BR_NOTE_FALLBACK') | translate }}
+                      </p>
+                    </div>
 
-                      <div class="br-id">
-                        <label
-                          for="logo-upload"
-                          class="br-plate"
-                          [class.drag]="brandDrag() === 'logo'"
-                          (dragover)="onBrandDrag($event, 'logo')"
-                          (dragleave)="brandDrag.set(null)"
-                          (drop)="onBrandDrop($event, 'logo')"
-                        >
+                    <div class="br-assets">
+                      <div class="br-asset" [class.drag]="brandDrag() === 'logo'" (dragover)="onBrandDrag($event, 'logo')" (dragleave)="brandDrag.set(null)" (drop)="onBrandDrop($event, 'logo')">
+                        <label for="logo-upload" class="br-thumb br-thumb-logo" [attr.aria-label]="'SETTINGS.UPLOAD_LOGO' | translate">
                           @if (logoPreview() || settings()?.logo_filename) {
                             <img [src]="getDisplayLogoSrc()" alt="Logo" />
                           } @else {
                             <b>{{ (formData.name || '?').charAt(0).toUpperCase() }}</b>
                           }
-                          <span class="br-over br-over-sm" aria-hidden="true">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                          </span>
                         </label>
-                        <span class="br-name">{{ formData.name }}</span>
+                        <div class="br-asset-body">
+                          <div class="br-asset-top">
+                            <b>{{ 'SETTINGS.LOGO' | translate }}</b>
+                            <span class="br-state" [class.pending]="logoFile" [class.empty]="!logoFile && !settings()?.logo_filename">
+                              {{ (logoFile ? 'SETTINGS.BR_STATE_PENDING' : (settings()?.logo_filename ? 'SETTINGS.BR_STATE_SAVED' : 'SETTINGS.BR_STATE_EMPTY')) | translate }}
+                            </span>
+                          </div>
+                          @if (logoMeta(); as m) {
+                            <small class="br-spec"><b>{{ m.name }}</b> · {{ m.w }} × {{ m.h }} px · {{ m.size }}</small>
+                          } @else {
+                            <small class="br-spec">{{ 'SETTINGS.BR_LOGO_REC' | translate }}</small>
+                          }
+                          <small class="br-formats">{{ 'SETTINGS.BR_LOGO_FORMATS' | translate }}</small>
+                          <div class="br-asset-btns">
+                            <label for="logo-upload" class="br-btn">{{ ((logoPreview() || settings()?.logo_filename) ? 'SETTINGS.BR_CHANGE_LOGO' : 'SETTINGS.UPLOAD_LOGO') | translate }}</label>
+                            @if (logoPreview() || settings()?.logo_filename) {
+                              <button type="button" class="br-btn br-btn-quiet" (click)="removeLogo()">{{ 'SETTINGS.REMOVE_LOGO' | translate }}</button>
+                            }
+                          </div>
+                        </div>
                       </div>
-                    </div>
 
-                    <div class="br-actions">
-                      <div class="br-action">
-                        <div class="br-action-text">
-                          <b>{{ 'SETTINGS.LOGO' | translate }}</b>
-                          <small>{{ 'SETTINGS.UPLOAD_LOGO_HINT' | translate }}</small>
-                        </div>
-                        <div class="br-action-btns">
-                          <label for="logo-upload" class="br-btn">{{ ((logoPreview() || settings()?.logo_filename) ? 'SETTINGS.BR_CHANGE_LOGO' : 'SETTINGS.UPLOAD_LOGO') | translate }}</label>
-                          @if (logoPreview() || settings()?.logo_filename) {
-                            <button type="button" class="br-btn br-btn-quiet" (click)="removeLogo()">{{ 'SETTINGS.REMOVE_LOGO' | translate }}</button>
-                          }
-                        </div>
-                      </div>
-                      <div class="br-action">
-                        <div class="br-action-text">
-                          <b>{{ 'SETTINGS.HEADER_BACKGROUND' | translate }}</b>
-                          <small>{{ 'SETTINGS.HEADER_BACKGROUND_HINT' | translate }}</small>
-                        </div>
-                        <div class="br-action-btns">
-                          <label for="header-bg-upload" class="br-btn">{{ ((headerBackgroundPreview() || settings()?.header_background_filename) ? 'SETTINGS.BR_CHANGE_IMAGE' : 'SETTINGS.UPLOAD_HEADER_BACKGROUND') | translate }}</label>
+                      <div class="br-asset" [class.drag]="brandDrag() === 'header'" (dragover)="onBrandDrag($event, 'header')" (dragleave)="brandDrag.set(null)" (drop)="onBrandDrop($event, 'header')">
+                        <label for="header-bg-upload" class="br-thumb br-thumb-bg" [attr.aria-label]="'SETTINGS.UPLOAD_HEADER_BACKGROUND' | translate">
                           @if (headerBackgroundPreview() || settings()?.header_background_filename) {
-                            <button type="button" class="br-btn br-btn-quiet" (click)="removeHeaderBackground()">{{ 'SETTINGS.REMOVE_LOGO' | translate }}</button>
+                            <img [src]="getHeaderBackgroundDisplaySrc()" alt="" />
+                          } @else {
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>
                           }
+                        </label>
+                        <div class="br-asset-body">
+                          <div class="br-asset-top">
+                            <b>{{ 'SETTINGS.HEADER_BACKGROUND' | translate }}</b>
+                            <span class="br-state" [class.pending]="headerBackgroundFile" [class.empty]="!headerBackgroundFile && !settings()?.header_background_filename">
+                              {{ (headerBackgroundFile ? 'SETTINGS.BR_STATE_PENDING' : (settings()?.header_background_filename ? 'SETTINGS.BR_STATE_SAVED' : 'SETTINGS.BR_STATE_EMPTY')) | translate }}
+                            </span>
+                          </div>
+                          @if (headerMeta(); as m) {
+                            <small class="br-spec"><b>{{ m.name }}</b> · {{ m.w }} × {{ m.h }} px · {{ m.size }}</small>
+                          } @else {
+                            <small class="br-spec">{{ 'SETTINGS.BR_BG_REC' | translate }}</small>
+                          }
+                          <small class="br-formats">{{ 'SETTINGS.BR_BG_FORMATS' | translate }}</small>
+                          <div class="br-asset-btns">
+                            <label for="header-bg-upload" class="br-btn">{{ ((headerBackgroundPreview() || settings()?.header_background_filename) ? 'SETTINGS.BR_CHANGE_IMAGE' : 'SETTINGS.UPLOAD_HEADER_BACKGROUND') | translate }}</label>
+                            @if (headerBackgroundPreview() || settings()?.header_background_filename) {
+                              <button type="button" class="br-btn br-btn-quiet" (click)="removeHeaderBackground()">{{ 'SETTINGS.REMOVE_LOGO' | translate }}</button>
+                            }
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2042,43 +2060,45 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .oh-btn-danger { color: #fff; border-color: #b91c1c; background: #b91c1c; }
 
     .br-sub { margin: -4px 0 18px; font-size: .9rem; color: var(--color-text-muted); }
-    .br-stage { position: relative; }
-    .br-banner { position: relative; display: block; width: 100%; aspect-ratio: 16 / 5; min-height: 140px; border-radius: 22px; overflow: hidden; cursor: pointer; background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 14%, #fff), color-mix(in srgb, var(--color-primary) 4%, #fff)); border: 1px solid color-mix(in srgb, var(--color-border) 70%, #fff); transition: box-shadow .2s, border-color .2s; }
-    .br-banner img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-    .br-banner.empty { border-style: dashed; border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border)); }
-    .br-banner.drag, .br-plate.drag { border-color: var(--color-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 18%, transparent); }
-    .br-empty { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 4px; padding-bottom: 28px; text-align: center; color: var(--color-primary); }
-    .br-empty b { font-size: .95rem; font-weight: 700; }
-    .br-empty small { font-size: .8rem; color: var(--color-text-muted); }
-    .br-over { position: absolute; right: 12px; top: 12px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; font-size: .8rem; font-weight: 600; color: #fff; background: rgba(28, 20, 14, .62); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transform: translateY(-4px); transition: opacity .2s, transform .2s; pointer-events: none; }
-    .br-banner:hover .br-over, .br-banner:focus-within .br-over { opacity: 1; transform: none; }
-    .br-id { display: flex; align-items: flex-end; gap: 16px; margin: -42px 0 0 22px; position: relative; }
-    .br-plate { position: relative; display: grid; place-items: center; flex: none; width: 92px; height: 92px; border-radius: 26px; overflow: hidden; cursor: pointer; background: #fff; border: 4px solid #fff; box-shadow: 0 14px 26px -14px rgba(60, 30, 10, .55), 0 0 0 1px var(--color-border); transition: box-shadow .2s; }
-    .br-plate img { width: 100%; height: 100%; object-fit: contain; padding: 6px; background: #fffdfa; }
-    .br-plate b { font-family: Georgia, 'Times New Roman', serif; font-size: 2.4rem; font-style: italic; font-weight: 400; color: var(--color-primary); }
-    .br-over-sm { inset: 0; right: auto; top: auto; display: grid; place-items: center; padding: 0; border-radius: 0; transform: none; }
-    .br-plate:hover .br-over-sm, .br-plate:focus-within .br-over-sm { opacity: 1; }
-    .br-name { padding-bottom: 10px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.5rem; font-style: italic; font-weight: 500; letter-spacing: -.01em; line-height: 1.1; overflow-wrap: anywhere; }
-    .br-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
-    .br-action { display: grid; gap: 12px; align-content: space-between; padding: 14px 16px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--color-border) 70%, #fff); background: #fffdfa; }
-    .br-action-text { display: grid; gap: 2px; }
-    .br-action-text b { font-size: .9rem; }
-    .br-action-text small { font-size: .8rem; line-height: 1.4; color: var(--color-text-muted); }
-    .br-action-btns { display: flex; flex-wrap: wrap; gap: 8px; }
-    .br-btn { display: inline-flex; align-items: center; min-height: 36px; padding: 0 16px; border: 1px solid color-mix(in srgb, var(--color-border) 70%, #fff); border-radius: 999px; font: inherit; font-size: .82rem; font-weight: 600; color: var(--color-text); background: #fff; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+    .br-frame { border-radius: 22px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--color-border) 70%, #fff); background: #fffdfa; }
+    .br-frame-bar { display: flex; align-items: center; gap: 14px; padding: 9px 14px; background: #f4eee6; }
+    .br-dots { display: inline-flex; gap: 5px; }
+    .br-dots i { width: 9px; height: 9px; border-radius: 50%; background: color-mix(in srgb, var(--color-text-muted) 35%, #fff); }
+    .br-url { min-width: 0; flex: 1; max-width: 420px; padding: 3px 12px; border-radius: 999px; font-size: .72rem; color: var(--color-text-muted); background: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .br-hero { position: relative; display: grid; place-items: center; min-height: 190px; padding: 26px 24px 30px; cursor: pointer; border-radius: 0 0 28px 28px; color: #fff; background: radial-gradient(120% 90% at 8% 0%, rgba(240, 138, 60, .4), transparent 55%), radial-gradient(90% 80% at 100% 100%, rgba(179, 90, 32, .32), transparent 60%), linear-gradient(170deg, #2b1d15, #171210); transition: box-shadow .2s; }
+    .br-hero.drag, .br-asset.drag { box-shadow: inset 0 0 0 3px var(--color-primary); }
+    .br-hero-img { max-width: 100%; max-height: 12.5rem; width: auto; object-fit: contain; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .35)); }
+    .br-hero-fallback { display: grid; justify-items: center; gap: 12px; text-align: center; }
+    .br-hero-logo { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 24px; background: #fff; box-shadow: 0 14px 28px -14px rgba(0, 0, 0, .7); }
+    .br-hero-logo img { width: 100%; height: 100%; padding: 6px; object-fit: contain; }
+    .br-hero-name { font-family: var(--font-brand, Georgia, serif); font-size: 1.6rem; font-weight: 600; letter-spacing: -.01em; }
+    .br-over { position: absolute; right: 14px; top: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; font-size: .8rem; font-weight: 600; color: #fff; background: rgba(255, 255, 255, .16); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, .22); opacity: 0; transform: translateY(-4px); transition: opacity .2s, transform .2s; pointer-events: none; }
+    .br-hero:hover .br-over, .br-hero:focus-within .br-over { opacity: 1; transform: none; }
+    .br-frame-note { margin: 0; padding: 10px 16px; font-size: .78rem; line-height: 1.45; color: var(--color-text-muted); }
+    .br-assets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+    .br-asset { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; padding: 14px; border-radius: 20px; border: 1px solid color-mix(in srgb, var(--color-border) 70%, #fff); background: #fffdfa; transition: box-shadow .2s; }
+    .br-thumb { display: grid; place-items: center; flex: none; width: 76px; height: 76px; border-radius: 18px; overflow: hidden; cursor: pointer; background: #fff; border: 1px solid var(--color-border); color: var(--color-primary); transition: border-color .15s; }
+    .br-thumb:hover { border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border)); }
+    .br-thumb img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+    .br-thumb b { font-family: Georgia, 'Times New Roman', serif; font-size: 2rem; font-style: italic; font-weight: 400; }
+    .br-thumb-bg { background: linear-gradient(170deg, #2b1d15, #171210); border-color: transparent; color: rgba(255, 255, 255, .55); }
+    .br-thumb-bg img { padding: 8px; }
+    .br-asset-body { display: grid; gap: 4px; min-width: 0; align-content: start; }
+    .br-asset-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .br-asset-top b { font-size: .92rem; }
+    .br-state { padding: 2px 9px; border-radius: 999px; font-size: .64rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #166534; background: #dcfce7; }
+    .br-state.pending { color: #92400e; background: #fef3c7; }
+    .br-state.empty { color: var(--color-text-muted); background: #ece5da; }
+    .br-spec { font-size: .8rem; line-height: 1.4; color: var(--color-text); overflow-wrap: anywhere; }
+    .br-formats { font-size: .74rem; color: var(--color-text-muted); }
+    .br-asset-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .br-btn { display: inline-flex; align-items: center; min-height: 34px; padding: 0 16px; border: 1px solid color-mix(in srgb, var(--color-border) 70%, #fff); border-radius: 999px; font: inherit; font-size: .8rem; font-weight: 600; color: var(--color-text); background: #fff; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
     .br-btn:hover { color: var(--color-primary); border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border)); }
     .br-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
     .br-btn-quiet { color: var(--color-text-muted); background: transparent; border-color: transparent; }
     .br-btn-quiet:hover { color: #b91c1c; background: #fee2e2; border-color: transparent; }
-    .br-stage:has(#logo-upload:focus-visible) .br-plate, .br-card:has(#logo-upload:focus-visible) .br-plate { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-    @media (max-width: 640px) {
-      .br-actions { grid-template-columns: 1fr; }
-      .br-banner { aspect-ratio: 16 / 7; }
-      .br-id { margin-left: 14px; gap: 12px; }
-      .br-plate { width: 78px; height: 78px; border-radius: 22px; }
-      .br-name { font-size: 1.25rem; }
-      .br-banner .br-over { opacity: 1; transform: none; }
-    }
+    @media (max-width: 760px) { .br-assets { grid-template-columns: 1fr; } }
+    @media (max-width: 560px) { .br-hero { min-height: 150px; padding: 20px 14px 24px; } .br-over { opacity: 1; transform: none; } .br-thumb { width: 64px; height: 64px; } }
     @media (prefers-reduced-motion: reduce) { .br-over { transition: none; } }
 
     /* Sticky save bar */
@@ -3857,6 +3877,17 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   /** Which brand image is being dragged over ("logo" | "header"), for the drop highlight. */
   brandDrag = signal<'logo' | 'header' | null>(null);
+  logoMeta = signal<{ name: string; w: number; h: number; size: string } | null>(null);
+  headerMeta = signal<{ name: string; w: number; h: number; size: string } | null>(null);
+
+  /** File name, pixel size and weight of a freshly chosen image, shown on its card until it is saved. */
+  private setImageMeta(file: File, dataUrl: string, target: { set: (v: { name: string; w: number; h: number; size: string } | null) => void }): void {
+    const size = file.size >= 1048576 ? `${(file.size / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(file.size / 1024))} KB`;
+    const img = new Image();
+    img.onload = () => target.set({ name: file.name, w: img.naturalWidth, h: img.naturalHeight, size });
+    img.onerror = () => target.set({ name: file.name, w: 0, h: 0, size });
+    img.src = dataUrl;
+  }
 
   onBrandDrag(e: DragEvent, kind: 'logo' | 'header'): void {
     e.preventDefault();
@@ -3885,6 +3916,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
       const reader = new FileReader();
       reader.onload = (e) => {
         this.logoPreview.set(e.target?.result as string);
+        this.setImageMeta(file, e.target?.result as string, this.logoMeta);
       };
       reader.readAsDataURL(file);
       this.error.set(null);
@@ -3894,6 +3926,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   removeLogo() {
     this.logoFile = null;
     this.logoPreview.set(null);
+    this.logoMeta.set(null);
     this.api.deleteTenantLogo().subscribe({
       next: (updated) => {
         this.settings.set(updated);
@@ -3978,6 +4011,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     const reader = new FileReader();
     reader.onload = (e) => {
       this.headerBackgroundPreview.set(e.target?.result as string);
+      this.setImageMeta(file, e.target?.result as string, this.headerMeta);
     };
     reader.readAsDataURL(file);
     this.error.set(null);
@@ -3986,6 +4020,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   removeHeaderBackground() {
     this.headerBackgroundFile = null;
     this.headerBackgroundPreview.set(null);
+    this.headerMeta.set(null);
     this.api.deleteTenantHeaderBackground().subscribe({
       next: (updated) => {
         this.settings.set(updated);
@@ -4073,6 +4108,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
             this.settings.set(updatedSettings);
             this.logoFile = null;
             this.logoPreview.set(null);
+            this.logoMeta.set(null);
             this.updateSettings();
           },
           error: (err) => {
@@ -4092,6 +4128,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
           this.settings.set(updatedSettings);
           this.headerBackgroundFile = null;
           this.headerBackgroundPreview.set(null);
+          this.headerMeta.set(null);
           doLogoUpload();
         },
         error: (err) => {
