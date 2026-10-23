@@ -8,6 +8,7 @@ Runs on every `docker compose up` (see docker-compose.yml, back.command).
 Manual: docker compose exec -T back python -m app.seeds.ensure_default_admin
 """
 
+import json
 import os
 from pathlib import Path
 
@@ -31,6 +32,15 @@ def _setting(name: str) -> str:
     return ""
 
 
+# Pancho Panza: every day 7:00 a.m. – 9:15 p.m.
+DEFAULT_OPENING_HOURS = json.dumps(
+    {
+        day: {"closed": False, "open": "07:00", "close": "21:15", "waiter": 0, "kitchen": 0}
+        for day in ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+    }
+)
+
+
 def run() -> None:
     username = _setting("DEFAULT_ADMIN_USERNAME")
     password = _setting("DEFAULT_ADMIN_PASSWORD")
@@ -38,9 +48,6 @@ def run() -> None:
         print("DEFAULT_ADMIN_USERNAME/PASSWORD not set. Skipping default admin.")
         return
     with Session(engine) as session:
-        if session.exec(select(User).where(User.username == username)).first():
-            print(f"Default admin '{username}' already exists.")
-            return
         tenant = session.exec(select(Tenant).order_by(Tenant.id)).first()
         if not tenant:
             tenant = Tenant(
@@ -51,6 +58,13 @@ def run() -> None:
             session.add(tenant)
             session.commit()
             session.refresh(tenant)
+        if not (tenant.opening_hours or "").strip():
+            tenant.opening_hours = DEFAULT_OPENING_HOURS
+            session.add(tenant)
+            session.commit()
+        if session.exec(select(User).where(User.username == username)).first():
+            print(f"Default admin '{username}' already exists.")
+            return
         session.add(
             User(
                 username=username,
