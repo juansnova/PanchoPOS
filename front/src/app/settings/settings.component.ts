@@ -20,6 +20,7 @@ import {
 import { SidebarComponent } from '../shared/sidebar.component';
 import { AppDatePickerComponent } from '../shared/app-date-picker.component';
 import { OpeningShiftComponent } from './opening-shift.component';
+import { TimePickerComponent } from './time-picker.component';
 import { PermissionService } from '../services/permission.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MAX_IMAGE_UPLOAD_BYTES, MAX_IMAGE_UPLOAD_MB } from '../shared/image-upload-limits';
@@ -64,6 +65,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     TranslateModule,
     AppDatePickerComponent,
     OpeningShiftComponent,
+    TimePickerComponent,
   ],
   template: `
     <app-sidebar>
@@ -592,6 +594,19 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                         <label for="ov_to">{{ 'SETTINGS.OPENING_HOURS_DATE_TO' | translate }}</label>
                         <app-date-picker id="ov_to" [clearable]="false" [placeholder]="'SETTINGS.OH_PICK_DATE' | translate" [(ngModel)]="overrideDateTo" name="ov_to" />
                       </div>
+                      @if (!overrideClosedOnly) {
+                        <div class="oh-fgroup oh-special-hours" data-testid="oh-special-hours">
+                          <label>{{ 'SETTINGS.OH_SPECIAL_HOURS' | translate }}</label>
+                          <div class="oh-range">
+                            <app-time-picker [value]="overrideOpen" ariaLabel="SETTINGS.OH_OPENS" (valueChange)="overrideOpen = $event" />
+                            <span class="oh-dash" aria-hidden="true">→</span>
+                            <app-time-picker [value]="overrideClose" ariaLabel="SETTINGS.OH_CLOSES" (valueChange)="overrideClose = $event" />
+                          </div>
+                          @if (overrideHoursInvalid()) {
+                            <p class="oh-error" role="alert">{{ 'SETTINGS.OH_ERR_ORDER' | translate }}</p>
+                          }
+                        </div>
+                      }
                       <div class="oh-fgroup">
                         <label for="ov_note">{{ 'SETTINGS.OPENING_HOURS_BASELINE_NOTE' | translate }}</label>
                         <input id="ov_note" class="oh-field" type="text" [(ngModel)]="overrideScheduleNote" name="ov_note" [placeholder]="'SETTINGS.OH_NOTE_OVERRIDE_PH' | translate" />
@@ -610,7 +625,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                           <li class="oh-plan-item">
                             <div class="oh-plan-main">
                               <span class="oh-plan-date">{{ fmtDate(o.date_from) }}{{ o.date_to !== o.date_from ? ' → ' + fmtDate(o.date_to) : '' }}</span>
-                              <span class="oh-plan-tag" [class.closed]="o.closed">{{ o.closed ? ('SETTINGS.OPENING_HOURS_TYPE_CLOSED' | translate) : ('SETTINGS.OPENING_HOURS_TYPE_HOURS' | translate) }}</span>
+                              <span class="oh-plan-tag" [class.closed]="o.closed">{{ o.closed ? ('SETTINGS.OPENING_HOURS_TYPE_CLOSED' | translate) : overrideHoursLabel(o.opening_hours) }}</span>
                               <span class="oh-plan-note">{{ o.note || '' }}</span>
                             </div>
                             <div class="oh-plan-actions">
@@ -2015,7 +2030,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .oh-form { display: grid; gap: 14px 12px; align-items: end; margin-bottom: 18px; }
     .oh-form-3 { grid-template-columns: minmax(180px, 1fr) minmax(200px, 1.4fr) auto; }
     .oh-form-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .oh-form-4 .oh-fgroup:nth-child(3) { grid-column: 1 / -1; }
+    .oh-form-4 .oh-fgroup:nth-child(n+3) { grid-column: 1 / -1; }
     .oh-form-4 .oh-add { grid-column: 1 / -1; justify-self: start; }
     .oh-fgroup ::ng-deep .dp-trigger { min-height: 48px; border-radius: 999px; background: #fffdfa; }
     .oh-fgroup { display: grid; gap: 6px; min-width: 0; }
@@ -2426,6 +2441,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
   overrideDateTo = '';
   overrideClosedOnly = false;
   overrideScheduleNote = '';
+  overrideOpen = '10:30';
+  overrideClose = '21:15';
 
   daysOfWeek = [
     { key: 'monday', label: 'SETTINGS.DAY_MONDAY' },
@@ -2920,7 +2937,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
       return;
     }
     const closed = this.overrideClosedOnly;
-    const oh = closed ? null : this.weeklyOpeningHoursJsonFromGrid();
+    if (!closed && this.overrideHoursInvalid()) {
+      this.error.set(this.translate.instant('SETTINGS.OH_ERR_ORDER'));
+      return;
+    }
+    const oh = closed ? null : this.specialDayHoursJson();
     this.saving.set(true);
     this.error.set(null);
     this.api
@@ -2937,6 +2958,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
           this.overrideDateTo = '';
           this.overrideScheduleNote = '';
           this.overrideClosedOnly = false;
+          this.overrideOpen = '10:30';
+          this.overrideClose = '21:15';
           this.loadOpeningHoursSchedule();
           this.saving.set(false);
         },
@@ -2946,6 +2969,28 @@ export class SettingsComponent implements OnInit, OnDestroy {
           this.error.set(typeof d === 'string' ? d : this.translate.instant('COMMON.ERROR'));
         },
       });
+  }
+
+  overrideHoursInvalid(): boolean {
+    const [o, c] = [SettingsComponent.toMinutes(this.overrideOpen), SettingsComponent.toMinutes(this.overrideClose)];
+    return o === null || c === null || c <= o;
+  }
+
+  /** Weekly JSON with the same open/close every day: the special-day hours apply to each date of the range. */
+  private specialDayHoursJson(): string {
+    const day = { closed: false, open: this.overrideOpen, close: this.overrideClose, waiter: 0, kitchen: 0 };
+    return JSON.stringify(Object.fromEntries(this.daysOfWeek.map((d) => [d.key, day])));
+  }
+
+  /** "10:30–15:00" from a stored weekly JSON (special days use the same hours every day); falls back to the generic label. */
+  overrideHoursLabel(weeklyJson: string | null | undefined): string {
+    try {
+      const d = JSON.parse(weeklyJson || '')?.monday;
+      if (d?.open && d?.close) return `${d.open}–${d.close}`;
+    } catch {
+      /* fall through */
+    }
+    return this.translate.instant('SETTINGS.OPENING_HOURS_TYPE_HOURS');
   }
 
   deleteOverrideSchedule(id: number): void {

@@ -65,11 +65,14 @@ async function main() {
   });
   const page = await browser.newPage();
   const errors = [];
-  // Safety net: the test must never write settings, so any save request is aborted and counted.
+  // Safety net: the test must never write or delete anything, so any settings save / schedule delete request is aborted and counted.
   let saveAttempts = 0;
   await page.setRequestInterception(true);
   page.on('request', (req) => {
-    if (req.method() === 'PUT' && /\/tenant\/settings/.test(req.url())) {
+    if (
+      (req.method() === 'PUT' && /\/tenant\/settings/.test(req.url())) ||
+      (req.method() === 'DELETE' && /opening-hours/.test(req.url()))
+    ) {
       saveAttempts++;
       req.abort();
     } else {
@@ -156,10 +159,21 @@ async function main() {
       await del.click();
       await sleep(200);
       check('delete asks inline, without a browser dialog', !dialog && (await page.$('.oh-ask')) !== null);
-      await page.click('.oh-plan-actions .oh-btn:not(.oh-btn-danger)');
+      await page.$eval('.oh-ask', (el) => el.parentElement.querySelector('.oh-btn:not(.oh-btn-danger)').click());
+      check('cancelling the confirmation deletes nothing', saveAttempts === 0);
     } else {
       console.log('SKIP inline delete confirmation (no scheduled entries to delete)');
     }
+
+    // Special days: own hours editor for "Horario distinto", hidden for "Cerrado todo el día"
+    const special = '[data-testid="oh-override-card"]';
+    check('special day with other hours shows its hours editor', (await page.$(`${special} [data-testid="oh-special-hours"]`)) !== null);
+    await pickTime(page, `${special} [data-testid="oh-special-hours"] app-time-picker:nth-of-type(2)`, '06:00');
+    await sleep(300);
+    check('special hours closing before opening shows an error', (await page.$$eval(`${special} .oh-error`, (e) => e.length)) === 1);
+    await page.click(`${special} .oh-seg-ctl button:first-child`);
+    await sleep(300);
+    check('closed all day hides the hours editor', (await page.$(`${special} [data-testid="oh-special-hours"]`)) === null);
 
     // Phone width
     await page.setViewport({ width: 390, height: 800, isMobile: true });
