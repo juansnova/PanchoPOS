@@ -905,18 +905,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     </div>
                     <p class="iv-note">{{ 'SETTINGS.INV_DEFAULT_CUSTOMER' | translate }}</p>
                   </div>
-
-                  <div class="st-card iv-creds">
-                    <h3 class="st-card-title">{{ 'SETTINGS.INV_CREDS_TITLE' | translate }}</h3>
-                    <p class="st-card-desc">{{ 'SETTINGS.INV_CREDS_DESC' | translate }}</p>
-                    <pre class="iv-pre" aria-label="config.env">DIAN_PROVIDER=factus
-DIAN_PROVIDER_CLIENT_ID=…
-DIAN_PROVIDER_CLIENT_SECRET=…
-DIAN_PROVIDER_USERNAME=…
-DIAN_PROVIDER_PASSWORD=…
-DIAN_LIVE_UNLOCK=true</pre>
-                    <p class="iv-warn">{{ 'SETTINGS.INV_CREDS_WARN' | translate }}</p>
-                  </div>
                 </div>
               }
 
@@ -2328,11 +2316,6 @@ DIAN_LIVE_UNLOCK=true</pre>
     .iv-pkg-count.low b { color: #b91c1c; }
     .iv-pkg-alert { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 12px 0 0; background: #fee2e2; color: #7f1d1d; }
     .iv-pkg-alert p { margin: 0; flex: 1 1 220px; }
-    .iv-creds { background: #1c1917; border-color: #1c1917; }
-    .iv-creds .st-card-title { color: #fff; }
-    .iv-creds .st-card-desc { color: rgba(255,255,255,.7); }
-    pre.iv-pre { margin: 0 0 12px; padding: 14px 16px; border-radius: 16px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: .8rem; line-height: 1.7; letter-spacing: 0; text-transform: none; color: #fde68a; background: rgba(255,255,255,.07); overflow-x: auto; }
-    .iv-warn { margin: 0 0 14px; font-size: .8rem; font-weight: 600; line-height: 1.45; color: #fbbf24; }
 
     /* Transferencias */
     .tr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
