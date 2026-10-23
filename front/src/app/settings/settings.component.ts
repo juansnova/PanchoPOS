@@ -426,7 +426,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
 
                   <div class="oh-days">
                     @for (day of daysOfWeek; track day.key) {
-                      <div class="oh-day" [class.closed]="openingHours[day.key]?.closed" [class.today]="day.key === todayKey">
+                      <div class="oh-day" [class.closed]="openingHours[day.key]?.closed" [class.today]="day.key === todayKey" [class.invalid]="!!dayError(day.key)">
                         <div class="oh-day-head">
                           <label class="switch">
                             <input
@@ -452,7 +452,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
 
                             @if (!openingHours[day.key]?.hasBreak) {
                               <app-opening-shift
-                                [times]="timeOptions"
                                 [open]="openingHours[day.key]?.open || '10:30'"
                                 [close]="openingHours[day.key]?.close || '21:15'"
                                 [label]="openingHours[day.key]?.serviceLabel || ''"
@@ -465,7 +464,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                             } @else {
                               <app-opening-shift
                                 variant="morning"
-                                [times]="timeOptions"
                                 [open]="openingHours[day.key]?.morningOpen"
                                 [close]="openingHours[day.key]?.morningClose"
                                 [label]="openingHours[day.key]?.morningLabel || ''"
@@ -477,7 +475,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                               />
                               <app-opening-shift
                                 variant="evening"
-                                [times]="timeOptions"
                                 [open]="openingHours[day.key]?.eveningOpen"
                                 [close]="openingHours[day.key]?.eveningClose"
                                 [label]="openingHours[day.key]?.eveningLabel || ''"
@@ -487,6 +484,10 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                                 (closeChange)="setOpeningHourValue(day.key, 'eveningClose', $event)"
                                 (labelChange)="setServiceLabelValue(day.key, 'eveningLabel', $event)"
                               />
+                            }
+
+                            @if (dayError(day.key); as err) {
+                              <p class="oh-error" role="alert">{{ err | translate }}</p>
                             }
 
                             <div class="oh-extras">
@@ -1389,6 +1390,8 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .oh-days { display: grid; gap: 12px; }
     .oh-day { padding: 16px 18px 18px; border-radius: 24px; border: 1px solid var(--color-border); background: #fff; box-shadow: 0 18px 28px -26px rgba(60, 30, 10, .55); transition: border-color .2s, box-shadow .2s; }
     .oh-day.today { border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border)); box-shadow: 0 18px 30px -22px color-mix(in srgb, var(--color-primary) 60%, transparent); }
+    .oh-day.invalid { border-color: #b91c1c; }
+    .oh-error { margin: 0; padding: 8px 14px; border-radius: 14px; font-size: .85rem; font-weight: 600; color: #7f1d1d; background: #fee2e2; }
     .oh-day.closed { padding-block: 12px; border-style: dashed; background: repeating-linear-gradient(135deg, #f6f1e9 0 6px, #fbf8f3 6px 12px); box-shadow: none; }
     .oh-day-head { display: flex; align-items: center; gap: 12px; }
     .oh-day-name { font-family: Georgia, 'Times New Roman', serif; font-size: 1.25rem; font-style: italic; font-weight: 500; letter-spacing: -.01em; }
@@ -2410,17 +2413,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
     { key: 'saturday', label: 'SETTINGS.DAY_SATURDAY' },
     { key: 'sunday', label: 'SETTINGS.DAY_SUNDAY' }
   ];
-
-  /** Time options for opening hours: 00:00, 00:15, 00:30, 00:45, ... 23:45 (European 24h). */
-  timeOptions: string[] = (() => {
-    const opts: string[] = [];
-    for (let h = 0; h < 24; h++) {
-      for (const m of [0, 15, 30, 45]) {
-        opts.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-      }
-    }
-    return opts;
-  })();
 
   copyFromDayKey = 'monday';
 
@@ -3517,7 +3509,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   setOpeningHourValue(dayKey: string, field: 'open' | 'close' | 'morningOpen' | 'morningClose' | 'eveningOpen' | 'eveningClose', value: string) {
     (this.openingHours[dayKey] as any)[field] = this.roundTimeToQuarter(value);
-    this.serializeOpeningHours();
+    this.serializeOpeningHours();    this.markDirty();
   }
 
   setServiceLabelValue(
@@ -3556,7 +3548,15 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.markDirty();
   }
 
-  todayKey = this.daysOfWeek[(new Date().getDay() + 6) % 7].key;
+  /** Weekday key ("monday"…) in the restaurant's time zone, falling back to the browser's. */
+  get todayKey(): string {
+    const tz = this.formData.timezone || undefined;
+    try {
+      return new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: tz }).format(new Date()).toLowerCase();
+    } catch {
+      return this.daysOfWeek[(new Date().getDay() + 6) % 7].key;
+    }
+  }
 
   dayShort(key: string): string {
     const i = this.daysOfWeek.findIndex((d) => d.key === key);
@@ -3569,7 +3569,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     return m ? Number(m[1]) * 60 + Number(m[2]) : null;
   }
 
-  /** Open windows of a day as [startMin, endMin]; a close at or before the open runs to midnight. */
+  /** Valid open windows of a day as [startMin, endMin]; hours cannot run past midnight, so inverted ones are skipped. */
   private dayWindows(key: string): [number, number][] {
     const d = this.openingHours[key];
     if (!d || d.closed) return [];
@@ -3579,9 +3579,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
     const out: [number, number][] = [];
     for (const [o, c] of pairs) {
       const s = SettingsComponent.toMinutes(o);
-      let e = SettingsComponent.toMinutes(c);
+      const e = SettingsComponent.toMinutes(c);
       if (s === null || e === null) continue;
-      if (e <= s) e = 1440;
+      if (e <= s) continue;
       out.push([s, e]);
     }
     return out;
@@ -3590,6 +3590,24 @@ export class SettingsComponent implements OnInit, OnDestroy {
   /** Percent positions of a day's open windows over a 24h bar. */
   dayBarSegments(key: string): { left: number; width: number }[] {
     return this.dayWindows(key).map(([s, e]) => ({ left: (s / 1440) * 100, width: ((e - s) / 1440) * 100 }));
+  }
+
+  /** i18n key of what is wrong with a day's hours, or null when they are valid. */
+  dayError(key: string): string | null {
+    const d = this.openingHours[key];
+    if (!d || d.closed) return null;
+    const m = SettingsComponent.toMinutes;
+    if (!d.hasBreak) {
+      const [o, c] = [m(d.open), m(d.close)];
+      return o === null || c === null || c <= o ? 'SETTINGS.OH_ERR_ORDER' : null;
+    }
+    const [mo, mc, eo, ec] = [m(d.morningOpen), m(d.morningClose), m(d.eveningOpen), m(d.eveningClose)];
+    if (mo === null || mc === null || eo === null || ec === null || mc <= mo || ec <= eo) return 'SETTINGS.OH_ERR_ORDER';
+    return eo < mc ? 'SETTINGS.OH_ERR_OVERLAP' : null;
+  }
+
+  hoursInvalid(): boolean {
+    return this.daysOfWeek.some((d) => !!this.dayError(d.key));
   }
 
   openDaysCount(): number {
@@ -3889,6 +3907,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   saveSettings() {
+    if (this.hoursInvalid()) {
+      this.activeSection.set('hours');
+      this.error.set(this.translate.instant('SETTINGS.OH_ERR_SAVE'));
+      return;
+    }
     this.saving.set(true);
     this.error.set(null);
     this.clearSuccessDismissTimer();

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Puppeteer test for Settings → Horarios de apertura (weekly planner). Nothing is saved: the test edits the
- * grid, checks the live feedback and leaves without pressing "Guardar".
+ * grid and checks the live feedback; any settings save request is aborted.
  *
  * Usage (from repo root):
  *   LOGIN_EMAIL=owner LOGIN_PASSWORD=secret node front/scripts/test-opening-hours.mjs
@@ -20,6 +20,17 @@ const CHROME_PATH =
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Opens a time picker and chooses hh:mm (hour cell, then quarter cell which closes it). */
+async function pickTime(page, pickerSelector, hhmm) {
+  const [h, m] = hhmm.split(':');
+  await page.click(`${pickerSelector} .oh-tp-btn`);
+  await page.waitForSelector(`${pickerSelector} .oh-tp-panel`);
+  const hours = await page.$$(`${pickerSelector} .oh-tp-hours .oh-tp-cell`);
+  await hours[Number(h)].click();
+  const mins = await page.$$(`${pickerSelector} .oh-tp-mins .oh-tp-cell`);
+  await mins[Number(m) / 15].click();
+}
 
 async function detectBaseUrl() {
   if (process.env.BASE_URL) return process.env.BASE_URL;
@@ -54,6 +65,17 @@ async function main() {
   });
   const page = await browser.newPage();
   const errors = [];
+  // Safety net: the test must never write settings, so any save request is aborted and counted.
+  let saveAttempts = 0;
+  await page.setRequestInterception(true);
+  page.on('request', (req) => {
+    if (req.method() === 'PUT' && /\/tenant\/settings/.test(req.url())) {
+      saveAttempts++;
+      req.abort();
+    } else {
+      req.continue();
+    }
+  });
   page.on('console', (msg) => {
     if (msg.type() === 'error') errors.push(msg.text());
   });
@@ -81,10 +103,10 @@ async function main() {
 
     // Editing the first day's closing time updates the bar and the summary
     const monday = '.oh-day:nth-child(1)';
-    await page.waitForSelector(`${monday} app-opening-shift .oh-sel`);
+    await page.waitForSelector(`${monday} app-opening-shift .oh-tp-btn`);
     const widthBefore = await page.$eval(`${monday} .oh-seg`, (e) => e.style.width);
     const summaryBefore = await page.$eval('.oh-hero-summary', (e) => e.textContent);
-    await page.select(`${monday} app-opening-shift .oh-range .oh-sel:nth-of-type(2)`, '20:00');
+    await pickTime(page, `${monday} app-opening-shift app-time-picker:nth-of-type(2)`, '20:00');
     await sleep(300);
     const widthAfter = await page.$eval(`${monday} .oh-seg`, (e) => e.style.width);
     const summaryAfter = await page.$eval('.oh-hero-summary', (e) => e.textContent);
@@ -97,7 +119,7 @@ async function main() {
     await page.click('[data-testid="oh-copy-weekdays"]');
     await sleep(300);
     const closes = await page.$$eval('.oh-day', (els) =>
-      els.map((d) => d.querySelectorAll('app-opening-shift .oh-range .oh-sel')[1]?.value ?? null),
+      els.map((d) => d.querySelectorAll('app-opening-shift .oh-tp-btn b')[1]?.textContent.trim() ?? null),
     );
     check('copy to weekdays gives Tue–Fri the same closing time', closes.slice(1, 5).every((v) => v === '20:00'), JSON.stringify(closes));
     check('copy to weekdays leaves the weekend alone', closes.slice(5).every((v) => v !== '20:00'), JSON.stringify(closes));
@@ -109,6 +131,14 @@ async function main() {
     const segs = await page.$$eval(`${monday} .oh-seg`, (e) => e.length);
     check('split shift shows two service windows', shifts === 2, `got ${shifts}`);
     check('split shift draws two bar segments', segs === 2, `got ${segs}`);
+
+    // Closing before opening is flagged and blocks saving
+    await pickTime(page, `${monday} app-opening-shift:nth-of-type(1) app-time-picker:nth-of-type(2)`, '09:00');
+    await sleep(300);
+    check('closing before opening shows an error', (await page.$$eval(`${monday} .oh-error`, (e) => e.length)) === 1);
+    await page.click('.st-savebar .btn-primary');
+    await sleep(500);
+    check('saving is blocked while hours are invalid', saveAttempts === 0 && (await page.$$eval('.oh-error', (e) => e.length)) >= 1, `save requests: ${saveAttempts}`);
 
     // Closing a day
     await page.click(`${monday} .switch .slider`);
