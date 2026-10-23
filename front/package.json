@@ -22,6 +22,7 @@
     "test:review-order-edit": "node scripts/review-order-edit-puppeteer.mjs",
     "test:reports": "node scripts/test-reports.mjs",
     "test:admin-screens": "node scripts/test-admin-screens.mjs",
+    "test:opening-hours": "node scripts/test-opening-hours.mjs",
     "test:order-tip-flows": "node scripts/test-order-tip-flows.mjs",
     "test:working-plan": "node scripts/test-working-plan.mjs",
     "test:working-plan-calendar": "node scripts/test-working-plan-calendar.mjs",

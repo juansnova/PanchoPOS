@@ -19,6 +19,7 @@ import {
 } from '../services/api.service';
 import { SidebarComponent } from '../shared/sidebar.component';
 import { AppDatePickerComponent } from '../shared/app-date-picker.component';
+import { OpeningShiftComponent } from './opening-shift.component';
 import { PermissionService } from '../services/permission.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MAX_IMAGE_UPLOAD_BYTES, MAX_IMAGE_UPLOAD_MB } from '../shared/image-upload-limits';
@@ -62,6 +63,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     SidebarComponent,
     TranslateModule,
     AppDatePickerComponent,
+    OpeningShiftComponent,
   ],
   template: `
     <app-sidebar>
@@ -414,9 +416,12 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                         <option [value]="day.key">{{ day.label | translate }}</option>
                       }
                     </select>
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="copyDayToOtherDays(copyFromDayKey)">
-                      {{ 'SETTINGS.COPY_TO_OTHER_DAYS' | translate }}
-                    </button>
+                    <span class="oh-copy-to">{{ 'SETTINGS.OH_COPY_TO' | translate }}</span>
+                    <div class="oh-copy-actions" role="group" [attr.aria-label]="'SETTINGS.COPY_TO_OTHER_DAYS' | translate">
+                      <button type="button" class="oh-copy-btn" data-testid="oh-copy-weekdays" (click)="copyDayToOtherDays(copyFromDayKey, 'weekdays')">{{ 'SETTINGS.OH_COPY_WEEKDAYS' | translate }}</button>
+                      <button type="button" class="oh-copy-btn" data-testid="oh-copy-weekend" (click)="copyDayToOtherDays(copyFromDayKey, 'weekend')">{{ 'SETTINGS.OH_COPY_WEEKEND' | translate }}</button>
+                      <button type="button" class="oh-copy-btn" data-testid="oh-copy-all" (click)="copyDayToOtherDays(copyFromDayKey, 'all')">{{ 'SETTINGS.OH_COPY_ALL' | translate }}</button>
+                    </div>
                   </div>
 
                   <div class="oh-days">
@@ -446,85 +451,42 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                             </div>
 
                             @if (!openingHours[day.key]?.hasBreak) {
-                              <div class="oh-shift">
-                                <div class="oh-range">
-                                  <select class="oh-sel oh-time" [ngModel]="openingHours[day.key]?.open || '09:00'" (ngModelChange)="setOpeningHourValue(day.key, 'open', $event)" [name]="'open-' + day.key" [attr.aria-label]="'SETTINGS.OH_OPENS' | translate">
-                                    @for (t of timeOptions; track t) {
-                                      <option [value]="t">{{ t }}</option>
-                                    }
-                                  </select>
-                                  <span class="oh-dash" aria-hidden="true">→</span>
-                                  <select class="oh-sel oh-time" [ngModel]="openingHours[day.key]?.close || '22:00'" (ngModelChange)="setOpeningHourValue(day.key, 'close', $event)" [name]="'close-' + day.key" [attr.aria-label]="'SETTINGS.OH_CLOSES' | translate">
-                                    @for (t of timeOptions; track t) {
-                                      <option [value]="t">{{ t }}</option>
-                                    }
-                                  </select>
-                                </div>
-                                <input
-                                  type="text"
-                                  class="oh-label"
-                                  [id]="'svc-label-' + day.key"
-                                  [name]="'svc-label-' + day.key"
-                                  [ngModel]="openingHours[day.key]?.serviceLabel || ''"
-                                  (ngModelChange)="setServiceLabelValue(day.key, 'serviceLabel', $event)"
-                                  [placeholder]="'SETTINGS.SERVICE_LABEL_PLACEHOLDER' | translate"
-                                  [attr.aria-label]="'SETTINGS.SERVICE_LABEL' | translate"
-                                  maxlength="64"
-                                />
-                              </div>
+                              <app-opening-shift
+                                [times]="timeOptions"
+                                [open]="openingHours[day.key]?.open || '10:30'"
+                                [close]="openingHours[day.key]?.close || '21:15'"
+                                [label]="openingHours[day.key]?.serviceLabel || ''"
+                                placeholder="SETTINGS.SERVICE_LABEL_PLACEHOLDER"
+                                labelAria="SETTINGS.SERVICE_LABEL"
+                                (openChange)="setOpeningHourValue(day.key, 'open', $event)"
+                                (closeChange)="setOpeningHourValue(day.key, 'close', $event)"
+                                (labelChange)="setServiceLabelValue(day.key, 'serviceLabel', $event)"
+                              />
                             } @else {
-                              <div class="oh-shift oh-morning">
-                                <span class="oh-shift-name"><i></i>{{ 'SETTINGS.MORNING_SHIFT' | translate }}</span>
-                                <div class="oh-range">
-                                  <select class="oh-sel oh-time" [ngModel]="openingHours[day.key]?.morningOpen" (ngModelChange)="setOpeningHourValue(day.key, 'morningOpen', $event)" [name]="'mo-' + day.key" [attr.aria-label]="'SETTINGS.OH_OPENS' | translate">
-                                    @for (t of timeOptions; track t) {
-                                      <option [value]="t">{{ t }}</option>
-                                    }
-                                  </select>
-                                  <span class="oh-dash" aria-hidden="true">→</span>
-                                  <select class="oh-sel oh-time" [ngModel]="openingHours[day.key]?.morningClose" (ngModelChange)="setOpeningHourValue(day.key, 'morningClose', $event)" [name]="'mc-' + day.key" [attr.aria-label]="'SETTINGS.OH_CLOSES' | translate">
-                                    @for (t of timeOptions; track t) {
-                                      <option [value]="t">{{ t }}</option>
-                                    }
-                                  </select>
-                                </div>
-                                <input
-                                  type="text"
-                                  class="oh-label"
-                                  [name]="'ml-' + day.key"
-                                  [ngModel]="openingHours[day.key]?.morningLabel || ''"
-                                  (ngModelChange)="setServiceLabelValue(day.key, 'morningLabel', $event)"
-                                  [placeholder]="'SETTINGS.MORNING_LABEL_PLACEHOLDER' | translate"
-                                  [attr.aria-label]="'SETTINGS.MORNING_LABEL' | translate"
-                                  maxlength="64"
-                                />
-                              </div>
-                              <div class="oh-shift oh-evening">
-                                <span class="oh-shift-name"><i></i>{{ 'SETTINGS.EVENING_SHIFT' | translate }}</span>
-                                <div class="oh-range">
-                                  <select class="oh-sel oh-time" [ngModel]="openingHours[day.key]?.eveningOpen" (ngModelChange)="setOpeningHourValue(day.key, 'eveningOpen', $event)" [name]="'eo-' + day.key" [attr.aria-label]="'SETTINGS.OH_OPENS' | translate">
-                                    @for (t of timeOptions; track t) {
-                                      <option [value]="t">{{ t }}</option>
-                                    }
-                                  </select>
-                                  <span class="oh-dash" aria-hidden="true">→</span>
-                                  <select class="oh-sel oh-time" [ngModel]="openingHours[day.key]?.eveningClose" (ngModelChange)="setOpeningHourValue(day.key, 'eveningClose', $event)" [name]="'ec-' + day.key" [attr.aria-label]="'SETTINGS.OH_CLOSES' | translate">
-                                    @for (t of timeOptions; track t) {
-                                      <option [value]="t">{{ t }}</option>
-                                    }
-                                  </select>
-                                </div>
-                                <input
-                                  type="text"
-                                  class="oh-label"
-                                  [name]="'el-' + day.key"
-                                  [ngModel]="openingHours[day.key]?.eveningLabel || ''"
-                                  (ngModelChange)="setServiceLabelValue(day.key, 'eveningLabel', $event)"
-                                  [placeholder]="'SETTINGS.EVENING_LABEL_PLACEHOLDER' | translate"
-                                  [attr.aria-label]="'SETTINGS.EVENING_LABEL' | translate"
-                                  maxlength="64"
-                                />
-                              </div>
+                              <app-opening-shift
+                                variant="morning"
+                                [times]="timeOptions"
+                                [open]="openingHours[day.key]?.morningOpen"
+                                [close]="openingHours[day.key]?.morningClose"
+                                [label]="openingHours[day.key]?.morningLabel || ''"
+                                placeholder="SETTINGS.MORNING_LABEL_PLACEHOLDER"
+                                labelAria="SETTINGS.MORNING_LABEL"
+                                (openChange)="setOpeningHourValue(day.key, 'morningOpen', $event)"
+                                (closeChange)="setOpeningHourValue(day.key, 'morningClose', $event)"
+                                (labelChange)="setServiceLabelValue(day.key, 'morningLabel', $event)"
+                              />
+                              <app-opening-shift
+                                variant="evening"
+                                [times]="timeOptions"
+                                [open]="openingHours[day.key]?.eveningOpen"
+                                [close]="openingHours[day.key]?.eveningClose"
+                                [label]="openingHours[day.key]?.eveningLabel || ''"
+                                placeholder="SETTINGS.EVENING_LABEL_PLACEHOLDER"
+                                labelAria="SETTINGS.EVENING_LABEL"
+                                (openChange)="setOpeningHourValue(day.key, 'eveningOpen', $event)"
+                                (closeChange)="setOpeningHourValue(day.key, 'eveningClose', $event)"
+                                (labelChange)="setServiceLabelValue(day.key, 'eveningLabel', $event)"
+                              />
                             }
 
                             <div class="oh-extras">
@@ -572,9 +534,9 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                       </div>
                       <div class="form-group flex-grow">
                         <label for="baseline_note">{{ 'SETTINGS.OPENING_HOURS_BASELINE_NOTE' | translate }}</label>
-                        <input id="baseline_note" type="text" [(ngModel)]="baselineScheduleNote" name="baseline_note" />
+                        <input id="baseline_note" class="oh-field" type="text" [(ngModel)]="baselineScheduleNote" name="baseline_note" />
                       </div>
-                      <button type="button" class="btn btn-secondary" (click)="addBaselineSchedule()" [disabled]="saving()">
+                      <button type="button" class="btn btn-primary oh-add" (click)="addBaselineSchedule()" [disabled]="saving()">
                         {{ 'SETTINGS.OPENING_HOURS_ADD_BASELINE' | translate }}
                       </button>
                     </div>
@@ -584,28 +546,25 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     } @else if (openingHoursScheduleBaselines().length === 0) {
                       <p class="hint">{{ 'SETTINGS.OPENING_HOURS_NO_BASELINES' | translate }}</p>
                     } @else {
-                      <table class="oh-schedule-table">
-                        <thead>
-                          <tr>
-                            <th>{{ 'SETTINGS.OPENING_HOURS_EFFECTIVE_FROM' | translate }}</th>
-                            <th>{{ 'SETTINGS.OPENING_HOURS_NOTE_SHORT' | translate }}</th>
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @for (b of openingHoursScheduleBaselines(); track b.id) {
-                            <tr>
-                              <td>{{ b.effective_from }}</td>
-                              <td>{{ b.note || '—' }}</td>
-                              <td>
-                                <button type="button" class="btn btn-link danger" (click)="deleteBaselineSchedule(b.id)">
-                                  {{ 'COMMON.DELETE' | translate }}
-                                </button>
-                              </td>
-                            </tr>
-                          }
-                        </tbody>
-                      </table>
+                      <ul class="oh-plan">
+                        @for (b of openingHoursScheduleBaselines(); track b.id) {
+                          <li class="oh-plan-item">
+                            <div class="oh-plan-main">
+                              <span class="oh-plan-date">{{ b.effective_from }}</span>
+                              <span class="oh-plan-note">{{ b.note || '—' }}</span>
+                            </div>
+                            <div class="oh-plan-actions">
+                              @if (pendingDelete() === 'b:' + b.id) {
+                                <span class="oh-ask">{{ 'SETTINGS.OPENING_HOURS_CONFIRM_DELETE' | translate }}</span>
+                                <button type="button" class="oh-btn oh-btn-danger" (click)="deleteBaselineSchedule(b.id)">{{ 'COMMON.DELETE' | translate }}</button>
+                                <button type="button" class="oh-btn" (click)="pendingDelete.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
+                              } @else {
+                                <button type="button" class="oh-btn" (click)="pendingDelete.set('b:' + b.id)">{{ 'COMMON.DELETE' | translate }}</button>
+                              }
+                            </div>
+                          </li>
+                        }
+                      </ul>
                     }
                   </div>
 
@@ -630,9 +589,9 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                       </div>
                       <div class="form-group flex-grow">
                         <label for="ov_note">{{ 'SETTINGS.OPENING_HOURS_BASELINE_NOTE' | translate }}</label>
-                        <input id="ov_note" type="text" [(ngModel)]="overrideScheduleNote" name="ov_note" />
+                        <input id="ov_note" class="oh-field" type="text" [(ngModel)]="overrideScheduleNote" name="ov_note" />
                       </div>
-                      <button type="button" class="btn btn-secondary" (click)="addOverrideSchedule()" [disabled]="saving()">
+                      <button type="button" class="btn btn-primary oh-add" (click)="addOverrideSchedule()" [disabled]="saving()">
                         {{ 'SETTINGS.OPENING_HOURS_ADD_OVERRIDE' | translate }}
                       </button>
                     </div>
@@ -642,32 +601,26 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     } @else if (openingHoursScheduleOverrides().length === 0) {
                       <p class="hint">{{ 'SETTINGS.OPENING_HOURS_NO_OVERRIDES' | translate }}</p>
                     } @else {
-                      <table class="oh-schedule-table">
-                        <thead>
-                          <tr>
-                            <th>{{ 'SETTINGS.OPENING_HOURS_DATE_FROM' | translate }}</th>
-                            <th>{{ 'SETTINGS.OPENING_HOURS_DATE_TO' | translate }}</th>
-                            <th>{{ 'SETTINGS.OPENING_HOURS_OVERRIDE_TYPE' | translate }}</th>
-                            <th>{{ 'SETTINGS.OPENING_HOURS_NOTE_SHORT' | translate }}</th>
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @for (o of openingHoursScheduleOverrides(); track o.id) {
-                            <tr>
-                              <td>{{ o.date_from }}</td>
-                              <td>{{ o.date_to }}</td>
-                              <td>{{ o.closed ? ('SETTINGS.OPENING_HOURS_TYPE_CLOSED' | translate) : ('SETTINGS.OPENING_HOURS_TYPE_HOURS' | translate) }}</td>
-                              <td>{{ o.note || '—' }}</td>
-                              <td>
-                                <button type="button" class="btn btn-link danger" (click)="deleteOverrideSchedule(o.id)">
-                                  {{ 'COMMON.DELETE' | translate }}
-                                </button>
-                              </td>
-                            </tr>
-                          }
-                        </tbody>
-                      </table>
+                      <ul class="oh-plan">
+                        @for (o of openingHoursScheduleOverrides(); track o.id) {
+                          <li class="oh-plan-item">
+                            <div class="oh-plan-main">
+                              <span class="oh-plan-date">{{ o.date_from }} → {{ o.date_to }}</span>
+                              <span class="oh-plan-tag" [class.closed]="o.closed">{{ o.closed ? ('SETTINGS.OPENING_HOURS_TYPE_CLOSED' | translate) : ('SETTINGS.OPENING_HOURS_TYPE_HOURS' | translate) }}</span>
+                              <span class="oh-plan-note">{{ o.note || '—' }}</span>
+                            </div>
+                            <div class="oh-plan-actions">
+                              @if (pendingDelete() === 'o:' + o.id) {
+                                <span class="oh-ask">{{ 'SETTINGS.OPENING_HOURS_CONFIRM_DELETE' | translate }}</span>
+                                <button type="button" class="oh-btn oh-btn-danger" (click)="deleteOverrideSchedule(o.id)">{{ 'COMMON.DELETE' | translate }}</button>
+                                <button type="button" class="oh-btn" (click)="pendingDelete.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
+                              } @else {
+                                <button type="button" class="oh-btn" (click)="pendingDelete.set('o:' + o.id)">{{ 'COMMON.DELETE' | translate }}</button>
+                              }
+                            </div>
+                          </li>
+                        }
+                      </ul>
                     }
                   </div>
                 </div>
@@ -1426,12 +1379,12 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
 
     .oh-copy { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
     .oh-copy label { font-size: .85rem; font-weight: 700; color: var(--color-text-muted); }
-    .oh-copy .btn { border-radius: 999px; }
+    .oh-copy-to { font-size: .85rem; font-weight: 700; color: var(--color-text-muted); }
+    .oh-copy-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+    .oh-copy-btn { min-height: 40px; padding: 0 16px; border: 1px solid var(--color-border); border-radius: 999px; font: inherit; font-size: .85rem; font-weight: 700; color: var(--color-text); background: #fffdfa; cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
+    .oh-copy-btn:hover { color: var(--color-primary); border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border)); background: color-mix(in srgb, var(--color-primary) 8%, #fff); }
+    .oh-copy-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
-    .oh-sel { appearance: none; -webkit-appearance: none; min-height: 40px; padding: 0 34px 0 14px; border: 1px solid var(--color-border); border-radius: 999px; font: inherit; font-size: .95rem; font-weight: 600; color: var(--color-text); background: #fffdfa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%238a7a6a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 14px center; cursor: pointer; transition: border-color .15s; }
-    .oh-sel:hover { border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border)); }
-    .oh-sel:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-    .oh-time { min-width: 96px; font-variant-numeric: tabular-nums; font-size: 1.05rem; }
 
     .oh-days { display: grid; gap: 12px; }
     .oh-day { padding: 16px 18px 18px; border-radius: 24px; border: 1px solid var(--color-border); background: #fff; box-shadow: 0 18px 28px -26px rgba(60, 30, 10, .55); transition: border-color .2s, box-shadow .2s; }
@@ -1448,14 +1401,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .oh-seg { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: var(--color-primary); transition: left .3s cubic-bezier(.16, 1, .3, 1), width .3s cubic-bezier(.16, 1, .3, 1); }
     .oh-seg.second { background: color-mix(in srgb, var(--color-primary) 55%, #2b1306); }
 
-    .oh-shift { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
-    .oh-shift-name { display: inline-flex; align-items: center; gap: 8px; min-width: 76px; font-size: .8rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); }
-    .oh-shift-name i { width: 10px; height: 10px; border-radius: 50%; background: var(--color-primary); }
-    .oh-evening .oh-shift-name i { background: color-mix(in srgb, var(--color-primary) 55%, #2b1306); }
-    .oh-range { display: inline-flex; align-items: center; gap: 8px; }
-    .oh-dash { color: var(--color-text-muted); }
-    .oh-label { flex: 1 1 180px; max-width: 280px; min-height: 40px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 999px; font: inherit; font-size: .9rem; color: var(--color-text); background: #fffdfa; }
-    .oh-label:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
     .oh-extras { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 18px; padding-top: 12px; border-top: 1px dashed var(--color-border); }
     .oh-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px 0 12px; border-radius: 999px; border: 1px solid var(--color-border); font-size: .85rem; font-weight: 700; color: var(--color-text-muted); background: #fffdfa; cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
@@ -1480,9 +1425,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
       .oh-week { width: 100%; justify-content: space-between; }
       .oh-week li { flex: 1; width: auto; height: 48px; }
       .oh-day { padding: 14px; }
-      .oh-time { min-width: 0; flex: 1; }
-      .oh-range { width: 100%; }
-      .oh-label { max-width: none; flex-basis: 100%; }
     }
     @media (prefers-reduced-motion: reduce) { .oh-seg { transition: none; } }
 
@@ -1964,40 +1906,9 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
       margin-bottom: var(--space-4);
     }
 
-    .oh-schedule-card {
-      margin-top: var(--space-4);
-      padding: var(--space-4);
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-    }
-    .oh-schedule-card h4 {
-      margin-top: var(--space-3);
-      margin-bottom: var(--space-2);
-      font-size: 1rem;
-      font-weight: 600;
-    }
-    .oh-schedule-form {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: flex-end;
-      gap: var(--space-3);
-      margin-bottom: var(--space-4);
-    }
     .flex-grow {
       flex: 1;
       min-width: 140px;
-    }
-    .oh-schedule-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
-    }
-    .oh-schedule-table th,
-    .oh-schedule-table td {
-      text-align: left;
-      padding: var(--space-2) var(--space-3);
-      border-bottom: 1px solid var(--color-border);
     }
     .btn-link.danger {
       color: var(--color-danger, #c62828);
@@ -2087,8 +1998,27 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .st-bank-row { padding: 14px; margin-bottom: 10px; border-radius: 20px; border: 1px dashed var(--color-border); background: #fffdfa; align-items: center; }
     .payment-qr-preview { border-radius: 20px; box-shadow: 0 18px 28px -20px rgba(60, 30, 10, .5); }
 
-    .oh-schedule-card { padding: 20px 22px; border-radius: 26px; background: #fff; box-shadow: 0 22px 34px -30px rgba(60, 30, 10, .55); }
-    .oh-schedule-card h4 { font-family: Georgia, 'Times New Roman', serif; font-size: 1.1rem; font-style: italic; font-weight: 500; }
+
+    .oh-schedule-card { margin-top: 16px; padding: 22px 24px; border-radius: 26px; border: 1px solid var(--color-border); background: #fff; box-shadow: 0 22px 34px -30px rgba(60, 30, 10, .55); }
+    .oh-schedule-card h4 { margin: 18px 0 10px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.15rem; font-style: italic; font-weight: 500; }
+    .oh-schedule-card > h4:first-child { margin-top: 0; }
+    .oh-schedule-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 8px; }
+    .oh-field { min-height: 44px; padding: 0 16px; border: 1px solid var(--color-border); border-radius: 999px; font: inherit; color: var(--color-text); background: #fffdfa; }
+    .oh-field:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    .oh-add { min-height: 44px; border-radius: 999px; padding: 0 22px; font-weight: 800; }
+    .oh-plan { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .oh-plan-item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 10px 14px; border-radius: 18px; background: #fbf8f3; border: 1px solid var(--color-border); }
+    .oh-plan-main { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
+    .oh-plan-date { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .oh-plan-tag { padding: 2px 10px; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, #fff); }
+    .oh-plan-tag.closed { color: #7f1d1d; background: #fee2e2; }
+    .oh-plan-note { color: var(--color-text-muted); font-size: .9rem; overflow-wrap: anywhere; }
+    .oh-plan-actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .oh-ask { font-size: .85rem; font-weight: 600; }
+    .oh-btn { min-height: 36px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 999px; font: inherit; font-size: .8rem; font-weight: 700; color: var(--color-text); background: #fff; cursor: pointer; }
+    .oh-btn:hover { border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border)); }
+    .oh-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    .oh-btn-danger { color: #fff; border-color: #b91c1c; background: #b91c1c; }
 
     /* Sticky save bar */
     .st-savebar { position: sticky; bottom: 14px; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 8px; padding: 10px 10px 10px 20px; border-radius: 999px; background: rgba(255, 253, 250, .92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--color-border); box-shadow: 0 24px 40px -22px rgba(60, 30, 10, .55); transition: border-color .2s, box-shadow .2s; }
@@ -2940,8 +2870,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
       });
   }
 
+  /** Row waiting for its inline delete confirmation: 'b:<id>' (baseline) or 'o:<id>' (override). */
+  pendingDelete = signal<string | null>(null);
+
   deleteBaselineSchedule(id: number): void {
-    if (!confirm(this.translate.instant('SETTINGS.OPENING_HOURS_CONFIRM_DELETE'))) return;
+    this.pendingDelete.set(null);
     this.api.deleteOpeningHoursBaseline(id).subscribe({
       next: () => this.loadOpeningHoursSchedule(),
       error: () => {},
@@ -2985,7 +2918,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   deleteOverrideSchedule(id: number): void {
-    if (!confirm(this.translate.instant('SETTINGS.OPENING_HOURS_CONFIRM_DELETE'))) return;
+    this.pendingDelete.set(null);
     this.api.deleteOpeningHoursOverride(id).subscribe({
       next: () => this.loadOpeningHoursSchedule(),
       error: () => {},
@@ -3596,11 +3529,12 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.serializeOpeningHours();
   }
 
-  copyDayToOtherDays(sourceKey: string) {
+  copyDayToOtherDays(sourceKey: string, scope: 'all' | 'weekdays' | 'weekend' = 'all') {
     const source = this.openingHours[sourceKey];
     if (!source) return;
-    this.daysOfWeek.forEach(day => {
-      if (day.key === sourceKey) return;
+    const targets = { all: [0, 1, 2, 3, 4, 5, 6], weekdays: [0, 1, 2, 3, 4], weekend: [5, 6] }[scope];
+    this.daysOfWeek.forEach((day, i) => {
+      if (day.key === sourceKey || !targets.includes(i)) return;
       this.openingHours[day.key] = {
         ...source,
         open: source.open,
@@ -3619,9 +3553,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
       };
     });
     this.serializeOpeningHours();
+    this.markDirty();
   }
 
-  /** Formatted opening hours summary in current locale, e.g. "Mon–Fri 09:00–22:00, Sat 10:00–20:00, Sun closed". */
   todayKey = this.daysOfWeek[(new Date().getDay() + 6) % 7].key;
 
   dayShort(key: string): string {
@@ -3670,6 +3604,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     return Math.round(minutes / 6) / 10;
   }
 
+  /** Formatted opening hours summary in current locale, e.g. "Mon–Fri 09:00–22:00, Sat 10:00–20:00, Sun closed". */
   getOpeningHoursSummary(): string {
     const locale = this.translate.currentLang || this.translate.defaultLang || 'en';
     const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });

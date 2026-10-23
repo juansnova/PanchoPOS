@@ -1,0 +1,58 @@
+// Opening-hours controls shared by the settings screen (pill selects, service windows).
+.oh-sel {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 40px;
+  padding: 0 34px 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+  background: #fffdfa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%238a7a6a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 14px center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:hover { border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border)); }
+  &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+}
+.oh-time { min-width: 96px; font-variant-numeric: tabular-nums; font-size: 1.05rem; }
+
+.oh-shift { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.oh-shift-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 76px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+
+  i { width: 10px; height: 10px; border-radius: 50%; background: var(--color-primary); }
+}
+.oh-evening .oh-shift-name i { background: color-mix(in srgb, var(--color-primary) 55%, #2b1306); }
+.oh-range { display: inline-flex; align-items: center; gap: 8px; }
+.oh-dash { color: var(--color-text-muted); }
+.oh-label {
+  flex: 1 1 180px;
+  max-width: 280px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  background: #fffdfa;
+
+  &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+}
+
+@media (max-width: 560px) {
+  .oh-time { min-width: 0; flex: 1; }
+  .oh-range { width: 100%; }
+  .oh-label { max-width: none; flex-basis: 100%; }
+}

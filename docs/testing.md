@@ -442,6 +442,14 @@ Logs in as **owner or admin**, opens each redesigned admin screen, checks its ma
 LOGIN_EMAIL=... LOGIN_PASSWORD=... npm run test:admin-screens --prefix front
 ```
 
+### Opening hours (Settings → Horarios de apertura)
+
+Logs in as **owner or admin**, edits the weekly grid without saving (closing time moves the day bar and the summary, quick copy to weekdays, split shift, closing a day, inline delete confirmation when there are scheduled entries) and checks no horizontal scroll at 390px and no console errors.
+
+```bash
+LOGIN_EMAIL=... LOGIN_PASSWORD=... npm run test:opening-hours --prefix front
+```
+
 ### 8. Reports (Sales & Revenue) smoke test
 
 Login as **owner or admin**, open `/reports`, and assert the Reports page loads (date range inputs and `[data-testid="reports-page"]` present). Use after Reports feature work.
