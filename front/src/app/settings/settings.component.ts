@@ -181,60 +181,86 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <p>{{ 'SETTINGS.SUBTITLE' | translate }}</p>
                   </div>
                   
-                  <div class="st-card">
-                  <h3 class="st-card-title">{{ 'SETTINGS.CARD_BRAND_IMAGES' | translate }}</h3>
-                  <!-- Logo -->
-                  <div class="form-group">
-                    <label>{{ 'SETTINGS.LOGO' | translate }}</label>
-                    <div class="logo-upload-wrapper">
-                      @if (logoPreview() || settings()?.logo_filename) {
-                        <div class="current-logo">
-                          <img [src]="getDisplayLogoSrc()" alt="Logo" />
-                          <button type="button" class="btn-icon-danger" (click)="removeLogo()" title="{{ 'SETTINGS.REMOVE_LOGO' | translate }}">✕</button>
-                        </div>
-                      }
-                      <div class="upload-controls">
-                        <input
-                          type="file"
-                          id="logo-upload"
-                          accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml,.svg"
-                          (change)="onLogoSelected($event)"
-                          hidden
-                        />
-                        <label for="logo-upload" class="btn btn-secondary">
-                          {{ 'SETTINGS.UPLOAD_LOGO' | translate }}
+                  <div class="st-card br-card" data-testid="settings-brand-card">
+                    <h3 class="st-card-title">{{ 'SETTINGS.CARD_BRAND_IMAGES' | translate }}</h3>
+                    <p class="br-sub">{{ 'SETTINGS.BR_SUB' | translate }}</p>
+
+                    <input type="file" id="logo-upload" accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml,.svg" (change)="onLogoSelected($event)" hidden />
+                    <input type="file" id="header-bg-upload" accept="image/jpeg,image/png,image/webp,image/avif" (change)="onHeaderBackgroundSelected($event)" hidden />
+
+                    <div class="br-stage">
+                      <label
+                        for="header-bg-upload"
+                        class="br-banner"
+                        [class.empty]="!(headerBackgroundPreview() || settings()?.header_background_filename)"
+                        [class.drag]="brandDrag() === 'header'"
+                        (dragover)="onBrandDrag($event, 'header')"
+                        (dragleave)="brandDrag.set(null)"
+                        (drop)="onBrandDrop($event, 'header')"
+                      >
+                        @if (headerBackgroundPreview() || settings()?.header_background_filename) {
+                          <img [src]="getHeaderBackgroundDisplaySrc()" alt="" />
+                        } @else {
+                          <span class="br-empty">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>
+                            <b>{{ 'SETTINGS.BR_ADD_BACKGROUND' | translate }}</b>
+                            <small>{{ 'SETTINGS.BR_DROP_HINT' | translate }}</small>
+                          </span>
+                        }
+                        <span class="br-over">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                          {{ 'SETTINGS.BR_CHANGE_IMAGE' | translate }}
+                        </span>
+                      </label>
+
+                      <div class="br-id">
+                        <label
+                          for="logo-upload"
+                          class="br-plate"
+                          [class.drag]="brandDrag() === 'logo'"
+                          (dragover)="onBrandDrag($event, 'logo')"
+                          (dragleave)="brandDrag.set(null)"
+                          (drop)="onBrandDrop($event, 'logo')"
+                        >
+                          @if (logoPreview() || settings()?.logo_filename) {
+                            <img [src]="getDisplayLogoSrc()" alt="Logo" />
+                          } @else {
+                            <b>{{ (formData.name || '?').charAt(0).toUpperCase() }}</b>
+                          }
+                          <span class="br-over br-over-sm" aria-hidden="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                          </span>
                         </label>
-                        <span class="hint">{{ 'SETTINGS.UPLOAD_LOGO_HINT' | translate }}</span>
+                        <span class="br-name">{{ formData.name }}</span>
                       </div>
                     </div>
-                  </div>
 
-                  <!-- Header background image -->
-                  <div class="form-group">
-                    <label>{{ 'SETTINGS.HEADER_BACKGROUND' | translate }}</label>
-                    <div class="logo-upload-wrapper">
-                      @if (headerBackgroundPreview() || settings()?.header_background_filename) {
-                        <div class="current-logo header-bg-preview">
-                          <img [src]="getHeaderBackgroundDisplaySrc()" alt="Header background" />
-                          <button type="button" class="btn-icon-danger" (click)="removeHeaderBackground()" title="{{ 'SETTINGS.REMOVE_HEADER_BACKGROUND' | translate }}">✕</button>
+                    <div class="br-actions">
+                      <div class="br-action">
+                        <div class="br-action-text">
+                          <b>{{ 'SETTINGS.LOGO' | translate }}</b>
+                          <small>{{ 'SETTINGS.UPLOAD_LOGO_HINT' | translate }}</small>
                         </div>
-                      }
-                      <div class="upload-controls">
-                        <input
-                          type="file"
-                          id="header-bg-upload"
-                          accept="image/jpeg,image/png,image/webp,image/avif"
-                          (change)="onHeaderBackgroundSelected($event)"
-                          hidden
-                        />
-                        <label for="header-bg-upload" class="btn btn-secondary">
-                          {{ 'SETTINGS.UPLOAD_HEADER_BACKGROUND' | translate }}
-                        </label>
-                        <span class="hint">{{ 'SETTINGS.HEADER_BACKGROUND_HINT' | translate }}</span>
+                        <div class="br-action-btns">
+                          <label for="logo-upload" class="br-btn">{{ ((logoPreview() || settings()?.logo_filename) ? 'SETTINGS.BR_CHANGE_LOGO' : 'SETTINGS.UPLOAD_LOGO') | translate }}</label>
+                          @if (logoPreview() || settings()?.logo_filename) {
+                            <button type="button" class="br-btn br-btn-quiet" (click)="removeLogo()">{{ 'SETTINGS.REMOVE_LOGO' | translate }}</button>
+                          }
+                        </div>
+                      </div>
+                      <div class="br-action">
+                        <div class="br-action-text">
+                          <b>{{ 'SETTINGS.HEADER_BACKGROUND' | translate }}</b>
+                          <small>{{ 'SETTINGS.HEADER_BACKGROUND_HINT' | translate }}</small>
+                        </div>
+                        <div class="br-action-btns">
+                          <label for="header-bg-upload" class="br-btn">{{ ((headerBackgroundPreview() || settings()?.header_background_filename) ? 'SETTINGS.BR_CHANGE_IMAGE' : 'SETTINGS.UPLOAD_HEADER_BACKGROUND') | translate }}</label>
+                          @if (headerBackgroundPreview() || settings()?.header_background_filename) {
+                            <button type="button" class="br-btn br-btn-quiet" (click)="removeHeaderBackground()">{{ 'SETTINGS.REMOVE_LOGO' | translate }}</button>
+                          }
+                        </div>
                       </div>
                     </div>
-                  </div>
-
                   </div>
                   <div class="st-card">
                   <h3 class="st-card-title">{{ 'SETTINGS.CARD_BUSINESS_DATA' | translate }}</h3>
@@ -1279,15 +1305,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
       font-family: monospace;
     }
 
-    .header-bg-preview {
-      max-width: 320px;
-    }
-    .header-bg-preview img {
-      width: 100%;
-      height: auto;
-      max-height: 120px;
-      object-fit: cover;
-    }
 
     @media (min-width: 640px) {
       .form-group {
@@ -1314,91 +1331,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     @media (min-width: 640px) {
       .hint {
         font-size: 0.8125rem;
-      }
-    }
-
-    /* ==========================================
-       LOGO UPLOAD - Mobile First
-       ========================================== */
-    .logo-upload-wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-4);
-      align-items: center;
-    }
-    
-    @media (min-width: 480px) {
-      .logo-upload-wrapper {
-        flex-direction: row;
-        align-items: flex-start;
-      }
-    }
-
-    .current-logo {
-      position: relative;
-      width: 120px;
-      height: 120px;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      padding: var(--space-2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--color-surface);
-      flex-shrink: 0;
-
-      img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-      }
-
-      .btn-icon-danger {
-        position: absolute;
-        top: -10px;
-        right: -10px;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        background: var(--color-error);
-        color: white;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        touch-action: manipulation;
-      }
-    }
-    
-    @media (min-width: 640px) {
-      .current-logo {
-        width: 100px;
-        height: 100px;
-      }
-      
-      .current-logo .btn-icon-danger {
-        width: 24px;
-        height: 24px;
-        top: -8px;
-        right: -8px;
-        font-size: 12px;
-      }
-    }
-
-    .upload-controls {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-2);
-      align-items: center;
-      text-align: center;
-    }
-    
-    @media (min-width: 480px) {
-      .upload-controls {
-        align-items: flex-start;
-        text-align: left;
       }
     }
 
@@ -2038,9 +1970,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .switch input:checked + .slider { background: linear-gradient(145deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 66%, #000)); }
     .switch input:focus-visible + .slider { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
-    .current-logo { border-radius: 22px; background: #fffdfa; }
-    .upload-controls .btn { border-radius: 999px; }
-    .st-upload { display: inline-flex; width: fit-content; cursor: pointer; margin-top: 4px; }
     .st-bank-row { padding: 14px; margin-bottom: 10px; border-radius: 20px; border: 1px dashed var(--color-border); background: #fffdfa; align-items: center; }
     .payment-qr-preview { border-radius: 20px; box-shadow: 0 18px 28px -20px rgba(60, 30, 10, .5); }
 
@@ -2111,6 +2040,46 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .oh-btn:hover { border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border)); }
     .oh-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
     .oh-btn-danger { color: #fff; border-color: #b91c1c; background: #b91c1c; }
+
+    .br-sub { margin: -4px 0 18px; font-size: .9rem; color: var(--color-text-muted); }
+    .br-stage { position: relative; }
+    .br-banner { position: relative; display: block; width: 100%; aspect-ratio: 16 / 5; min-height: 140px; border-radius: 22px; overflow: hidden; cursor: pointer; background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 14%, #fff), color-mix(in srgb, var(--color-primary) 4%, #fff)); border: 1px solid color-mix(in srgb, var(--color-border) 70%, #fff); transition: box-shadow .2s, border-color .2s; }
+    .br-banner img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .br-banner.empty { border-style: dashed; border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border)); }
+    .br-banner.drag, .br-plate.drag { border-color: var(--color-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 18%, transparent); }
+    .br-empty { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 4px; padding-bottom: 28px; text-align: center; color: var(--color-primary); }
+    .br-empty b { font-size: .95rem; font-weight: 700; }
+    .br-empty small { font-size: .8rem; color: var(--color-text-muted); }
+    .br-over { position: absolute; right: 12px; top: 12px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; font-size: .8rem; font-weight: 600; color: #fff; background: rgba(28, 20, 14, .62); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transform: translateY(-4px); transition: opacity .2s, transform .2s; pointer-events: none; }
+    .br-banner:hover .br-over, .br-banner:focus-within .br-over { opacity: 1; transform: none; }
+    .br-id { display: flex; align-items: flex-end; gap: 16px; margin: -42px 0 0 22px; position: relative; }
+    .br-plate { position: relative; display: grid; place-items: center; flex: none; width: 92px; height: 92px; border-radius: 26px; overflow: hidden; cursor: pointer; background: #fff; border: 4px solid #fff; box-shadow: 0 14px 26px -14px rgba(60, 30, 10, .55), 0 0 0 1px var(--color-border); transition: box-shadow .2s; }
+    .br-plate img { width: 100%; height: 100%; object-fit: contain; padding: 6px; background: #fffdfa; }
+    .br-plate b { font-family: Georgia, 'Times New Roman', serif; font-size: 2.4rem; font-style: italic; font-weight: 400; color: var(--color-primary); }
+    .br-over-sm { inset: 0; right: auto; top: auto; display: grid; place-items: center; padding: 0; border-radius: 0; transform: none; }
+    .br-plate:hover .br-over-sm, .br-plate:focus-within .br-over-sm { opacity: 1; }
+    .br-name { padding-bottom: 10px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.5rem; font-style: italic; font-weight: 500; letter-spacing: -.01em; line-height: 1.1; overflow-wrap: anywhere; }
+    .br-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
+    .br-action { display: grid; gap: 12px; align-content: space-between; padding: 14px 16px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--color-border) 70%, #fff); background: #fffdfa; }
+    .br-action-text { display: grid; gap: 2px; }
+    .br-action-text b { font-size: .9rem; }
+    .br-action-text small { font-size: .8rem; line-height: 1.4; color: var(--color-text-muted); }
+    .br-action-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+    .br-btn { display: inline-flex; align-items: center; min-height: 36px; padding: 0 16px; border: 1px solid color-mix(in srgb, var(--color-border) 70%, #fff); border-radius: 999px; font: inherit; font-size: .82rem; font-weight: 600; color: var(--color-text); background: #fff; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+    .br-btn:hover { color: var(--color-primary); border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border)); }
+    .br-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    .br-btn-quiet { color: var(--color-text-muted); background: transparent; border-color: transparent; }
+    .br-btn-quiet:hover { color: #b91c1c; background: #fee2e2; border-color: transparent; }
+    .br-stage:has(#logo-upload:focus-visible) .br-plate, .br-card:has(#logo-upload:focus-visible) .br-plate { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    @media (max-width: 640px) {
+      .br-actions { grid-template-columns: 1fr; }
+      .br-banner { aspect-ratio: 16 / 7; }
+      .br-id { margin-left: 14px; gap: 12px; }
+      .br-plate { width: 78px; height: 78px; border-radius: 22px; }
+      .br-name { font-size: 1.25rem; }
+      .br-banner .br-over { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { .br-over { transition: none; } }
 
     /* Sticky save bar */
     .st-savebar { position: sticky; bottom: 14px; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 8px; padding: 10px 10px 10px 20px; border-radius: 999px; background: rgba(255, 253, 250, .92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--color-border); box-shadow: 0 24px 40px -22px rgba(60, 30, 10, .55); transition: border-color .2s, box-shadow .2s; }
@@ -3884,6 +3853,22 @@ export class SettingsComponent implements OnInit, OnDestroy {
     const n = Math.max(0, Math.min(99, Math.floor(Number(value)) || 0));
     (this.openingHours[dayKey] as any)[role] = n;
     this.serializeOpeningHours();
+  }
+
+  /** Which brand image is being dragged over ("logo" | "header"), for the drop highlight. */
+  brandDrag = signal<'logo' | 'header' | null>(null);
+
+  onBrandDrag(e: DragEvent, kind: 'logo' | 'header'): void {
+    e.preventDefault();
+    this.brandDrag.set(kind);
+  }
+
+  onBrandDrop(e: DragEvent, kind: 'logo' | 'header'): void {
+    e.preventDefault();
+    this.brandDrag.set(null);
+    const fake = { target: { files: e.dataTransfer?.files, value: '' } } as unknown as Event;
+    if (kind === 'logo') this.onLogoSelected(fake);
+    else this.onHeaderBackgroundSelected(fake);
   }
 
   onLogoSelected(event: Event) {
