@@ -50,6 +50,15 @@ pattern.
   `dian_invoice_next_number` (local bookkeeping; Factus manages its own DIAN-authorized
   numbering range — see `numbering_range_id` in their docs if the tenant has multiple ranges).
 
+## Package usage and low-package alert
+
+Factus sells a package of documents (400/year); every live invoice **and** credit note uses one. The POS
+counts them locally (`dian_invoice` rows with `mode=live`, accepted by the provider, since
+`DIAN_PACKAGE_SINCE`) and shows `DIAN_PACKAGE_DOCUMENTS - used` in Settings → Facturación electrónica.
+Below `DIAN_PACKAGE_ALERT_BELOW` (40) the administrator gets one email (tenant contact email) and a red
+notice in that section until they confirm it (`POST /tenant/dian-package/ack`). Both flags re-arm when the
+package is refilled (change `DIAN_PACKAGE_DOCUMENTS` / `DIAN_PACKAGE_SINCE` in `config.env`).
+
 ## Live-enable guards
 
 | Gate | DIAN |

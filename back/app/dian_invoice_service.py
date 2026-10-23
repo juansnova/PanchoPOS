@@ -7,12 +7,13 @@ provider-agnostic payload, and persists the resulting DianInvoice row.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from app import models
 from app.dian_providers import (
@@ -153,6 +154,66 @@ def assert_order_dian_mutable(session: Session, tenant_id: int, order_id: int) -
         )
 
 
+def package_status(session: Session, tenant: models.Tenant) -> dict[str, Any]:
+    """Factus package usage: every live document accepted by the provider (invoice or credit note) uses one."""
+    since = datetime.fromisoformat(settings.dian_package_since).replace(tzinfo=timezone.utc)
+    used = session.exec(
+        select(func.count(models.DianInvoice.id)).where(
+            models.DianInvoice.tenant_id == tenant.id,
+            models.DianInvoice.mode == "live",
+            models.DianInvoice.submission_status.in_(tuple(LIVE_OK_STATUSES)),
+            models.DianInvoice.submitted_at >= since,
+        )
+    ).one()
+    total = int(settings.dian_package_documents)
+    remaining = max(0, total - int(used))
+    return {
+        "total": total,
+        "used": int(used),
+        "remaining": remaining,
+        "alert_below": int(settings.dian_package_alert_below),
+        "low": remaining < int(settings.dian_package_alert_below),
+        "alert_acked": bool(tenant.dian_package_alert_acked),
+    }
+
+
+def _notify_low_package(session: Session, tenant: models.Tenant) -> None:
+    """Email the administrator once when the package drops below the threshold; re-arm when refilled."""
+    pkg = package_status(session, tenant)
+    if not pkg["low"]:
+        if tenant.dian_package_alert_emailed or tenant.dian_package_alert_acked:
+            tenant.dian_package_alert_emailed = False
+            tenant.dian_package_alert_acked = False
+            session.add(tenant)
+        return
+    to_email = (tenant.email or "").strip()
+    if tenant.dian_package_alert_emailed or not to_email:
+        return
+    from app import email_service  # local import: email_service imports models
+
+    remaining = pkg["remaining"]
+    subject = f"Facturación electrónica: quedan {remaining} documentos en el paquete"
+    text = (
+        f"Quedan {remaining} de {pkg['total']} documentos en el paquete de facturación electrónica (Factus). "
+        "Cada factura y cada nota crédito descuenta uno. Renueva o amplía el paquete antes de que se agote."
+    )
+    try:
+        sent = asyncio.run(
+            email_service.send_email(to_email, subject, f"<p>{text}</p>", text, tenant=tenant)
+        )
+    except Exception:
+        logger.exception("Low DIAN package email failed")
+        sent = False
+    if sent:
+        tenant.dian_package_alert_emailed = True
+        session.add(tenant)
+
+
+def acknowledge_package_alert(session: Session, tenant: models.Tenant) -> None:
+    tenant.dian_package_alert_acked = True
+    session.add(tenant)
+
+
 def live_mode_allowed() -> bool:
     unlock = bool(getattr(settings, "dian_live_unlock", False))
     return unlock and live_credentials_ready()
@@ -197,6 +258,9 @@ def _submit(
         di.error_message = str(result.get("error") or result.get("body") or status)[:2000]
     session.add(di)
     session.flush()
+
+    if di.mode == "live" and status in LIVE_OK_STATUSES:
+        _notify_low_package(session, tenant)
 
     if require_live_success and status not in LIVE_OK_STATUSES:
         raise HTTPException(

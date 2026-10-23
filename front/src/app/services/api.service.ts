@@ -1025,6 +1025,15 @@ export interface OrderItem {
 }
 
 /** Colombia DIAN electronic invoice metadata (certified provider — e.g. Factus). */
+export interface DianPackage {
+  total: number;
+  used: number;
+  remaining: number;
+  alert_below: number;
+  low: boolean;
+  alert_acked: boolean;
+}
+
 export interface DianInvoicePublic {
   id: number;
   order_id: number;
@@ -1388,6 +1397,7 @@ export interface TenantSettings {
   dian_send_email?: boolean | null;
   /** Read-only (GET): provider readiness on the server; never carries credentials. */
   dian_status?: { provider: string; credentials_ready: boolean; live_unlocked: boolean } | null;
+  dian_package?: DianPackage | null;
 }
 
 export interface OrderItemCreate {
@@ -2401,6 +2411,10 @@ export class ApiService {
 
   getOrderDianInvoice(orderId: number): Observable<DianInvoicePublic> {
     return this.http.get<DianInvoicePublic>(`${this.apiUrl}/orders/${orderId}/dian-invoice`);
+  }
+
+  ackDianPackageAlert(): Observable<DianPackage> {
+    return this.http.post<DianPackage>(`${this.apiUrl}/tenant/dian-package/ack`, {});
   }
 
   cancelOrderDianInvoice(orderId: number): Observable<DianInvoicePublic> {

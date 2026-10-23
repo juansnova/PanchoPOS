@@ -239,6 +239,22 @@ class Settings(BaseSettings):
         description="When true and provider credentials ready, tenants may select dian_mode=live",
     )
 
+    dian_package_documents: int = Field(
+        default=400,
+        validation_alias="DIAN_PACKAGE_DOCUMENTS",
+        description="Documents (invoices + credit notes) in the Factus package currently contracted",
+    )
+    dian_package_since: str = Field(
+        default="2026-10-20",
+        validation_alias="DIAN_PACKAGE_SINCE",
+        description="ISO date the current Factus package started; only live documents from then on are counted",
+    )
+    dian_package_alert_below: int = Field(
+        default=40,
+        validation_alias="DIAN_PACKAGE_ALERT_BELOW",
+        description="Alert the administrator when fewer than this many package documents remain",
+    )
+
     @model_validator(mode="after")
     def _require_real_secrets_in_production(self) -> "Settings":
         """Refuse to start in production with placeholder or weak JWT signing secrets."""

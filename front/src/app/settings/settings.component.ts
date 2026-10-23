@@ -841,6 +841,20 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     </div>
                   </div>
 
+                  @if (settings()?.dian_package; as pkg) {
+                    <div class="st-card" data-testid="settings-dian-package">
+                      <h3 class="st-card-title">{{ 'SETTINGS.INV_PACKAGE_TITLE' | translate }}</h3>
+                      <p class="iv-pkg-count" [class.low]="pkg.low"><b>{{ pkg.remaining }}</b> {{ 'SETTINGS.INV_PACKAGE_OF' | translate }} {{ pkg.total }}</p>
+                      <small class="field-hint">{{ 'SETTINGS.INV_PACKAGE_HINT' | translate }}</small>
+                      @if (pkg.low && !pkg.alert_acked) {
+                        <div class="iv-note iv-pkg-alert" role="alert">
+                          <p>{{ 'SETTINGS.INV_PACKAGE_LOW' | translate: { n: pkg.alert_below } }}</p>
+                          <button type="button" class="btn btn-secondary" (click)="ackDianPackageAlert()" data-testid="dian-package-ack">{{ 'SETTINGS.INV_PACKAGE_ACK' | translate }}</button>
+                        </div>
+                      }
+                    </div>
+                  }
+
                   <div class="st-card">
                     <h3 class="st-card-title">{{ 'SETTINGS.INV_ISSUER_TITLE' | translate }}</h3>
                     <p class="st-card-desc">{{ 'SETTINGS.INV_ISSUER_DESC' | translate }}</p>
@@ -2309,6 +2323,11 @@ DIAN_LIVE_UNLOCK=true</pre>
     .iv-dv small { font-size: .56rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--color-text-muted); }
     .iv-dv b { font-family: Georgia, 'Times New Roman', serif; font-size: 1.4rem; font-weight: 500; line-height: 1; color: var(--color-primary); }
     .iv-note { margin: 0 0 14px; padding: 10px 14px; border-radius: 16px; font-size: .84rem; line-height: 1.45; color: var(--color-text-muted); background: #f6f1e9; }
+    .iv-pkg-count { margin: 4px 0 6px; font-size: 1rem; color: var(--color-text-muted); }
+    .iv-pkg-count b { font-size: 2.2rem; font-weight: 700; color: var(--color-text); }
+    .iv-pkg-count.low b { color: #b91c1c; }
+    .iv-pkg-alert { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 12px 0 0; background: #fee2e2; color: #7f1d1d; }
+    .iv-pkg-alert p { margin: 0; flex: 1 1 220px; }
     .iv-creds { background: #1c1917; border-color: #1c1917; }
     .iv-creds .st-card-title { color: #fff; }
     .iv-creds .st-card-desc { color: rgba(255,255,255,.7); }
@@ -2452,6 +2471,12 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // ---- Factura electrónica DIAN (Factus)
   dianStatus(): { provider: string; credentials_ready: boolean; live_unlocked: boolean } {
     return this.settings()?.dian_status ?? { provider: 'mock', credentials_ready: false, live_unlocked: false };
+  }
+
+  ackDianPackageAlert(): void {
+    this.api.ackDianPackageAlert().subscribe((pkg) => {
+      this.settings.update((s) => (s ? { ...s, dian_package: pkg } : s));
+    });
   }
 
   dianLiveAllowed(): boolean {

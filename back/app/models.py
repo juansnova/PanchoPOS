@@ -255,6 +255,9 @@ class Tenant(SQLModel, table=True):
     dian_numbering_range_id: int | None = Field(default=None)
     # Ask the provider to email the invoice to the customer when an email is known
     dian_send_email: bool = Field(default=True)
+    # Low-package alert: email sent once / administrator confirmed the notice (reset when package is refilled)
+    dian_package_alert_emailed: bool = Field(default=False)
+    dian_package_alert_acked: bool = Field(default=False)
 
     users: list["User"] = Relationship(back_populates="tenant")
 

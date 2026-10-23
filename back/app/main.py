@@ -67,8 +67,10 @@ from .clock_qr_util import (
 from .dian_providers import provider_status as dian_provider_status
 from .dian_invoice_service import (
     assert_dian_mode_allowed,
+    acknowledge_package_alert,
     cancel_dian_invoice,
     dian_invoice_public_dict,
+    package_status as dian_package_status,
     get_dian_invoice,
     issue_or_get_dian_invoice,
 )
@@ -2994,6 +2996,7 @@ def get_tenant_settings(
     tenant_dict["currency"] = "$"
     tenant_dict["ui_modules"] = resolve_tenant_ui_modules(tenant.ui_modules)
     tenant_dict["dian_status"] = dian_provider_status()
+    tenant_dict["dian_package"] = dian_package_status(session, tenant)
 
     tenant_dict.pop("clock_qr_token_hash", None)
     tenant_dict.pop("clock_qr_token_encrypted", None)
@@ -13078,6 +13081,20 @@ def set_order_billing_customer(
     session.add(order)
     session.commit()
     return {"order_id": order.id, "billing_customer_id": order.billing_customer_id}
+
+
+@app.post("/tenant/dian-package/ack")
+def ack_dian_package_alert(
+    current_user: Annotated[models.User, Depends(require_permission(Permission.SETTINGS_UPDATE))],
+    session: Session = Depends(get_session),
+) -> dict:
+    """Administrator confirms the low-package notice so it stops showing."""
+    tenant = session.get(models.Tenant, current_user.tenant_id)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    acknowledge_package_alert(session, tenant)
+    session.commit()
+    return dian_package_status(session, tenant)
 
 
 @app.get("/orders/{order_id}/dian-invoice")
