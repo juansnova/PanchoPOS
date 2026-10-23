@@ -127,7 +127,7 @@ async function main() {
     check('editing marks the save bar as dirty', (await page.$$eval('.st-savebar.dirty', (e) => e.length)) === 1);
 
     // Quick copy: Monday → weekdays
-    await page.select('#oh-copy-from', 'monday');
+    await page.click('[data-testid="oh-copy-from-monday"]');
     await page.click('[data-testid="oh-copy-weekdays"]');
     await sleep(300);
     const closes = await page.$$eval('.oh-day', (els) =>

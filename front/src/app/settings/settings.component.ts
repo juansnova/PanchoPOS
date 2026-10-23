@@ -412,12 +412,12 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                   </div>
 
                   <div class="oh-copy">
-                    <label for="oh-copy-from">{{ 'SETTINGS.COPY_FROM_DAY' | translate }}</label>
-                    <select id="oh-copy-from" class="oh-sel" [(ngModel)]="copyFromDayKey" name="copyFromDay">
+                    <span class="oh-copy-label" id="oh-copy-from-label">{{ 'SETTINGS.COPY_FROM_DAY' | translate }}</span>
+                    <div class="oh-daychips" role="radiogroup" aria-labelledby="oh-copy-from-label">
                       @for (day of daysOfWeek; track day.key) {
-                        <option [value]="day.key">{{ day.label | translate }}</option>
+                        <button type="button" role="radio" class="oh-daychip" [class.on]="copyFromDayKey === day.key" [attr.aria-checked]="copyFromDayKey === day.key" [attr.aria-label]="day.label | translate" [attr.data-testid]="'oh-copy-from-' + day.key" (click)="copyFromDayKey = day.key">{{ dayShort(day.key) }}</button>
                       }
-                    </select>
+                    </div>
                     <span class="oh-copy-to">{{ 'SETTINGS.OH_COPY_TO' | translate }}</span>
                     <div class="oh-copy-actions" role="group" [attr.aria-label]="'SETTINGS.COPY_TO_OTHER_DAYS' | translate">
                       <button type="button" class="oh-copy-btn" data-testid="oh-copy-weekdays" (click)="copyDayToOtherDays(copyFromDayKey, 'weekdays')">{{ 'SETTINGS.OH_COPY_WEEKDAYS' | translate }}</button>
@@ -1412,7 +1412,13 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .oh-week li.today { outline: 2px solid #fff; outline-offset: 3px; }
 
     .oh-copy { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
-    .oh-copy label { font-size: .85rem; font-weight: 700; color: var(--color-text-muted); }
+    .oh-copy-label { font-size: .85rem; font-weight: 700; color: var(--color-text-muted); }
+    .oh-daychips { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 999px; background: #f4eee6; }
+    .oh-daychip { min-width: 46px; min-height: 34px; padding: 0 10px; border: 0; border-radius: 999px; font: inherit; font-size: .76rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-text-muted); background: transparent; cursor: pointer; transition: background .18s, color .18s, box-shadow .18s; }
+    .oh-daychip:hover { color: var(--color-text); }
+    .oh-daychip.on { color: var(--color-primary); background: #fff; box-shadow: 0 3px 8px -4px rgba(60, 30, 10, .45); }
+    @media (max-width: 560px) { .oh-daychips { display: flex; flex-wrap: nowrap; gap: 2px; width: 100%; } .oh-daychip { flex: 1; min-width: 0; padding: 0 2px; font-size: .68rem; letter-spacing: 0; } }
+    .oh-daychip:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
     .oh-copy-to { font-size: .85rem; font-weight: 700; color: var(--color-text-muted); }
     .oh-copy-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; }
     .oh-copy-btn { min-height: 40px; padding: 0 16px; border: 1px solid var(--color-border); border-radius: 999px; font: inherit; font-size: .85rem; font-weight: 700; color: var(--color-text); background: #fffdfa; cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
