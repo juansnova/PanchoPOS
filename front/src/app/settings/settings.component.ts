@@ -846,30 +846,24 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <p class="st-card-desc">{{ 'SETTINGS.INV_ISSUER_DESC' | translate }}</p>
                     <div class="form-group">
                       <label for="dian_nit">{{ 'SETTINGS.INV_NIT' | translate }}</label>
-                      <div class="iv-nit">
-                        <input id="dian_nit" type="text" inputmode="numeric" autocomplete="off" maxlength="15"
-                          [ngModel]="nitDigits()" (ngModelChange)="onNitInput($event)" name="dian_nit"
-                          placeholder="900123456" data-testid="settings-dian-nit" />
-                        <span class="iv-dv" [class.empty]="nitDv() === null">
-                          <small>{{ 'SETTINGS.INV_DV' | translate }}</small>
-                          <b>{{ nitDv() === null ? '–' : nitDv() }}</b>
+                      <div class="st-fixed st-fixed-sm" data-testid="settings-dian-nit">
+                        <span class="st-fixed-ico" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                         </span>
+                        <span class="st-fixed-name">{{ nitDigits() }}{{ nitDv() === null ? '' : '-' + nitDv() }}</span>
+                        <span class="st-fixed-chip">{{ 'SETTINGS.CITY_FIXED' | translate }}</span>
                       </div>
-                      <small class="field-hint">{{ 'SETTINGS.INV_NIT_HINT' | translate }}</small>
                     </div>
 
                     <div class="form-group">
                       <label>{{ 'SETTINGS.INV_REGIME' | translate }}</label>
-                      <div class="iv-regimes" role="radiogroup" [attr.aria-label]="'SETTINGS.INV_REGIME' | translate">
-                        @for (r of dianRegimes; track r.value) {
-                          <button type="button" role="radio" class="iv-regime" [class.on]="formData.dian_tax_regime === r.value" [attr.aria-checked]="formData.dian_tax_regime === r.value" (click)="setDianRegime(r.value)">
-                            <span class="iv-code">{{ r.code }}</span>
-                            <b>{{ r.labelKey | translate }}</b>
-                            <small>{{ r.descKey | translate }}</small>
-                          </button>
-                        }
+                      <div class="st-fixed st-fixed-sm" data-testid="settings-dian-regime-fixed">
+                        <span class="st-fixed-ico" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                        </span>
+                        <span class="st-fixed-name">{{ 'SETTINGS.INV_REGIME_NO_IVA' | translate }}</span>
+                        <span class="st-fixed-chip">{{ 'SETTINGS.CITY_FIXED' | translate }}</span>
                       </div>
-                      <small class="field-hint">{{ 'SETTINGS.INV_REGIME_HINT' | translate }}</small>
                     </div>
                   </div>
 
@@ -877,10 +871,13 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <h3 class="st-card-title">{{ 'SETTINGS.INV_DELIVERY_TITLE' | translate }}</h3>
                     <div class="form-group">
                       <label for="dian_numbering_range">{{ 'SETTINGS.INV_RANGE' | translate }}</label>
-                      <input id="dian_numbering_range" type="number" min="1" step="1" class="input-medium"
-                        [ngModel]="formData.dian_numbering_range_id" (ngModelChange)="onRangeInput($event)" name="dian_numbering_range"
-                        placeholder="{{ 'SETTINGS.INV_RANGE_PLACEHOLDER' | translate }}" />
-                      <small class="field-hint">{{ 'SETTINGS.INV_RANGE_HINT' | translate }}</small>
+                      <div class="st-fixed st-fixed-sm" data-testid="settings-dian-range-fixed">
+                        <span class="st-fixed-ico" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                        </span>
+                        <span class="st-fixed-name">{{ 'SETTINGS.INV_RANGE_PLACEHOLDER' | translate }}</span>
+                        <span class="st-fixed-chip">{{ 'SETTINGS.CITY_FIXED' | translate }}</span>
+                      </div>
                     </div>
                     <div class="form-group checkbox-row">
                       <label class="switch">
@@ -2453,12 +2450,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
   ];
 
   // ---- Factura electrónica DIAN (Factus)
-  readonly dianRegimes = [
-    { value: 'no_responsable_iva', code: '49', labelKey: 'SETTINGS.INV_REGIME_NO_IVA', descKey: 'SETTINGS.INV_REGIME_NO_IVA_DESC' },
-    { value: 'responsable_iva', code: '48', labelKey: 'SETTINGS.INV_REGIME_IVA', descKey: 'SETTINGS.INV_REGIME_IVA_DESC' },
-    { value: 'regimen_simple', code: '47', labelKey: 'SETTINGS.INV_REGIME_SIMPLE', descKey: 'SETTINGS.INV_REGIME_SIMPLE_DESC' },
-  ];
-
   dianStatus(): { provider: string; credentials_ready: boolean; live_unlocked: boolean } {
     return this.settings()?.dian_status ?? { provider: 'mock', credentials_ready: false, live_unlocked: false };
   }
@@ -2473,26 +2464,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.markDirty();
   }
 
-  setDianRegime(value: string): void {
-    this.formData.dian_tax_regime = this.formData.dian_tax_regime === value ? null : value;
-    this.markDirty();
-  }
-
-  onRangeInput(v: number | string | null): void {
-    const n = Math.floor(Number(v));
-    this.formData.dian_numbering_range_id = v === null || v === '' || !Number.isFinite(n) || n <= 0 ? null : n;
-    this.markDirty();
-  }
-
   /** NIT without check digit (the stored value may come as "123456789-1"). */
   nitDigits(): string {
     return String(this.formData.tax_id || '').split('-')[0].replace(/\D/g, '');
-  }
-
-  onNitInput(v: string): void {
-    const digits = String(v || '').replace(/\D/g, '').slice(0, 15);
-    this.formData.tax_id = digits || null;
-    this.markDirty();
   }
 
   /** DIAN check digit (módulo 11 with the official prime weights). */
