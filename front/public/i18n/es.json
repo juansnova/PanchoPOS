@@ -2035,6 +2035,7 @@
     "INV_DELIVERY_TITLE": "Numeración y envío",
     "INV_RANGE": "Rango de numeración",
     "INV_RANGE_PLACEHOLDER": "Predeterminado",
+    "INV_RANGE_FIXED": "MG · del 1 al 1000 · vence 03-12-2027",
     "INV_RANGE_HINT": "Número del rango que ves en Factus (resolución DIAN con prefijo y consecutivos). Vacío usa el rango predeterminado de tu cuenta.",
     "INV_SEND_EMAIL": "Enviar la factura al correo del cliente",
     "INV_SEND_EMAIL_HINT": "Solo si el cliente dio un correo al pedir la factura.",

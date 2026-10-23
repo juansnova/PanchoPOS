@@ -875,7 +875,7 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                         <span class="st-fixed-ico" aria-hidden="true">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                         </span>
-                        <span class="st-fixed-name">{{ 'SETTINGS.INV_RANGE_PLACEHOLDER' | translate }}</span>
+                        <span class="st-fixed-name">{{ 'SETTINGS.INV_RANGE_FIXED' | translate }}</span>
                         <span class="st-fixed-chip">{{ 'SETTINGS.CITY_FIXED' | translate }}</span>
                       </div>
                     </div>
