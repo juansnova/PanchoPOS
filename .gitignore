@@ -64,3 +64,26 @@ dist/
 
 # Print agent secrets (token)
 scripts/print-agent/agent.env
+
+# Claude / AI tooling (local only)
+.claude/
+.claude-*/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+.impeccable/
+.cursorrules
+.aider*
+.windsurf/
+.codex/
+.gemini/
+claude-session.log
+
+# Scratch, logs and local backups
+tmp/
+*.log
+*.bak
+*.orig
+*.dump
+Thumbs.db
+desktop.ini
