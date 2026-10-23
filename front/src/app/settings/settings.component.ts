@@ -391,15 +391,25 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                     <h2>{{ 'SETTINGS.OPENING_HOURS' | translate }}</h2>
                     <p>{{ 'SETTINGS.OPENING_HOURS_SUBTITLE' | translate }}</p>
                   </div>
-                  @if (getOpeningHoursSummary()) {
-                    <div class="opening-hours-summary">
-                      <span class="summary-label">{{ 'SETTINGS.OPENING_HOURS' | translate }}:</span>
-                      <span class="summary-text">{{ getOpeningHoursSummary() }}</span>
+                  <div class="oh-hero" data-testid="settings-hours-hero">
+                    <div class="oh-hero-main">
+                      <p class="oh-hero-summary">{{ getOpeningHoursSummary() }}</p>
+                      <p class="oh-hero-stats">
+                        <b>{{ openDaysCount() }}</b> {{ 'SETTINGS.OH_OPEN_DAYS' | translate }}
+                        <span aria-hidden="true">·</span>
+                        <b>{{ weeklyHours() }}</b> {{ 'SETTINGS.OH_HOURS_WEEK' | translate }}
+                      </p>
                     </div>
-                  }
-                  <div class="copy-to-other-days">
-                    <label>{{ 'SETTINGS.COPY_FROM_DAY' | translate }}</label>
-                    <select [(ngModel)]="copyFromDayKey" name="copyFromDay">
+                    <ol class="oh-week" aria-hidden="true">
+                      @for (day of daysOfWeek; track day.key) {
+                        <li [class.off]="openingHours[day.key]?.closed" [class.today]="day.key === todayKey">{{ dayShort(day.key) }}</li>
+                      }
+                    </ol>
+                  </div>
+
+                  <div class="oh-copy">
+                    <label for="oh-copy-from">{{ 'SETTINGS.COPY_FROM_DAY' | translate }}</label>
+                    <select id="oh-copy-from" class="oh-sel" [(ngModel)]="copyFromDayKey" name="copyFromDay">
                       @for (day of daysOfWeek; track day.key) {
                         <option [value]="day.key">{{ day.label | translate }}</option>
                       }
@@ -408,124 +418,139 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
                       {{ 'SETTINGS.COPY_TO_OTHER_DAYS' | translate }}
                     </button>
                   </div>
-                  <div class="hours-grid">
+
+                  <div class="oh-days">
                     @for (day of daysOfWeek; track day.key) {
-                      <div class="day-row" [class.closed]="openingHours[day.key]?.closed">
-                        <div class="day-header">
+                      <div class="oh-day" [class.closed]="openingHours[day.key]?.closed" [class.today]="day.key === todayKey">
+                        <div class="oh-day-head">
                           <label class="switch">
                             <input
                               type="checkbox"
                               [checked]="!openingHours[day.key]?.closed"
                               (change)="toggleDayClosed(day.key, $event)"
+                              [attr.aria-label]="day.label | translate"
                             />
                             <span class="slider round"></span>
                           </label>
-                          <span class="day-name">{{ day.label | translate }}</span>
+                          <span class="oh-day-name">{{ day.label | translate }}</span>
+                          @if (day.key === todayKey) { <span class="oh-today">{{ 'SETTINGS.OH_TODAY' | translate }}</span> }
+                          @if (openingHours[day.key]?.closed) { <span class="closed-badge">{{ 'SETTINGS.CLOSED' | translate }}</span> }
                         </div>
 
                         @if (!openingHours[day.key]?.closed) {
-                          <div class="hours-inputs">
+                          <div class="oh-day-body">
+                            <div class="oh-bar" aria-hidden="true">
+                              @for (seg of dayBarSegments(day.key); track $index) {
+                                <i class="oh-seg" [class.second]="$index === 1" [style.left.%]="seg.left" [style.width.%]="seg.width"></i>
+                              }
+                            </div>
+
                             @if (!openingHours[day.key]?.hasBreak) {
-                              <div class="time-range">
-                                <select [ngModel]="openingHours[day.key]?.open || '09:00'" (ngModelChange)="setOpeningHourValue(day.key, 'open', $event)" [name]="'open-' + day.key">
-                                  @for (t of timeOptions; track t) {
-                                    <option [value]="t">{{ t }}</option>
-                                  }
-                                </select>
-                                <span>–</span>
-                                <select [ngModel]="openingHours[day.key]?.close || '22:00'" (ngModelChange)="setOpeningHourValue(day.key, 'close', $event)" [name]="'close-' + day.key">
-                                  @for (t of timeOptions; track t) {
-                                    <option [value]="t">{{ t }}</option>
-                                  }
-                                </select>
-                              </div>
-                              <div class="service-label-field">
-                                <label [for]="'svc-label-' + day.key">{{ 'SETTINGS.SERVICE_LABEL' | translate }}</label>
+                              <div class="oh-shift">
+                                <div class="oh-range">
+                                  <select class="oh-sel oh-time" [ngModel]="openingHours[day.key]?.open || '09:00'" (ngModelChange)="setOpeningHourValue(day.key, 'open', $event)" [name]="'open-' + day.key" [attr.aria-label]="'SETTINGS.OH_OPENS' | translate">
+                                    @for (t of timeOptions; track t) {
+                                      <option [value]="t">{{ t }}</option>
+                                    }
+                                  </select>
+                                  <span class="oh-dash" aria-hidden="true">→</span>
+                                  <select class="oh-sel oh-time" [ngModel]="openingHours[day.key]?.close || '22:00'" (ngModelChange)="setOpeningHourValue(day.key, 'close', $event)" [name]="'close-' + day.key" [attr.aria-label]="'SETTINGS.OH_CLOSES' | translate">
+                                    @for (t of timeOptions; track t) {
+                                      <option [value]="t">{{ t }}</option>
+                                    }
+                                  </select>
+                                </div>
                                 <input
                                   type="text"
+                                  class="oh-label"
                                   [id]="'svc-label-' + day.key"
                                   [name]="'svc-label-' + day.key"
                                   [ngModel]="openingHours[day.key]?.serviceLabel || ''"
                                   (ngModelChange)="setServiceLabelValue(day.key, 'serviceLabel', $event)"
                                   [placeholder]="'SETTINGS.SERVICE_LABEL_PLACEHOLDER' | translate"
+                                  [attr.aria-label]="'SETTINGS.SERVICE_LABEL' | translate"
                                   maxlength="64"
                                 />
                               </div>
                             } @else {
-                              <div class="split-shifts">
-                                <div class="shift">
-                                  <span class="shift-label">{{ 'SETTINGS.MORNING_SHIFT' | translate }}</span>
-                                  <select [ngModel]="openingHours[day.key]?.morningOpen" (ngModelChange)="setOpeningHourValue(day.key, 'morningOpen', $event)" [name]="'mo-' + day.key">
+                              <div class="oh-shift oh-morning">
+                                <span class="oh-shift-name"><i></i>{{ 'SETTINGS.MORNING_SHIFT' | translate }}</span>
+                                <div class="oh-range">
+                                  <select class="oh-sel oh-time" [ngModel]="openingHours[day.key]?.morningOpen" (ngModelChange)="setOpeningHourValue(day.key, 'morningOpen', $event)" [name]="'mo-' + day.key" [attr.aria-label]="'SETTINGS.OH_OPENS' | translate">
                                     @for (t of timeOptions; track t) {
                                       <option [value]="t">{{ t }}</option>
                                     }
                                   </select>
-                                  <span>–</span>
-                                  <select [ngModel]="openingHours[day.key]?.morningClose" (ngModelChange)="setOpeningHourValue(day.key, 'morningClose', $event)" [name]="'mc-' + day.key">
+                                  <span class="oh-dash" aria-hidden="true">→</span>
+                                  <select class="oh-sel oh-time" [ngModel]="openingHours[day.key]?.morningClose" (ngModelChange)="setOpeningHourValue(day.key, 'morningClose', $event)" [name]="'mc-' + day.key" [attr.aria-label]="'SETTINGS.OH_CLOSES' | translate">
                                     @for (t of timeOptions; track t) {
                                       <option [value]="t">{{ t }}</option>
                                     }
                                   </select>
-                                  <input
-                                    type="text"
-                                    class="shift-service-label"
-                                    [name]="'ml-' + day.key"
-                                    [ngModel]="openingHours[day.key]?.morningLabel || ''"
-                                    (ngModelChange)="setServiceLabelValue(day.key, 'morningLabel', $event)"
-                                    [placeholder]="'SETTINGS.MORNING_LABEL_PLACEHOLDER' | translate"
-                                    [attr.aria-label]="'SETTINGS.MORNING_LABEL' | translate"
-                                    maxlength="64"
-                                  />
                                 </div>
-                                <div class="shift">
-                                  <span class="shift-label">{{ 'SETTINGS.EVENING_SHIFT' | translate }}</span>
-                                  <select [ngModel]="openingHours[day.key]?.eveningOpen" (ngModelChange)="setOpeningHourValue(day.key, 'eveningOpen', $event)" [name]="'eo-' + day.key">
+                                <input
+                                  type="text"
+                                  class="oh-label"
+                                  [name]="'ml-' + day.key"
+                                  [ngModel]="openingHours[day.key]?.morningLabel || ''"
+                                  (ngModelChange)="setServiceLabelValue(day.key, 'morningLabel', $event)"
+                                  [placeholder]="'SETTINGS.MORNING_LABEL_PLACEHOLDER' | translate"
+                                  [attr.aria-label]="'SETTINGS.MORNING_LABEL' | translate"
+                                  maxlength="64"
+                                />
+                              </div>
+                              <div class="oh-shift oh-evening">
+                                <span class="oh-shift-name"><i></i>{{ 'SETTINGS.EVENING_SHIFT' | translate }}</span>
+                                <div class="oh-range">
+                                  <select class="oh-sel oh-time" [ngModel]="openingHours[day.key]?.eveningOpen" (ngModelChange)="setOpeningHourValue(day.key, 'eveningOpen', $event)" [name]="'eo-' + day.key" [attr.aria-label]="'SETTINGS.OH_OPENS' | translate">
                                     @for (t of timeOptions; track t) {
                                       <option [value]="t">{{ t }}</option>
                                     }
                                   </select>
-                                  <span>–</span>
-                                  <select [ngModel]="openingHours[day.key]?.eveningClose" (ngModelChange)="setOpeningHourValue(day.key, 'eveningClose', $event)" [name]="'ec-' + day.key">
+                                  <span class="oh-dash" aria-hidden="true">→</span>
+                                  <select class="oh-sel oh-time" [ngModel]="openingHours[day.key]?.eveningClose" (ngModelChange)="setOpeningHourValue(day.key, 'eveningClose', $event)" [name]="'ec-' + day.key" [attr.aria-label]="'SETTINGS.OH_CLOSES' | translate">
                                     @for (t of timeOptions; track t) {
                                       <option [value]="t">{{ t }}</option>
                                     }
                                   </select>
-                                  <input
-                                    type="text"
-                                    class="shift-service-label"
-                                    [name]="'el-' + day.key"
-                                    [ngModel]="openingHours[day.key]?.eveningLabel || ''"
-                                    (ngModelChange)="setServiceLabelValue(day.key, 'eveningLabel', $event)"
-                                    [placeholder]="'SETTINGS.EVENING_LABEL_PLACEHOLDER' | translate"
-                                    [attr.aria-label]="'SETTINGS.EVENING_LABEL' | translate"
-                                    maxlength="64"
-                                  />
                                 </div>
+                                <input
+                                  type="text"
+                                  class="oh-label"
+                                  [name]="'el-' + day.key"
+                                  [ngModel]="openingHours[day.key]?.eveningLabel || ''"
+                                  (ngModelChange)="setServiceLabelValue(day.key, 'eveningLabel', $event)"
+                                  [placeholder]="'SETTINGS.EVENING_LABEL_PLACEHOLDER' | translate"
+                                  [attr.aria-label]="'SETTINGS.EVENING_LABEL' | translate"
+                                  maxlength="64"
+                                />
                               </div>
                             }
-                            <div class="break-option">
-                              <label class="checkbox-small">
+
+                            <div class="oh-extras">
+                              <label class="oh-chip" [class.on]="openingHours[day.key]?.hasBreak">
                                 <input type="checkbox" [checked]="openingHours[day.key]?.hasBreak" (change)="toggleBreak(day.key, $event)">
                                 {{ 'SETTINGS.HAS_BREAK' | translate }}
                               </label>
-                            </div>
-                            <div class="personnel-per-shift">
-                              <span class="personnel-label">{{ 'SETTINGS.PERSONNEL_PER_SHIFT' | translate }}</span>
-                              <div class="personnel-inputs">
-                                @for (role of staffRoleKeys; track role.key) {
-                                  <div class="personnel-field">
-                                    <label [for]="'staff-' + day.key + '-' + role.key">{{ role.labelKey | translate }}</label>
-                                    <input type="number" [id]="'staff-' + day.key + '-' + role.key"
-                                      [value]="getStaffRequired(day.key, role.key)"
-                                      (input)="setStaffRequired(day.key, role.key, $any($event.target).value)"
-                                      min="0" max="99" class="input-number" />
-                                  </div>
-                                }
-                              </div>
+                              <details class="oh-staff">
+                                <summary>
+                                  {{ 'SETTINGS.PERSONNEL_PER_SHIFT' | translate }}
+                                  <span class="oh-staff-sum">{{ getStaffRequired(day.key, 'waiter') }} · {{ getStaffRequired(day.key, 'kitchen') }}</span>
+                                </summary>
+                                <div class="oh-staff-inputs">
+                                  @for (role of staffRoleKeys; track role.key) {
+                                    <div class="oh-staff-field">
+                                      <label [for]="'staff-' + day.key + '-' + role.key">{{ role.labelKey | translate }}</label>
+                                      <input type="number" [id]="'staff-' + day.key + '-' + role.key"
+                                        [value]="getStaffRequired(day.key, role.key)"
+                                        (input)="setStaffRequired(day.key, role.key, $any($event.target).value)"
+                                        min="0" max="99" class="oh-num" />
+                                    </div>
+                                  }
+                                </div>
+                              </details>
                             </div>
                           </div>
-                        } @else {
-                          <span class="closed-badge">{{ 'SETTINGS.CLOSED' | translate }}</span>
                         }
                       </div>
                     }
@@ -1387,263 +1412,79 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     }
 
     /* ==========================================
-       OPENING HOURS - Mobile First
+       OPENING HOURS
        ========================================== */
-    .opening-hours-summary {
-      background: var(--color-bg);
-      border-radius: var(--radius-md);
-      padding: var(--space-3) var(--space-4);
-      margin-bottom: var(--space-4);
-      border: 1px solid var(--color-border);
-      .summary-label { font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem; margin-right: var(--space-2); }
-      .summary-text { font-size: 0.9375rem; color: var(--color-text); }
-    }
-    .copy-to-other-days {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: var(--space-2);
-      margin-bottom: var(--space-4);
-      label { font-weight: 500; font-size: 0.875rem; }
-      select { padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--color-border); min-width: 120px; }
-      .btn-sm { padding: var(--space-2) var(--space-3); font-size: 0.875rem; }
-    }
-    .hours-grid {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
+    .oh-hero { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 32px; margin-bottom: 18px; padding: 22px 26px; border-radius: 28px; color: #fff7ec; background: radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--color-primary) 88%, #fff) 0%, color-mix(in srgb, var(--color-primary) 62%, #2b1306) 100%); box-shadow: 0 28px 40px -28px color-mix(in srgb, var(--color-primary) 70%, #000); }
+    .oh-hero-main { flex: 1 1 260px; min-width: 0; }
+    .oh-hero-summary { margin: 0 0 10px; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.15rem, 2.2vw, 1.6rem); font-style: italic; font-weight: 500; line-height: 1.3; letter-spacing: -.01em; text-wrap: balance; }
+    .oh-hero-stats { margin: 0; font-size: .88rem; color: rgba(255, 247, 236, .85); display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+    .oh-hero-stats b { font-size: 1.15rem; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+    .oh-week { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .oh-week li { display: grid; place-items: center; width: 44px; height: 56px; border-radius: 16px; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-primary); background: #fff7ec; box-shadow: 0 10px 16px -12px rgba(0, 0, 0, .55); }
+    .oh-week li.off { color: rgba(255, 247, 236, .75); background: repeating-linear-gradient(135deg, rgba(255,255,255,.1) 0 5px, rgba(255,255,255,.04) 5px 10px); box-shadow: none; }
+    .oh-week li.today { outline: 2px solid #fff; outline-offset: 3px; }
 
-    .day-row {
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      padding: var(--space-3);
+    .oh-copy { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .oh-copy label { font-size: .85rem; font-weight: 700; color: var(--color-text-muted); }
+    .oh-copy .btn { border-radius: 999px; }
 
-      &.closed {
-        opacity: 0.7;
-      }
-    }
-    
-    @media (min-width: 640px) {
-      .day-row {
-        padding: var(--space-4);
-      }
-    }
+    .oh-sel { appearance: none; -webkit-appearance: none; min-height: 40px; padding: 0 34px 0 14px; border: 1px solid var(--color-border); border-radius: 999px; font: inherit; font-size: .95rem; font-weight: 600; color: var(--color-text); background: #fffdfa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%238a7a6a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 14px center; cursor: pointer; transition: border-color .15s; }
+    .oh-sel:hover { border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border)); }
+    .oh-sel:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    .oh-time { min-width: 96px; font-variant-numeric: tabular-nums; font-size: 1.05rem; }
 
-    .day-header {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      margin-bottom: var(--space-2);
-    }
+    .oh-days { display: grid; gap: 12px; }
+    .oh-day { padding: 16px 18px 18px; border-radius: 24px; border: 1px solid var(--color-border); background: #fff; box-shadow: 0 18px 28px -26px rgba(60, 30, 10, .55); transition: border-color .2s, box-shadow .2s; }
+    .oh-day.today { border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border)); box-shadow: 0 18px 30px -22px color-mix(in srgb, var(--color-primary) 60%, transparent); }
+    .oh-day.closed { padding-block: 12px; border-style: dashed; background: repeating-linear-gradient(135deg, #f6f1e9 0 6px, #fbf8f3 6px 12px); box-shadow: none; }
+    .oh-day-head { display: flex; align-items: center; gap: 12px; }
+    .oh-day-name { font-family: Georgia, 'Times New Roman', serif; font-size: 1.25rem; font-style: italic; font-weight: 500; letter-spacing: -.01em; }
+    .oh-day.closed .oh-day-name { color: var(--color-text-muted); }
+    .oh-today { padding: 3px 10px; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, #fff); }
+    .closed-badge { margin-left: auto; padding: 3px 12px; border-radius: 999px; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); background: #ece5da; }
 
-    .day-name {
-      font-weight: 500;
-      font-size: 0.9375rem;
-    }
+    .oh-day-body { display: grid; gap: 12px; margin-top: 14px; }
+    .oh-bar { position: relative; height: 10px; border-radius: 999px; background: #f1ebe2 linear-gradient(90deg, transparent calc(25% - 1px), rgba(120, 90, 60, .18) calc(25% - 1px) 25%, transparent 25% calc(50% - 1px), rgba(120, 90, 60, .18) calc(50% - 1px) 50%, transparent 50% calc(75% - 1px), rgba(120, 90, 60, .18) calc(75% - 1px) 75%, transparent 75%); overflow: hidden; }
+    .oh-seg { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: var(--color-primary); transition: left .3s cubic-bezier(.16, 1, .3, 1), width .3s cubic-bezier(.16, 1, .3, 1); }
+    .oh-seg.second { background: color-mix(in srgb, var(--color-primary) 55%, #2b1306); }
 
-    /* Mobile: Stack hours below header */
-    .hours-inputs {
-      padding-left: 0;
-      margin-top: var(--space-3);
-    }
-    
-    @media (min-width: 480px) {
-      .hours-inputs {
-        padding-left: 52px; /* Switch width + gap */
-        margin-top: 0;
-      }
-    }
+    .oh-shift { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+    .oh-shift-name { display: inline-flex; align-items: center; gap: 8px; min-width: 76px; font-size: .8rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted); }
+    .oh-shift-name i { width: 10px; height: 10px; border-radius: 50%; background: var(--color-primary); }
+    .oh-evening .oh-shift-name i { background: color-mix(in srgb, var(--color-primary) 55%, #2b1306); }
+    .oh-range { display: inline-flex; align-items: center; gap: 8px; }
+    .oh-dash { color: var(--color-text-muted); }
+    .oh-label { flex: 1 1 180px; max-width: 280px; min-height: 40px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 999px; font: inherit; font-size: .9rem; color: var(--color-text); background: #fffdfa; }
+    .oh-label:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
-    /* Mobile: Full-width time inputs / selects (0, 15, 30, 45 min options) */
-    .time-range {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      flex-wrap: wrap;
+    .oh-extras { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 18px; padding-top: 12px; border-top: 1px dashed var(--color-border); }
+    .oh-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px 0 12px; border-radius: 999px; border: 1px solid var(--color-border); font-size: .85rem; font-weight: 700; color: var(--color-text-muted); background: #fffdfa; cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
+    .oh-chip input { width: 16px; height: 16px; accent-color: var(--color-primary); cursor: pointer; }
+    .oh-chip.on { color: var(--color-primary); border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border)); background: color-mix(in srgb, var(--color-primary) 8%, #fff); }
+    .oh-chip:has(input:focus-visible) { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    .oh-staff { flex: 1 1 260px; }
+    .oh-staff summary { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; font-size: .85rem; font-weight: 700; color: var(--color-text-muted); cursor: pointer; list-style: none; }
+    .oh-staff summary::-webkit-details-marker { display: none; }
+    .oh-staff summary::after { content: '+'; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 1rem; line-height: 1; background: #f1ebe2; }
+    .oh-staff[open] summary::after { content: '–'; }
+    .oh-staff summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 8px; }
+    .oh-staff-sum { padding: 2px 10px; border-radius: 999px; font-variant-numeric: tabular-nums; color: var(--color-text); background: #f1ebe2; }
+    .oh-staff-inputs { display: flex; flex-wrap: wrap; gap: 12px 22px; padding: 6px 0 4px; }
+    .oh-staff-field { display: inline-flex; align-items: center; gap: 10px; }
+    .oh-staff-field label { font-size: .85rem; color: var(--color-text-muted); }
+    .oh-num { width: 64px; min-height: 40px; padding: 0 8px; border: 1px solid var(--color-border); border-radius: 14px; font: inherit; font-weight: 700; text-align: center; color: var(--color-text); background: #fffdfa; font-variant-numeric: tabular-nums; }
+    .oh-num:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
-      input, select {
-        flex: 1;
-        min-width: 90px;
-        max-width: 120px;
-        padding: var(--space-2) var(--space-3);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        font-size: 1rem;
-        min-height: 40px;
-        text-align: center;
-        background: var(--color-bg);
-        color: var(--color-text);
-      }
-      
-      span {
-        color: var(--color-text-muted);
-        font-weight: 500;
-      }
+    @media (max-width: 560px) {
+      .oh-hero { padding: 18px; border-radius: 24px; }
+      .oh-week { width: 100%; justify-content: space-between; }
+      .oh-week li { flex: 1; width: auto; height: 48px; }
+      .oh-day { padding: 14px; }
+      .oh-time { min-width: 0; flex: 1; }
+      .oh-range { width: 100%; }
+      .oh-label { max-width: none; flex-basis: 100%; }
     }
-    
-    @media (min-width: 480px) {
-      .time-range input, .time-range select {
-        flex: 0 0 auto;
-        width: 110px;
-        min-width: unset;
-      }
-    }
-
-    .service-label-field {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-1);
-      margin-top: var(--space-2);
-      max-width: 280px;
-
-      label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--color-text-muted);
-      }
-
-      input {
-        padding: var(--space-2) var(--space-3);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        font-size: 0.95rem;
-        min-height: 40px;
-        background: var(--color-bg);
-        color: var(--color-text);
-        text-align: left;
-      }
-    }
-
-    .shift-service-label {
-      max-width: 180px !important;
-      text-align: left !important;
-    }
-
-    /* Split Shifts - Mobile First (Stacked) */
-    .split-shifts {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-4);
-
-      .shift {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-        padding: var(--space-3);
-        background: var(--color-bg);
-        border-radius: var(--radius-sm);
-
-        .shift-label {
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: var(--color-text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        
-        .shift-times {
-          display: flex;
-          align-items: center;
-          gap: var(--space-2);
-          flex-wrap: wrap;
-        }
-
-        input, select {
-          flex: 1;
-          min-width: 80px;
-          max-width: 110px;
-          padding: var(--space-2) var(--space-3);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-sm);
-          font-size: 1rem;
-          min-height: 40px;
-          text-align: center;
-          background: var(--color-bg);
-          color: var(--color-text);
-        }
-      }
-    }
-    
-    @media (min-width: 480px) {
-      .split-shifts .shift {
-        flex-direction: row;
-        align-items: center;
-        gap: var(--space-3);
-        padding: var(--space-2);
-        background: transparent;
-        
-        .shift-label {
-          width: 60px;
-          text-transform: none;
-          font-weight: 500;
-        }
-        
-        .shift-times {
-          flex-wrap: nowrap;
-        }
-        
-        input {
-          flex: 0 0 auto;
-          width: 100px;
-          min-width: unset;
-        }
-      }
-    }
-
-    .break-option {
-      margin-top: var(--space-3);
-      padding-top: var(--space-3);
-      border-top: 1px dashed var(--color-border);
-    }
-    
-    .checkbox-small {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      font-size: 0.875rem;
-      cursor: pointer;
-      min-height: 44px; /* Touch target */
-      
-      input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-      }
-    }
-
-    .personnel-per-shift {
-      margin-top: var(--space-3);
-      padding-top: var(--space-3);
-      border-top: 1px dashed var(--color-border);
-    }
-    .personnel-label {
-      display: block;
-      font-size: 0.8125rem;
-      font-weight: 500;
-      color: var(--color-text-muted);
-      margin-bottom: var(--space-2);
-    }
-    .personnel-inputs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-4);
-    }
-    .personnel-field {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      label { font-size: 0.8125rem; color: var(--color-text-muted); white-space: nowrap; }
-    }
-    .personnel-field .input-number {
-      width: 3rem;
-      padding: var(--space-1) var(--space-2);
-      font-size: 0.875rem;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-sm);
-      text-align: center;
-    }
+    @media (prefers-reduced-motion: reduce) { .oh-seg { transition: none; } }
 
     .closed-badge {
       display: inline-block;
@@ -2246,11 +2087,6 @@ const SETTINGS_SECTION_HASH: Record<SettingsSectionId, string> = {
     .st-bank-row { padding: 14px; margin-bottom: 10px; border-radius: 20px; border: 1px dashed var(--color-border); background: #fffdfa; align-items: center; }
     .payment-qr-preview { border-radius: 20px; box-shadow: 0 18px 28px -20px rgba(60, 30, 10, .5); }
 
-    .day-row { border-radius: 22px; border: 1px solid var(--color-border); background: #fff; box-shadow: 0 16px 26px -24px rgba(60, 30, 10, .5); }
-    .day-row.closed { background: repeating-linear-gradient(135deg, #f6f1e9 0 6px, #fbf8f3 6px 12px); box-shadow: none; }
-    .day-name { font-family: Georgia, 'Times New Roman', serif; font-size: 1.15rem; font-style: italic; font-weight: 500; }
-    .closed-badge { padding: 3px 12px; border-radius: 999px; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); background: #ece5da; }
-    .opening-hours-summary { border-radius: 20px; background: color-mix(in srgb, var(--color-primary) 7%, #fff); border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border)); }
     .oh-schedule-card { padding: 20px 22px; border-radius: 26px; background: #fff; box-shadow: 0 22px 34px -30px rgba(60, 30, 10, .55); }
     .oh-schedule-card h4 { font-family: Georgia, 'Times New Roman', serif; font-size: 1.1rem; font-style: italic; font-weight: 500; }
 
@@ -3786,6 +3622,54 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   /** Formatted opening hours summary in current locale, e.g. "Mon–Fri 09:00–22:00, Sat 10:00–20:00, Sun closed". */
+  todayKey = this.daysOfWeek[(new Date().getDay() + 6) % 7].key;
+
+  dayShort(key: string): string {
+    const i = this.daysOfWeek.findIndex((d) => d.key === key);
+    const locale = this.translate.currentLang || this.translate.defaultLang || 'es';
+    return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(2024, 0, 1 + i)).replace('.', '');
+  }
+
+  private static toMinutes(t: string | undefined): number | null {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(t || '');
+    return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+  }
+
+  /** Open windows of a day as [startMin, endMin]; a close at or before the open runs to midnight. */
+  private dayWindows(key: string): [number, number][] {
+    const d = this.openingHours[key];
+    if (!d || d.closed) return [];
+    const pairs = d.hasBreak
+      ? [[d.morningOpen, d.morningClose], [d.eveningOpen, d.eveningClose]]
+      : [[d.open, d.close]];
+    const out: [number, number][] = [];
+    for (const [o, c] of pairs) {
+      const s = SettingsComponent.toMinutes(o);
+      let e = SettingsComponent.toMinutes(c);
+      if (s === null || e === null) continue;
+      if (e <= s) e = 1440;
+      out.push([s, e]);
+    }
+    return out;
+  }
+
+  /** Percent positions of a day's open windows over a 24h bar. */
+  dayBarSegments(key: string): { left: number; width: number }[] {
+    return this.dayWindows(key).map(([s, e]) => ({ left: (s / 1440) * 100, width: ((e - s) / 1440) * 100 }));
+  }
+
+  openDaysCount(): number {
+    return this.daysOfWeek.filter((d) => this.openingHours[d.key] && !this.openingHours[d.key].closed).length;
+  }
+
+  weeklyHours(): number {
+    const minutes = this.daysOfWeek.reduce(
+      (sum, d) => sum + this.dayWindows(d.key).reduce((a, [s, e]) => a + (e - s), 0),
+      0,
+    );
+    return Math.round(minutes / 6) / 10;
+  }
+
   getOpeningHoursSummary(): string {
     const locale = this.translate.currentLang || this.translate.defaultLang || 'en';
     const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
