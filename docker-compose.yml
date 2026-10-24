@@ -14,6 +14,7 @@ services:
       sh -c "python -m app.migrate;
       python -m app.seeds.ensure_default_admin;
       python -m app.seeds.seed_demo_products;
+      python -m app.seeds.seed_default_tables;
       exec uvicorn app.main:app --host 0.0.0.0 --port 8020 --reload"
     expose:
       - "8020"

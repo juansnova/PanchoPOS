@@ -1875,6 +1875,8 @@ export class TablesCanvasComponent implements OnInit, OnDestroy {
   private layoutMutationEpoch = 0;
   private readonly layoutAutoSaveDebounceMs = 550;
   private layoutAutoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Saves the typed table name shortly after typing stops (blur does not fire when leaving the screen). */
+  private nameSaveTimer: ReturnType<typeof setTimeout> | null = null;
   /** Serializes layout PUTs so concurrent flush + debounce coalesce. */
   private layoutSaveTail: Promise<void> = Promise.resolve();
 
@@ -2005,6 +2007,9 @@ export class TablesCanvasComponent implements OnInit, OnDestroy {
       clearInterval(this.activeDurationTimer);
       this.activeDurationTimer = null;
     }
+    // Leaving the screen must not drop a name or a move that is still waiting for its debounce.
+    if (this.nameSaveTimer) this.updateSelectedTable();
+    if (this.hasUnsavedChanges()) void this.flushLayoutSave();
     this.clearLayoutAutoSaveTimer();
     document.removeEventListener('mousemove', this.onMouseMove);
     document.removeEventListener('mouseup', this.onMouseUp);
@@ -3248,9 +3253,18 @@ export class TablesCanvasComponent implements OnInit, OnDestroy {
     if (id == null) return;
     this.tables.update(ts => ts.map(t => (t.id === id ? { ...t, name } : t)));
     this.selectedTable.update(st => (st && st.id === id ? { ...st, name } : st));
+    if (this.nameSaveTimer) clearTimeout(this.nameSaveTimer);
+    this.nameSaveTimer = setTimeout(() => {
+      this.nameSaveTimer = null;
+      this.updateSelectedTable();
+    }, 500);
   }
 
   updateSelectedTable() {
+    if (this.nameSaveTimer) {
+      clearTimeout(this.nameSaveTimer);
+      this.nameSaveTimer = null;
+    }
     const table = this.selectedTable();
     if (!table?.id) return;
 
