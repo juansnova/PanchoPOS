@@ -86,3 +86,4 @@ tmp/
 *.dump
 Thumbs.db
 desktop.ini
+back/config.env
