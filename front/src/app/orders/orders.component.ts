@@ -1281,14 +1281,14 @@ ModuleRegistry.registerModules([
               <div class="modal-actions fx-actions">
                 <button type="button" class="fx-cancelbtn" (click)="closeFacturaModal()">{{ 'COMMON.CANCEL' | translate }}</button>
                 @if (facturaModalEditMode()) {
-                  <button type="button" class="fx-printbtn fx-printbtn-soft" [disabled]="!canInvoice()" (click)="printFacturaAndClose()">
+                  <button type="button" class="fx-printbtn fx-printbtn-soft" (click)="printFacturaAndClose()">
                     {{ 'ORDERS.PRINT_INVOICE' | translate }}
                   </button>
                   <button type="button" class="fx-printbtn" (click)="saveFacturaCustomerAndClose()">
                     {{ 'COMMON.SAVE' | translate }}
                   </button>
                 } @else {
-                  <button type="button" class="fx-printbtn" [disabled]="!canInvoice()" (click)="printFacturaAndClose()" data-testid="factura-print">
+                  <button type="button" class="fx-printbtn" (click)="printFacturaAndClose()" data-testid="factura-print">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                     {{ 'ORDERS.PRINT_INVOICE' | translate }}
                   </button>
@@ -4416,7 +4416,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   printFacturaAndClose() {
     const order = this.facturaOrder();
-    if (!order || !this.canInvoice()) return;
+    if (!order) return;
     const customer = this.facturaCustomerId != null
       ? this.facturaCustomers().find(c => c.id === this.facturaCustomerId)
       : null;

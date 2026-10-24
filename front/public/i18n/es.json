@@ -952,7 +952,7 @@
     "FX_BILL_TO": "Facturar a",
     "FX_FINAL": "Consumidor final",
     "FX_FINAL_SUB": "Sin datos del cliente",
-    "FX_FINAL_NOTE": "Elige el cliente al que se le factura. Sin cliente no se puede imprimir ni emitir la factura.",
+    "FX_FINAL_NOTE": "El cliente es opcional para imprimir la factura normal. Para emitir la factura electrónica sí es obligatorio.",
     "FX_ITEMS": "{{n}} productos",
     "FX_NEW_CUSTOMER": "Crear cliente nuevo",
     "FX_NO_DOC": "Sin documento",
