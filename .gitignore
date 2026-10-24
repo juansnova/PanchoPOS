@@ -21,8 +21,7 @@ back/.venv/
 .venv/
 venv/
 
-# Local config (copy from config.env.example)
-config.env
+# config.env SÍ se versiona (repositorio privado). Plantilla: config.env.example
 # Demo/local credentials (do not commit)
 .env
 
