@@ -704,6 +704,15 @@ Guía técnica completa: [docs/0004-deployment.md](docs/0004-deployment.md).
 | **Imágenes subidas** | `back/uploads/` | Fotos de platos, logo, imagen de marca |
 | **Configuración** | `config.env`, `scripts/print-agent/agent.env` | Claves y ajustes |
 
+### Copia y restauración con un solo comando (recomendado)
+
+```bash
+./scripts/backup.sh                                   # crea backups/pos_FECHA.tar.gz (base + imágenes + config.env)
+./scripts/restore.sh backups/pos_2026-10-23_1800.tar.gz   # en este PC o en uno nuevo
+```
+
+Sirve también para **mover el sistema a otro PC**: copia la carpeta del proyecto, haz `backup.sh` en el PC viejo, lleva el `.tar.gz` al nuevo y ejecuta `restore.sh`. El archivo contiene `config.env` (claves): guárdalo en un lugar privado. Se conservan las últimas 14 copias. Para automatizarlo en Windows, crea una tarea en el Programador de tareas que ejecute cada noche `bash scripts/backup.sh` desde la carpeta del proyecto (Git Bash).
+
 ### Copia de la base de datos
 
 Con el sistema encendido, en Git Bash:
