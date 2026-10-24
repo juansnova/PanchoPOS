@@ -193,8 +193,7 @@ footer p { margin: 0; font-size: 13px; font-weight: 700; }
 </style></head><body>
 <div class="sheet">
   <header>
-    ${d.logoUrl ? `<img src="${esc(d.logoUrl)}" alt="">` : ''}
-    <h1>${esc(d.business.name)}</h1>
+    ${d.logoUrl ? `<img src="${esc(d.logoUrl)}" alt="${esc(d.business.name)}">` : `<h1>${esc(d.business.name)}</h1>`}
     ${d.business.taxId ? `<p>NIT ${esc(d.business.taxId)}</p>` : ''}
     ${contact.map((c) => `<p>${esc(c)}</p>`).join('')}
   </header>
