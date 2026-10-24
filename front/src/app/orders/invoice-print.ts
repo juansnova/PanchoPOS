@@ -52,10 +52,6 @@ export interface InvoiceData {
   formatMoney: (cents: number) => string;
 }
 
-const ACCENT = '#c2672c';
-const INK = '#2b2118';
-const MUTED = '#7a6c5d';
-const RULE = '#d9cdbd';
 
 function esc(s: string | null | undefined): string {
   return (s ?? '')
@@ -142,51 +138,53 @@ export function buildInvoiceHtml(d: InvoiceData): string {
   return `<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8"><title>${esc(docTitle)} ${esc(docNumber)}</title>
 <style>
-@page { margin: 8mm; }
+@page { margin: 6mm; }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: #efe9df; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-body { font-family: 'Segoe UI', system-ui, -apple-system, Helvetica, Arial, sans-serif; font-size: 13px; line-height: 1.45; color: ${INK}; }
-.sheet { width: 100%; max-width: 400px; margin: 24px auto; padding: 28px 24px 22px; background: #fff; border-top: 5px solid ${ACCENT}; box-shadow: 0 6px 24px rgba(60,40,20,.12); }
-header { text-align: center; padding-bottom: 14px; }
-header img { display: block; margin: 0 auto 8px; max-height: 64px; max-width: 200px; }
-header h1 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 22px; letter-spacing: .3px; }
-header p { margin: 2px 0 0; font-size: 11.5px; color: ${MUTED}; }
-.doc { margin: 14px 0 4px; text-align: center; }
-.doc .t { display: inline-block; padding: 4px 12px; border: 1.5px solid ${ACCENT}; border-radius: 99px; color: ${ACCENT}; font-size: 10.5px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; }
-.doc .no { display: block; margin-top: 8px; font-family: Georgia, serif; font-size: 20px; font-weight: 700; }
-.meta { margin: 12px 0; padding: 8px 0; border-top: 1px dashed ${RULE}; border-bottom: 1px dashed ${RULE}; }
-.meta div { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; padding: 1px 0; }
-.meta span { color: ${MUTED}; }
-.box { margin: 0 0 12px; padding: 9px 12px; background: #faf6f0; border-left: 3px solid ${ACCENT}; border-radius: 2px; }
-.box h4 { margin: 0 0 3px; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: ${ACCENT}; }
-.box p { margin: 0; font-size: 12px; color: ${MUTED}; }
-.box p.strong { color: ${INK}; font-weight: 700; font-size: 13px; }
+html, body { margin: 0; background: #e8e8e8; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+/* Impresora de baja resolución: todo en negro puro, letras grandes y gruesas, sin grises ni líneas finas. */
+body { font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.4; color: #000; }
+.sheet { width: 100%; max-width: 420px; margin: 24px auto; padding: 24px 20px 20px; background: #fff; border-top: 6px solid #000; box-shadow: 0 6px 24px rgba(0,0,0,.15); }
+header { text-align: center; padding-bottom: 12px; }
+header img { display: block; margin: 0 auto 8px; max-height: 70px; max-width: 220px; filter: grayscale(1) contrast(3) brightness(.55); }
+header h1 { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: .3px; }
+header p { margin: 2px 0 0; font-size: 14px; font-weight: 700; }
+.doc { margin: 12px 0 4px; text-align: center; }
+.doc .t { display: inline-block; padding: 4px 12px; border: 2.5px solid #000; border-radius: 99px; font-size: 14px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
+.doc .no { display: block; margin-top: 8px; font-size: 26px; font-weight: 900; }
+.meta { margin: 12px 0; padding: 8px 0; border-top: 2px solid #000; border-bottom: 2px solid #000; }
+.meta div { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; padding: 1px 0; }
+.meta span { font-weight: 600; }
+.meta b { font-weight: 900; }
+.box { margin: 0 0 12px; padding: 8px 12px; border: 2px solid #000; border-radius: 4px; }
+.box h4 { margin: 0 0 3px; font-size: 13px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 900; }
+.box p { margin: 0; font-size: 14px; font-weight: 600; }
+.box p.strong { font-weight: 900; font-size: 16px; }
 table { width: 100%; border-collapse: collapse; }
-thead th { padding: 6px 0; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: ${MUTED}; text-align: left; border-bottom: 1.5px solid ${INK}; }
-thead th.q { width: 44px; }
+thead th { padding: 6px 0; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; font-weight: 900; text-align: left; border-bottom: 3px solid #000; }
+thead th.q { width: 48px; }
 thead th.p { text-align: right; }
-tbody td { padding: 8px 0; vertical-align: top; border-bottom: 1px dotted ${RULE}; }
-td.q { width: 44px; font-weight: 700; color: ${ACCENT}; }
-td.n small, .r small { display: block; font-size: 10.5px; color: ${MUTED}; }
+tbody td { padding: 9px 0; vertical-align: top; border-bottom: 2px solid #000; font-weight: 800; font-size: 16px; }
+td.q { width: 48px; font-weight: 900; font-size: 18px; }
+td.n small, .r small { display: block; font-size: 13px; font-weight: 600; }
 td.p { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 tr { page-break-inside: avoid; }
 .totals { margin-top: 10px; }
-.r { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; font-size: 12.5px; }
-.r b { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.r.tax { font-size: 11.5px; color: ${MUTED}; }
-.grand { display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px; padding: 10px 12px; background: ${INK}; color: #fff; border-radius: 4px; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; }
-.grand b { font-family: Georgia, serif; font-size: 21px; letter-spacing: 0; }
-.paid { margin-top: 8px; text-align: center; font-size: 10.5px; font-weight: 700; letter-spacing: 2.4px; text-transform: uppercase; color: ${ACCENT}; }
-.dian { margin-top: 16px; padding: 10px 12px; border: 1px solid ${RULE}; border-radius: 4px; font-size: 11px; color: ${MUTED}; }
+.r { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 16px; font-weight: 700; }
+.r b { font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.r.tax { font-size: 14px; }
+.grand { display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px; padding: 10px 12px; background: #000; color: #fff; border-radius: 4px; font-size: 17px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
+.grand b { font-size: 28px; letter-spacing: 0; }
+.paid { margin-top: 8px; text-align: center; font-size: 15px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
+.dian { margin-top: 14px; padding: 10px 12px; border: 2px solid #000; border-radius: 4px; font-size: 13px; font-weight: 700; }
 .dian p { margin: 2px 0 0; }
-.dian-head { display: flex; align-items: center; gap: 8px; color: ${INK}; font-size: 12px; }
-.shield { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border-radius: 50%; background: ${ACCENT}; color: #fff; font-size: 11px; font-weight: 700; }
-.cufe-l { margin-top: 6px !important; font-size: 9.5px; letter-spacing: 1.6px; font-weight: 700; color: ${INK}; }
-.cufe { font-family: Consolas, 'Courier New', monospace; font-size: 10.5px; color: ${INK}; word-break: break-all; }
-.pdf { font-size: 9.5px; word-break: break-all; }
-footer { margin-top: 18px; padding-top: 12px; border-top: 1px dashed ${RULE}; text-align: center; }
-footer .thanks { margin: 0 0 4px; font-family: Georgia, serif; font-size: 16px; color: ${ACCENT}; }
-footer p { margin: 0; font-size: 10.5px; color: ${MUTED}; }
+.dian-head { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 900; }
+.shield { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; border-radius: 50%; background: #000; color: #fff; font-size: 14px; font-weight: 900; }
+.cufe-l { margin-top: 6px !important; font-size: 12px; letter-spacing: 1.4px; font-weight: 900; }
+.cufe { font-family: 'Courier New', Consolas, monospace; font-size: 13px; font-weight: 900; word-break: break-all; }
+.pdf { font-size: 12px; word-break: break-all; }
+footer { margin-top: 16px; padding-top: 10px; border-top: 2px solid #000; text-align: center; }
+footer .thanks { margin: 0 0 4px; font-size: 20px; font-weight: 900; }
+footer p { margin: 0; font-size: 13px; font-weight: 700; }
 @media print {
   html, body { background: #fff; }
   .sheet { margin: 0 auto; box-shadow: none; padding: 4px 0; max-width: 100%; border-top: 0; }

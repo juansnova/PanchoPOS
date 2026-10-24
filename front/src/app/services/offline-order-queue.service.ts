@@ -251,7 +251,7 @@ export class OfflineOrderQueueService {
 
   private isTakeAwayName(name: string | undefined): boolean {
     const n = (name || '').trim().toLowerCase();
-    return n === 'take away' || n === 'home ordering' || n === 'takeaway' || n === 'take-away';
+    return n === 'barra' || n === 'take away' || n === 'home ordering' || n === 'takeaway' || n === 'take-away';
   }
 
   private errorDetail(err: unknown): string {

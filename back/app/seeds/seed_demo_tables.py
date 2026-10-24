@@ -109,7 +109,7 @@ def _ensure_take_away_table(session, tenant_id: int, floor_id: int) -> None:
     result = session.execute(
         text(
             '''SELECT id FROM "table"
-               WHERE tenant_id = :tid AND lower(trim(name)) = :name'''
+               WHERE tenant_id = :tid AND lower(trim(name)) IN (:name, 'barra')'''
         ),
         {"tid": tenant_id, "name": "take away"},
     )

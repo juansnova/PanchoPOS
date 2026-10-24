@@ -1952,7 +1952,7 @@ export class TablesComponent implements OnInit {
 
   /** Take Away is the shared counter (orders come from Staff > Orders > Venta en barra): not listed here. */
   private withoutTakeAway(tables: Table[]): Table[] {
-    const counter = ['take away', 'takeaway', 'take-away', 'home ordering'];
+    const counter = ['barra', 'take away', 'takeaway', 'take-away', 'home ordering'];
     return tables.filter(t => !counter.includes((t.name || '').trim().toLowerCase()));
   }
 

@@ -1,6 +1,6 @@
 """
-Default floor plan: 30 tables ("Mesa 1".."Mesa 30") in a 6 x 5 grid with generous gaps, plus Take Away.
-Runs on every start but only fills a tenant that has no tables yet (Take Away alone counts as empty),
+Default floor plan: 30 tables ("Mesa 1".."Mesa 30") in a 6 x 5 grid with generous gaps, plus Barra (take-away counter).
+Runs on every start but only fills a tenant that has no tables yet (Barra alone counts as empty),
 so tables, names and positions edited by the owner are never overwritten.
 
 Usage:
@@ -57,9 +57,16 @@ def run() -> None:
     with Session(engine) as session:
         tenant_ids = [r[0] for r in session.execute(text("SELECT id FROM tenant ORDER BY id")).fetchall()]
         for tenant_id in tenant_ids:
+            # The counter used to be called "Take Away"; same table, new name (orders keep pointing to it).
+            session.execute(
+                text('''UPDATE "table" SET name = 'Barra' WHERE tenant_id = :tid AND lower(trim(name)) = 'take away'
+                        AND NOT EXISTS (SELECT 1 FROM "table" WHERE tenant_id = :tid AND lower(trim(name)) = 'barra')'''),
+                {"tid": tenant_id},
+            )
+            session.commit()
             others = session.execute(
-                text('SELECT count(*) FROM "table" WHERE tenant_id = :tid AND lower(trim(name)) <> :ta'),
-                {"tid": tenant_id, "ta": "take away"},
+                text('''SELECT count(*) FROM "table" WHERE tenant_id = :tid AND lower(trim(name)) NOT IN ('barra', 'take away')'''),
+                {"tid": tenant_id},
             ).scalar_one()
             if others:
                 continue
@@ -69,11 +76,11 @@ def run() -> None:
                 _insert(session, tenant_id, floor_id, f"Mesa {i + 1}", X0 + col * DX, Y0 + row * DY,
                         "rectangle", SIZE, SIZE, SEATS, False)
             has_take_away = session.execute(
-                text('SELECT 1 FROM "table" WHERE tenant_id = :tid AND lower(trim(name)) = :ta'),
-                {"tid": tenant_id, "ta": "take away"},
+                text('''SELECT 1 FROM "table" WHERE tenant_id = :tid AND lower(trim(name)) IN ('barra', 'take away')'''),
+                {"tid": tenant_id},
             ).fetchone()
             if not has_take_away:
-                _insert(session, tenant_id, floor_id, "Take Away", 600, 760, "bar", 160, 50, 2, True)
+                _insert(session, tenant_id, floor_id, "Barra", 600, 760, "bar", 160, 50, 2, True)
             session.commit()
             print(f"Tenant {tenant_id}: created {COLUMNS * ROWS} default tables ({COLUMNS}x{ROWS}).")
 

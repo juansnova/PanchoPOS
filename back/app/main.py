@@ -753,7 +753,7 @@ class TenantSummary(_BaseModel):
     reservation_max_guests_per_slot: int | None = None
 
 
-TAKE_AWAY_TABLE_NAMES = ("take away", "home ordering", "takeaway", "take-away")
+TAKE_AWAY_TABLE_NAMES = ("barra", "take away", "home ordering", "takeaway", "take-away")
 
 
 def _is_take_away_table(table) -> bool:
@@ -764,7 +764,7 @@ def _is_take_away_table(table) -> bool:
 
 
 def ensure_take_away_table(session: Session, tenant_id: int) -> None:
-    """Make sure every tenant has a 'Take Away' table, so Venta en barra always works out of the box."""
+    """Make sure every tenant has a "Barra" (take-away) table, so Venta en barra always works out of the box."""
     tables = session.exec(select(models.Table).where(models.Table.tenant_id == tenant_id)).all()
     if any(_is_take_away_table(t) for t in tables):
         return
@@ -780,7 +780,7 @@ def ensure_take_away_table(session: Session, tenant_id: int) -> None:
         session.commit()
         session.refresh(floor)
 
-    session.add(models.Table(name="Take Away", tenant_id=tenant_id, floor_id=floor.id))
+    session.add(models.Table(name="Barra", tenant_id=tenant_id, floor_id=floor.id))
     session.commit()
 
 

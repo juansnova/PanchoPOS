@@ -9,7 +9,7 @@ from sqlmodel import Session, select
 from app import models
 from app.delivery_order_service import _add_order_items, _resolve_product_lines
 
-TAKE_AWAY_TABLE_NAMES = ("take away", "home ordering", "takeaway", "take-away")
+TAKE_AWAY_TABLE_NAMES = ("barra", "take away", "home ordering", "takeaway", "take-away")
 VALID_PAYMENT_INTENTS = frozenset({"cash", "card", "transfer"})
 # Intents that are paid on the spot (card is collected later, online).
 PAID_NOW_INTENTS = frozenset({"cash", "transfer"})
