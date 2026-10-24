@@ -24,7 +24,7 @@ import { StaffPosToolbarComponent } from '../shared/staff-pos-toolbar.component'
 import { FocusFirstInputDirective } from '../shared/focus-first-input.directive';
 import { AppSelectComponent, AppSelectOption } from '../shared/app-select.component';
 import { QuickSaleComponent } from './quick-sale.component';
-import { buildInvoiceA4Html } from './invoice-a4';
+import { buildInvoiceHtml } from './invoice-print';
 import { ProductPickerComponent, PickedLine, PickerProduct } from './product-picker.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { formatMoneyCents } from '../shared/currency-symbol';
@@ -3855,14 +3855,14 @@ export class OrdersComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Illustrated A4 invoice (opens the browser print dialog; "Save as PDF" works from there). */
+  /** Factura (normal o electrónica) en el diálogo de impresión del navegador; también sirve "Guardar como PDF". */
   printEditOrderInvoice() {
     const order = this.editOrder();
     if (!order) return;
     const customer = this.editOrderBillingId != null
       ? this.editOrderBillingCustomers().find(c => c.id === this.editOrderBillingId)
       : undefined;
-    this.printInvoiceA4(order, customer ?? null);
+    this.printInvoice(order, customer ?? null);
     if (this.editOrderBillingId != null) {
       this.api.setOrderBillingCustomer(order.id, this.editOrderBillingId).subscribe({
         next: () => this.refreshEditOrder(order.id),
@@ -3871,7 +3871,27 @@ export class OrdersComponent implements OnInit, OnDestroy {
     }
   }
 
-  printInvoiceA4(order: Order, billingCustomer?: BillingCustomer | null) {
+  printInvoice(order: Order, billingCustomer?: BillingCustomer | null) {
+    // La ventana se abre ya (dentro del clic) para que el navegador no la bloquee mientras se consulta la DIAN.
+    const w = window.open('', '_blank');
+    if (!w) return;
+    const cached = this.dianInvoice();
+    const render = (di: DianInvoicePublic | null) => {
+      const html = this.buildInvoiceDocument(order, billingCustomer ?? null, di);
+      w.document.write(html);
+      w.document.write('<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};}<\/script>');
+      w.document.close();
+    };
+    if (!this.dianInvoicingEnabled() || order.id == null) {
+      render(null);
+    } else if (cached && cached.order_id === order.id) {
+      render(cached);
+    } else {
+      this.api.getOrderDianInvoice(order.id).subscribe({ next: render, error: () => render(null) });
+    }
+  }
+
+  private buildInvoiceDocument(order: Order, billingCustomer: BillingCustomer | null, di: DianInvoicePublic | null): string {
     const settings = this.tenantSettings();
     const tenantId = this.api.getCurrentUser()?.tenant_id;
     const logoUrl = settings?.logo_filename && tenantId
@@ -3886,14 +3906,28 @@ export class OrdersComponent implements OnInit, OnDestroy {
     });
     const tipCents = order.tip_amount_cents || 0;
     const tipPct = order.tip_percent_applied;
-    const created = order.created_at
-      ? new Date(order.created_at.endsWith('Z') || order.created_at.includes('+') || order.created_at.includes('-', 10) ? order.created_at : order.created_at + 'Z')
-      : null;
+    const toDate = (iso: string) =>
+      new Date(iso.endsWith('Z') || iso.includes('+') || iso.includes('-', 10) ? iso : iso + 'Z');
+    const dateFmt = (iso: string | null | undefined) =>
+      iso ? toDate(iso).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : '';
     const paid = order.status === 'paid' || order.status === 'completed' || !!order.paid_at;
     const methods: Record<string, string> = {
       cash: 'Efectivo', terminal: 'Datáfono', stripe: 'Tarjeta (online)', revolut: 'Revolut', transfer: 'Transferencia',
     };
-    const html = buildInvoiceA4Html({
+    const regimes: Record<string, string> = {
+      no_responsable_iva: 'No responsable de IVA',
+      responsable_iva: 'Responsable de IVA',
+      regimen_simple: 'Régimen simple de tributación',
+    };
+    const electronic = di && di.status === 'issued' && di.document_type === 'invoice'
+      ? {
+          number: di.provider_invoice_number,
+          cufe: di.cufe,
+          issuedLabel: dateFmt(di.issued_at) || null,
+          regimeLabel: settings?.dian_tax_regime ? (regimes[settings.dian_tax_regime] ?? null) : null,
+        }
+      : null;
+    return buildInvoiceHtml({
       logoUrl,
       business: {
         name: settings?.name || 'Restaurante',
@@ -3905,7 +3939,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
         taxId: settings?.tax_id,
       },
       invoiceNumber: String(order.id).padStart(6, '0'),
-      dateLabel: created ? created.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : '',
+      dateLabel: dateFmt(order.created_at),
       tableName: order.table_name,
       customerName: order.customer_name,
       billing: billingCustomer
@@ -3927,19 +3961,14 @@ export class OrdersComponent implements OnInit, OnDestroy {
       extraChargeCents: order.extra_charge_cents || 0,
       extraChargeNote: order.extra_charge_note,
       tipCents,
-      tipLabel: tipPct ? `PROPINA ${tipPct}%` : 'PROPINA',
+      tipLabel: tipPct ? `Propina ${tipPct}%` : 'Propina',
       taxes: Object.entries(taxByRate).sort(([a], [b]) => Number(a) - Number(b)).map(([rate, cents]) => ({ rate: Number(rate), cents })),
       totalCents: order.total_cents || 0,
       paid,
       paymentMethodLabel: order.payment_method ? (methods[order.payment_method] ?? order.payment_method) : null,
+      electronic,
       formatMoney: c => this.formatPrice(c),
     });
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(html);
-      w.document.write('<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};}<\/script>');
-      w.document.close();
-    }
   }
 
   printEditOrderKitchen() {
@@ -4391,7 +4420,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     const customer = this.facturaCustomerId != null
       ? this.facturaCustomers().find(c => c.id === this.facturaCustomerId)
       : null;
-    this.printInvoiceA4(order, customer ?? null);
+    this.printInvoice(order, customer ?? null);
     this.afterFacturaPrintPersistCustomer(order, customer);
     this.closeFacturaModal();
   }
