@@ -145,7 +145,7 @@ html, body { margin: 0; background: #e8e8e8; -webkit-print-color-adjust: exact; 
 body { font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.4; color: #000; }
 .sheet { width: 100%; max-width: 420px; margin: 24px auto; padding: 24px 20px 20px; background: #fff; border-top: 6px solid #000; box-shadow: 0 6px 24px rgba(0,0,0,.15); }
 header { text-align: center; padding-bottom: 12px; }
-header img { display: block; margin: 0 auto 8px; max-height: 70px; max-width: 220px; filter: grayscale(1) contrast(3) brightness(.55); }
+header img { display: block; margin: 0 auto 8px; max-height: 90px; max-width: 240px; }
 header h1 { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: .3px; }
 header p { margin: 2px 0 0; font-size: 14px; font-weight: 700; }
 .doc { margin: 12px 0 4px; text-align: center; }
@@ -216,5 +216,40 @@ footer p { margin: 0; font-size: 13px; font-weight: 700; }
     <p>${esc(legal)}</p>
   </footer>
 </div>
+<script>
+/* El logo se pasa a blanco y negro puro (sin grises) y se engrosa un punto: las impresoras térmicas no imprimen medios tonos. */
+window.prepareLogo = function () {
+  return new Promise(function (done) {
+    var img = document.querySelector('header img');
+    if (!img) { done(); return; }
+    var src = new Image();
+    src.crossOrigin = 'anonymous';
+    src.onerror = function () { done(); };
+    src.onload = function () {
+      try {
+        var k = Math.min(480 / src.naturalWidth, 180 / src.naturalHeight);
+        var w = Math.max(1, Math.round(src.naturalWidth * k)), h = Math.max(1, Math.round(src.naturalHeight * k));
+        var c = document.createElement('canvas'); c.width = w; c.height = h;
+        var x = c.getContext('2d');
+        x.fillStyle = '#fff'; x.fillRect(0, 0, w, h);
+        x.drawImage(src, 0, 0, w, h);
+        var d = x.getImageData(0, 0, w, h), px = d.data, dark = new Uint8Array(w * h), i, j;
+        for (i = 0; i < w * h; i++) {
+          dark[i] = (0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2]) < 200 ? 1 : 0;
+        }
+        for (i = 0; i < h; i++) for (j = 0; j < w; j++) {
+          var p = (i * w + j) * 4, on = dark[i * w + j] || (j > 0 && dark[i * w + j - 1]) || (i > 0 && dark[(i - 1) * w + j]);
+          px[p] = px[p + 1] = px[p + 2] = on ? 0 : 255; px[p + 3] = 255;
+        }
+        x.putImageData(d, 0, 0);
+        img.onload = function () { done(); };
+        img.style.width = Math.round(w / 2) + 'px';
+        img.src = c.toDataURL('image/png');
+      } catch (e) { done(); }
+    };
+    src.src = img.src;
+  });
+};
+</script>
 </body></html>`;
 }

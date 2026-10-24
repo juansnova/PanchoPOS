@@ -3879,7 +3879,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     const render = (di: DianInvoicePublic | null) => {
       const html = this.buildInvoiceDocument(order, billingCustomer ?? null, di);
       w.document.write(html);
-      w.document.write('<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};}<\/script>');
+      w.document.write('<script>window.onload=function(){(window.prepareLogo?window.prepareLogo():Promise.resolve()).then(function(){window.print();});window.onafterprint=function(){window.close();};}<\/script>');
       w.document.close();
     };
     if (!this.dianInvoicingEnabled() || order.id == null) {
