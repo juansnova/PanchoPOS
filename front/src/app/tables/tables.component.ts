@@ -1647,7 +1647,7 @@ export class TablesComponent implements OnInit {
       }
     }
     for (const [, arr] of byGroup) {
-      arr.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+      arr.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', undefined, { numeric: true }));
     }
 
     const seenGroup = new Set<number>();
@@ -1677,10 +1677,10 @@ export class TablesComponent implements OnInit {
     return rows.sort((a, b) => {
       const floorA = this.getFloorName(a.kind === 'group' ? a.floorId : a.table.floor_id);
       const floorB = this.getFloorName(b.kind === 'group' ? b.floorId : b.table.floor_id);
-      if (floorA !== floorB) return floorA.localeCompare(floorB);
+      if (floorA !== floorB) return floorA.localeCompare(floorB, undefined, { numeric: true });
       const nameA = a.kind === 'group' ? a.label : (a.table.name ?? '');
       const nameB = b.kind === 'group' ? b.label : (b.table.name ?? '');
-      return nameA.localeCompare(nameB);
+      return nameA.localeCompare(nameB, undefined, { numeric: true });
     });
   }
 
@@ -1700,7 +1700,7 @@ export class TablesComponent implements OnInit {
       }
     }
     for (const [, arr] of byGroup) {
-      arr.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+      arr.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', undefined, { numeric: true }));
     }
     const seen = new Set<number>();
     const blocks: TablesTileBlock[] = [];
@@ -1722,7 +1722,7 @@ export class TablesComponent implements OnInit {
     return blocks.sort((a, b) => {
       const nameA = a.kind === 'group' ? a.label : (a.table.name ?? '');
       const nameB = b.kind === 'group' ? b.label : (b.table.name ?? '');
-      return nameA.localeCompare(nameB);
+      return nameA.localeCompare(nameB, undefined, { numeric: true });
     });
   }
 
