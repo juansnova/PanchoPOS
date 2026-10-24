@@ -88,6 +88,55 @@ _MENU_PESOS = [
     ("Coronita", 5000, "Bebidas", None),
 ]
 
+# Brief descriptions for products listed above without one. Applied on create and, for
+# existing products, only while their description is empty (owner edits are never overwritten).
+_BRIEF_DESCRIPTIONS = {
+    "Almuerzo Corriente": "Sopa, seco del día, jugo y postre",
+    "Almuerzo con Pollo Asado": "Sopa, pollo asado con acompañantes y jugo",
+    "Almuerzo con Broaster": "Sopa, pollo broaster con acompañantes y jugo",
+    "Sopa": "Sopa del día",
+    "Pollo Asado Entero": "Pollo asado entero con papa y arepa",
+    "Pollo Asado Medio": "Medio pollo asado con papa y arepa",
+    "Pollo Asado Cuarto": "Cuarto de pollo asado con papa y arepa",
+    "Pollo Broaster Entero": "Pollo broaster entero, crocante, con papa",
+    "Pollo Broaster Medio": "Medio pollo broaster crocante con papa",
+    "Pollo Broaster Cuarto": "Cuarto de pollo broaster crocante con papa",
+    "Cazuela de Mariscos": "Mariscos en salsa cremosa, con arroz",
+    "Trucha Marinera": "Trucha frita en salsa marinera",
+    "Bagre en Salsa": "Bagre guisado en salsa criolla",
+    "Mojarra": "Mojarra frita con patacón y ensalada",
+    "Churrasco": "Corte de res a la parrilla con acompañantes",
+    "Carne Fresca": "Carne de res a la plancha con acompañantes",
+    "Carne Oreada": "Carne oreada asada con acompañantes",
+    "Sobrebarriga": "Sobrebarriga en salsa criolla con acompañantes",
+    "Lomo de Cerdo": "Lomo de cerdo a la plancha con acompañantes",
+    "Chuleta de Cerdo": "Chuleta de cerdo apanada con acompañantes",
+    "Pechuga a la Plancha": "Pechuga de pollo a la plancha con acompañantes",
+    "Arroz con Pollo": "Arroz con pollo y vegetales",
+    "Espaguetis con Pollo": "Espaguetis con pollo en salsa cremosa",
+    "Salchichoripapa": "Salchicha, chorizo y papa francesa",
+    "Porción Papa Francesa": "Porción de papa a la francesa",
+    "Jugo Natural en Leche": "Jugo de fruta natural preparado en leche",
+    "Jugo Natural en Agua": "Jugo de fruta natural preparado en agua",
+    "Granizada de Cereza": "Granizada fría con sabor a cereza",
+    "Jugo Hit": "Jugo Hit de caja",
+    "Gaseosa Personal": "Gaseosa en presentación personal",
+    "Gaseosa Econolitro": "Gaseosa de litro",
+    "Gaseosa 1,5 Lt": "Gaseosa de 1,5 litros",
+    "Gaseosa 3 Lt": "Gaseosa de 3 litros",
+    "Agua Natural": "Botella de agua natural",
+    "Agua Saborizada": "Agua con sabor",
+    "Electrolit": "Bebida hidratante con electrolitos",
+    "Soda Hatsu": "Soda Hatsu con sabor",
+    "Cola & Pola": "Mezcla de gaseosa cola y cerveza",
+    "Águila Original": "Cerveza Águila Original",
+    "Águila Light": "Cerveza Águila Light",
+    "Poker": "Cerveza Poker",
+    "Club Colombia": "Cerveza Club Colombia",
+    "Budweiser": "Cerveza Budweiser",
+    "Coronita": "Cerveza Coronita",
+}
+
 # Menu structure: the old flat categories are subcategories of three general ones.
 #   old name -> (category, subcategory)
 # "Main Course" is the standard category shown as "Platos Fuertes" (see _CATEGORY_LABELS).
@@ -157,7 +206,7 @@ DEMO_PRODUCTS = [
             if c == "Bebidas"
             else _REGROUP.get(c, (c, None))
         ),
-        d,
+        d or _BRIEF_DESCRIPTIONS.get(n),
     )
     for n, pesos, c, d in _MENU_PESOS
 ]
@@ -214,6 +263,15 @@ def _seed_tenant_products(session, tenant_id: int) -> int:
             )
     for name, price_cents, category, subcategory, description in DEMO_PRODUCTS:
         if name in existing_names:
+            if description:
+                session.execute(
+                    text(
+                        "UPDATE product SET description = :d "
+                        "WHERE tenant_id = :tid AND name = :n "
+                        "AND (description IS NULL OR description = '')"
+                    ),
+                    {"d": description, "tid": tenant_id, "n": name},
+                )
             continue
         product = Product(
             tenant_id=tenant_id,
